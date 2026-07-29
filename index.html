@@ -103,6 +103,12 @@
     padding-bottom: 4px;
     margin-bottom: 8px;
   }
+  .board-title .showall {
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    margin-left: 8px;
+  }
   .board-row { font-size: 19px; line-height: 1.5; display: block; }
   .board-row .n { margin-right: 6px; }
   .board-empty { font-size: 14px; font-weight: 400; color: #6A6A6A; }
@@ -160,11 +166,11 @@ function rankRow(rank, p) {
   return `<a class="board-row" href="player.html?id=${p.id}"><span class="n">${rank}.</span><span class="rank-name">${p.name}</span></a>`;
 }
 
-function renderBoard(title, list) {
+function renderBoard(title, list, href) {
   const rows = list.length
     ? list.map((p, i) => rankRow(i + 1, p)).join('')
     : `<div class="board-empty">None yet.</div>`;
-  return `<div><div class="board-title">${title}</div>${rows}</div>`;
+  return `<div><div class="board-title">${title}<a class="showall" href="${href}">(Show All)</a></div>${rows}</div>`;
 }
 
 function renderBoards(players) {
@@ -173,11 +179,11 @@ function renderBoards(players) {
   const byPos = (pos) => players.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
 
   document.getElementById('boards').innerHTML = [
-    renderBoard('Overall Ranks:', overall.slice(0, 10)),
-    renderBoard('Latino Ranks:', latino.slice(0, 10)),
-    renderBoard('Guard Ranks:', byPos('Guard').slice(0, 10)),
-    renderBoard('Wing Ranks:', byPos('Wing').slice(0, 10)),
-    renderBoard('Big Ranks:', byPos('Big').slice(0, 10)),
+    renderBoard('Overall Ranks:', overall.slice(0, 10), 'rankings.html?pos=overall'),
+    renderBoard('Latino Ranks:', latino.slice(0, 10), 'rankings.html?pos=overall&latino=yes'),
+    renderBoard('Guard Ranks:', byPos('Guard').slice(0, 10), 'rankings.html?pos=guard'),
+    renderBoard('Wing Ranks:', byPos('Wing').slice(0, 10), 'rankings.html?pos=wing'),
+    renderBoard('Big Ranks:', byPos('Big').slice(0, 10), 'rankings.html?pos=big'),
   ].join('');
 }
 

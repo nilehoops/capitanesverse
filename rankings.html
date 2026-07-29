@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capitanesverse — Rankings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #000; color: #ECECEC; font-family: 'Lora', serif; font-weight: 700; }
+  a { color: inherit; }
+  .top { padding: 20px 24px 6px; }
+  .menu-link { font-size: 16px; text-decoration: underline; }
+  h1 { font-size: clamp(28px, 5vw, 52px); margin: 8px 0 14px; }
+
+  .toggle { padding: 0 24px 16px; font-size: 16px; }
+  .toggle span { margin-right: 10px; }
+  .toggle button {
+    background: none; border: none; color: #9A9A9A; font-family: 'Lora', serif;
+    font-weight: 700; font-size: 16px; cursor: pointer; margin-right: 14px; padding: 2px 0;
+  }
+  .toggle button.active { color: #ECECEC; border-bottom: 2px solid #ECECEC; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-weight: 400; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid #262626; text-align: left; white-space: nowrap; }
+  th { font-family: 'Lora', serif; font-weight: 700; font-size: 12px; cursor: pointer; color: #ECECEC; }
+  th:hover { color: #9A9A9A; }
+  td.name a { text-decoration: underline; }
+  .wrap { overflow-x: auto; padding: 0 24px 60px; }
+  .empty { padding: 20px 24px; font-size: 15px; font-weight: 400; color: #9A9A9A; }
+
+  /* ---- left-side show/hide column panel ---- */
+  #colTabBtn {
+    position: fixed; top: 50%; left: 0; transform: translateY(-50%);
+    writing-mode: vertical-rl; background: #ECECEC; color: #000;
+    font-family: 'Lora', serif; font-weight: 700; font-size: 13px;
+    border: none; padding: 12px 6px; cursor: pointer; z-index: 20;
+  }
+  #colPanel {
+    position: fixed; top: 0; left: -280px; width: 280px; height: 100vh;
+    background: #0D0D0D; border-right: 1px solid #333; z-index: 19;
+    transition: left 0.2s ease; overflow-y: auto; padding: 50px 16px 20px;
+  }
+  #colPanel.open { left: 0; }
+  #colTabBtn.open { left: 280px; }
+  .col-panel-head { font-size: 16px; margin-bottom: 10px; }
+  .col-group-label { font-size: 12px; color: #9A9A9A; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .col-check { font-size: 13px; font-weight: 400; display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+  .col-check input { accent-color: #ECECEC; }
+  .col-actions { font-size: 12px; font-weight: 600; text-decoration: underline; cursor: pointer; margin-right: 12px; }
+
+  body.panel-open .wrap, body.panel-open .top, body.panel-open .toggle { margin-left: 0; }
+
+  @media (max-width: 640px) {
+    #colPanel { width: 82vw; left: -82vw; }
+    #colTabBtn.open { left: 82vw; }
+  }
+</style>
+</head>
+<body>
+
+<button id="colTabBtn">Columns</button>
+<div id="colPanel">
+  <div class="col-panel-head">Show / Hide Columns</div>
+  <div>
+    <span class="col-actions" id="checkAll">All</span>
+    <span class="col-actions" id="checkNone">None</span>
+    <span class="col-actions" id="checkDefault">Default</span>
+  </div>
+  <div class="col-group-label">Core Stats (shown as %ile vs. position)</div>
+  <div id="coreChecks"></div>
+  <div class="col-group-label">Advanced Metrics (shown as raw value)</div>
+  <div id="advChecks"></div>
+</div>
+
+<div class="top">
+  <a class="menu-link" href="index.html">&larr; Main Menu</a>
+  <h1 id="title">Rankings</h1>
+</div>
+
+<div class="toggle">
+  <span>Latino:</span>
+  <button data-latino="all" class="active">All</button>
+  <button data-latino="yes">Yes</button>
+  <button data-latino="no">No</button>
+</div>
+
+<div class="wrap"><table id="table"></table></div>
+
+<script>
+const CORE_LABELS = {
+  gp:"GP", minPct:"Min%", prpg:"PRPG!", dPrpg:"D-PRPG", bpm:"BPM", obpm:"OBPM", dbpm:"DBPM",
+  ortg:"ORtg", drtg:"D-Rtg", usg:"Usg", efg:"eFG", ts:"TS", orb:"OR", drb:"DR", ast:"Ast",
+  tov:"TO", astToRatio:"A/TO", blk:"Blk", stl:"Stl", ftr:"FTR", fc40:"FC/40",
+  dunks:"Dunks", dunkAttempts:"Dunk Att", dunkPct:"Dunk%", rimMakes:"Rim M", rimAttempts:"Rim A",
+  rimPct:"Rim%", nonRim2Makes:"NonRim2 M", nonRim2Attempts:"NonRim2 A", nonRim2Pct:"NonRim2%",
+  ftMakes:"FT", ftAttempts:"FTA", ftPct:"FT%", twoPM:"2PM", twoPA:"2PA", twoPct:"2P%",
+  threePRate:"3PR", threePer100:"3P/100", threePM:"3P", threePA:"3PA", threePct:"3P%", fga:"FGA",
+};
+const ADV_LABELS = {
+  ftrPctile:"FTR %ile (src)", threePARPctile:"3PAR %ile (src)", dunkRate:"Dunk Rate",
+  dunksPerRimAtt:"Dunks/Rim Att", rimRate:"Rim Rate", rimRatePctile:"Rim Rate %ile (src)",
+  rimToNonRim2Ratio:"Rim:NonRim2", moreyballPct:"Moreyball%", moreyballPctile:"Moreyball %ile (src)",
+  griftRate:"Grift Rate", griftRatePctile:"Grift %ile (src)", jumperRate:"Jumper Rate",
+};
+const DEFAULT_CORE = new Set(['bpm','efg','ts','ast','stl','blk','orb','drb','threePct','ftPct']);
+const LOWER_IS_BETTER = new Set(['tov', 'drtg']);
+const POS_TITLES = { overall: 'Overall Rankings', guard: 'Guard Rankings', wing: 'Wing Rankings', big: 'Big Rankings' };
+const POS_MAP = { guard: 'Guard', wing: 'Wing', big: 'Big' };
+
+let visibleCore = new Set(DEFAULT_CORE);
+let visibleAdv = new Set();
+
+const params = new URLSearchParams(location.search);
+const posParam = params.get('pos') || 'overall';
+let latinoFilter = params.get('latino') === 'yes' ? 'yes' : params.get('latino') === 'no' ? 'no' : 'all';
+let sortKey = 'natural';
+let sortDir = 1;
+let cachedPlayers = null;
+
+document.getElementById('title').textContent = POS_TITLES[posParam] || 'Rankings';
+
+function percentileRank(allPlayers, position, key, value) {
+  const peers = allPlayers.filter(p => p.position === position && p.stats[key] != null);
+  if (peers.length < 5 || value == null) return null;
+  const better = LOWER_IS_BETTER.has(key)
+    ? peers.filter(p => p.stats[key] >= value).length
+    : peers.filter(p => p.stats[key] <= value).length;
+  return Math.round((better / peers.length) * 100);
+}
+
+function baseList(allPlayers) {
+  if (posParam === 'overall') return allPlayers.filter(p => p.overallRank != null);
+  const pos = POS_MAP[posParam];
+  return allPlayers.filter(p => p.position === pos && p.positionalRank != null);
+}
+function naturalRankField() { return posParam === 'overall' ? 'overallRank' : 'positionalRank'; }
+
+// ---- Left-side column panel ----
+function buildColumnPanel() {
+  document.getElementById('coreChecks').innerHTML = Object.entries(CORE_LABELS).map(([key, label]) => `
+    <label class="col-check"><input type="checkbox" data-group="core" data-key="${key}" ${visibleCore.has(key) ? 'checked' : ''}> ${label}</label>
+  `).join('');
+  document.getElementById('advChecks').innerHTML = Object.entries(ADV_LABELS).map(([key, label]) => `
+    <label class="col-check"><input type="checkbox" data-group="adv" data-key="${key}" ${visibleAdv.has(key) ? 'checked' : ''}> ${label}</label>
+  `).join('');
+
+  document.querySelectorAll('#colPanel input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const set = cb.dataset.group === 'core' ? visibleCore : visibleAdv;
+      cb.checked ? set.add(cb.dataset.key) : set.delete(cb.dataset.key);
+      renderTable(cachedPlayers);
+    });
+  });
+}
+
+document.getElementById('colTabBtn').addEventListener('click', () => {
+  document.getElementById('colPanel').classList.toggle('open');
+  document.getElementById('colTabBtn').classList.toggle('open');
+});
+document.getElementById('checkAll').addEventListener('click', () => {
+  visibleCore = new Set(Object.keys(CORE_LABELS));
+  visibleAdv = new Set(Object.keys(ADV_LABELS));
+  buildColumnPanel(); renderTable(cachedPlayers);
+});
+document.getElementById('checkNone').addEventListener('click', () => {
+  visibleCore = new Set(); visibleAdv = new Set();
+  buildColumnPanel(); renderTable(cachedPlayers);
+});
+document.getElementById('checkDefault').addEventListener('click', () => {
+  visibleCore = new Set(DEFAULT_CORE); visibleAdv = new Set();
+  buildColumnPanel(); renderTable(cachedPlayers);
+});
+
+// ---- Table ----
+function renderTable(allPlayers) {
+  cachedPlayers = allPlayers;
+  let rows = baseList(allPlayers);
+  if (latinoFilter === 'yes') rows = rows.filter(p => p.latino === true);
+  if (latinoFilter === 'no') rows = rows.filter(p => p.latino === false);
+
+  const field = naturalRankField();
+  const coreKeys = Object.keys(CORE_LABELS).filter(k => visibleCore.has(k));
+  const advKeys = Object.keys(ADV_LABELS).filter(k => visibleAdv.has(k));
+
+  const computed = rows.map(p => {
+    const corePct = {};
+    coreKeys.forEach(k => { corePct[k] = percentileRank(allPlayers, p.position, k, p.stats[k]); });
+    return { p, corePct };
+  });
+
+  computed.sort((a, b) => {
+    let av, bv;
+    if (sortKey === 'natural') { av = a.p[field]; bv = b.p[field]; }
+    else if (sortKey === 'name') { av = a.p.name; bv = b.p.name; }
+    else if (sortKey.startsWith('core:')) { av = a.corePct[sortKey.slice(5)]; bv = b.corePct[sortKey.slice(5)]; }
+    else if (sortKey.startsWith('adv:')) { av = a.p.advanced[sortKey.slice(4)]; bv = b.p.advanced[sortKey.slice(4)]; }
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (av < bv) return -1 * sortDir;
+    if (av > bv) return 1 * sortDir;
+    return 0;
+  });
+
+  const table = document.getElementById('table');
+  if (!computed.length) {
+    document.querySelector('.wrap').innerHTML = '<div class="empty">No players match this filter yet.</div>';
+    return;
+  }
+
+  const headCells = [
+    `<th data-k="natural">#</th>`,
+    `<th data-k="name">Name</th>`,
+    `<th>Pos</th><th>Team</th><th>Class</th><th>Height</th><th>Age</th><th>Weight</th><th>Latino</th>`,
+    ...coreKeys.map(k => `<th data-k="core:${k}">${CORE_LABELS[k]} %ile</th>`),
+    ...advKeys.map(k => `<th data-k="adv:${k}">${ADV_LABELS[k]}</th>`),
+  ].join('');
+
+  const bodyRows = computed.map((row, i) => {
+    const p = row.p;
+    const coreCells = coreKeys.map(k => `<td>${row.corePct[k] != null ? row.corePct[k] + '%' : '—'}</td>`).join('');
+    const advCells = advKeys.map(k => `<td>${p.advanced[k] != null ? p.advanced[k] : '—'}</td>`).join('');
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="name"><a href="player.html?id=${p.id}">${p.name}</a></td>
+      <td>${p.position || '—'}</td>
+      <td>${p.team || '—'}</td>
+      <td>${p.class || '—'}</td>
+      <td>${p.heightDisplay || '—'}</td>
+      <td>—</td>
+      <td>—</td>
+      <td>${p.latino === true ? 'Yes' : p.latino === false ? 'No' : '—'}</td>
+      ${coreCells}${advCells}
+    </tr>`;
+  }).join('');
+
+  table.innerHTML = `<thead><tr>${headCells}</tr></thead><tbody>${bodyRows}</tbody>`;
+  table.querySelectorAll('th[data-k]').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.k;
+      sortDir = (sortKey === k) ? -sortDir : 1;
+      sortKey = k;
+      renderTable(allPlayers);
+    });
+  });
+}
+
+document.querySelectorAll('.toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    latinoFilter = btn.dataset.latino;
+    document.querySelectorAll('.toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable(cachedPlayers);
+  });
+});
+document.querySelector(`.toggle button[data-latino="${latinoFilter}"]`).classList.add('active');
+
+buildColumnPanel();
+fetch('data/players.json')
+  .then(r => r.json())
+  .then(renderTable)
+  .catch(err => {
+    console.error('Could not load data/players.json', err);
+    document.querySelector('.wrap').innerHTML = '<div class="empty">Could not load data/players.json.</div>';
+  });
+</script>
+</body>
+</html>

@@ -181,11 +181,14 @@ function render(player, players) {
 
   document.getElementById('app').innerHTML = `
     <div class="grid">
-      <div class="name"><h1>${player.name}</h1></div>
+      <div class="name">
+        <a href="index.html" style="font-size:15px; text-decoration:underline; margin-right:16px;">&larr; Main Menu</a>
+        <h1 style="display:inline;">${player.name}</h1>
+      </div>
 
       <div class="ranktop">
-        <div class="line">Overall Rank: ${player.overallRank ? '#' + player.overallRank : 'N/A'}</div>
-        <div class="line">Positional Rank: ${player.positionalRank ? '#' + player.positionalRank : 'N/A'}</div>
+        <div class="line"><a href="rankings.html?pos=overall">Overall Rank: ${player.overallRank ? '#' + player.overallRank : 'N/A'}</a></div>
+        <div class="line"><a href="rankings.html?pos=${player.position ? player.position.toLowerCase() : 'overall'}">Positional Rank: ${player.positionalRank ? '#' + player.positionalRank : 'N/A'}</a></div>
       </div>
 
       <div class="sidebar">
@@ -211,8 +214,8 @@ function render(player, players) {
       <div class="video2">${videoSlot(videos[1], player.name)}</div>
 
       <div class="ranksmid">
-        <div class="line">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</div>
-        <div class="line">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</div>
+        <div class="line"><a href="rankings.html?pos=overall">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
+        <div class="line"><a href="rankings.html?pos=overall&latino=yes">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</a></div>
         <div class="staff-head">Staff Notes/Overview:</div>
         <div class="staff-body">${player.staffNotes || 'No staff notes yet.'}</div>
       </div>

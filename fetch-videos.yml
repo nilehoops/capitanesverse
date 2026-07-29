@@ -21,11 +21,9 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install yt-dlp
 
       - name: Fetch videos for each player
-        env:
-          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python scripts/fetch_videos.py
 
       - name: Commit and push if data changed

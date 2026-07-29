@@ -4074,6 +4074,9 @@
       "griftRate": 6648.4962,
       "griftRatePctile": 0.2,
       "jumperRate": 0.6059
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4151,6 +4154,9 @@
       "griftRate": 8612.5,
       "griftRatePctile": 0.543,
       "jumperRate": 0.6308
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4228,6 +4234,9 @@
       "griftRate": 8983.2512,
       "griftRatePctile": 0.604,
       "jumperRate": 0.4781
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4305,6 +4314,9 @@
       "griftRate": 6328.2759,
       "griftRatePctile": 0.157,
       "jumperRate": 0.6502
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4382,6 +4394,9 @@
       "griftRate": 17552.5683,
       "griftRatePctile": 0.936,
       "jumperRate": 0.8507
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4459,6 +4474,9 @@
       "griftRate": 13144.5139,
       "griftRatePctile": 0.868,
       "jumperRate": 0.8557
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4536,6 +4554,9 @@
       "griftRate": 6861.2594,
       "griftRatePctile": 0.229,
       "jumperRate": 0.5828
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4613,6 +4634,9 @@
       "griftRate": 7563.5887,
       "griftRatePctile": 0.35,
       "jumperRate": 0.5941
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4690,6 +4714,9 @@
       "griftRate": 7732.5581,
       "griftRatePctile": 0.393,
       "jumperRate": 0.6767
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4767,6 +4794,9 @@
       "griftRate": 13612.9412,
       "griftRatePctile": 0.886,
       "jumperRate": 0.7069
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4844,6 +4874,9 @@
       "griftRate": 9146.644,
       "griftRatePctile": 0.621,
       "jumperRate": 0.6538
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4921,6 +4954,9 @@
       "griftRate": 17853.913,
       "griftRatePctile": 0.943,
       "jumperRate": 0.8701
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -4998,6 +5034,9 @@
       "griftRate": 5581.4068,
       "griftRatePctile": 0.079,
       "jumperRate": 0.6757
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5075,6 +5114,9 @@
       "griftRate": 5548.6239,
       "griftRatePctile": 0.075,
       "jumperRate": 0.2214
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5152,6 +5194,9 @@
       "griftRate": 9821.5385,
       "griftRatePctile": 0.679,
       "jumperRate": 0.4868
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5229,6 +5274,9 @@
       "griftRate": 13186.1714,
       "griftRatePctile": 0.871,
       "jumperRate": 0.7164
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5306,6 +5354,9 @@
       "griftRate": 11385.5696,
       "griftRatePctile": 0.814,
       "jumperRate": 0.5995
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5383,6 +5434,9 @@
       "griftRate": 6380.3641,
       "griftRatePctile": 0.168,
       "jumperRate": 0.058
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5460,6 +5514,9 @@
       "griftRate": 8328.8719,
       "griftRatePctile": 0.486,
       "jumperRate": 0.6038
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5537,6 +5594,9 @@
       "griftRate": 6640.0407,
       "griftRatePctile": 0.196,
       "jumperRate": 0.3283
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5614,6 +5674,9 @@
       "griftRate": 9800.9351,
       "griftRatePctile": 0.671,
       "jumperRate": 0.5878
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5691,6 +5754,9 @@
       "griftRate": 7614.3925,
       "griftRatePctile": 0.375,
       "jumperRate": 0.518
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5768,6 +5834,9 @@
       "griftRate": 5475.0829,
       "griftRatePctile": 0.068,
       "jumperRate": 0.337
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5845,6 +5914,9 @@
       "griftRate": 16915.6872,
       "griftRatePctile": 0.925,
       "jumperRate": 0.8575
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5922,6 +5994,9 @@
       "griftRate": 18133.758,
       "griftRatePctile": 0.946,
       "jumperRate": 0.8208
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -5999,6 +6074,9 @@
       "griftRate": 12008.7379,
       "griftRatePctile": 0.832,
       "jumperRate": 0.7785
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6076,6 +6154,9 @@
       "griftRate": 7362.4012,
       "griftRatePctile": 0.304,
       "jumperRate": 0.6428
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6153,6 +6234,9 @@
       "griftRate": 7486.2439,
       "griftRatePctile": 0.332,
       "jumperRate": 0.4901
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6230,6 +6314,9 @@
       "griftRate": 13586.087,
       "griftRatePctile": 0.882,
       "jumperRate": 0.8145
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6307,6 +6394,9 @@
       "griftRate": 8216.0,
       "griftRatePctile": 0.471,
       "jumperRate": 0.7152
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6384,6 +6474,9 @@
       "griftRate": 4987.7736,
       "griftRatePctile": 0.032,
       "jumperRate": 0.6485
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6461,6 +6554,9 @@
       "griftRate": 8621.9737,
       "griftRatePctile": 0.546,
       "jumperRate": 0.528
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6538,6 +6634,9 @@
       "griftRate": 8652.8634,
       "griftRatePctile": 0.554,
       "jumperRate": 0.7342
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6615,6 +6714,9 @@
       "griftRate": 10023.2773,
       "griftRatePctile": 0.714,
       "jumperRate": 0.7298
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6692,6 +6794,9 @@
       "griftRate": 27160.4938,
       "griftRatePctile": 0.993,
       "jumperRate": 0.838
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6769,6 +6874,9 @@
       "griftRate": 6383.4259,
       "griftRatePctile": 0.171,
       "jumperRate": 0.6674
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6846,6 +6954,9 @@
       "griftRate": 15199.3651,
       "griftRatePctile": 0.911,
       "jumperRate": 0.7079
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -6923,6 +7034,9 @@
       "griftRate": 11303.6649,
       "griftRatePctile": 0.804,
       "jumperRate": 0.7753
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7000,6 +7114,9 @@
       "griftRate": 7865.0,
       "griftRatePctile": 0.425,
       "jumperRate": 0.6694
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7077,6 +7194,9 @@
       "griftRate": 12137.3438,
       "griftRatePctile": 0.836,
       "jumperRate": 0.6886
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7154,6 +7274,9 @@
       "griftRate": 12309.5197,
       "griftRatePctile": 0.85,
       "jumperRate": 0.701
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7231,6 +7354,9 @@
       "griftRate": 8879.6098,
       "griftRatePctile": 0.589,
       "jumperRate": 0.5827
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7308,6 +7434,9 @@
       "griftRate": 12397.4093,
       "griftRatePctile": 0.854,
       "jumperRate": 0.7196
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7385,6 +7514,9 @@
       "griftRate": 8160.2713,
       "griftRatePctile": 0.468,
       "jumperRate": 0.5159
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7462,6 +7594,9 @@
       "griftRate": 10217.7953,
       "griftRatePctile": 0.718,
       "jumperRate": 0.6985
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7539,6 +7674,9 @@
       "griftRate": 9998.4722,
       "griftRatePctile": 0.704,
       "jumperRate": 0.6269
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7616,6 +7754,9 @@
       "griftRate": 21979.5349,
       "griftRatePctile": 0.982,
       "jumperRate": 0.8499
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7693,6 +7834,9 @@
       "griftRate": 7141.5584,
       "griftRatePctile": 0.279,
       "jumperRate": 0.6051
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7770,6 +7914,9 @@
       "griftRate": 21373.44,
       "griftRatePctile": 0.975,
       "jumperRate": 0.8719
+    },
+    "realgm": {
+      "found": false
     }
   },
   {
@@ -7847,6 +7994,9 @@
       "griftRate": 8538.2716,
       "griftRatePctile": 0.532,
       "jumperRate": 0.6885
+    },
+    "realgm": {
+      "found": false
     }
   },
   {

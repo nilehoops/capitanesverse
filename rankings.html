@@ -122,6 +122,18 @@ let cachedPlayers = null;
 
 document.getElementById('title').textContent = POS_TITLES[posParam] || 'Rankings';
 
+function pctColor(pct) {
+  if (pct == null) return '#9A9A9A';
+  const red = [216, 31, 42], green = [18, 138, 62];
+  const t = pct / 100;
+  const mix = (a, b) => Math.round(a + (b - a) * t);
+  return `rgb(${mix(red[0], green[0])},${mix(red[1], green[1])},${mix(red[2], green[2])})`;
+}
+function fmtRaw(v) {
+  if (v == null) return null;
+  return Number.isInteger(v) ? v : Math.round(v * 100) / 100;
+}
+
 function percentileRank(allPlayers, position, key, value) {
   const peers = allPlayers.filter(p => p.position === position && p.stats[key] != null);
   if (peers.length < 5 || value == null) return null;
@@ -214,13 +226,19 @@ function renderTable(allPlayers) {
     `<th data-k="natural">#</th>`,
     `<th data-k="name">Name</th>`,
     `<th>Pos</th><th>Team</th><th>Class</th><th>Height</th><th>Age</th><th>Weight</th><th>Latino</th>`,
-    ...coreKeys.map(k => `<th data-k="core:${k}">${CORE_LABELS[k]} %ile</th>`),
+    ...coreKeys.map(k => `<th data-k="core:${k}">${CORE_LABELS[k]}</th>`),
     ...advKeys.map(k => `<th data-k="adv:${k}">${ADV_LABELS[k]}</th>`),
   ].join('');
 
   const bodyRows = computed.map((row, i) => {
     const p = row.p;
-    const coreCells = coreKeys.map(k => `<td>${row.corePct[k] != null ? row.corePct[k] + '%' : '—'}</td>`).join('');
+    const coreCells = coreKeys.map(k => {
+      const raw = fmtRaw(p.stats[k]);
+      const pct = row.corePct[k];
+      if (raw == null) return '<td>—</td>';
+      const sub = pct != null ? `<sub style="color:#8A8A8A;">${pct}</sub>` : '';
+      return `<td><span style="color:${pctColor(pct)}">${raw}</span>${sub}</td>`;
+    }).join('');
     const advCells = advKeys.map(k => `<td>${p.advanced[k] != null ? p.advanced[k] : '—'}</td>`).join('');
     return `<tr>
       <td>${i + 1}</td>

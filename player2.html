@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capitanesverse — Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #000000;
+    color: #ECECEC;
+    font-family: 'Lora', serif;
+    font-weight: 700;
+  }
+  a { color: inherit; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr) 1.4fr;
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas:
+      "name  name  name  name  name  name  name  ranktop ranktop ranktop ranktop sidebar"
+      "video1 video1 video1 video2 video2 video2 video2 ranksmid ranksmid ranksmid ranksmid sidebar"
+      "stats stats stats stats stats stats stats crowd crowd crowd crowd sidebar"
+      "strong strong strong strong weak weak weak crowd crowd crowd crowd sidebar";
+    min-height: 100vh;
+  }
+
+  .name    { grid-area: name;    background: #1631FF; display:flex; align-items:center; padding: 14px 24px; }
+  .ranktop { grid-area: ranktop; background: #000; padding: 14px 18px; }
+  .video1  { grid-area: video1;  background: #000; padding: 14px; border-top: 1px solid #222; }
+  .video2  { grid-area: video2;  background: #000; padding: 14px; border-top: 1px solid #222; border-left: 1px solid #222; }
+  .ranksmid{ grid-area: ranksmid;background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .stats   { grid-area: stats;   background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .strong  { grid-area: strong;  background: #128A3E; padding: 14px 18px; }
+  .weak    { grid-area: weak;    background: #D81F2A; padding: 14px 18px; border-left: 1px solid #000; }
+  .crowd   { grid-area: crowd;   background: #C9C9C9; color: #101010; padding: 14px 18px; border-top: 1px solid #222; }
+  .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; }
+
+  .name h1 { font-size: clamp(30px, 4.4vw, 64px); margin: 0; color: #ECECEC; line-height: 1; }
+
+  .line { font-size: 21px; margin: 2px 0; }
+  .small-label { font-size: 15px; font-weight: 600; }
+
+  .yt-slot {
+    background: #0A0A0A;
+    border: 1px dashed #333;
+    color: #8A8A8A;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .yt-slot iframe { width: 100%; height: 160px; border: 0; }
+
+  .staff-head { font-size: 19px; margin-top: 10px; }
+  .staff-body { font-size: 15px; font-weight: 400; color: #C9C9C9; margin-top: 4px; }
+
+  .stats-head { font-size: 24px; margin-bottom: 8px; }
+  .stat-table { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 4px 14px; font-size: 13px; font-weight: 400; }
+  .stat-table .k { color: #9A9A9A; }
+  .stat-table .v { color: #ECECEC; font-weight: 600; }
+
+  .box-title { font-size: 20px; margin: 0 0 6px; }
+  .box-sub { font-size: 13px; font-weight: 400; margin-bottom: 8px; }
+  .pct-row { font-size: 14px; font-weight: 600; margin: 3px 0; }
+
+  .crowd .box-sub { font-size: 13px; font-weight: 400; color: #303030; }
+  .crowd textarea { width: 100%; font-family: 'Lora', serif; font-size: 13px; padding: 6px; margin-top: 8px; border: 1px solid #999; }
+  .crowd button { margin-top: 6px; font-family: 'Lora', serif; font-weight: 700; font-size: 13px; padding: 6px 12px; background: #101010; color: #ECECEC; border: none; cursor: pointer; }
+  .crowd-list { margin-top: 10px; font-size: 13px; font-weight: 400; }
+  .crowd-list .entry { border-top: 1px solid #999; padding: 6px 0; }
+
+  /* ---- sidebar internals ---- */
+  .sb-search { padding: 10px; }
+  .sb-search input {
+    width: 100%; background: #FFFFFF; color: #000; border: none;
+    font-family: 'Lora', serif; font-weight: 700; font-size: 14px; padding: 8px;
+  }
+  .sb-search-results a { display: block; font-size: 12px; font-weight: 600; color: #ECECEC; padding: 2px 0; }
+
+  .sb-fields { padding: 4px 10px 10px; font-size: 15px; line-height: 1.6; }
+  .sb-fields .lab { color: #ECECEC; }
+  .sb-fields .val { color: #9A9A9A; font-weight: 400; }
+
+  .sb-twitter {
+    background: #FFFFFF;
+    color: #000;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 12px;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    text-align: center;
+  }
+
+  .sb-logo {
+    padding: 10px;
+    font-size: 13px;
+    text-align: right;
+    color: #ECECEC;
+  }
+
+  .notfound { padding: 40px; font-size: 22px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+const STAT_LABELS = {
+  gp:"GP", minPct:"Min%", prpg:"PRPG!", dPrpg:"D-PRPG", bpm:"BPM", obpm:"OBPM", dbpm:"DBPM",
+  ortg:"ORtg", drtg:"D-Rtg", usg:"Usg", efg:"eFG", ts:"TS", orb:"OR", drb:"DR", ast:"Ast",
+  tov:"TO", astToRatio:"A/TO", blk:"Blk", stl:"Stl", ftr:"FTR", fc40:"FC/40",
+  dunks:"Dunks", dunkAttempts:"Dunk Att", dunkPct:"Dunk%", rimMakes:"Rim M", rimAttempts:"Rim A",
+  rimPct:"Rim%", nonRim2Makes:"NonRim2 M", nonRim2Attempts:"NonRim2 A", nonRim2Pct:"NonRim2%",
+  ftMakes:"FT", ftAttempts:"FTA", ftPct:"FT%", twoPM:"2PM", twoPA:"2PA", twoPct:"2P%",
+  threePRate:"3PR", threePer100:"3P/100", threePM:"3P", threePA:"3PA", threePct:"3P%", fga:"FGA",
+};
+
+// Which direction is "good" for percentile purposes (used by Strengths/Weaknesses).
+const LOWER_IS_BETTER = new Set(['tov', 'drtg']);
+const PERCENTILE_KEYS = ['bpm','obpm','dbpm','ortg','drtg','efg','ts','ast','tov','stl','blk','orb','drb','threePct','ftPct','usg'];
+
+function percentileRank(players, position, key, value) {
+  const peers = players.filter(p => p.position === position && p.stats[key] != null);
+  if (peers.length < 5 || value == null) return null;
+  const better = LOWER_IS_BETTER.has(key)
+    ? peers.filter(p => p.stats[key] >= value).length
+    : peers.filter(p => p.stats[key] <= value).length;
+  return better / peers.length;
+}
+
+function computeStrengthsWeaknesses(players, player) {
+  const rows = PERCENTILE_KEYS.map(key => {
+    const pct = percentileRank(players, player.position, key, player.stats[key]);
+    return pct == null ? null : { key, label: STAT_LABELS[key] || key, pct };
+  }).filter(Boolean);
+  rows.sort((a, b) => b.pct - a.pct);
+  return { strengths: rows.slice(0, 3), weaknesses: rows.slice(-3).reverse() };
+}
+
+// Derived ranks: the source sheet doesn't have explicit "Available Rank" or
+// "Latino Rank" columns, so both are computed here from Overall Rank.
+function computeDerivedRanks(players, player) {
+  const availableCodes = new Set(['2', '3', 'WW', '?']); // not yet signed
+  const availablePool = players.filter(p => availableCodes.has(p.availability) && p.overallRank != null)
+    .sort((a, b) => a.overallRank - b.overallRank);
+  const availableRank = availableCodes.has(player.availability)
+    ? availablePool.findIndex(p => p.id === player.id) + 1 : null;
+
+  const latinoPool = players.filter(p => p.latino === true && p.overallRank != null)
+    .sort((a, b) => a.overallRank - b.overallRank);
+  const latinoRank = player.latino === true
+    ? latinoPool.findIndex(p => p.id === player.id) + 1 : null;
+
+  return { availableRank: availableRank || null, latinoRank: latinoRank || null };
+}
+
+function videoSlot(video, label) {
+  if (video) {
+    return `<div class="yt-slot"><iframe src="https://www.youtube.com/embed/${video.id}" title="${video.title}" allowfullscreen></iframe></div>`;
+  }
+  return `<div class="yt-slot">Youtube Embed of<br>"'${label}' highlight"<br>(populated by the fetch-videos Action)</div>`;
+}
+
+function render(player, players) {
+  const { strengths, weaknesses } = computeStrengthsWeaknesses(players, player);
+  const { availableRank, latinoRank } = computeDerivedRanks(players, player);
+  const videos = player.videos || [];
+
+  document.getElementById('app').innerHTML = `
+    <div class="grid">
+      <div class="name"><h1>${player.name}</h1></div>
+
+      <div class="ranktop">
+        <div class="line">Overall Rank: ${player.overallRank ? '#' + player.overallRank : 'N/A'}</div>
+        <div class="line">Positional Rank: ${player.positionalRank ? '#' + player.positionalRank : 'N/A'}</div>
+      </div>
+
+      <div class="sidebar">
+        <div class="sb-search">
+          <input id="searchInput" placeholder="Search:" autocomplete="off">
+          <div class="sb-search-results" id="searchResults"></div>
+        </div>
+        <div class="sb-fields">
+          <div><span class="lab">Position: </span><span class="val">${player.position || '—'}</span></div>
+          <div><span class="lab">Age: </span><span class="val">—</span></div>
+          <div><span class="lab">Height: </span><span class="val">${player.heightDisplay || '—'}</span></div>
+          <div><span class="lab">Weight: </span><span class="val">—</span></div>
+          <div><span class="lab">Last Team: </span><span class="val">${player.team || '—'}</span></div>
+          <div><span class="lab">Agency: </span><span class="val">—</span></div>
+          <div><span class="lab">Availability: </span><span class="val">${player.availabilityLabel || '—'}</span></div>
+          <div><span class="lab">Latino: </span><span class="val">${player.latino === true ? 'Yes' : player.latino === false ? 'No' : '—'}</span></div>
+        </div>
+        <div class="sb-twitter">Twitter (X) embed of "${player.name}" to keep up with news<br>(needs the player's X handle — swap in publish.twitter.com's search-embed widget)</div>
+        <div class="sb-logo">Capitanes 2026<br>Offseason Site</div>
+      </div>
+
+      <div class="video1">${videoSlot(videos[0], player.name)}</div>
+      <div class="video2">${videoSlot(videos[1], player.name)}</div>
+
+      <div class="ranksmid">
+        <div class="line">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</div>
+        <div class="line">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</div>
+        <div class="staff-head">Staff Notes/Overview:</div>
+        <div class="staff-body">${player.staffNotes || 'No staff notes yet.'}</div>
+      </div>
+
+      <div class="stats">
+        <div class="stats-head">2026 Stats/Metrics</div>
+        <div class="stat-table">
+          ${Object.entries(STAT_LABELS).map(([key, label]) => {
+            const v = player.stats[key];
+            return v == null ? '' : `<div><span class="k">${label}:</span> <span class="v">${v}</span></div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="strong">
+        <div class="box-title">Stat Strengths</div>
+        <div class="box-sub">Strongest %ile metrics, relative to the position group</div>
+        ${strengths.map(s => `<div class="pct-row">${s.label} — ${Math.round(s.pct * 100)}th %ile</div>`).join('') || '<div class="box-sub">Not enough position-group data yet.</div>'}
+      </div>
+
+      <div class="weak">
+        <div class="box-title">Stat Weaknesses</div>
+        <div class="box-sub">Weakest %ile metrics, relative to the position group</div>
+        ${weaknesses.map(s => `<div class="pct-row">${s.label} — ${Math.round(s.pct * 100)}th %ile</div>`).join('') || '<div class="box-sub">Not enough position-group data yet.</div>'}
+      </div>
+
+      <div class="crowd">
+        <div class="box-title">Community Notes</div>
+        <div class="box-sub">A section where anyone with access to the site can add their notes on a player, and it's visible to everyone else.</div>
+        <textarea id="noteInput" rows="2" placeholder="Add a note..."></textarea><br>
+        <button id="addNoteBtn">Add Note</button>
+        <div class="crowd-list" id="crowdList"></div>
+      </div>
+    </div>
+  `;
+
+  setupSearch(players);
+  setupCrowdNotes(player.id);
+}
+
+// ---- Community notes: front-end shell only ----
+// No backend is wired up yet — see the chat response for free hosting options
+// (Firebase, Supabase, a Sheets-backed Apps Script endpoint, giscus, etc).
+// Whichever is picked, replace loadNotes()/saveNote() below with real calls.
+function loadNotes(playerId) {
+  return JSON.parse(sessionStorage.getItem('notes:' + playerId) || '[]');
+}
+function saveNoteLocally(playerId, text) {
+  const notes = loadNotes(playerId);
+  notes.push({ text, ts: new Date().toISOString() });
+  sessionStorage.setItem('notes:' + playerId, JSON.stringify(notes));
+}
+function setupCrowdNotes(playerId) {
+  const list = document.getElementById('crowdList');
+  const renderList = () => {
+    const notes = loadNotes(playerId);
+    list.innerHTML = notes.length
+      ? notes.map(n => `<div class="entry">${n.text}</div>`).join('')
+      : '<div class="entry">No notes yet.</div>';
+  };
+  renderList();
+  document.getElementById('addNoteBtn').addEventListener('click', () => {
+    const input = document.getElementById('noteInput');
+    if (!input.value.trim()) return;
+    saveNoteLocally(playerId, input.value.trim()); // TEMPORARY — session-only, not shared
+    input.value = '';
+    renderList();
+  });
+}
+
+function setupSearch(players) {
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { results.innerHTML = ''; return; }
+    const matches = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 6);
+    results.innerHTML = matches.map(p => `<a href="player.html?id=${p.id}">${p.name}</a>`).join('');
+  });
+}
+
+const playerId = new URLSearchParams(location.search).get('id');
+fetch('data/players.json')
+  .then(r => r.json())
+  .then(players => {
+    const player = players.find(p => p.id === playerId);
+    if (!player) {
+      document.getElementById('app').innerHTML = `<div class="notfound">Player not found: ${playerId || '(no id given)'}</div>`;
+      return;
+    }
+    render(player, players);
+  })
+  .catch(err => {
+    console.error('Could not load data/players.json', err);
+    document.getElementById('app').innerHTML = '<div class="notfound">Could not load data/players.json.</div>';
+  });
+</script>
+</body>
+</html>

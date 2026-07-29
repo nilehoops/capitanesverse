@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capitanesverse — 2026 Offseason Site</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #000000;
+    color: #ECECEC;
+    font-family: 'Lora', serif;
+    font-weight: 700;
+  }
+  a { color: inherit; text-decoration: none; }
+  a:hover .rank-name { text-decoration: underline; }
+
+  .top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 24px 24px 8px;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .wordmark {
+    font-size: clamp(44px, 9vw, 118px);
+    line-height: 0.95;
+    margin: 0;
+  }
+  .search-line {
+    margin-top: 10px;
+  }
+  .search-line input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid #ECECEC;
+    color: #ECECEC;
+    font-family: 'Lora', serif;
+    font-weight: 700;
+    font-size: 20px;
+    padding: 4px 2px;
+    width: min(360px, 70vw);
+  }
+  .search-line input::placeholder { color: #9A9A9A; }
+  .search-results {
+    margin-top: 6px;
+    font-size: 16px;
+  }
+  .search-results a { display: block; padding: 2px 0; }
+  .search-results .pos { color: #9A9A9A; font-weight: 600; font-size: 13px; margin-left: 8px; }
+
+  .roster-block {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .roster-label { font-size: 26px; line-height: 1.05; text-align: right; }
+  .roster-photos {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    width: 130px;
+  }
+  .roster-photos img, .roster-photos .noimg {
+    width: 63px;
+    height: 63px;
+    object-fit: cover;
+    display: block;
+    background: #1A1A1A;
+  }
+  .roster-photos .noimg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    color: #6A6A6A;
+  }
+  .roster-names {
+    font-size: 12px;
+    font-weight: 600;
+    margin-top: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3px;
+    width: 130px;
+    text-align: center;
+  }
+
+  .boards {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    padding: 28px 24px 60px;
+    gap: 12px;
+  }
+  .board-title {
+    font-size: 22px;
+    border-bottom: 2px solid #ECECEC;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+  .board-row { font-size: 19px; line-height: 1.5; display: block; }
+  .board-row .n { margin-right: 6px; }
+  .board-empty { font-size: 14px; font-weight: 400; color: #6A6A6A; }
+
+  @media (max-width: 720px) {
+    .boards { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div>
+    <h1 class="wordmark">Capitanesverse</h1>
+    <div class="search-line">
+      <input id="searchInput" type="text" placeholder="Search:" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+  </div>
+
+  <div class="roster-block">
+    <div class="roster-label">Current<br>Roster</div>
+    <div>
+      <div class="roster-photos" id="rosterPhotos"></div>
+      <div class="roster-names" id="rosterNames"></div>
+    </div>
+  </div>
+</div>
+
+<div class="boards" id="boards"></div>
+
+<script>
+// Current roster — hotlinked directly from ESPN's headshot CDN, same technique
+// the original draft-guide site used (no image is re-hosted, just referenced).
+// Agapy Santos plays in Brazil's NBB, not ESPN's NCAA system, so there's no
+// ESPN headshot to hotlink — his cell falls back to a blank tile.
+const ROSTER = [
+  { name: "Aly Khalifa",       id: "aly-khalifa",       photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4702739.png" },
+  { name: "Chad Baker-Mazara", id: "chad-baker-mazara", photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4700877.png" },
+  { name: "Terri Miller Jr.",  id: "terri-miller-jr",   photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5175976.png" },
+  { name: "Agapy Santos",      id: null,                photo: null },
+];
+
+function renderRoster() {
+  document.getElementById('rosterPhotos').innerHTML = ROSTER.map(r =>
+    r.photo ? `<img src="${r.photo}" alt="${r.name}">` : `<div class="noimg">?</div>`
+  ).join('');
+  document.getElementById('rosterNames').innerHTML = ROSTER.map(r => {
+    const inner = r.name.split(' ')[0];
+    return r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`;
+  }).join('');
+}
+
+function rankRow(rank, p) {
+  return `<a class="board-row" href="player.html?id=${p.id}"><span class="n">${rank}.</span><span class="rank-name">${p.name}</span></a>`;
+}
+
+function renderBoard(title, list) {
+  const rows = list.length
+    ? list.map((p, i) => rankRow(i + 1, p)).join('')
+    : `<div class="board-empty">None yet.</div>`;
+  return `<div><div class="board-title">${title}</div>${rows}</div>`;
+}
+
+function renderBoards(players) {
+  const overall = players.filter(p => p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
+  const latino = players.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
+  const byPos = (pos) => players.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
+
+  document.getElementById('boards').innerHTML = [
+    renderBoard('Overall Ranks:', overall.slice(0, 10)),
+    renderBoard('Latino Ranks:', latino.slice(0, 10)),
+    renderBoard('Guard Ranks:', byPos('Guard').slice(0, 10)),
+    renderBoard('Wing Ranks:', byPos('Wing').slice(0, 10)),
+    renderBoard('Big Ranks:', byPos('Big').slice(0, 10)),
+  ].join('');
+}
+
+function setupSearch(players) {
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { results.innerHTML = ''; return; }
+    const matches = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
+    results.innerHTML = matches.map(p =>
+      `<a href="player.html?id=${p.id}">${p.name}<span class="pos">${p.position || ''}${p.team ? ' · ' + p.team : ''}</span></a>`
+    ).join('') || `<div class="board-empty">No matches.</div>`;
+  });
+}
+
+renderRoster();
+fetch('data/players.json')
+  .then(r => r.json())
+  .then(players => { renderBoards(players); setupSearch(players); })
+  .catch(err => {
+    console.error('Could not load data/players.json', err);
+    document.getElementById('boards').innerHTML = '<div class="board-empty">Could not load data/players.json.</div>';
+  });
+</script>
+</body>
+</html>

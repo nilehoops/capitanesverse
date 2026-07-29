@@ -71,7 +71,9 @@
 
   .box-title { font-size: 20px; margin: 0 0 6px; }
   .box-sub { font-size: 13px; font-weight: 400; margin-bottom: 8px; }
-  .pct-row { font-size: 14px; font-weight: 600; margin: 3px 0; }
+  .stat-row { font-size: 14px; font-weight: 600; margin: 4px 0; display: flex; align-items: center; gap: 6px; }
+  .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: #ECECEC; }
+  .dot-row { display: flex; gap: 3px; }
 
   .crowd .box-sub { font-size: 13px; font-weight: 400; color: #303030; }
   .crowd textarea { width: 100%; font-family: 'Lora', serif; font-size: 13px; padding: 6px; margin-top: 8px; border: 1px solid #999; }
@@ -129,8 +131,31 @@ const STAT_LABELS = {
 };
 
 // Which direction is "good" for percentile purposes (used by Strengths/Weaknesses).
-const LOWER_IS_BETTER = new Set(['tov', 'drtg']);
-const PERCENTILE_KEYS = ['bpm','obpm','dbpm','ortg','drtg','efg','ts','ast','tov','stl','blk','orb','drb','threePct','ftPct','usg'];
+const LOWER_IS_BETTER = new Set(['tov', 'drtg', 'fc40']);
+// Rate/efficiency stats only — raw volume counts (makes/attempts, dunks, GP) don't
+// mean much as standalone "strength/weakness" signals, so they're left out here.
+const PERCENTILE_KEYS = [
+  'minPct','prpg','dPrpg','bpm','obpm','dbpm','ortg','drtg','usg','efg','ts',
+  'orb','drb','ast','tov','astToRatio','blk','stl','ftr','fc40',
+  'dunkPct','rimPct','nonRim2Pct','ftPct','twoPct','threePRate','threePct',
+];
+
+// Tankathon-style tiers: more dots = more extreme percentile. Only stats
+// clearing the lowest tier are shown at all — everything else is "average."
+function strengthTier(pct) {
+  if (pct >= 0.97) return 4;
+  if (pct >= 0.90) return 3;
+  if (pct >= 0.80) return 2;
+  if (pct >= 0.65) return 1;
+  return 0;
+}
+function weaknessTier(pct) {
+  if (pct <= 0.03) return 4;
+  if (pct <= 0.10) return 3;
+  if (pct <= 0.20) return 2;
+  if (pct <= 0.35) return 1;
+  return 0;
+}
 
 function percentileRank(players, position, key, value) {
   const peers = players.filter(p => p.position === position && p.stats[key] != null);
@@ -142,12 +167,19 @@ function percentileRank(players, position, key, value) {
 }
 
 function computeStrengthsWeaknesses(players, player) {
-  const rows = PERCENTILE_KEYS.map(key => {
+  const strengths = [];
+  const weaknesses = [];
+  for (const key of PERCENTILE_KEYS) {
     const pct = percentileRank(players, player.position, key, player.stats[key]);
-    return pct == null ? null : { key, label: STAT_LABELS[key] || key, pct };
-  }).filter(Boolean);
-  rows.sort((a, b) => b.pct - a.pct);
-  return { strengths: rows.slice(0, 3), weaknesses: rows.slice(-3).reverse() };
+    if (pct == null) continue;
+    const sTier = strengthTier(pct);
+    const wTier = weaknessTier(pct);
+    if (sTier > 0) strengths.push({ key, label: STAT_LABELS[key] || key, pct, tier: sTier });
+    else if (wTier > 0) weaknesses.push({ key, label: STAT_LABELS[key] || key, pct, tier: wTier });
+  }
+  strengths.sort((a, b) => b.tier - a.tier || b.pct - a.pct);
+  weaknesses.sort((a, b) => b.tier - a.tier || a.pct - b.pct);
+  return { strengths, weaknesses };
 }
 
 // Derived ranks: the source sheet doesn't have explicit "Available Rank" or
@@ -214,7 +246,7 @@ function render(player, players) {
       <div class="video2">${videoSlot(videos[1], player.name)}</div>
 
       <div class="ranksmid">
-        <div class="line"><a href="rankings.html?pos=overall">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
+        <div class="line"><a href="rankings.html?pos=overall&availability=available">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
         <div class="line"><a href="rankings.html?pos=overall&latino=yes">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</a></div>
         <div class="staff-head">Staff Notes/Overview:</div>
         <div class="staff-body">${player.staffNotes || 'No staff notes yet.'}</div>
@@ -232,14 +264,14 @@ function render(player, players) {
 
       <div class="strong">
         <div class="box-title">Stat Strengths</div>
-        <div class="box-sub">Strongest %ile metrics, relative to the position group</div>
-        ${strengths.map(s => `<div class="pct-row">${s.label} — ${Math.round(s.pct * 100)}th %ile</div>`).join('') || '<div class="box-sub">Not enough position-group data yet.</div>'}
+        <div class="box-sub">Relative to the position group</div>
+        ${strengths.map(s => `<div class="stat-row"><span class="dot-row">${'<span class="dot"></span>'.repeat(s.tier)}</span>${s.label}</div>`).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
       </div>
 
       <div class="weak">
         <div class="box-title">Stat Weaknesses</div>
-        <div class="box-sub">Weakest %ile metrics, relative to the position group</div>
-        ${weaknesses.map(s => `<div class="pct-row">${s.label} — ${Math.round(s.pct * 100)}th %ile</div>`).join('') || '<div class="box-sub">Not enough position-group data yet.</div>'}
+        <div class="box-sub">Relative to the position group</div>
+        ${weaknesses.map(s => `<div class="stat-row"><span class="dot-row">${'<span class="dot"></span>'.repeat(s.tier)}</span>${s.label}</div>`).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
       </div>
 
       <div class="crowd">

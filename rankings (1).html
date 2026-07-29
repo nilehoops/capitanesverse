@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capitanesverse — Rankings</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #000; color: #ECECEC; font-family: 'Lora', serif; font-weight: 700; }
+  a { color: inherit; }
+  .top { padding: 20px 24px 6px; }
+  .menu-link { font-size: 16px; text-decoration: underline; }
+  h1 { font-size: clamp(28px, 5vw, 52px); margin: 8px 0 14px; }
+
+  .toggle-row { padding: 0 24px 10px; font-size: 16px; }
+  .toggle-row span.lab { margin-right: 10px; }
+  .toggle-row button {
+    background: none; border: none; color: #9A9A9A; font-family: 'Lora', serif;
+    font-weight: 700; font-size: 16px; cursor: pointer; margin-right: 14px; padding: 2px 0;
+  }
+  .toggle-row button.active { color: #ECECEC; border-bottom: 2px solid #ECECEC; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-weight: 400; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid #262626; text-align: left; white-space: nowrap; }
+  th { font-family: 'Lora', serif; font-weight: 700; font-size: 12px; cursor: pointer; color: #ECECEC; }
+  th:hover { color: #9A9A9A; }
+  td.name a { text-decoration: underline; }
+  .wrap { overflow-x: auto; padding: 0 24px 60px; }
+  .empty { padding: 20px 24px; font-size: 15px; font-weight: 400; color: #9A9A9A; }
+
+  /* ---- left-side show/hide + query panel ---- */
+  #colTabBtn {
+    position: fixed; top: 50%; left: 0; transform: translateY(-50%);
+    writing-mode: vertical-rl; background: #ECECEC; color: #000;
+    font-family: 'Lora', serif; font-weight: 700; font-size: 13px;
+    border: none; padding: 12px 6px; cursor: pointer; z-index: 20;
+  }
+  #colPanel {
+    position: fixed; top: 0; left: -320px; width: 320px; height: 100vh;
+    background: #0D0D0D; border-right: 1px solid #333; z-index: 19;
+    transition: left 0.2s ease; overflow-y: auto; padding: 50px 16px 20px;
+  }
+  #colPanel.open { left: 0; }
+  #colTabBtn.open { left: 320px; }
+  .col-panel-head { font-size: 16px; margin-bottom: 10px; }
+  .col-group-label { font-size: 12px; color: #9A9A9A; margin: 14px 0 6px; text-transform: uppercase; letter-spacing: 1px; }
+  .col-actions { font-size: 12px; font-weight: 600; text-decoration: underline; cursor: pointer; margin-right: 12px; }
+
+  .stat-row { margin: 8px 0; border-bottom: 1px solid #1C1C1C; padding-bottom: 6px; }
+  .stat-row label.col-check { font-size: 13px; font-weight: 400; display: flex; align-items: center; gap: 6px; }
+  .stat-row label.col-check input { accent-color: #ECECEC; }
+  .pct-filter-row { display: flex; align-items: center; gap: 6px; margin-top: 3px; }
+  .pct-filter-row input[type=range] { flex: 1; accent-color: #ECECEC; }
+  .pct-filter-row input[type=number] {
+    width: 42px; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 2px;
+  }
+  .pct-filter-row .pct-suffix { font-size: 11px; color: #9A9A9A; }
+
+  @media (max-width: 640px) {
+    #colPanel { width: 82vw; left: -82vw; }
+    #colTabBtn.open { left: 82vw; }
+  }
+</style>
+</head>
+<body>
+
+<button id="colTabBtn">Columns / Filters</button>
+<div id="colPanel">
+  <div class="col-panel-head">Show / Hide + %ile Query</div>
+  <div>
+    <span class="col-actions" id="checkAll">Show All</span>
+    <span class="col-actions" id="checkNone">Show None</span>
+    <span class="col-actions" id="checkDefault">Default</span>
+    <span class="col-actions" id="clearFilters">Clear Filters</span>
+  </div>
+  <div class="col-group-label">Core Stats (%ile vs. <span id="baseLabel">sample</span>)</div>
+  <div id="coreChecks"></div>
+  <div class="col-group-label">Advanced Metrics</div>
+  <div id="advChecks"></div>
+</div>
+
+<div class="top">
+  <a class="menu-link" href="index.html">&larr; Main Menu</a>
+  <h1 id="title">Rankings</h1>
+</div>
+
+<div class="toggle-row">
+  <span class="lab">Latino:</span>
+  <button data-latino="all" class="active">All</button>
+  <button data-latino="yes">Yes</button>
+  <button data-latino="no">No</button>
+</div>
+<div class="toggle-row">
+  <span class="lab">Availability:</span>
+  <button data-avail="all" class="active">All</button>
+  <button data-avail="available">Available</button>
+  <button data-avail="unavailable">Unavailable</button>
+</div>
+
+<div class="wrap"><table id="table"></table></div>
+
+<script>
+const CORE_LABELS = {
+  gp:"GP", minPct:"Min%", prpg:"PRPG!", dPrpg:"D-PRPG", bpm:"BPM", obpm:"OBPM", dbpm:"DBPM",
+  ortg:"ORtg", drtg:"D-Rtg", usg:"Usg", efg:"eFG", ts:"TS", orb:"OR", drb:"DR", ast:"Ast",
+  tov:"TO", astToRatio:"A/TO", blk:"Blk", stl:"Stl", ftr:"FTR", fc40:"FC/40",
+  dunks:"Dunks", dunkAttempts:"Dunk Att", dunkPct:"Dunk%", rimMakes:"Rim M", rimAttempts:"Rim A",
+  rimPct:"Rim%", nonRim2Makes:"NonRim2 M", nonRim2Attempts:"NonRim2 A", nonRim2Pct:"NonRim2%",
+  ftMakes:"FT", ftAttempts:"FTA", ftPct:"FT%", twoPM:"2PM", twoPA:"2PA", twoPct:"2P%",
+  threePRate:"3PR", threePer100:"3P/100", threePM:"3P", threePA:"3PA", threePct:"3P%", fga:"FGA",
+};
+const ADV_LABELS = {
+  ftrPctile:"FTR %ile (src)", threePARPctile:"3PAR %ile (src)", dunkRate:"Dunk Rate",
+  dunksPerRimAtt:"Dunks/Rim Att", rimRate:"Rim Rate", rimRatePctile:"Rim Rate %ile (src)",
+  rimToNonRim2Ratio:"Rim:NonRim2", moreyballPct:"Moreyball%", moreyballPctile:"Moreyball %ile (src)",
+  griftRate:"Grift Rate", griftRatePctile:"Grift %ile (src)", jumperRate:"Jumper Rate",
+};
+const DEFAULT_CORE = new Set(['bpm','efg','ts','ast','stl','blk','orb','drb','threePct','ftPct']);
+const LOWER_IS_BETTER = new Set(['tov', 'drtg']);
+const AVAILABLE_CODES = new Set(['2','3','WW','?']); // not yet signed — matches player.html
+const POS_TITLES = { overall: 'Overall Rankings', guard: 'Guard Rankings', wing: 'Wing Rankings', big: 'Big Rankings' };
+const POS_MAP = { guard: 'Guard', wing: 'Wing', big: 'Big' };
+
+let visibleCore = new Set(DEFAULT_CORE);
+let visibleAdv = new Set();
+let filterMin = {}; // `${group}:${key}` -> 0-100, 0 = inactive
+
+const params = new URLSearchParams(location.search);
+const posParam = params.get('pos') || 'overall';
+let latinoFilter = params.get('latino') === 'yes' ? 'yes' : params.get('latino') === 'no' ? 'no' : 'all';
+let availFilter = params.get('availability') === 'available' ? 'available' : params.get('availability') === 'unavailable' ? 'unavailable' : 'all';
+let sortKey = 'natural';
+let sortDir = 1;
+let cachedPlayers = null;
+let renderTimer = null;
+
+document.getElementById('title').textContent = POS_TITLES[posParam] || 'Rankings';
+document.getElementById('baseLabel').textContent = posParam === 'overall' ? 'overall sample' : (POS_MAP[posParam] || 'sample');
+document.querySelector(`.toggle-row button[data-latino="${latinoFilter}"]`)?.classList.add('active');
+document.querySelector(`.toggle-row button[data-avail="${availFilter}"]`)?.classList.add('active');
+
+// ---- Percentile base group: Overall/Latino views compare vs the WHOLE sample;
+// position-specific views (Guard/Wing/Big) compare within that position, as before.
+function peerGroup(allPlayers) {
+  if (posParam === 'overall') return allPlayers;
+  const pos = POS_MAP[posParam];
+  return allPlayers.filter(p => p.position === pos);
+}
+
+function lowerBoundCount(sortedArr, v) { // count of elements < v
+  let lo = 0, hi = sortedArr.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; sortedArr[m] < v ? lo = m + 1 : hi = m; }
+  return lo;
+}
+function upperBoundCount(sortedArr, v) { // count of elements <= v
+  let lo = 0, hi = sortedArr.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; sortedArr[m] <= v ? lo = m + 1 : hi = m; }
+  return lo;
+}
+
+function buildPctMap(peers, key, group) {
+  const getVal = (pl) => group === 'adv' ? pl.advanced[key] : pl.stats[key];
+  const vals = peers.map(getVal).filter(v => v != null).sort((a, b) => a - b);
+  const n = vals.length;
+  const map = new Map();
+  for (const p of peers) {
+    const v = getVal(p);
+    if (v == null || n < 5) { map.set(p.id, null); continue; }
+    const count = LOWER_IS_BETTER.has(key) ? (n - lowerBoundCount(vals, v)) : upperBoundCount(vals, v);
+    map.set(p.id, Math.round((count / n) * 100));
+  }
+  return map;
+}
+
+function pctColor(pct) {
+  if (pct == null) return '#9A9A9A';
+  const red = [216, 31, 42], green = [18, 138, 62];
+  const t = pct / 100;
+  const mix = (a, b) => Math.round(a + (b - a) * t);
+  return `rgb(${mix(red[0], green[0])},${mix(red[1], green[1])},${mix(red[2], green[2])})`;
+}
+function fmtRaw(v) { return v == null ? null : (Number.isInteger(v) ? v : Math.round(v * 100) / 100); }
+
+function baseList(allPlayers) {
+  if (posParam === 'overall') return allPlayers.filter(p => p.overallRank != null);
+  const pos = POS_MAP[posParam];
+  return allPlayers.filter(p => p.position === pos && p.positionalRank != null);
+}
+function naturalRankField() { return posParam === 'overall' ? 'overallRank' : 'positionalRank'; }
+
+// ---- Left panel: columns + %ile query sliders ----
+function statRowHtml(key, label, group) {
+  const checked = (group === 'core' ? visibleCore : visibleAdv).has(key);
+  const min = filterMin[`${group}:${key}`] || 0;
+  return `
+    <div class="stat-row">
+      <label class="col-check"><input type="checkbox" data-group="${group}" data-key="${key}" ${checked ? 'checked' : ''}> ${label}</label>
+      <div class="pct-filter-row">
+        <input type="range" min="0" max="100" value="${min}" class="pct-range" data-fgroup="${group}" data-fkey="${key}">
+        <input type="number" min="0" max="100" value="${min}" class="pct-number" data-fgroup="${group}" data-fkey="${key}">
+        <span class="pct-suffix">%ile min</span>
+      </div>
+    </div>`;
+}
+
+function buildColumnPanel() {
+  document.getElementById('coreChecks').innerHTML = Object.entries(CORE_LABELS).map(([k, l]) => statRowHtml(k, l, 'core')).join('');
+  document.getElementById('advChecks').innerHTML = Object.entries(ADV_LABELS).map(([k, l]) => statRowHtml(k, l, 'adv')).join('');
+
+  document.querySelectorAll('#colPanel input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const set = cb.dataset.group === 'core' ? visibleCore : visibleAdv;
+      cb.checked ? set.add(cb.dataset.key) : set.delete(cb.dataset.key);
+      renderTable(cachedPlayers);
+    });
+  });
+
+  document.querySelectorAll('.pct-range, .pct-number').forEach(input => {
+    input.addEventListener('input', () => {
+      const fkey = `${input.dataset.fgroup}:${input.dataset.fkey}`;
+      const val = Math.max(0, Math.min(100, parseInt(input.value, 10) || 0));
+      filterMin[fkey] = val;
+      // keep the paired slider/number box in sync
+      document.querySelectorAll(`[data-fgroup="${input.dataset.fgroup}"][data-fkey="${input.dataset.fkey}"]`)
+        .forEach(el => { if (el !== input) el.value = val; });
+      clearTimeout(renderTimer);
+      renderTimer = setTimeout(() => renderTable(cachedPlayers), 120);
+    });
+  });
+}
+
+document.getElementById('colTabBtn').addEventListener('click', () => {
+  document.getElementById('colPanel').classList.toggle('open');
+  document.getElementById('colTabBtn').classList.toggle('open');
+});
+document.getElementById('checkAll').addEventListener('click', () => {
+  visibleCore = new Set(Object.keys(CORE_LABELS)); visibleAdv = new Set(Object.keys(ADV_LABELS));
+  buildColumnPanel(); renderTable(cachedPlayers);
+});
+document.getElementById('checkNone').addEventListener('click', () => {
+  visibleCore = new Set(); visibleAdv = new Set();
+  buildColumnPanel(); renderTable(cachedPlayers);
+});
+document.getElementById('checkDefault').addEventListener('click', () => {
+  visibleCore = new Set(DEFAULT_CORE); visibleAdv = new Set();
+  buildColumnPanel(); renderTable(cachedPlayers);
+});
+document.getElementById('clearFilters').addEventListener('click', () => {
+  filterMin = {}; buildColumnPanel(); renderTable(cachedPlayers);
+});
+
+// ---- Table ----
+function renderTable(allPlayers) {
+  cachedPlayers = allPlayers;
+  const peers = peerGroup(allPlayers);
+  const coreKeys = Object.keys(CORE_LABELS);
+  const advKeys = Object.keys(ADV_LABELS);
+
+  // percentile maps built once per key (against the peer group), reused for display + filtering
+  const corePctMaps = {}; coreKeys.forEach(k => { corePctMaps[k] = buildPctMap(peers, k, 'core'); });
+  const advPctMaps = {}; advKeys.forEach(k => { advPctMaps[k] = buildPctMap(peers, k, 'adv'); });
+
+  let rows = baseList(allPlayers);
+  if (latinoFilter === 'yes') rows = rows.filter(p => p.latino === true);
+  if (latinoFilter === 'no') rows = rows.filter(p => p.latino === false);
+  if (availFilter === 'available') rows = rows.filter(p => AVAILABLE_CODES.has(p.availability));
+  if (availFilter === 'unavailable') rows = rows.filter(p => !AVAILABLE_CODES.has(p.availability));
+
+  // %ile query filters (any active slider > 0 must be met)
+  for (const [fkey, min] of Object.entries(filterMin)) {
+    if (!min) continue;
+    const [group, key] = fkey.split(':');
+    const map = group === 'adv' ? advPctMaps[key] : corePctMaps[key];
+    rows = rows.filter(p => (map.get(p.id) ?? -1) >= min);
+  }
+
+  const field = naturalRankField();
+  const visCoreKeys = coreKeys.filter(k => visibleCore.has(k));
+  const visAdvKeys = advKeys.filter(k => visibleAdv.has(k));
+
+  rows.sort((a, b) => {
+    let av, bv;
+    if (sortKey === 'natural') { av = a[field]; bv = b[field]; }
+    else if (sortKey === 'name') { av = a.name; bv = b.name; }
+    else if (sortKey.startsWith('core:')) { av = corePctMaps[sortKey.slice(5)].get(a.id); bv = corePctMaps[sortKey.slice(5)].get(b.id); }
+    else if (sortKey.startsWith('adv:')) { av = advPctMaps[sortKey.slice(4)].get(a.id); bv = advPctMaps[sortKey.slice(4)].get(b.id); }
+    if (av == null) return 1;
+    if (bv == null) return -1;
+    if (av < bv) return -1 * sortDir;
+    if (av > bv) return 1 * sortDir;
+    return 0;
+  });
+
+  const table = document.getElementById('table');
+  if (!rows.length) {
+    document.querySelector('.wrap').innerHTML = '<div class="empty">No players match this filter yet.</div>';
+    return;
+  }
+
+  const headCells = [
+    `<th data-k="natural">#</th>`, `<th data-k="name">Name</th>`,
+    `<th>Pos</th><th>Team</th><th>Class</th><th>Height</th><th>Age</th><th>Weight</th><th>Latino</th>`,
+    ...visCoreKeys.map(k => `<th data-k="core:${k}">${CORE_LABELS[k]}</th>`),
+    ...visAdvKeys.map(k => `<th data-k="adv:${k}">${ADV_LABELS[k]}</th>`),
+  ].join('');
+
+  const bodyRows = rows.map((p, i) => {
+    const coreCells = visCoreKeys.map(k => {
+      const raw = fmtRaw(p.stats[k]);
+      const pct = corePctMaps[k].get(p.id);
+      if (raw == null) return '<td>—</td>';
+      return `<td><span style="color:${pctColor(pct)}">${raw}</span>${pct != null ? `<sub style="color:#8A8A8A;">${pct}</sub>` : ''}</td>`;
+    }).join('');
+    const advCells = visAdvKeys.map(k => `<td>${p.advanced[k] != null ? p.advanced[k] : '—'}</td>`).join('');
+    return `<tr>
+      <td>${i + 1}</td>
+      <td class="name"><a href="player.html?id=${p.id}">${p.name}</a></td>
+      <td>${p.position || '—'}</td><td>${p.team || '—'}</td><td>${p.class || '—'}</td>
+      <td>${p.heightDisplay || '—'}</td><td>—</td><td>—</td>
+      <td>${p.latino === true ? 'Yes' : p.latino === false ? 'No' : '—'}</td>
+      ${coreCells}${advCells}
+    </tr>`;
+  }).join('');
+
+  table.innerHTML = `<thead><tr>${headCells}</tr></thead><tbody>${bodyRows}</tbody>`;
+  table.querySelectorAll('th[data-k]').forEach(th => {
+    th.addEventListener('click', () => {
+      const k = th.dataset.k;
+      sortDir = (sortKey === k) ? -sortDir : 1;
+      sortKey = k;
+      renderTable(allPlayers);
+    });
+  });
+}
+
+document.querySelectorAll('.toggle-row button[data-latino]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    latinoFilter = btn.dataset.latino;
+    document.querySelectorAll('button[data-latino]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable(cachedPlayers);
+  });
+});
+document.querySelectorAll('.toggle-row button[data-avail]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    availFilter = btn.dataset.avail;
+    document.querySelectorAll('button[data-avail]').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderTable(cachedPlayers);
+  });
+});
+
+buildColumnPanel();
+fetch('data/players.json')
+  .then(r => r.json())
+  .then(renderTable)
+  .catch(err => {
+    console.error('Could not load data/players.json', err);
+    document.querySelector('.wrap').innerHTML = '<div class="empty">Could not load data/players.json.</div>';
+  });
+</script>
+</body>
+</html>

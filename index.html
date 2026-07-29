@@ -113,6 +113,14 @@
   .board-row .n { margin-right: 6px; }
   .board-empty { font-size: 14px; font-weight: 400; color: #6A6A6A; }
 
+  .avail-toggle { padding: 4px 24px 14px; font-size: 17px; }
+  .avail-toggle span { margin-right: 10px; }
+  .avail-toggle button {
+    background: none; border: none; color: #9A9A9A; font-family: 'Lora', serif;
+    font-weight: 700; font-size: 17px; cursor: pointer; margin-right: 14px; padding: 2px 0;
+  }
+  .avail-toggle button.active { color: #ECECEC; border-bottom: 2px solid #ECECEC; }
+
   @media (max-width: 720px) {
     .boards { grid-template-columns: repeat(2, 1fr); }
   }
@@ -136,6 +144,13 @@
       <div class="roster-names" id="rosterNames"></div>
     </div>
   </div>
+</div>
+
+<div class="avail-toggle" id="availToggle">
+  <span>Availability:</span>
+  <button data-avail="all" class="active">All</button>
+  <button data-avail="available">Available</button>
+  <button data-avail="unavailable">Unavailable</button>
 </div>
 
 <div class="boards" id="boards"></div>
@@ -173,19 +188,40 @@ function renderBoard(title, list, href) {
   return `<div><div class="board-title">${title}<a class="showall" href="${href}">(Show All)</a></div>${rows}</div>`;
 }
 
+const AVAILABLE_CODES = new Set(['2', '3', 'WW', '?']); // not yet signed — matches player.html
+let availFilter = 'all';
+let cachedPlayers = null;
+
+function withAvail(href) {
+  return availFilter === 'all' ? href : href + (href.includes('?') ? '&' : '?') + 'availability=' + availFilter;
+}
+
 function renderBoards(players) {
-  const overall = players.filter(p => p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
-  const latino = players.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
-  const byPos = (pos) => players.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
+  let pool = players;
+  if (availFilter === 'available') pool = pool.filter(p => AVAILABLE_CODES.has(p.availability));
+  if (availFilter === 'unavailable') pool = pool.filter(p => !AVAILABLE_CODES.has(p.availability));
+
+  const overall = pool.filter(p => p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
+  const latino = pool.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
+  const byPos = (pos) => pool.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
 
   document.getElementById('boards').innerHTML = [
-    renderBoard('Overall Ranks:', overall.slice(0, 10), 'rankings.html?pos=overall'),
-    renderBoard('Latino Ranks:', latino.slice(0, 10), 'rankings.html?pos=overall&latino=yes'),
-    renderBoard('Guard Ranks:', byPos('Guard').slice(0, 10), 'rankings.html?pos=guard'),
-    renderBoard('Wing Ranks:', byPos('Wing').slice(0, 10), 'rankings.html?pos=wing'),
-    renderBoard('Big Ranks:', byPos('Big').slice(0, 10), 'rankings.html?pos=big'),
+    renderBoard('Overall Ranks:', overall.slice(0, 10), withAvail('rankings.html?pos=overall')),
+    renderBoard('Latino Ranks:', latino.slice(0, 10), withAvail('rankings.html?pos=overall&latino=yes')),
+    renderBoard('Guard Ranks:', byPos('Guard').slice(0, 10), withAvail('rankings.html?pos=guard')),
+    renderBoard('Wing Ranks:', byPos('Wing').slice(0, 10), withAvail('rankings.html?pos=wing')),
+    renderBoard('Big Ranks:', byPos('Big').slice(0, 10), withAvail('rankings.html?pos=big')),
   ].join('');
 }
+
+document.querySelectorAll('#availToggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    availFilter = btn.dataset.avail;
+    document.querySelectorAll('#availToggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (cachedPlayers) renderBoards(cachedPlayers);
+  });
+});
 
 function setupSearch(players) {
   const input = document.getElementById('searchInput');
@@ -203,7 +239,7 @@ function setupSearch(players) {
 renderRoster();
 fetch('data/players.json')
   .then(r => r.json())
-  .then(players => { renderBoards(players); setupSearch(players); })
+  .then(players => { cachedPlayers = players; renderBoards(players); setupSearch(players); })
   .catch(err => {
     console.error('Could not load data/players.json', err);
     document.getElementById('boards').innerHTML = '<div class="board-empty">Could not load data/players.json.</div>';

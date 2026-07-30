@@ -4995,8 +4995,8 @@
       "source": "user-xlsx+user-xlsx-2",
       "heightMismatchNote": "sheet says 6'5\", dataset has 6'3\""
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League, no PT",
+    "availabilitySimple": "no",
+    "availabilityNote": "E10 with Sacramento Kings",
     "videos": [
       {
         "id": "g5CnhLEB174",

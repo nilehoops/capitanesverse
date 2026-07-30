@@ -186,6 +186,20 @@ function pctColor(pct) {
 }
 function fmtRaw(v) { return v == null ? null : (Number.isInteger(v) ? v : Math.round(v * 100) / 100); }
 
+// Precise age to 2 decimals when we have a clean, unqualified birthdate;
+// falls back to the stored whole-year age for fuzzy/uncertain birthdates.
+function computeDecimalAge(bio) {
+  if (!bio) return null;
+  if (bio.born && /^[A-Z][a-z]{2} \d{1,2}, \d{4}$/.test(bio.born.trim())) {
+    const d = new Date(bio.born);
+    if (!isNaN(d.getTime())) {
+      const msPerYear = 365.25 * 24 * 60 * 60 * 1000;
+      return ((Date.now() - d.getTime()) / msPerYear).toFixed(2);
+    }
+  }
+  return bio.age != null ? Number(bio.age).toFixed(2) : null;
+}
+
 function baseList(allPlayers) {
   if (posParam === 'overall') return allPlayers.filter(p => p.overallRank != null);
   const pos = POS_MAP[posParam];
@@ -321,7 +335,7 @@ function renderTable(allPlayers) {
       <td>${i + 1}</td>
       <td class="name"><a href="player.html?id=${p.id}">${p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name}</a></td>
       <td>${p.position || '—'}</td><td>${p.team || '—'}</td><td>${p.class || '—'}</td>
-      <td>${p.heightDisplay || '—'}</td><td>—</td><td>—</td>
+      <td>${p.heightDisplay || '—'}</td><td>${computeDecimalAge(p.biography) ?? '—'}</td><td>${p.biography?.weight ?? '—'}</td>
       <td>${p.latino === true ? 'Yes' : p.latino === false ? 'No' : '—'}</td>
       ${coreCells}${advCells}
     </tr>`;

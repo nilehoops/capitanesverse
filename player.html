@@ -42,6 +42,7 @@
   .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; }
 
   .name h1 { font-size: clamp(30px, 4.4vw, 64px); margin: 0; color: #ECECEC; line-height: 1; }
+  .roster-tag { background: #FFD400; color: #1631FF; padding: 0 4px; }
 
   .line { font-size: 21px; margin: 2px 0; }
   .small-label { font-size: 15px; font-weight: 600; }
@@ -92,6 +93,16 @@
   .sb-fields { padding: 4px 10px 10px; font-size: 15px; line-height: 1.6; }
   .sb-fields .lab { color: #ECECEC; }
   .sb-fields .val { color: #9A9A9A; font-weight: 400; }
+  .avail-edit-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 15px; }
+  .avail-edit-row select {
+    background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 3px;
+  }
+  .avail-edit-row button {
+    font-family: 'Lora', serif; font-weight: 700; font-size: 11px;
+    background: #ECECEC; color: #000; border: none; padding: 3px 8px; cursor: pointer;
+  }
+  .avail-edit-row #availStatus { font-size: 11px; font-weight: 400; color: #9A9A9A; }
 
   .sb-twitter {
     background: #FFFFFF;
@@ -120,6 +131,84 @@
 <div id="app"></div>
 
 <script>
+// ---- Repo this page saves availability edits to ----
+const REPO_OWNER = 'nilehoops';
+const REPO_NAME = 'capitanesverse';
+const DATA_PATH_IN_REPO = 'data/players.json';
+
+const AVAIL_OPTIONS = [
+  { code: '0', label: 'Signed' },
+  { code: '1', label: 'Summer League w/ PT or Exhibit 10+' },
+  { code: '2', label: 'Summer League, no PT' },
+  { code: '3', label: 'Unsigned' },
+  { code: 'WW', label: 'Waiver Watch' },
+  { code: '?', label: 'Unknown' },
+  { code: 'Retired', label: 'Retired' },
+];
+const AVAIL_LABEL_MAP = Object.fromEntries(AVAIL_OPTIONS.map(o => [o.code, o.label]));
+
+// UTF-8-safe base64 helpers (plain btoa/atob mishandle non-ASCII names)
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+function base64ToUtf8(b64) {
+  const binary = atob(b64);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+let githubToken = null; // held in memory only for this page load — never stored
+
+async function saveAvailabilityToGitHub(playerId, newCode) {
+  if (!githubToken) {
+    githubToken = prompt(
+      'GitHub personal access token (Contents: read/write on this repo).\n' +
+      'Only used for this save, kept in memory only, never stored.'
+    );
+    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
+  }
+
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+  const headers = {
+    'Authorization': `Bearer ${githubToken}`,
+    'Accept': 'application/vnd.github+json',
+  };
+
+  try {
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}). Check token permissions.` };
+    const fileData = await getResp.json();
+    const content = base64ToUtf8(fileData.content);
+    const allPlayers = JSON.parse(content);
+
+    const target = allPlayers.find(p => p.id === playerId);
+    if (!target) return { ok: false, message: 'Player not found in remote file.' };
+    target.availability = newCode;
+    target.availabilityLabel = AVAIL_LABEL_MAP[newCode] || newCode;
+
+    const updatedContent = JSON.stringify(allPlayers, null, 2);
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Update availability: ${target.name} -> ${target.availabilityLabel}`,
+        content: utf8ToBase64(updatedContent),
+        sha: fileData.sha,
+      }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}` };
+    }
+    return { ok: true, message: 'Saved — live site updates in ~1 min.' };
+  } catch (e) {
+    return { ok: false, message: `Network error: ${e.message}` };
+  }
+}
+
 const STAT_LABELS = {
   gp:"GP", minPct:"Min%", prpg:"PRPG!", dPrpg:"D-PRPG", bpm:"BPM", obpm:"OBPM", dbpm:"DBPM",
   ortg:"ORtg", drtg:"D-Rtg", usg:"Usg", efg:"eFG", ts:"TS", orb:"OR", drb:"DR", ast:"Ast",
@@ -215,7 +304,7 @@ function render(player, players) {
     <div class="grid">
       <div class="name">
         <a href="index.html" style="font-size:15px; text-decoration:underline; margin-right:16px;">&larr; Main Menu</a>
-        <h1 style="display:inline;">${player.name}</h1>
+        <h1 style="display:inline;">${player.onRoster ? `<span class="roster-tag">${player.name}</span>` : player.name}</h1>
       </div>
 
       <div class="ranktop">
@@ -230,14 +319,22 @@ function render(player, players) {
         </div>
         <div class="sb-fields">
           <div><span class="lab">Position: </span><span class="val">${player.position || '—'}</span></div>
-          <div><span class="lab">Age: </span><span class="val">—</span></div>
+          <div><span class="lab">Age: </span><span class="val">${player.realgm?.age ?? '—'}</span></div>
           <div><span class="lab">Height: </span><span class="val">${player.heightDisplay || '—'}</span></div>
-          <div><span class="lab">Weight: </span><span class="val">—</span></div>
+          <div><span class="lab">Weight: </span><span class="val">${player.realgm?.weight ?? '—'}</span></div>
           <div><span class="lab">Last Team: </span><span class="val">${player.team || '—'}</span></div>
-          <div><span class="lab">Agency: </span><span class="val">—</span></div>
-          <div><span class="lab">Availability: </span><span class="val">${player.availabilityLabel || '—'}</span></div>
+          <div><span class="lab">Agency: </span><span class="val">${player.realgm?.agent ?? '—'}</span></div>
+          <div class="avail-edit-row">
+            <span class="lab">Availability: </span>
+            <select id="availSelect">
+              ${AVAIL_OPTIONS.map(o => `<option value="${o.code}" ${o.code === player.availability ? 'selected' : ''}>${o.label}</option>`).join('')}
+            </select>
+            <button id="saveAvailBtn">Save</button>
+            <span id="availStatus"></span>
+          </div>
           <div><span class="lab">Latino: </span><span class="val">${player.latino === true ? 'Yes' : player.latino === false ? 'No' : '—'}</span></div>
         </div>
+        ${player.realgm?.hometown ? `<div class="sb-fields" style="padding-top:0;"><span class="lab">Hometown: </span><span class="val">${player.realgm.hometown}</span></div>` : ''}
         <div class="sb-twitter">Twitter (X) embed of "${player.name}" to keep up with news<br>(needs the player's X handle — swap in publish.twitter.com's search-embed widget)</div>
         <div class="sb-logo">Capitanes 2026<br>Offseason Site</div>
       </div>
@@ -286,6 +383,22 @@ function render(player, players) {
 
   setupSearch(players);
   setupCrowdNotes(player.id);
+  setupAvailabilitySave(player);
+}
+
+function setupAvailabilitySave(player) {
+  document.getElementById('saveAvailBtn').addEventListener('click', async () => {
+    const select = document.getElementById('availSelect');
+    const status = document.getElementById('availStatus');
+    const newCode = select.value;
+    status.textContent = 'Saving...';
+    const result = await saveAvailabilityToGitHub(player.id, newCode);
+    status.textContent = result.message;
+    if (result.ok) {
+      player.availability = newCode;
+      player.availabilityLabel = AVAIL_LABEL_MAP[newCode] || newCode;
+    }
+  });
 }
 
 // ---- Community notes: front-end shell only ----
@@ -325,7 +438,7 @@ function setupSearch(players) {
     const q = input.value.trim().toLowerCase();
     if (!q) { results.innerHTML = ''; return; }
     const matches = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 6);
-    results.innerHTML = matches.map(p => `<a href="player.html?id=${p.id}">${p.name}</a>`).join('');
+    results.innerHTML = matches.map(p => `<a href="player.html?id=${p.id}">${p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name}</a>`).join('');
   });
 }
 

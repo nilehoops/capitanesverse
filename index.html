@@ -112,6 +112,7 @@
   .board-row { font-size: 19px; line-height: 1.5; display: block; }
   .board-row .n { margin-right: 6px; }
   .board-empty { font-size: 14px; font-weight: 400; color: #6A6A6A; }
+  .roster-tag { background: #FFD400; color: #1631FF; padding: 0 3px; }
 
   .avail-toggle { padding: 4px 24px 14px; font-size: 17px; }
   .avail-toggle span { margin-right: 10px; }
@@ -172,13 +173,17 @@ function renderRoster() {
     r.photo ? `<img src="${r.photo}" alt="${r.name}">` : `<div class="noimg">?</div>`
   ).join('');
   document.getElementById('rosterNames').innerHTML = ROSTER.map(r => {
-    const inner = r.name.split(' ')[0];
+    const inner = `<span class="roster-tag">${r.name.split(' ')[0]}</span>`;
     return r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`;
   }).join('');
 }
 
+function nameHtml(p) {
+  return p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name;
+}
+
 function rankRow(rank, p) {
-  return `<a class="board-row" href="player.html?id=${p.id}"><span class="n">${rank}.</span><span class="rank-name">${p.name}</span></a>`;
+  return `<a class="board-row" href="player.html?id=${p.id}"><span class="n">${rank}.</span><span class="rank-name">${nameHtml(p)}</span></a>`;
 }
 
 function renderBoard(title, list, href) {
@@ -231,7 +236,7 @@ function setupSearch(players) {
     if (!q) { results.innerHTML = ''; return; }
     const matches = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
     results.innerHTML = matches.map(p =>
-      `<a href="player.html?id=${p.id}">${p.name}<span class="pos">${p.position || ''}${p.team ? ' · ' + p.team : ''}</span></a>`
+      `<a href="player.html?id=${p.id}">${nameHtml(p)}<span class="pos">${p.position || ''}${p.team ? ' · ' + p.team : ''}</span></a>`
     ).join('') || `<div class="board-empty">No matches.</div>`;
   });
 }

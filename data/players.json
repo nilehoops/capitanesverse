@@ -15734,7 +15734,15 @@
       "source": "user-xlsx+user-xlsx-2",
       "age": 23,
       "born": "Apr 3, 2003"
-    }
+    },
+    "videos": [
+      {
+        "id": "Y5_7InHUNho",
+        "title": "Custom pick",
+        "thumbnail": "https://i.ytimg.com/vi/Y5_7InHUNho/hqdefault.jpg"
+      },
+      null
+    ]
   },
   {
     "id": "cam-carter",

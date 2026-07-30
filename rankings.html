@@ -46,11 +46,49 @@
   .reorder-note { font-size: 12px; font-weight: 400; color: #9A9A9A; }
   .reorder-status { font-size: 12px; font-weight: 400; color: #9A9A9A; }
 
-  tr.drag-row { cursor: grab; }
-  tr.drag-row.dragging { opacity: 0.35; }
-  tr.drag-row.drag-over { border-top: 2px solid #FFD400; }
-  .drag-handle { color: #666; font-size: 16px; cursor: grab; user-select: none; padding-right: 4px; }
-  .unranked-row { color: #7A7A7A; }
+  .reorder-panes { display: none; padding: 0 24px 60px; gap: 20px; grid-template-columns: 1fr 1fr; }
+  .reorder-panes.show { display: grid; }
+  .pane { background: #0D0D0D; border: 1px solid #262626; border-radius: 4px; }
+  .pane-head { padding: 10px 12px; border-bottom: 1px solid #262626; font-size: 14px; }
+  .pane-search {
+    width: 100%; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 13px; padding: 5px 8px; margin-top: 6px;
+  }
+  .pane-body { max-height: 560px; overflow-y: auto; }
+
+  .pool-card, .final-card {
+    display: flex; align-items: center; gap: 8px; padding: 6px 12px;
+    border-bottom: 1px solid #1A1A1A; font-size: 13px; font-weight: 400;
+  }
+  .pool-card { cursor: pointer; }
+  .pool-card:hover { background: #161616; }
+  .pool-card .badge { font-size: 10px; font-weight: 700; color: #7A7A7A; }
+  .pool-card .addbtn {
+    margin-left: auto; background: #ECECEC; color: #000; border: none;
+    font-family: 'Lora', serif; font-weight: 700; font-size: 11px; padding: 2px 8px; cursor: pointer;
+  }
+
+  .final-card { cursor: grab; }
+  .final-card.dragging { opacity: 0.35; }
+  .final-card.drag-over { border-top: 2px solid #FFD400; }
+  .final-card .rank-num { font-family: 'Lora', serif; font-weight: 700; color: #FFD400; min-width: 26px; }
+  .final-card .cname { flex: 1; }
+  .final-card .nudge {
+    background: none; border: 1px solid #444; color: #ECECEC; font-size: 11px;
+    width: 20px; height: 20px; cursor: pointer; padding: 0;
+  }
+  .final-card .jumpinput {
+    width: 40px; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 11px; padding: 2px;
+  }
+  .final-card .rmbtn {
+    background: none; border: none; color: #D81F2A; font-size: 14px; cursor: pointer; padding: 0 4px;
+  }
+  .pane-empty { padding: 14px; font-size: 12px; color: #6A6A6A; }
+
+  @media (max-width: 860px) {
+    .reorder-panes { grid-template-columns: 1fr; }
+  }
 
   /* ---- left-side show/hide + query panel ---- */
   #colTabBtn {
@@ -127,6 +165,20 @@
   <button class="reorder-save" id="reorderSaveBtn">Save New Order</button>
   <span class="reorder-note" id="reorderNote"></span>
   <span class="reorder-status" id="reorderStatus"></span>
+</div>
+
+<div class="reorder-panes" id="reorderPanes">
+  <div class="pane">
+    <div class="pane-head">
+      Player Pool — <span id="poolCount">0</span> unranked
+      <input class="pane-search" id="poolSearch" type="text" placeholder="Search pool...">
+    </div>
+    <div class="pane-body" id="poolBody"></div>
+  </div>
+  <div class="pane">
+    <div class="pane-head">Final Ranking — <span id="finalCount">0</span> ranked</div>
+    <div class="pane-body" id="finalBody"></div>
+  </div>
 </div>
 
 <div class="wrap"><table id="table"></table></div>
@@ -216,65 +268,138 @@ async function saveNewOrderToGitHub(rankField, orderedIds) {
   }
 }
 
-// ---- Reorder mode ----
+// ---- Reorder mode: two-pane pool (unranked) / final (ranked) system ----
 let reorderMode = false;
-let reorderList = null; // array of player objects, in custom order, while active
+let poolList = null;   // players not currently in the final ranking
+let finalList = null;  // players in the ranking, in order
+let poolSearchTerm = '';
 
 function enterReorderMode(allPlayers) {
   const field = naturalRankField();
   const pos = posParam === 'overall' ? null : POS_MAP[posParam];
   const inScope = allPlayers.filter(p => pos ? p.position === pos : true);
-  // Ranked players first (current order), unranked ones appended at the bottom —
-  // this is what lets a newly-added (unranked) player get dragged into position.
-  const ranked = inScope.filter(p => p[field] != null).sort((a, b) => a[field] - b[field]);
-  const unranked = inScope.filter(p => p[field] == null).sort((a, b) => a.name.localeCompare(b.name));
-  reorderList = [...ranked, ...unranked];
+  finalList = inScope.filter(p => p[field] != null).sort((a, b) => a[field] - b[field]);
+  poolList = inScope.filter(p => p[field] == null).sort((a, b) => a.name.localeCompare(b.name));
   reorderMode = true;
 }
 
-function renderReorderTable() {
-  document.getElementById('reorderNote').textContent = 'Drag rows to reorder. Filters are ignored while reordering.';
-  const table = document.getElementById('table');
-  const bodyRows = reorderList.map((p, i) => `
-    <tr class="drag-row ${p[naturalRankField()] == null ? 'unranked-row' : ''}" draggable="true" data-id="${p.id}">
-      <td><span class="drag-handle">⠿</span>${i + 1}</td>
-      <td class="name">${p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name}</td>
-      <td>${p.position || '—'}</td>
-      <td>${p.team || '—'}</td>
-      <td>${p[naturalRankField()] == null ? '(unranked)' : ''}</td>
-    </tr>`).join('');
-  table.innerHTML = `<thead><tr><th>#</th><th>Name</th><th>Pos</th><th>Team</th><th></th></tr></thead><tbody>${bodyRows}</tbody>`;
+function renderPool() {
+  const term = poolSearchTerm.toLowerCase();
+  const shown = poolList.filter(p => p.name.toLowerCase().includes(term));
+  document.getElementById('poolCount').textContent = poolList.length;
+  document.getElementById('poolBody').innerHTML = shown.length
+    ? shown.map(p => `
+        <div class="pool-card" data-id="${p.id}">
+          <span>${p.name}</span>
+          <span class="badge">${p.team || ''}</span>
+          <button class="addbtn" data-id="${p.id}">+ Add</button>
+        </div>`).join('')
+    : `<div class="pane-empty">No unranked players match.</div>`;
 
-  let draggingEl = null;
-  table.querySelectorAll('tr.drag-row').forEach(row => {
-    row.addEventListener('dragstart', () => { draggingEl = row; row.classList.add('dragging'); });
-    row.addEventListener('dragend', () => { row.classList.remove('dragging'); table.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over')); });
-    row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
-    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
-    row.addEventListener('drop', (e) => {
-      e.preventDefault();
-      row.classList.remove('drag-over');
-      if (draggingEl === row) return;
-      const fromId = draggingEl.dataset.id, toId = row.dataset.id;
-      const fromIdx = reorderList.findIndex(p => p.id === fromId);
-      const toIdx = reorderList.findIndex(p => p.id === toId);
-      const [moved] = reorderList.splice(fromIdx, 1);
-      reorderList.splice(toIdx, 0, moved);
-      renderReorderTable();
+  document.querySelectorAll('#poolBody .pool-card, #poolBody .addbtn').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = el.dataset.id;
+      const idx = poolList.findIndex(p => p.id === id);
+      const [moved] = poolList.splice(idx, 1);
+      finalList.push(moved);
+      renderPool(); renderFinal();
     });
   });
 }
+
+function renderFinal() {
+  const field = naturalRankField();
+  document.getElementById('finalCount').textContent = finalList.length;
+  document.getElementById('finalBody').innerHTML = finalList.length ? finalList.map((p, i) => `
+    <div class="final-card" draggable="true" data-id="${p.id}">
+      <span class="rank-num">${i + 1}</span>
+      <span class="cname">${p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name}</span>
+      <button class="nudge" data-dir="-1" data-id="${p.id}">&uarr;</button>
+      <button class="nudge" data-dir="1" data-id="${p.id}">&darr;</button>
+      <input class="jumpinput" type="number" placeholder="#" data-id="${p.id}">
+      <button class="rmbtn" data-id="${p.id}" title="Remove — sends back to pool">&times;</button>
+    </div>`).join('') : `<div class="pane-empty">Nothing ranked yet — add from the pool.</div>`;
+
+  // drag-and-drop for short local reorders
+  let draggingId = null;
+  document.querySelectorAll('#finalBody .final-card').forEach(card => {
+    card.addEventListener('dragstart', () => { draggingId = card.dataset.id; card.classList.add('dragging'); });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      document.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+    });
+    card.addEventListener('dragover', (e) => { e.preventDefault(); card.classList.add('drag-over'); });
+    card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+    card.addEventListener('drop', (e) => {
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      const toId = card.dataset.id;
+      if (draggingId === toId) return;
+      const fromIdx = finalList.findIndex(p => p.id === draggingId);
+      const toIdx = finalList.findIndex(p => p.id === toId);
+      const [moved] = finalList.splice(fromIdx, 1);
+      finalList.splice(toIdx, 0, moved);
+      renderFinal();
+    });
+  });
+
+  // up/down single-step nudges — reliable for small moves
+  document.querySelectorAll('#finalBody .nudge').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = finalList.findIndex(p => p.id === btn.dataset.id);
+      const dir = Number(btn.dataset.dir);
+      const swapWith = idx + dir;
+      if (swapWith < 0 || swapWith >= finalList.length) return;
+      [finalList[idx], finalList[swapWith]] = [finalList[swapWith], finalList[idx]];
+      renderFinal();
+    });
+  });
+
+  // "jump to position" — the actual fix for long-distance moves without dragging
+  document.querySelectorAll('#finalBody .jumpinput').forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const target = Math.max(1, Math.min(finalList.length, parseInt(input.value, 10) || 1)) - 1;
+      const idx = finalList.findIndex(p => p.id === input.dataset.id);
+      const [moved] = finalList.splice(idx, 1);
+      finalList.splice(target, 0, moved);
+      renderFinal();
+    });
+  });
+
+  // remove — sends back to the pool
+  document.querySelectorAll('#finalBody .rmbtn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = finalList.findIndex(p => p.id === btn.dataset.id);
+      const [moved] = finalList.splice(idx, 1);
+      poolList.push(moved);
+      poolList.sort((a, b) => a.name.localeCompare(b.name));
+      renderFinal(); renderPool();
+    });
+  });
+}
+
+document.getElementById('poolSearch').addEventListener('input', (e) => {
+  poolSearchTerm = e.target.value;
+  renderPool();
+});
 
 document.getElementById('reorderToggle').addEventListener('click', () => {
   if (!reorderMode) {
     enterReorderMode(cachedPlayers);
     document.getElementById('reorderToggle').classList.add('active');
     document.getElementById('reorderSaveBtn').classList.add('show');
-    renderReorderTable();
+    document.getElementById('reorderPanes').classList.add('show');
+    document.querySelector('.wrap').style.display = 'none';
+    document.getElementById('reorderNote').textContent = 'Click a pool player to add them, drag/nudge/type-a-number to reposition.';
+    renderPool(); renderFinal();
   } else {
     reorderMode = false;
     document.getElementById('reorderToggle').classList.remove('active');
     document.getElementById('reorderSaveBtn').classList.remove('show');
+    document.getElementById('reorderPanes').classList.remove('show');
+    document.querySelector('.wrap').style.display = '';
     document.getElementById('reorderNote').textContent = '';
     document.getElementById('reorderStatus').textContent = '';
     renderTable(cachedPlayers);
@@ -284,7 +409,7 @@ document.getElementById('reorderToggle').addEventListener('click', () => {
 document.getElementById('reorderSaveBtn').addEventListener('click', async () => {
   const status = document.getElementById('reorderStatus');
   status.textContent = 'Saving...';
-  const result = await saveNewOrderToGitHub(naturalRankField(), reorderList.map(p => p.id));
+  const result = await saveNewOrderToGitHub(naturalRankField(), finalList.map(p => p.id));
   status.textContent = result.message;
 });
 
@@ -428,7 +553,7 @@ document.getElementById('clearFilters').addEventListener('click', () => {
 
 // ---- Table ----
 function renderTable(allPlayers) {
-  if (reorderMode) { renderReorderTable(); return; }
+  if (reorderMode) { renderPool(); renderFinal(); return; }
   cachedPlayers = allPlayers;
   const peers = peerGroup(allPlayers);
   const coreKeys = Object.keys(CORE_LABELS);

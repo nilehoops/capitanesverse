@@ -42,6 +42,8 @@
   .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; }
 
   .name h1 { font-size: clamp(30px, 4.4vw, 64px); margin: 0; color: #ECECEC; line-height: 1; }
+  .x-logo-link { color: #ECECEC; margin-left: 14px; display: inline-flex; vertical-align: middle; opacity: 0.85; }
+  .x-logo-link:hover { opacity: 1; }
   .roster-tag { background: #FFD400; color: #1631FF; padding: 0 4px; }
 
   .line { font-size: 21px; margin: 2px 0; }
@@ -113,21 +115,6 @@
     background: #ECECEC; color: #000; border: none; padding: 3px 8px; cursor: pointer;
   }
   .avail-edit-row #availStatus { font-size: 11px; font-weight: 400; color: #9A9A9A; }
-
-  .sb-twitter {
-    background: #FFFFFF;
-    color: #000;
-    font-size: 13px;
-    font-weight: 700;
-    padding: 12px;
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    text-decoration: none;
-  }
-  .sb-twitter:hover { background: #E5E5E5; }
 
   .sb-logo {
     padding: 10px;
@@ -379,6 +366,9 @@ function render(player, players) {
       <div class="name">
         <a href="index.html" style="font-size:15px; text-decoration:underline; margin-right:16px;">&larr; Main Menu</a>
         <h1 style="display:inline;">${player.onRoster ? `<span class="roster-tag">${player.name}</span>` : player.name}</h1>
+        <a class="x-logo-link" href="https://x.com/search?q=${encodeURIComponent(player.name + ' basketball')}&f=live" target="_blank" rel="noopener" title="Search &quot;${player.name}&quot; on X">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
       </div>
 
       <div class="ranktop">
@@ -409,7 +399,7 @@ function render(player, players) {
           <div><span class="lab">Latino: </span><span class="val">${player.latino === true ? 'Yes' : player.latino === false ? 'No' : '—'}</span></div>
         </div>
         ${player.biography?.hometown ? `<div class="sb-fields" style="padding-top:0;"><span class="lab">Hometown: </span><span class="val">${player.biography.hometown}</span></div>` : ''}
-        <a class="sb-twitter" href="https://x.com/search?q=${encodeURIComponent(player.name + ' basketball')}&f=live" target="_blank" rel="noopener">Search "${player.name}" on X &rarr;</a>
+        
         <div class="sb-logo">Capitanes 2026<br>Offseason Site</div>
       </div>
 

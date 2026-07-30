@@ -61,6 +61,16 @@
     text-align: center;
   }
   .yt-slot iframe { width: 100%; height: 160px; border: 0; }
+  .yt-custom-row { display: flex; gap: 4px; margin-top: 6px; }
+  .yt-custom-row input {
+    flex: 1; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 11px; padding: 4px;
+  }
+  .yt-custom-row button {
+    font-family: 'Lora', serif; font-weight: 700; font-size: 11px;
+    background: #ECECEC; color: #000; border: none; padding: 4px 8px; cursor: pointer;
+  }
+  .yt-custom-status { font-size: 10px; color: #8A8A8A; margin-top: 2px; }
 
   .staff-head { font-size: 19px; margin-top: 10px; }
   .staff-body { font-size: 15px; font-weight: 400; color: #C9C9C9; margin-top: 4px; }
@@ -162,7 +172,9 @@ function base64ToUtf8(b64) {
 
 let githubToken = null; // held in memory only for this page load — never stored
 
-async function saveAvailabilityToGitHub(playerId, newCode) {
+// Generic: fetch the live file, let `mutate(target)` change one player's fields,
+// then commit. Used by both the Availability editor and the custom-video setter.
+async function commitPlayerUpdate(playerId, mutate, commitMessage) {
   if (!githubToken) {
     githubToken = prompt(
       'GitHub personal access token (Contents: read/write on this repo).\n' +
@@ -186,15 +198,14 @@ async function saveAvailabilityToGitHub(playerId, newCode) {
 
     const target = allPlayers.find(p => p.id === playerId);
     if (!target) return { ok: false, message: 'Player not found in remote file.' };
-    target.availability = newCode;
-    target.availabilityLabel = AVAIL_LABEL_MAP[newCode] || newCode;
+    mutate(target);
 
     const updatedContent = JSON.stringify(allPlayers, null, 2);
     const putResp = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: `Update availability: ${target.name} -> ${target.availabilityLabel}`,
+        message: commitMessage(target),
         content: utf8ToBase64(updatedContent),
         sha: fileData.sha,
       }),
@@ -207,6 +218,46 @@ async function saveAvailabilityToGitHub(playerId, newCode) {
   } catch (e) {
     return { ok: false, message: `Network error: ${e.message}` };
   }
+}
+
+function saveAvailabilityToGitHub(playerId, newCode) {
+  return commitPlayerUpdate(
+    playerId,
+    (target) => { target.availability = newCode; target.availabilityLabel = AVAIL_LABEL_MAP[newCode] || newCode; },
+    (target) => `Update availability: ${target.name} -> ${target.availabilityLabel}`
+  );
+}
+
+// Accepts a full YouTube URL (watch?v=, youtu.be/, embed/) or a bare 11-char video ID.
+function extractYouTubeId(input) {
+  const s = input.trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+    /(?:youtu\.be\/)([\w-]{11})/,
+    /(?:youtube\.com\/embed\/)([\w-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = s.match(p);
+    if (m) return m[1];
+  }
+  if (/^[\w-]{11}$/.test(s)) return s;
+  return null;
+}
+
+function saveCustomVideo(playerId, slotIndex, videoId) {
+  return commitPlayerUpdate(
+    playerId,
+    (target) => {
+      target.videos = target.videos || [null, null];
+      while (target.videos.length <= slotIndex) target.videos.push(null);
+      target.videos[slotIndex] = {
+        id: videoId,
+        title: 'Custom pick',
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      };
+    },
+    (target) => `Set custom video ${slotIndex + 1} for ${target.name}`
+  );
 }
 
 const STAT_LABELS = {
@@ -288,11 +339,17 @@ function computeDerivedRanks(players, player) {
   return { availableRank: availableRank || null, latinoRank: latinoRank || null };
 }
 
-function videoSlot(video, label) {
-  if (video) {
-    return `<div class="yt-slot"><iframe src="https://www.youtube.com/embed/${video.id}" title="${video.title}" allowfullscreen></iframe></div>`;
-  }
-  return `<div class="yt-slot">Youtube Embed of<br>"'${label}' highlight"<br>(populated by the fetch-videos Action)</div>`;
+function videoSlot(video, label, slotIndex) {
+  const player = video
+    ? `<div class="yt-slot"><iframe src="https://www.youtube.com/embed/${video.id}" title="${video.title}" allowfullscreen></iframe></div>`
+    : `<div class="yt-slot">Youtube Embed of<br>"'${label}' highlight"<br>(populated by the fetch-videos Action)</div>`;
+  const customRow = `
+    <div class="yt-custom-row">
+      <input type="text" placeholder="Paste YouTube URL or ID" data-slot="${slotIndex}" class="yt-custom-input">
+      <button data-slot="${slotIndex}" class="yt-custom-btn">Set</button>
+    </div>
+    <div class="yt-custom-status" data-slot="${slotIndex}"></div>`;
+  return player + customRow;
 }
 
 function render(player, players) {
@@ -319,11 +376,11 @@ function render(player, players) {
         </div>
         <div class="sb-fields">
           <div><span class="lab">Position: </span><span class="val">${player.position || '—'}</span></div>
-          <div><span class="lab">Age: </span><span class="val">${player.realgm?.age ?? '—'}</span></div>
+          <div><span class="lab">Age: </span><span class="val">${player.biography?.age ?? '—'}</span></div>
           <div><span class="lab">Height: </span><span class="val">${player.heightDisplay || '—'}</span></div>
-          <div><span class="lab">Weight: </span><span class="val">${player.realgm?.weight ?? '—'}</span></div>
+          <div><span class="lab">Weight: </span><span class="val">${player.biography?.weight ?? '—'}</span></div>
           <div><span class="lab">Last Team: </span><span class="val">${player.team || '—'}</span></div>
-          <div><span class="lab">Agency: </span><span class="val">${player.realgm?.agent ?? '—'}</span></div>
+          <div><span class="lab">Agency: </span><span class="val">${player.biography?.agent ?? '—'}</span></div>
           <div class="avail-edit-row">
             <span class="lab">Availability: </span>
             <select id="availSelect">
@@ -334,13 +391,13 @@ function render(player, players) {
           </div>
           <div><span class="lab">Latino: </span><span class="val">${player.latino === true ? 'Yes' : player.latino === false ? 'No' : '—'}</span></div>
         </div>
-        ${player.realgm?.hometown ? `<div class="sb-fields" style="padding-top:0;"><span class="lab">Hometown: </span><span class="val">${player.realgm.hometown}</span></div>` : ''}
+        ${player.biography?.hometown ? `<div class="sb-fields" style="padding-top:0;"><span class="lab">Hometown: </span><span class="val">${player.biography.hometown}</span></div>` : ''}
         <div class="sb-twitter">Twitter (X) embed of "${player.name}" to keep up with news<br>(needs the player's X handle — swap in publish.twitter.com's search-embed widget)</div>
         <div class="sb-logo">Capitanes 2026<br>Offseason Site</div>
       </div>
 
-      <div class="video1">${videoSlot(videos[0], player.name)}</div>
-      <div class="video2">${videoSlot(videos[1], player.name)}</div>
+      <div class="video1">${videoSlot(videos[0], player.name, 0)}</div>
+      <div class="video2">${videoSlot(videos[1], player.name, 1)}</div>
 
       <div class="ranksmid">
         <div class="line"><a href="rankings.html?pos=overall&availability=available">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
@@ -384,6 +441,22 @@ function render(player, players) {
   setupSearch(players);
   setupCrowdNotes(player.id);
   setupAvailabilitySave(player);
+  setupCustomVideo(player);
+}
+
+function setupCustomVideo(player) {
+  document.querySelectorAll('.yt-custom-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slot = parseInt(btn.dataset.slot, 10);
+      const input = document.querySelector(`.yt-custom-input[data-slot="${slot}"]`);
+      const status = document.querySelector(`.yt-custom-status[data-slot="${slot}"]`);
+      const videoId = extractYouTubeId(input.value);
+      if (!videoId) { status.textContent = "Couldn't read a video ID from that."; return; }
+      status.textContent = 'Saving...';
+      const result = await saveCustomVideo(player.id, slot, videoId);
+      status.textContent = result.message;
+    });
+  });
 }
 
 function setupAvailabilitySave(player) {

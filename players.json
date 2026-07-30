@@ -75,7 +75,7 @@
       "griftRatePctile": 0.696,
       "jumperRate": 0.6316
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "Santa Cruz de Tenerife",
       "highSchool": "IMG Academy",
@@ -161,7 +161,7 @@
       "griftRatePctile": 0.989,
       "jumperRate": 0.7743
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "Santa Cruz de Tenerife",
       "highSchool": "IMG Academy",
@@ -247,7 +247,7 @@
       "griftRatePctile": 0.971,
       "jumperRate": 0.8337
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Omaha (NE)",
       "highSchool": "Omaha Westside High School",
@@ -333,7 +333,7 @@
       "griftRatePctile": 0.746,
       "jumperRate": 0.8557
     },
-    "realgm": {
+    "biography": {
       "weight": "188 lbs",
       "hometown": "Indianapolis (IN)",
       "highSchool": "Lawrence Central High School",
@@ -419,7 +419,7 @@
       "griftRatePctile": 0.961,
       "jumperRate": 0.6711
     },
-    "realgm": {
+    "biography": {
       "weight": "160 lbs",
       "hometown": "Houston (TX)",
       "highSchool": "Houston Christian High School",
@@ -580,7 +580,7 @@
       "griftRatePctile": 0.271,
       "jumperRate": 0.7161
     },
-    "realgm": {
+    "biography": {
       "weight": "175 lbs",
       "hometown": "Fairfax (VA)",
       "highSchool": "St. Paul VI High School",
@@ -666,7 +666,7 @@
       "griftRatePctile": 0.786,
       "jumperRate": 0.6358
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Pickerington (OH)",
       "highSchool": "Brewster Academy",
@@ -754,7 +754,7 @@
       "griftRatePctile": 0.55,
       "jumperRate": 0.5091
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Nashville, TN",
       "age": 27,
@@ -916,7 +916,7 @@
       "griftRatePctile": 0.65,
       "jumperRate": 0.6332
     },
-    "realgm": {
+    "biography": {
       "age": 27,
       "born": "Jun 29, 1998",
       "weight": "180 lbs",
@@ -1003,7 +1003,7 @@
       "griftRatePctile": 0.25,
       "jumperRate": 0.399
     },
-    "realgm": {
+    "biography": {
       "weight": "200 lbs",
       "hometown": "Orlando (FL)",
       "highSchool": "Lake Nona High School",
@@ -1089,7 +1089,7 @@
       "griftRatePctile": 0.557,
       "jumperRate": 0.5123
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Cincinnati (OH)",
       "highSchool": "St. Xavier High School",
@@ -1173,7 +1173,7 @@
       "griftRatePctile": 0.689,
       "jumperRate": 0.7104
     },
-    "realgm": {
+    "biography": {
       "weight": "180 lbs",
       "age": 24,
       "born": "Aug 26, 2001",
@@ -1257,7 +1257,7 @@
       "griftRatePctile": 0.421,
       "jumperRate": 0.674
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Raleigh, NC",
       "age": 32,
@@ -1342,7 +1342,7 @@
       "griftRatePctile": 0.514,
       "jumperRate": 0.7077
     },
-    "realgm": {
+    "biography": {
       "weight": "150 lbs",
       "hometown": "Flint, MI",
       "age": 23,
@@ -1504,7 +1504,7 @@
       "griftRatePctile": 0.568,
       "jumperRate": 0.6703
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "San Jose (CA)",
       "found": true,
@@ -1664,7 +1664,7 @@
       "griftRatePctile": 0.336,
       "jumperRate": 0.246
     },
-    "realgm": {
+    "biography": {
       "weight": "155 lbs",
       "hometown": "Muskogee (OK)",
       "highSchool": "Muskogee High School",
@@ -1827,7 +1827,7 @@
       "griftRatePctile": 0.875,
       "jumperRate": 0.762
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Columbus (GA)",
       "highSchool": "St. Anne-Pacelli Catholic School",
@@ -1911,7 +1911,7 @@
       "griftRatePctile": 0.996,
       "jumperRate": 0.9026
     },
-    "realgm": {
+    "biography": {
       "weight": "175 lbs",
       "hometown": "Agoura Hills (CA)",
       "highSchool": "Agoura High School",
@@ -2072,7 +2072,7 @@
       "griftRatePctile": 0.839,
       "jumperRate": 0.7462
     },
-    "realgm": {
+    "biography": {
       "age": 28,
       "born": "Oct 27, 1997",
       "weight": "190 lbs",
@@ -2237,7 +2237,7 @@
       "griftRatePctile": 0.736,
       "jumperRate": 0.7309
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Dec 7, 1999",
       "weight": "180 lbs",
@@ -2325,7 +2325,7 @@
       "griftRatePctile": 0.793,
       "jumperRate": 0.7715
     },
-    "realgm": {
+    "biography": {
       "age": 31,
       "born": "Jan 2, 1995",
       "weight": "165 lbs",
@@ -2413,7 +2413,7 @@
       "griftRatePctile": 0.182,
       "jumperRate": 0.5142
     },
-    "realgm": {
+    "biography": {
       "weight": "260 lbs",
       "age": 25,
       "born": "May 31, 2001",
@@ -2497,7 +2497,7 @@
       "griftRatePctile": 0.329,
       "jumperRate": 0.7192
     },
-    "realgm": {
+    "biography": {
       "weight": "180 lbs",
       "hometown": "Baton Rouge (LA)",
       "highSchool": "Scotlandville High School",
@@ -2582,7 +2582,7 @@
       "griftRatePctile": 0.582,
       "jumperRate": 0.5848
     },
-    "realgm": {
+    "biography": {
       "weight": "189 lbs",
       "hometown": "West Hills, CA",
       "age": 23,
@@ -2667,7 +2667,7 @@
       "griftRatePctile": 0.907,
       "jumperRate": 0.8229
     },
-    "realgm": {
+    "biography": {
       "weight": "192 lbs",
       "hometown": "Phoenix, AZ",
       "age": 27,
@@ -2752,7 +2752,7 @@
       "griftRatePctile": 0.457,
       "jumperRate": 0.5995
     },
-    "realgm": {
+    "biography": {
       "weight": "212 lbs",
       "hometown": "Okotoks",
       "highSchool": "Holy Trinity Catholic High School",
@@ -2915,7 +2915,7 @@
       "griftRatePctile": 0.957,
       "jumperRate": 0.7084
     },
-    "realgm": {
+    "biography": {
       "age": 31,
       "born": "Feb 2, 1995",
       "weight": "195 lbs",
@@ -3003,7 +3003,7 @@
       "griftRatePctile": 0.682,
       "jumperRate": 0.5115
     },
-    "realgm": {
+    "biography": {
       "age": 27,
       "born": "Jul 8, 1999",
       "weight": "190 lbs",
@@ -3168,7 +3168,7 @@
       "griftRatePctile": 0.95,
       "jumperRate": 0.7727
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Taylors (SC)",
       "highSchool": "Blue Ridge High School",
@@ -3254,7 +3254,7 @@
       "griftRatePctile": 0.218,
       "jumperRate": 0.7111
     },
-    "realgm": {
+    "biography": {
       "age": 30,
       "born": "Feb 19, 1996",
       "weight": "231 lbs",
@@ -3342,7 +3342,7 @@
       "griftRatePctile": 0.846,
       "jumperRate": 0.3555
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": 150130,
@@ -3432,7 +3432,7 @@
       "griftRatePctile": 0.236,
       "jumperRate": 0.5609
     },
-    "realgm": {
+    "biography": {
       "weight": "167 lbs",
       "age": 24,
       "born": "Oct 13, 2001",
@@ -3594,7 +3594,7 @@
       "griftRatePctile": 0.6,
       "jumperRate": 0.5949
     },
-    "realgm": {
+    "biography": {
       "weight": "180 lbs",
       "hometown": "Hartford (CT)",
       "highSchool": "Putnam Science Academy",
@@ -3678,7 +3678,7 @@
       "griftRatePctile": 0.732,
       "jumperRate": 0.6926
     },
-    "realgm": {
+    "biography": {
       "weight": "197 lbs",
       "hometown": "Highland (UT)",
       "highSchool": "Fremont High School",
@@ -3765,7 +3765,7 @@
       "griftRatePctile": 0.921,
       "jumperRate": 0.8154
     },
-    "realgm": {
+    "biography": {
       "weight": "200 lbs",
       "age": 25,
       "born": "May 27, 2001",
@@ -3849,7 +3849,7 @@
       "griftRatePctile": 0.325,
       "jumperRate": 0.5929
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Apr 6, 2001",
       "weight": "170 lbs",
@@ -3937,7 +3937,7 @@
       "griftRatePctile": 0.932,
       "jumperRate": 0.8376
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "Little Rock, AR",
       "age": 32,
@@ -4022,7 +4022,7 @@
       "griftRatePctile": 0.357,
       "jumperRate": 0.6332
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Tampa (FL)",
       "highSchool": "Wharton High School",
@@ -4106,7 +4106,7 @@
       "griftRatePctile": 0.775,
       "jumperRate": 0.7044
     },
-    "realgm": {
+    "biography": {
       "weight": "192 lbs",
       "hometown": "Cleveland (OH)",
       "highSchool": "Andrews Osborne Academy",
@@ -4269,7 +4269,7 @@
       "griftRatePctile": 0.2,
       "jumperRate": 0.6059
     },
-    "realgm": {
+    "biography": {
       "weight": "200 lbs",
       "hometown": "Knoxville (TN)",
       "highSchool": "Knoxville Catholic High School",
@@ -4664,7 +4664,7 @@
       "griftRatePctile": 0.868,
       "jumperRate": 0.8557
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Jun 15, 2000",
       "weight": "205 lbs",
@@ -4752,7 +4752,7 @@
       "griftRatePctile": 0.229,
       "jumperRate": 0.5828
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": 119546,
@@ -4843,7 +4843,7 @@
       "griftRatePctile": 0.35,
       "jumperRate": 0.5941
     },
-    "realgm": {
+    "biography": {
       "weight": "177 lbs",
       "hometown": "Toronto, ON",
       "age": 22,
@@ -4928,7 +4928,7 @@
       "griftRatePctile": 0.393,
       "jumperRate": 0.6767
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Tallahassee (FL)",
       "highSchool": "Florida State University School",
@@ -5014,7 +5014,7 @@
       "griftRatePctile": 0.886,
       "jumperRate": 0.7069
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Heredia",
       "age": 25,
@@ -5176,7 +5176,7 @@
       "griftRatePctile": 0.943,
       "jumperRate": 0.8701
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "Nogales",
       "age": 36,
@@ -5262,7 +5262,7 @@
       "griftRatePctile": 0.079,
       "jumperRate": 0.6757
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "age": 25,
       "born": "Feb 3, 2001",
@@ -5346,7 +5346,7 @@
       "griftRatePctile": 0.075,
       "jumperRate": 0.2214
     },
-    "realgm": {
+    "biography": {
       "weight": "246 lbs",
       "hometown": "Montvale (NJ)",
       "highSchool": "Pascack Hills High School",
@@ -5430,7 +5430,7 @@
       "griftRatePctile": 0.679,
       "jumperRate": 0.4868
     },
-    "realgm": {
+    "biography": {
       "weight": "200 lbs",
       "hometown": "Asheville, NC",
       "age": 26,
@@ -5592,7 +5592,7 @@
       "griftRatePctile": 0.814,
       "jumperRate": 0.5995
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Memphis (TN)",
       "highSchool": "Kirby High School",
@@ -5676,7 +5676,7 @@
       "griftRatePctile": 0.168,
       "jumperRate": 0.058
     },
-    "realgm": {
+    "biography": {
       "weight": "226 lbs",
       "hometown": "Helsinki",
       "highSchool": "First Love Christian Academy",
@@ -5839,7 +5839,7 @@
       "griftRatePctile": 0.196,
       "jumperRate": 0.3283
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup+user-xlsx+user-xlsx-2",
       "realgmId": 192815,
@@ -5930,7 +5930,7 @@
       "griftRatePctile": 0.671,
       "jumperRate": 0.5878
     },
-    "realgm": {
+    "biography": {
       "age": 23,
       "born": "May 2, 2003",
       "weight": "185 lbs",
@@ -6018,7 +6018,7 @@
       "griftRatePctile": 0.375,
       "jumperRate": 0.518
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Dayton (OH)",
       "highSchool": "Wayne High School",
@@ -6102,7 +6102,7 @@
       "griftRatePctile": 0.068,
       "jumperRate": 0.337
     },
-    "realgm": {
+    "biography": {
       "weight": "212 lbs",
       "age": 23,
       "born": "Jul 16, 2003",
@@ -6263,7 +6263,7 @@
       "griftRatePctile": 0.946,
       "jumperRate": 0.8208
     },
-    "realgm": {
+    "biography": {
       "hometown": "Chicago (IL)",
       "highSchool": "Eisenhower High School",
       "age": 24,
@@ -6348,7 +6348,7 @@
       "griftRatePctile": 0.832,
       "jumperRate": 0.7785
     },
-    "realgm": {
+    "biography": {
       "weight": "181 lbs",
       "hometown": "Dallas (TX)",
       "highSchool": "Richardson High School",
@@ -6434,7 +6434,7 @@
       "griftRatePctile": 0.304,
       "jumperRate": 0.6428
     },
-    "realgm": {
+    "biography": {
       "weight": "205 lbs",
       "hometown": "Elizabeth, NJ",
       "age": 25,
@@ -6673,7 +6673,7 @@
       "griftRatePctile": 0.471,
       "jumperRate": 0.7152
     },
-    "realgm": {
+    "biography": {
       "weight": "189 lbs",
       "hometown": "Winchester (VA)",
       "highSchool": "John Handley High School",
@@ -6757,7 +6757,8 @@
       "griftRatePctile": 0.032,
       "jumperRate": 0.6485
     },
-    "realgm": {
+    "onRoster": true,
+    "biography": {
       "weight": "250 lbs",
       "hometown": "Alexandria",
       "highSchool": "NBA Global Academy",
@@ -6765,8 +6766,7 @@
       "born": "Nov 22, 2001",
       "found": true,
       "source": "user-xlsx+user-xlsx-2"
-    },
-    "onRoster": true
+    }
   },
   {
     "id": "robbie-avila",
@@ -6844,7 +6844,7 @@
       "griftRatePctile": 0.546,
       "jumperRate": 0.528
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup+user-xlsx+user-xlsx-2",
       "realgmId": 188737,
@@ -6936,7 +6936,7 @@
       "griftRatePctile": 0.554,
       "jumperRate": 0.7342
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Xenia (OH)",
       "highSchool": "Andrews Osborne Academy",
@@ -7099,7 +7099,7 @@
       "griftRatePctile": 0.993,
       "jumperRate": 0.838
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "age": 24,
       "born": "Oct 13, 2001",
@@ -7183,7 +7183,7 @@
       "griftRatePctile": 0.171,
       "jumperRate": 0.6674
     },
-    "realgm": {
+    "biography": {
       "weight": "188 lbs",
       "hometown": "Tortola",
       "age": 27,
@@ -7269,7 +7269,7 @@
       "griftRatePctile": 0.911,
       "jumperRate": 0.7079
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": 88903,
@@ -7436,7 +7436,7 @@
       "griftRatePctile": 0.425,
       "jumperRate": 0.6694
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": 105378,
@@ -7526,7 +7526,7 @@
       "griftRatePctile": 0.836,
       "jumperRate": 0.6886
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Brooklyn, New York",
       "age": 23,
@@ -7611,7 +7611,7 @@
       "griftRatePctile": 0.85,
       "jumperRate": 0.701
     },
-    "realgm": {
+    "biography": {
       "weight": "205 lbs",
       "hometown": "Pickerington (OH)",
       "highSchool": "Pickerington High School Central",
@@ -7695,7 +7695,7 @@
       "griftRatePctile": 0.589,
       "jumperRate": 0.5827
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Sep 18, 2000",
       "weight": "190 lbs",
@@ -7783,7 +7783,7 @@
       "griftRatePctile": 0.854,
       "jumperRate": 0.7196
     },
-    "realgm": {
+    "biography": {
       "weight": "175 lbs",
       "hometown": "Oakland (CA)",
       "highSchool": "Dublin High School",
@@ -7946,7 +7946,7 @@
       "griftRatePctile": 0.718,
       "jumperRate": 0.6985
     },
-    "realgm": {
+    "biography": {
       "age": 27,
       "born": "Aug 14, 1998",
       "weight": "195 lbs",
@@ -8034,7 +8034,7 @@
       "griftRatePctile": 0.704,
       "jumperRate": 0.6269
     },
-    "realgm": {
+    "biography": {
       "weight": "206 lbs",
       "age": 24,
       "born": "Sep 1, 2001",
@@ -8119,7 +8119,7 @@
       "griftRatePctile": 0.982,
       "jumperRate": 0.8499
     },
-    "realgm": {
+    "biography": {
       "weight": "168 lbs",
       "hometown": "Brooklyn (NY)",
       "highSchool": "Perkiomen School",
@@ -8203,7 +8203,7 @@
       "griftRatePctile": 0.279,
       "jumperRate": 0.6051
     },
-    "realgm": {
+    "biography": {
       "weight": "170 lbs",
       "hometown": "Louisville (KY)",
       "highSchool": "Butler Traditional High School",
@@ -8287,7 +8287,7 @@
       "griftRatePctile": 0.975,
       "jumperRate": 0.8719
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Montebello (CA)",
       "highSchool": "St. Anthony High School",
@@ -8371,7 +8371,7 @@
       "griftRatePctile": 0.532,
       "jumperRate": 0.6885
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Salem (OR)",
       "highSchool": "McNary High School",
@@ -8457,7 +8457,7 @@
       "griftRatePctile": 0.111,
       "jumperRate": 0.1959
     },
-    "realgm": {
+    "biography": {
       "weight": "250 lbs",
       "age": 25,
       "born": "May 17, 2001",
@@ -8541,7 +8541,7 @@
       "griftRatePctile": 0.507,
       "jumperRate": 0.7296
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Columbus, OH",
       "age": 26,
@@ -8626,7 +8626,7 @@
       "griftRatePctile": 0.654,
       "jumperRate": 0.5619
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": 127261,
@@ -8793,7 +8793,7 @@
       "griftRatePctile": 0.539,
       "jumperRate": 0.7105
     },
-    "realgm": {
+    "biography": {
       "weight": "200 lbs",
       "hometown": "Chandler (AZ)",
       "highSchool": "Hamilton High School",
@@ -8956,7 +8956,7 @@
       "griftRatePctile": 0.607,
       "jumperRate": 0.3591
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Rabat",
       "highSchool": "Eaglecrest High School",
@@ -9117,7 +9117,7 @@
       "griftRatePctile": 0.146,
       "jumperRate": 0.4419
     },
-    "realgm": {
+    "biography": {
       "weight": "238 lbs",
       "hometown": "Apopka (FL)",
       "highSchool": "Apopka High School",
@@ -9357,7 +9357,7 @@
       "griftRatePctile": 0.243,
       "jumperRate": 0.4983
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup+user-xlsx-2",
       "realgmId": 136040,
@@ -9447,7 +9447,7 @@
       "griftRatePctile": 0.618,
       "jumperRate": 0.1102
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Seabrook Island (SC)",
       "highSchool": "Whale Branch Early College High School",
@@ -9533,7 +9533,7 @@
       "griftRatePctile": 0.879,
       "jumperRate": 0.7377
     },
-    "realgm": {
+    "biography": {
       "age": 30,
       "born": "Jun 11, 1995",
       "weight": "206 lbs",
@@ -9698,7 +9698,7 @@
       "griftRatePctile": 0.757,
       "jumperRate": 0.7123
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Jun 16, 2000",
       "weight": "200 lbs",
@@ -9786,7 +9786,7 @@
       "griftRatePctile": 0.004,
       "jumperRate": 0.2323
     },
-    "realgm": {
+    "biography": {
       "weight": "170 lbs",
       "hometown": "Kissemme. FL",
       "highSchool": "Life Christian Academy",
@@ -9949,7 +9949,7 @@
       "griftRatePctile": 0.432,
       "jumperRate": 0.6237
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Bethlehem (PA)",
       "highSchool": "Believe Prep",
@@ -10035,7 +10035,7 @@
       "griftRatePctile": 0.914,
       "jumperRate": 0.7366
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": 127817,
@@ -10202,7 +10202,7 @@
       "griftRatePctile": 0.632,
       "jumperRate": 0.5638
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": 85943,
@@ -10292,7 +10292,8 @@
       "griftRatePctile": 0.968,
       "jumperRate": 0.7932
     },
-    "realgm": {
+    "onRoster": true,
+    "biography": {
       "weight": "172 lbs",
       "hometown": "Santo Domingo",
       "highSchool": "SPIRE Sports Academy",
@@ -10300,8 +10301,7 @@
       "born": "Jan 27, 2000",
       "found": true,
       "source": "user-xlsx+user-xlsx-2"
-    },
-    "onRoster": true
+    }
   },
   {
     "id": "josh-reed",
@@ -10456,7 +10456,7 @@
       "griftRatePctile": 0.779,
       "jumperRate": 0.6728
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup+user-xlsx-2",
       "realgmId": null,
@@ -10546,7 +10546,7 @@
       "griftRatePctile": 0.232,
       "jumperRate": 0.4882
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "Haledon, NJ",
       "age": 28,
@@ -10631,7 +10631,7 @@
       "griftRatePctile": 0.9,
       "jumperRate": 0.919
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Hialeah, FL",
       "age": 25,
@@ -10716,7 +10716,7 @@
       "griftRatePctile": 0.418,
       "jumperRate": 0.4235
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": null,
@@ -10806,7 +10806,7 @@
       "griftRatePctile": 0.825,
       "jumperRate": 0.4603
     },
-    "realgm": {
+    "biography": {
       "weight": "260 lbs",
       "hometown": "Luanda",
       "highSchool": "Quality Education Academy",
@@ -10969,7 +10969,7 @@
       "griftRatePctile": 0.411,
       "jumperRate": 0.7373
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Bishopville (SC)",
       "highSchool": "Lee Central High School",
@@ -11055,7 +11055,7 @@
       "griftRatePctile": 0.125,
       "jumperRate": 0.2401
     },
-    "realgm": {
+    "biography": {
       "age": 27,
       "born": "Oct 14, 1998",
       "weight": "210 lbs",
@@ -11143,7 +11143,7 @@
       "griftRatePctile": 0.614,
       "jumperRate": 0.5133
     },
-    "realgm": {
+    "biography": {
       "weight": "244 lbs",
       "hometown": "Clovis (CA)",
       "highSchool": "Clovis North High School",
@@ -11229,7 +11229,7 @@
       "griftRatePctile": 0.368,
       "jumperRate": 0.448
     },
-    "realgm": {
+    "biography": {
       "weight": "240 lbs",
       "hometown": "Chappaqua (NY)",
       "highSchool": "Hotchkiss School",
@@ -11315,7 +11315,7 @@
       "griftRatePctile": 0.05,
       "jumperRate": 0.6709
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": null,
@@ -11405,7 +11405,7 @@
       "griftRatePctile": 0.296,
       "jumperRate": 0.4786
     },
-    "realgm": {
+    "biography": {
       "weight": "200 lbs",
       "hometown": "Affligem",
       "age": 25,
@@ -11490,7 +11490,7 @@
       "griftRatePctile": 0.129,
       "jumperRate": 0.3936
     },
-    "realgm": {
+    "biography": {
       "weight": "235 lbs",
       "hometown": "Cincinnati (OH)",
       "highSchool": "Beechcroft High School",
@@ -11576,7 +11576,7 @@
       "griftRatePctile": 0.464,
       "jumperRate": 0.5808
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "Newburgh (NY)",
       "highSchool": "South Kent School",
@@ -11893,7 +11893,7 @@
       "griftRatePctile": 0.518,
       "jumperRate": 0.6226
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Jun 28, 1999",
       "weight": "210 lbs",
@@ -11981,7 +11981,7 @@
       "griftRatePctile": 0.386,
       "jumperRate": 0.2919
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": null,
@@ -12071,7 +12071,7 @@
       "griftRatePctile": 0.782,
       "jumperRate": 0.741
     },
-    "realgm": {
+    "biography": {
       "age": 23,
       "born": "Jul 11, 2003",
       "weight": "200 lbs",
@@ -12159,7 +12159,7 @@
       "griftRatePctile": 0.739,
       "jumperRate": 0.5256
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "North Little Rock (AR)",
       "highSchool": "North Little Rock High School",
@@ -12243,7 +12243,7 @@
       "griftRatePctile": 0.089,
       "jumperRate": 0.5487
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "Toronto (ON)",
       "highSchool": "Potter's House Christian Academy",
@@ -12329,7 +12329,7 @@
       "griftRatePctile": 0.475,
       "jumperRate": 0.6976
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Mar 26, 1999",
       "weight": "205 lbs",
@@ -12494,7 +12494,7 @@
       "griftRatePctile": 0.382,
       "jumperRate": 0.5067
     },
-    "realgm": {
+    "biography": {
       "found": true,
       "source": "manual-lookup",
       "realgmId": null,
@@ -12584,7 +12584,7 @@
       "griftRatePctile": 0.436,
       "jumperRate": 0.7152
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Boston, MA",
       "age": 24,
@@ -12669,7 +12669,7 @@
       "griftRatePctile": 0.214,
       "jumperRate": 0.7889
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Georgetown, KY",
       "age": 25,
@@ -12754,7 +12754,7 @@
       "griftRatePctile": 0.179,
       "jumperRate": 0.3223
     },
-    "realgm": {
+    "biography": {
       "weight": "250 lbs",
       "hometown": "Taunton, MA",
       "age": 29,
@@ -12916,7 +12916,7 @@
       "griftRatePctile": 0.593,
       "jumperRate": 0.7366
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Las Vegas (NV)",
       "highSchool": "Bishop Gorman High School",
@@ -13156,7 +13156,7 @@
       "griftRatePctile": 0.446,
       "jumperRate": 0.3058
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Nassau",
       "highSchool": "Sunrise Christian Academy",
@@ -13242,7 +13242,7 @@
       "griftRatePctile": 0.093,
       "jumperRate": 0.247
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Los Angeles (CA)",
       "highSchool": "Crespi Carmelite High School",
@@ -13326,7 +13326,7 @@
       "griftRatePctile": 0.646,
       "jumperRate": 0.1369
     },
-    "realgm": {
+    "biography": {
       "weight": "205 lbs",
       "hometown": "Plainfield, NJ",
       "age": 30,
@@ -13411,7 +13411,7 @@
       "griftRatePctile": 0.379,
       "jumperRate": 0.3178
     },
-    "realgm": {
+    "biography": {
       "age": 22,
       "born": "Oct 20, 2003",
       "weight": "235 lbs",
@@ -13499,7 +13499,7 @@
       "griftRatePctile": 0.661,
       "jumperRate": 0.4732
     },
-    "realgm": {
+    "biography": {
       "age": 28,
       "born": "Feb 1, 1998",
       "weight": "240 lbs",
@@ -13587,7 +13587,7 @@
       "griftRatePctile": 0.521,
       "jumperRate": 0.1638
     },
-    "realgm": {
+    "biography": {
       "weight": "280 lbs",
       "hometown": "Hoxie (KS)",
       "highSchool": "Hoxie High School",
@@ -13671,7 +13671,7 @@
       "griftRatePctile": 0.1,
       "jumperRate": 0.2874
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Orlando (FL)",
       "highSchool": "Orlando Christian Prep High School",
@@ -13757,7 +13757,7 @@
       "griftRatePctile": 0.136,
       "jumperRate": 0.319
     },
-    "realgm": {
+    "biography": {
       "weight": "260 lbs",
       "hometown": "Geneva, IL",
       "age": 28,
@@ -13842,7 +13842,7 @@
       "griftRatePctile": 0.707,
       "jumperRate": 0.1453
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Panama City (FL)",
       "highSchool": "J.R. Arnold High School",
@@ -13929,7 +13929,7 @@
       "griftRatePctile": 0.339,
       "jumperRate": 0.4847
     },
-    "realgm": {
+    "biography": {
       "age": 24,
       "born": "Sep 19, 2001",
       "weight": "235 lbs",
@@ -14018,7 +14018,7 @@
       "griftRatePctile": 0.061,
       "jumperRate": 0.3082
     },
-    "realgm": {
+    "biography": {
       "weight": "205 lbs",
       "hometown": "Winnsboro (LA)",
       "highSchool": "Franklin Parish High School",
@@ -14104,7 +14104,7 @@
       "griftRatePctile": 0.225,
       "jumperRate": 0.4867
     },
-    "realgm": {
+    "biography": {
       "age": 23,
       "born": "Mar 1, 2003",
       "weight": "238 lbs",
@@ -14191,7 +14191,7 @@
       "griftRatePctile": 0.018,
       "jumperRate": 0.25
     },
-    "realgm": {
+    "biography": {
       "weight": "270 lbs",
       "hometown": "Toronto (ON)",
       "found": true,
@@ -14274,7 +14274,7 @@
       "griftRatePctile": 0.318,
       "jumperRate": 0.5688
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "May 3, 2001",
       "weight": "205 lbs",
@@ -14362,7 +14362,7 @@
       "griftRatePctile": 0.893,
       "jumperRate": 0.7766
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "Richmond (VA)",
       "highSchool": "Brewster Academy",
@@ -14525,7 +14525,8 @@
       "griftRatePctile": 0.164,
       "jumperRate": 0.5308
     },
-    "realgm": {
+    "onRoster": true,
+    "biography": {
       "weight": "250 lbs",
       "hometown": "Fresno (CA)",
       "highSchool": "Clovis North High School",
@@ -14533,8 +14534,7 @@
       "source": "user-xlsx+user-xlsx-2",
       "age": 23,
       "born": "Apr 3, 2003"
-    },
-    "onRoster": true
+    }
   },
   {
     "id": "cam-carter",
@@ -14689,7 +14689,7 @@
       "griftRatePctile": 0.054,
       "jumperRate": 0.5083
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Jan 22, 2000",
       "weight": "200 lbs",
@@ -14777,7 +14777,7 @@
       "griftRatePctile": 0.525,
       "jumperRate": 0.7494
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Boston, MA",
       "age": 25,
@@ -14939,7 +14939,7 @@
       "griftRatePctile": 0.821,
       "jumperRate": 0.6867
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Tallahassee (FL)",
       "found": true,
@@ -15022,7 +15022,7 @@
       "griftRatePctile": 0.45,
       "jumperRate": 0.6694
     },
-    "realgm": {
+    "biography": {
       "weight": "212 lbs",
       "hometown": "Santa Clarita (CA)",
       "highSchool": "Santa Clarita Christian School",
@@ -15183,7 +15183,7 @@
       "griftRatePctile": 0.132,
       "jumperRate": 0.0686
     },
-    "realgm": {
+    "biography": {
       "weight": "218 lbs",
       "hometown": "Oskaloosa (IA)",
       "highSchool": "Pella Christian High School",
@@ -15267,7 +15267,7 @@
       "griftRatePctile": 0.207,
       "jumperRate": 0.3056
     },
-    "realgm": {
+    "biography": {
       "age": 24,
       "born": "Jul 16, 2002",
       "weight": "255 lbs",
@@ -15354,7 +15354,7 @@
       "griftRatePctile": 0.064,
       "jumperRate": 0.2692
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Nairobi",
       "highSchool": "Sunrise Christian Academy",
@@ -15445,7 +15445,7 @@
       "griftRatePctile": 0.096,
       "jumperRate": 0.3186
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Savannah (GA)",
       "highSchool": "Groves High School",
@@ -15610,7 +15610,7 @@
       "griftRatePctile": 0.186,
       "jumperRate": 0.3898
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Fort Worth (TX)",
       "highSchool": "Centennial High School",
@@ -15696,7 +15696,7 @@
       "griftRatePctile": 0.161,
       "jumperRate": 0.4063
     },
-    "realgm": {
+    "biography": {
       "weight": "260 lbs",
       "hometown": "Santa Barbara, CA",
       "age": 26,
@@ -16012,7 +16012,7 @@
       "griftRatePctile": 0.204,
       "jumperRate": 0.47
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "St. Louis (MO)",
       "highSchool": "Cardinal Ritter College Prep High School",
@@ -16097,7 +16097,7 @@
       "griftRatePctile": 0.014,
       "jumperRate": 0.3101
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Sep 24, 2000",
       "weight": "230 lbs",
@@ -16184,7 +16184,7 @@
       "griftRatePctile": 0.489,
       "jumperRate": 0.7804
     },
-    "realgm": {
+    "biography": {
       "weight": "180 lbs",
       "age": 26,
       "born": "Dec 9, 1999",
@@ -16268,7 +16268,7 @@
       "griftRatePctile": 0.321,
       "jumperRate": 0.7121
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "San Diego (CA)",
       "highSchool": "University City High School",
@@ -16352,7 +16352,7 @@
       "griftRatePctile": 0.364,
       "jumperRate": 0.6369
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Oct 18, 2000",
       "weight": "227 lbs",
@@ -16440,7 +16440,7 @@
       "griftRatePctile": 0.596,
       "jumperRate": 0.712
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Nov 12, 2000",
       "weight": "225 lbs",
@@ -16528,7 +16528,7 @@
       "griftRatePctile": 0.686,
       "jumperRate": 0.4319
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Raleigh (NC)",
       "highSchool": "Word of God Christian Academy",
@@ -16689,7 +16689,7 @@
       "griftRatePctile": 0.979,
       "jumperRate": 0.8987
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Germantown (TN)",
       "highSchool": "Houston High School",
@@ -16773,7 +16773,7 @@
       "griftRatePctile": 0.246,
       "jumperRate": 0.4249
     },
-    "realgm": {
+    "biography": {
       "weight": "232 lbs",
       "hometown": "Hialeah Gardens (FL)",
       "highSchool": "Montverde Academy",
@@ -17090,7 +17090,7 @@
       "griftRatePctile": 0.771,
       "jumperRate": 0.4438
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Yukon, OK",
       "age": 28,
@@ -17175,7 +17175,7 @@
       "griftRatePctile": 0.104,
       "jumperRate": 0.1534
     },
-    "realgm": {
+    "biography": {
       "weight": "242 lbs",
       "hometown": "Boston, MA",
       "age": 26,
@@ -17260,7 +17260,7 @@
       "griftRatePctile": 0.575,
       "jumperRate": 0.0769
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Bamako",
       "highSchool": "Scotland Campus",
@@ -17346,7 +17346,7 @@
       "griftRatePctile": 0.143,
       "jumperRate": 0.3333
     },
-    "realgm": {
+    "biography": {
       "weight": "250 lbs",
       "hometown": "Deerfield (IL)",
       "highSchool": "Deerfield High School",
@@ -17432,7 +17432,7 @@
       "griftRatePctile": 0.564,
       "jumperRate": 0.3191
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "Garfield Heights, OH",
       "age": 30,
@@ -17518,7 +17518,7 @@
       "griftRatePctile": 0.536,
       "jumperRate": 0.3231
     },
-    "realgm": {
+    "biography": {
       "age": 28,
       "born": "May 22, 1997",
       "weight": "265 lbs",
@@ -17606,7 +17606,7 @@
       "griftRatePctile": 0.211,
       "jumperRate": 0.2278
     },
-    "realgm": {
+    "biography": {
       "weight": "235 lbs",
       "hometown": "Sanford (FL)",
       "highSchool": "Seminole High School",
@@ -17690,7 +17690,7 @@
       "griftRatePctile": 0.586,
       "jumperRate": 0.4187
     },
-    "realgm": {
+    "biography": {
       "weight": "240 lbs",
       "hometown": "Gary (IN)",
       "highSchool": "West Side High School",
@@ -17776,7 +17776,7 @@
       "griftRatePctile": 0.071,
       "jumperRate": 0.6862
     },
-    "realgm": {
+    "biography": {
       "weight": "160 lbs",
       "hometown": "Chicago (IL)",
       "highSchool": "Lyons Township",
@@ -17861,7 +17861,7 @@
       "griftRatePctile": 0.493,
       "jumperRate": 0.7256
     },
-    "realgm": {
+    "biography": {
       "weight": "182 lbs",
       "hometown": "Granada",
       "age": 24,
@@ -17946,7 +17946,7 @@
       "griftRatePctile": 0.036,
       "jumperRate": 0.6258
     },
-    "realgm": {
+    "biography": {
       "weight": "181 lbs",
       "hometown": "Gilbert (AZ)",
       "highSchool": "Mesquite High School",
@@ -18030,7 +18030,7 @@
       "griftRatePctile": 0.496,
       "jumperRate": 0.5096
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Aug 30, 2000",
       "weight": "197 lbs",
@@ -18118,7 +18118,7 @@
       "griftRatePctile": 0.275,
       "jumperRate": 0.5845
     },
-    "realgm": {
+    "biography": {
       "age": 23,
       "born": "Dec 3, 2002",
       "weight": "210 lbs",
@@ -18282,7 +18282,7 @@
       "griftRatePctile": 0.107,
       "jumperRate": 0.4698
     },
-    "realgm": {
+    "biography": {
       "age": 24,
       "born": "Dec 17, 2001",
       "weight": "235 lbs",
@@ -18368,7 +18368,7 @@
       "griftRatePctile": 0.021,
       "jumperRate": 0.3333
     },
-    "realgm": {
+    "biography": {
       "weight": "235 lbs",
       "hometown": "Hong Kong",
       "age": 25,
@@ -18453,7 +18453,7 @@
       "griftRatePctile": 0.7,
       "jumperRate": 0.7883
     },
-    "realgm": {
+    "biography": {
       "weight": "180 lbs",
       "hometown": "Orlando (FL)",
       "highSchool": "Olympia High School",
@@ -18539,7 +18539,7 @@
       "griftRatePctile": 0.511,
       "jumperRate": 0.5533
     },
-    "realgm": {
+    "biography": {
       "age": 27,
       "born": "Feb 20, 1999",
       "weight": "245 lbs",
@@ -18627,7 +18627,7 @@
       "griftRatePctile": 0.625,
       "jumperRate": 0.6771
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "Geneseo, IL",
       "age": 24,
@@ -18712,7 +18712,7 @@
       "griftRatePctile": 0.139,
       "jumperRate": 0.2105
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "Lithonia, GA",
       "age": 24,
@@ -18797,7 +18797,7 @@
       "griftRatePctile": 0.504,
       "jumperRate": 0.7623
     },
-    "realgm": {
+    "biography": {
       "weight": "200 lbs",
       "hometown": "Morrilton (AR)",
       "highSchool": "Morrilton High School",
@@ -18886,7 +18886,7 @@
       "griftRatePctile": 0.082,
       "jumperRate": 0.2273
     },
-    "realgm": {
+    "biography": {
       "weight": "215 lbs",
       "hometown": "San Juan (PR)",
       "highSchool": "Our Saviour Lutheran School",
@@ -18970,7 +18970,7 @@
       "griftRatePctile": 0.011,
       "jumperRate": 0.5058
     },
-    "realgm": {
+    "biography": {
       "age": 23,
       "born": "May 11, 2003",
       "weight": "190 lbs",
@@ -19058,7 +19058,7 @@
       "griftRatePctile": 0.8,
       "jumperRate": 0.7345
     },
-    "realgm": {
+    "biography": {
       "weight": "177 lbs",
       "hometown": "Washington, DC",
       "age": 29,
@@ -19143,7 +19143,7 @@
       "griftRatePctile": 0.046,
       "jumperRate": 0.2222
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Jan 10, 2001",
       "weight": "200 lbs",
@@ -19230,7 +19230,7 @@
       "griftRatePctile": 0.286,
       "jumperRate": 0.4965
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Jul 30, 2001",
       "weight": "247 lbs",
@@ -19318,7 +19318,7 @@
       "griftRatePctile": 0.15,
       "jumperRate": 0.4751
     },
-    "realgm": {
+    "biography": {
       "age": 23,
       "born": "Dec 10, 2002",
       "weight": "240 lbs",
@@ -19406,7 +19406,7 @@
       "griftRatePctile": 0.0,
       "jumperRate": 0.2206
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "age": 25,
       "born": "Feb 26, 2001",
@@ -19490,7 +19490,7 @@
       "griftRatePctile": 0.4,
       "jumperRate": 0.4715
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Sao Paulo",
       "age": 25,
@@ -19575,7 +19575,7 @@
       "griftRatePctile": 0.729,
       "jumperRate": 0.9074
     },
-    "realgm": {
+    "biography": {
       "weight": "215 lbs",
       "hometown": "Bronx, NY",
       "age": 23,
@@ -19661,7 +19661,7 @@
       "griftRatePctile": 0.396,
       "jumperRate": 0.5915
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Malaga",
       "age": 26,
@@ -19746,7 +19746,7 @@
       "griftRatePctile": 0.764,
       "jumperRate": 0.6239
     },
-    "realgm": {
+    "biography": {
       "weight": "235 lbs",
       "hometown": "Prior Lake, MN",
       "age": 24,
@@ -19832,7 +19832,7 @@
       "griftRatePctile": 0.929,
       "jumperRate": 0.6267
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Urbandale, IA",
       "age": 33,
@@ -19917,7 +19917,7 @@
       "griftRatePctile": 0.289,
       "jumperRate": 0.2102
     },
-    "realgm": {
+    "biography": {
       "weight": "275 lbs",
       "hometown": "Boddington",
       "highSchool": "Australian Centre of Excellence",
@@ -20003,7 +20003,7 @@
       "griftRatePctile": 0.175,
       "jumperRate": 0.2159
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Madrid",
       "age": 23,
@@ -20088,7 +20088,7 @@
       "griftRatePctile": 0.268,
       "jumperRate": 0.3064
     },
-    "realgm": {
+    "biography": {
       "weight": "215 lbs",
       "hometown": "Germantown (TN)",
       "highSchool": "Speights Academy",
@@ -20174,7 +20174,7 @@
       "griftRatePctile": 0.086,
       "jumperRate": 0.6569
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Jun 23, 1999",
       "weight": "230 lbs",
@@ -20261,7 +20261,7 @@
       "griftRatePctile": 0.5,
       "jumperRate": 0.4023
     },
-    "realgm": {
+    "biography": {
       "weight": "234 lbs",
       "hometown": "Chicago, IL",
       "age": 25,
@@ -20347,7 +20347,7 @@
       "griftRatePctile": 0.954,
       "jumperRate": 0.792
     },
-    "realgm": {
+    "biography": {
       "age": 23,
       "born": "Jun 5, 2003",
       "weight": "180 lbs",
@@ -20435,7 +20435,7 @@
       "griftRatePctile": 0.818,
       "jumperRate": 0.6916
     },
-    "realgm": {
+    "biography": {
       "weight": "175 lbs",
       "hometown": "Chicago (IL)",
       "highSchool": "Victory Rock Prep",
@@ -20522,7 +20522,7 @@
       "griftRatePctile": 0.346,
       "jumperRate": 0.4248
     },
-    "realgm": {
+    "biography": {
       "weight": "248 lbs",
       "age": 24,
       "born": "Aug 28, 2001",
@@ -20606,7 +20606,7 @@
       "griftRatePctile": 0.896,
       "jumperRate": 0.7905
     },
-    "realgm": {
+    "biography": {
       "age": 33,
       "born": "Nov 12, 1992",
       "weight": "185 lbs",
@@ -20694,7 +20694,7 @@
       "griftRatePctile": 0.754,
       "jumperRate": 0.7151
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Dec 20, 2000",
       "weight": "173 lbs",
@@ -20781,7 +20781,7 @@
       "griftRatePctile": 0.864,
       "jumperRate": 0.7814
     },
-    "realgm": {
+    "biography": {
       "weight": "171 lbs",
       "hometown": "Aurora (CO)",
       "highSchool": "Smoky Hill High School",
@@ -20865,7 +20865,7 @@
       "griftRatePctile": 0.189,
       "jumperRate": 0.594
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Aug 26, 1999",
       "weight": "184 lbs",
@@ -20953,7 +20953,7 @@
       "griftRatePctile": 0.293,
       "jumperRate": 0.2901
     },
-    "realgm": {
+    "biography": {
       "weight": "250 lbs",
       "hometown": "Coconut Creek (FL)",
       "highSchool": "North Broward Preparatory School",
@@ -21039,7 +21039,7 @@
       "griftRatePctile": 0.221,
       "jumperRate": 0.3397
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "Tallahassee (FL)",
       "highSchool": "James Rickards High School",
@@ -21123,7 +21123,7 @@
       "griftRatePctile": 0.282,
       "jumperRate": 0.2352
     },
-    "realgm": {
+    "biography": {
       "weight": "245 lbs",
       "hometown": "Lagos",
       "age": 24,
@@ -21209,7 +21209,7 @@
       "griftRatePctile": 0.579,
       "jumperRate": 0.2841
     },
-    "realgm": {
+    "biography": {
       "age": 25,
       "born": "Feb 25, 2001",
       "weight": "270 lbs",
@@ -21296,7 +21296,7 @@
       "griftRatePctile": 0.029,
       "jumperRate": 0.2002
     },
-    "realgm": {
+    "biography": {
       "age": 27,
       "born": "Aug 3, 1997",
       "weight": "255 lbs",
@@ -21384,7 +21384,7 @@
       "griftRatePctile": 0.939,
       "jumperRate": 0.6414
     },
-    "realgm": {
+    "biography": {
       "weight": "215 lbs",
       "hometown": "Knoxville, TN",
       "age": 26,
@@ -21469,7 +21469,7 @@
       "griftRatePctile": 0.264,
       "jumperRate": 0.1509
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Rouen",
       "age": 25,
@@ -21554,7 +21554,7 @@
       "griftRatePctile": 0.639,
       "jumperRate": 0.626
     },
-    "realgm": {
+    "biography": {
       "age": 26,
       "born": "Nov 5, 1999",
       "weight": "270 lbs",
@@ -21642,7 +21642,7 @@
       "griftRatePctile": 0.668,
       "jumperRate": 0.3448
     },
-    "realgm": {
+    "biography": {
       "weight": "270 lbs",
       "hometown": "Cananea",
       "found": true,
@@ -21725,7 +21725,7 @@
       "griftRatePctile": 0.154,
       "jumperRate": 0.2829
     },
-    "realgm": {
+    "biography": {
       "weight": "251 lbs",
       "age": 24,
       "born": "Dec 3, 2001",
@@ -21886,7 +21886,7 @@
       "griftRatePctile": 0.043,
       "jumperRate": 0.2427
     },
-    "realgm": {
+    "biography": {
       "weight": "260 lbs",
       "hometown": "Syracuse (NY)",
       "highSchool": "Quality Education Academy",
@@ -21972,7 +21972,7 @@
       "griftRatePctile": 0.314,
       "jumperRate": 0.4379
     },
-    "realgm": {
+    "biography": {
       "weight": "190 lbs",
       "hometown": "Eagle Mountain (UT)",
       "highSchool": "Westlake High School",
@@ -22136,7 +22136,7 @@
       "griftRatePctile": 0.429,
       "jumperRate": 0.5972
     },
-    "realgm": {
+    "biography": {
       "weight": "240 lbs",
       "hometown": "American Fork (UT)",
       "highSchool": "American Fork High School",
@@ -22222,7 +22222,7 @@
       "griftRatePctile": 0.796,
       "jumperRate": 0.4659
     },
-    "realgm": {
+    "biography": {
       "age": 33,
       "born": "Apr 26, 1992",
       "weight": "185 lbs",
@@ -22310,7 +22310,7 @@
       "griftRatePctile": 0.254,
       "jumperRate": 0.1786
     },
-    "realgm": {
+    "biography": {
       "age": 30,
       "born": "Dec 10, 1995",
       "weight": "311 lbs",
@@ -22398,7 +22398,7 @@
       "griftRatePctile": 0.007,
       "jumperRate": 0.5106
     },
-    "realgm": {
+    "biography": {
       "weight": "215 lbs",
       "hometown": "Baltimore (MD)",
       "highSchool": "Putnam Science Academy",
@@ -22484,7 +22484,7 @@
       "griftRatePctile": 0.025,
       "jumperRate": 0.4041
     },
-    "realgm": {
+    "biography": {
       "weight": "230 lbs",
       "hometown": "Cumming (GA)",
       "highSchool": "South Forsyth High School",
@@ -22570,7 +22570,7 @@
       "griftRatePctile": 0.343,
       "jumperRate": 0.4283
     },
-    "realgm": {
+    "biography": {
       "weight": "225 lbs",
       "hometown": "Spokane, WA",
       "age": 25,
@@ -22655,7 +22655,7 @@
       "griftRatePctile": 0.439,
       "jumperRate": 0.4631
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "New Orleans, LA",
       "age": 25,
@@ -22740,7 +22740,7 @@
       "griftRatePctile": 0.761,
       "jumperRate": 0.6688
     },
-    "realgm": {
+    "biography": {
       "weight": "212 lbs",
       "hometown": "Phoenix, AZ",
       "age": 28,
@@ -22825,7 +22825,7 @@
       "griftRatePctile": 0.193,
       "jumperRate": 0.3713
     },
-    "realgm": {
+    "biography": {
       "weight": "239 lbs",
       "hometown": "Montreal, QB",
       "age": 26,
@@ -22911,7 +22911,7 @@
       "griftRatePctile": 0.561,
       "jumperRate": 0.7593
     },
-    "realgm": {
+    "biography": {
       "weight": "205 lbs",
       "hometown": "Baton Rouge, LA",
       "age": 27,
@@ -22996,7 +22996,7 @@
       "griftRatePctile": 0.693,
       "jumperRate": 0.6977
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Trenton, NJ",
       "age": 29,
@@ -23081,7 +23081,7 @@
       "griftRatePctile": 0.529,
       "jumperRate": 0.608
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Compton, CA",
       "age": 23,
@@ -23166,7 +23166,7 @@
       "griftRatePctile": 0.118,
       "jumperRate": 0.3819
     },
-    "realgm": {
+    "biography": {
       "weight": "210 lbs",
       "hometown": "Scottsdale, AZ",
       "age": 25,
@@ -23251,7 +23251,7 @@
       "griftRatePctile": 0.768,
       "jumperRate": 0.4601
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "age": 25,
       "born": "May 29, 2001",
@@ -23335,7 +23335,7 @@
       "griftRatePctile": 0.861,
       "jumperRate": 0.788
     },
-    "realgm": {
+    "biography": {
       "weight": "185 lbs",
       "hometown": "Allen, TX",
       "age": 25,
@@ -23421,7 +23421,7 @@
       "griftRatePctile": 1.0,
       "jumperRate": 0.9447
     },
-    "realgm": {
+    "biography": {
       "weight": "195 lbs",
       "hometown": "Hacienda Heights, CA",
       "age": 26,
@@ -23506,7 +23506,7 @@
       "griftRatePctile": 0.361,
       "jumperRate": 0.2723
     },
-    "realgm": {
+    "biography": {
       "weight": "220 lbs",
       "hometown": "Cleveland, OH",
       "age": 26,
@@ -23592,7 +23592,7 @@
       "griftRatePctile": 0.964,
       "jumperRate": 0.8739
     },
-    "realgm": {
+    "biography": {
       "weight": "165 lbs",
       "hometown": "Bloomington, IN",
       "age": 27,
@@ -23677,7 +23677,7 @@
       "griftRatePctile": 0.725,
       "jumperRate": 0.7561
     },
-    "realgm": {
+    "biography": {
       "weight": "205 lbs",
       "hometown": "Columbia, MO",
       "age": 26,

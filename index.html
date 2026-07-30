@@ -242,7 +242,7 @@ function setupSearch(players) {
 }
 
 renderRoster();
-fetch('data/players.json')
+fetch('data/players.json?v=' + Date.now())
   .then(r => r.json())
   .then(players => { cachedPlayers = players; renderBoards(players); setupSearch(players); })
   .catch(err => {

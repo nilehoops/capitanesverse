@@ -356,7 +356,7 @@ document.querySelectorAll('.toggle-row button[data-avail]').forEach(btn => {
 });
 
 buildColumnPanel();
-fetch('data/players.json')
+fetch('data/players.json?v=' + Date.now())
   .then(r => r.json())
   .then(renderTable)
   .catch(err => {

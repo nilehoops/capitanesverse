@@ -516,7 +516,7 @@ function setupSearch(players) {
 }
 
 const playerId = new URLSearchParams(location.search).get('id');
-fetch('data/players.json')
+fetch('data/players.json?v=' + Date.now())
   .then(r => r.json())
   .then(players => {
     const player = players.find(p => p.id === playerId);

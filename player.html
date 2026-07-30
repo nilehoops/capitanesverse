@@ -118,13 +118,16 @@
     background: #FFFFFF;
     color: #000;
     font-size: 13px;
-    font-weight: 600;
+    font-weight: 700;
     padding: 12px;
     flex-grow: 1;
     display: flex;
     align-items: center;
+    justify-content: center;
     text-align: center;
+    text-decoration: none;
   }
+  .sb-twitter:hover { background: #E5E5E5; }
 
   .sb-logo {
     padding: 10px;
@@ -406,7 +409,7 @@ function render(player, players) {
           <div><span class="lab">Latino: </span><span class="val">${player.latino === true ? 'Yes' : player.latino === false ? 'No' : '—'}</span></div>
         </div>
         ${player.biography?.hometown ? `<div class="sb-fields" style="padding-top:0;"><span class="lab">Hometown: </span><span class="val">${player.biography.hometown}</span></div>` : ''}
-        <div class="sb-twitter">Twitter (X) embed of "${player.name}" to keep up with news<br>(needs the player's X handle — swap in publish.twitter.com's search-embed widget)</div>
+        <a class="sb-twitter" href="https://x.com/search?q=${encodeURIComponent(player.name + ' basketball')}&f=live" target="_blank" rel="noopener">Search "${player.name}" on X &rarr;</a>
         <div class="sb-logo">Capitanes 2026<br>Offseason Site</div>
       </div>
 

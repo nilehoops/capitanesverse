@@ -63,6 +63,7 @@ def main():
 
     queries_made = 0
     updated = 0
+    new_videos_by_id = {}  # collected in memory; only written to disk at the very end
 
     for player in players:
         if player.get("videos"):  # already enriched — skip
@@ -81,18 +82,26 @@ def main():
             continue
 
         queries_made += 1
+        new_videos_by_id[player["id"]] = videos  # [] counts as "checked, nothing found"
         if videos:
-            player["videos"] = videos
             updated += 1
             print(f"  {player['name']}: {len(videos)} video(s) found.")
         else:
-            player["videos"] = []  # checked, nothing found — don't retry every run
             print(f"  {player['name']}: no results.")
 
         time.sleep(SLEEP_BETWEEN_QUERIES)
 
+    # Re-read the file fresh right before writing, in case it changed on disk while
+    # this run was in progress (manual edits, another workflow, etc.) — this run only
+    # ever touches the `videos` field, so nothing else can be clobbered by this merge.
+    with open(DATA_PATH) as f:
+        fresh_players = json.load(f)
+    for p in fresh_players:
+        if p["id"] in new_videos_by_id:
+            p["videos"] = new_videos_by_id[p["id"]]
+
     with open(DATA_PATH, "w") as f:
-        json.dump(players, f, indent=2)
+        json.dump(fresh_players, f, indent=2)
 
     print(f"Done. Made {queries_made} searches, updated {updated} players.")
 

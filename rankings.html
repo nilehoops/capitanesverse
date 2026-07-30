@@ -122,7 +122,6 @@ const ADV_LABELS = {
 };
 const DEFAULT_CORE = new Set(['bpm','efg','ts','ast','stl','blk','orb','drb','threePct','ftPct']);
 const LOWER_IS_BETTER = new Set(['tov', 'drtg']);
-const AVAILABLE_CODES = new Set(['2','3','WW','?']); // not yet signed — matches player.html
 const POS_TITLES = { overall: 'Overall Rankings', guard: 'Guard Rankings', wing: 'Wing Rankings', big: 'Big Rankings' };
 const POS_MAP = { guard: 'Guard', wing: 'Wing', big: 'Big' };
 
@@ -282,8 +281,8 @@ function renderTable(allPlayers) {
   let rows = baseList(allPlayers);
   if (latinoFilter === 'yes') rows = rows.filter(p => p.latino === true);
   if (latinoFilter === 'no') rows = rows.filter(p => p.latino === false);
-  if (availFilter === 'available') rows = rows.filter(p => AVAILABLE_CODES.has(p.availability));
-  if (availFilter === 'unavailable') rows = rows.filter(p => !AVAILABLE_CODES.has(p.availability));
+  if (availFilter === 'available') rows = rows.filter(p => p.availabilitySimple === 'yes');
+  if (availFilter === 'unavailable') rows = rows.filter(p => p.availabilitySimple !== 'yes');
 
   // %ile query filters (any active slider > 0 must be met)
   for (const [fkey, min] of Object.entries(filterMin)) {

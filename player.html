@@ -110,11 +110,28 @@
     background: #000; color: #ECECEC; border: 1px solid #444;
     font-family: 'Lora', serif; font-size: 12px; padding: 3px;
   }
+  .avail-edit-row input[type=text] {
+    background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 3px; width: 120px;
+  }
   .avail-edit-row button {
     font-family: 'Lora', serif; font-weight: 700; font-size: 11px;
     background: #ECECEC; color: #000; border: none; padding: 3px 8px; cursor: pointer;
   }
   .avail-edit-row #availStatus { font-size: 11px; font-weight: 400; color: #9A9A9A; }
+
+  .compare-section { padding: 10px; border-top: 1px solid #222; }
+  .compare-title { font-size: 14px; font-weight: 700; color: #ECECEC; margin-bottom: 8px; }
+  .compare-group { margin-bottom: 12px; }
+  .compare-group-label { font-size: 11px; font-weight: 700; color: #8A8A8A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .compare-players { display: flex; gap: 6px; }
+  .compare-player { width: 32%; text-align: center; }
+  .compare-player img, .compare-player .noimg {
+    width: 100%; aspect-ratio: 1; object-fit: cover; background: #1A1A1A; display: block;
+  }
+  .compare-player .noimg { display: flex; align-items: center; justify-content: center; font-size: 16px; color: #6A6A6A; }
+  .compare-player .cname { font-size: 10px; font-weight: 600; margin-top: 2px; line-height: 1.2; }
+  .compare-empty { font-size: 11px; font-weight: 400; color: #6A6A6A; }
 
   .sb-logo {
     padding: 10px;
@@ -135,17 +152,6 @@
 const REPO_OWNER = 'nilehoops';
 const REPO_NAME = 'capitanesverse';
 const DATA_PATH_IN_REPO = 'data/players.json';
-
-const AVAIL_OPTIONS = [
-  { code: '0', label: 'Signed' },
-  { code: '1', label: 'Summer League w/ PT or Exhibit 10+' },
-  { code: '2', label: 'Summer League, no PT' },
-  { code: '3', label: 'Unsigned' },
-  { code: 'WW', label: 'Waiver Watch' },
-  { code: '?', label: 'Unknown' },
-  { code: 'Retired', label: 'Retired' },
-];
-const AVAIL_LABEL_MAP = Object.fromEntries(AVAIL_OPTIONS.map(o => [o.code, o.label]));
 
 // UTF-8-safe base64 helpers (plain btoa/atob mishandle non-ASCII names)
 function utf8ToBase64(str) {
@@ -210,11 +216,11 @@ async function commitPlayerUpdate(playerId, mutate, commitMessage) {
   }
 }
 
-function saveAvailabilityToGitHub(playerId, newCode) {
+function saveAvailabilityToGitHub(playerId, newSimple, newNote) {
   return commitPlayerUpdate(
     playerId,
-    (target) => { target.availability = newCode; target.availabilityLabel = AVAIL_LABEL_MAP[newCode] || newCode; },
-    (target) => `Update availability: ${target.name} -> ${target.availabilityLabel}`
+    (target) => { target.availabilitySimple = newSimple; target.availabilityNote = newNote || null; },
+    (target) => `Update availability: ${target.name} -> ${newSimple}${newNote ? ' (' + newNote + ')' : ''}`
   );
 }
 
@@ -329,10 +335,9 @@ function computeStrengthsWeaknesses(players, player) {
 // Derived ranks: the source sheet doesn't have explicit "Available Rank" or
 // "Latino Rank" columns, so both are computed here from Overall Rank.
 function computeDerivedRanks(players, player) {
-  const availableCodes = new Set(['2', '3', 'WW', '?']); // not yet signed
-  const availablePool = players.filter(p => availableCodes.has(p.availability) && p.overallRank != null)
+  const availablePool = players.filter(p => p.availabilitySimple === 'yes' && p.overallRank != null)
     .sort((a, b) => a.overallRank - b.overallRank);
-  const availableRank = availableCodes.has(player.availability)
+  const availableRank = player.availabilitySimple === 'yes'
     ? availablePool.findIndex(p => p.id === player.id) + 1 : null;
 
   const latinoPool = players.filter(p => p.latino === true && p.overallRank != null)
@@ -389,17 +394,20 @@ function render(player, players) {
           <div><span class="lab">Last Team: </span><span class="val">${player.team || '—'}</span></div>
           <div><span class="lab">Agency: </span><span class="val">${player.biography?.agent ?? '—'}</span></div>
           <div class="avail-edit-row">
-            <span class="lab">Availability: </span>
+            <span class="lab">Available: </span>
             <select id="availSelect">
-              ${AVAIL_OPTIONS.map(o => `<option value="${o.code}" ${o.code === player.availability ? 'selected' : ''}>${o.label}</option>`).join('')}
+              <option value="yes" ${player.availabilitySimple === 'yes' ? 'selected' : ''}>Yes</option>
+              <option value="no" ${player.availabilitySimple === 'no' ? 'selected' : ''}>No</option>
+              <option value="unknown" ${player.availabilitySimple === 'unknown' ? 'selected' : ''}>Unknown</option>
             </select>
+            <input id="availNote" type="text" placeholder="Note (optional)" value="${player.availabilityNote || ''}">
             <button id="saveAvailBtn">Save</button>
             <span id="availStatus"></span>
           </div>
           <div><span class="lab">Latino: </span><span class="val">${player.latino === true ? 'Yes' : player.latino === false ? 'No' : '—'}</span></div>
         </div>
         ${player.biography?.hometown ? `<div class="sb-fields" style="padding-top:0;"><span class="lab">Hometown: </span><span class="val">${player.biography.hometown}</span></div>` : ''}
-        
+        <div class="compare-section" id="compareSection"></div>
         <div class="sb-logo">Capitanes 2026<br>Offseason Site</div>
       </div>
 
@@ -449,6 +457,42 @@ function render(player, players) {
   setupCrowdNotes(player.id);
   setupAvailabilitySave(player);
   setupCustomVideo(player);
+  renderCompareTo(players, player);
+}
+
+// ---- Compare To: best-available / best-available-Latino / 2026 Capitanes /
+// Current Roster, each filtered to this player's own position, top 3 by rank.
+function compareGroupHtml(label, list) {
+  const cards = list.map(p => `
+    <a class="compare-player" href="player.html?id=${p.id}">
+      ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<div class="noimg">?</div>`}
+      <div class="cname">${p.name.split(' ').pop()}</div>
+    </a>`).join('');
+  return `
+    <div class="compare-group">
+      <div class="compare-group-label">${label}</div>
+      ${list.length ? `<div class="compare-players">${cards}</div>` : `<div class="compare-empty">None yet.</div>`}
+    </div>`;
+}
+
+function renderCompareTo(players, player) {
+  const pos = player.position;
+  const samePos = players.filter(p => p.position === pos && p.id !== player.id);
+
+  const top3 = (arr, key) => arr.filter(p => p[key] != null).sort((a, b) => a[key] - b[key]).slice(0, 3);
+
+  const bestAvailable = top3(samePos.filter(p => p.availabilitySimple === 'yes'), 'positionalRank');
+  const bestAvailableLatino = top3(samePos.filter(p => p.availabilitySimple === 'yes' && p.latino === true), 'positionalRank');
+  const capitanes2026 = top3(samePos.filter(p => (p.biography?.currentStatus || '').includes('Mexico City Capitanes')), 'positionalRank');
+  const currentRoster = samePos.filter(p => p.onRoster).slice(0, 3);
+
+  document.getElementById('compareSection').innerHTML = `
+    <div class="compare-title">Compare To (${pos || '—'})</div>
+    ${compareGroupHtml('Best Available', bestAvailable)}
+    ${compareGroupHtml('Best Available Latino', bestAvailableLatino)}
+    ${compareGroupHtml('2026 Capitanes', capitanes2026)}
+    ${compareGroupHtml('Current Roster Capitanes', currentRoster)}
+  `;
 }
 
 function setupCustomVideo(player) {
@@ -469,14 +513,16 @@ function setupCustomVideo(player) {
 function setupAvailabilitySave(player) {
   document.getElementById('saveAvailBtn').addEventListener('click', async () => {
     const select = document.getElementById('availSelect');
+    const noteInput = document.getElementById('availNote');
     const status = document.getElementById('availStatus');
-    const newCode = select.value;
+    const newSimple = select.value;
+    const newNote = noteInput.value.trim();
     status.textContent = 'Saving...';
-    const result = await saveAvailabilityToGitHub(player.id, newCode);
+    const result = await saveAvailabilityToGitHub(player.id, newSimple, newNote);
     status.textContent = result.message;
     if (result.ok) {
-      player.availability = newCode;
-      player.availabilityLabel = AVAIL_LABEL_MAP[newCode] || newCode;
+      player.availabilitySimple = newSimple;
+      player.availabilityNote = newNote || null;
     }
   });
 }

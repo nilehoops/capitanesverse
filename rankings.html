@@ -32,6 +32,26 @@
   .wrap { overflow-x: auto; padding: 0 24px 60px; }
   .empty { padding: 20px 24px; font-size: 15px; font-weight: 400; color: #9A9A9A; }
 
+  .reorder-bar { padding: 0 24px 10px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+  .reorder-toggle {
+    background: none; border: 1px solid #ECECEC; color: #ECECEC; font-family: 'Lora', serif;
+    font-weight: 700; font-size: 14px; padding: 6px 12px; cursor: pointer;
+  }
+  .reorder-toggle.active { background: #ECECEC; color: #000; }
+  .reorder-save {
+    background: #128A3E; color: #ECECEC; border: none; font-family: 'Lora', serif;
+    font-weight: 700; font-size: 14px; padding: 6px 12px; cursor: pointer; display: none;
+  }
+  .reorder-save.show { display: inline-block; }
+  .reorder-note { font-size: 12px; font-weight: 400; color: #9A9A9A; }
+  .reorder-status { font-size: 12px; font-weight: 400; color: #9A9A9A; }
+
+  tr.drag-row { cursor: grab; }
+  tr.drag-row.dragging { opacity: 0.35; }
+  tr.drag-row.drag-over { border-top: 2px solid #FFD400; }
+  .drag-handle { color: #666; font-size: 16px; cursor: grab; user-select: none; padding-right: 4px; }
+  .unranked-row { color: #7A7A7A; }
+
   /* ---- left-side show/hide + query panel ---- */
   #colTabBtn {
     position: fixed; top: 50%; left: 0; transform: translateY(-50%);
@@ -102,6 +122,13 @@
   <button data-avail="unavailable">Unavailable</button>
 </div>
 
+<div class="reorder-bar">
+  <button class="reorder-toggle" id="reorderToggle">Reorder Rankings</button>
+  <button class="reorder-save" id="reorderSaveBtn">Save New Order</button>
+  <span class="reorder-note" id="reorderNote"></span>
+  <span class="reorder-status" id="reorderStatus"></span>
+</div>
+
 <div class="wrap"><table id="table"></table></div>
 
 <script>
@@ -128,6 +155,138 @@ const POS_MAP = { guard: 'Guard', wing: 'Wing', big: 'Big' };
 let visibleCore = new Set(DEFAULT_CORE);
 let visibleAdv = new Set();
 let filterMin = {}; // `${group}:${key}` -> 0-100, 0 = inactive
+
+// ---- GitHub commit (same mechanism as index.html/player.html editors) ----
+const REPO_OWNER = 'nilehoops';
+const REPO_NAME = 'capitanesverse';
+const DATA_PATH_IN_REPO = 'data/players.json';
+let githubToken = null;
+
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+function base64ToUtf8(b64) {
+  const binary = atob(b64);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+async function saveNewOrderToGitHub(rankField, orderedIds) {
+  if (!githubToken) {
+    githubToken = prompt(
+      'GitHub personal access token (Contents: read/write on this repo).\n' +
+      'Only used for this save, kept in memory only, never stored.'
+    );
+    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
+  }
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+
+  try {
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).` };
+    const fileData = await getResp.json();
+    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const byId = new Map(allPlayers.map(p => [p.id, p]));
+
+    orderedIds.forEach((id, i) => {
+      const p = byId.get(id);
+      if (p) p[rankField] = i + 1;
+    });
+
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Reorder ${rankField} (${orderedIds.length} players)`,
+        content: utf8ToBase64(JSON.stringify(allPlayers, null, 2)),
+        sha: fileData.sha,
+      }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}` };
+    }
+    return { ok: true, message: 'Saved — live site updates in ~1 min.' };
+  } catch (e) {
+    return { ok: false, message: `Network error: ${e.message}` };
+  }
+}
+
+// ---- Reorder mode ----
+let reorderMode = false;
+let reorderList = null; // array of player objects, in custom order, while active
+
+function enterReorderMode(allPlayers) {
+  const field = naturalRankField();
+  const pos = posParam === 'overall' ? null : POS_MAP[posParam];
+  const inScope = allPlayers.filter(p => pos ? p.position === pos : true);
+  // Ranked players first (current order), unranked ones appended at the bottom —
+  // this is what lets a newly-added (unranked) player get dragged into position.
+  const ranked = inScope.filter(p => p[field] != null).sort((a, b) => a[field] - b[field]);
+  const unranked = inScope.filter(p => p[field] == null).sort((a, b) => a.name.localeCompare(b.name));
+  reorderList = [...ranked, ...unranked];
+  reorderMode = true;
+}
+
+function renderReorderTable() {
+  document.getElementById('reorderNote').textContent = 'Drag rows to reorder. Filters are ignored while reordering.';
+  const table = document.getElementById('table');
+  const bodyRows = reorderList.map((p, i) => `
+    <tr class="drag-row ${p[naturalRankField()] == null ? 'unranked-row' : ''}" draggable="true" data-id="${p.id}">
+      <td><span class="drag-handle">⠿</span>${i + 1}</td>
+      <td class="name">${p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name}</td>
+      <td>${p.position || '—'}</td>
+      <td>${p.team || '—'}</td>
+      <td>${p[naturalRankField()] == null ? '(unranked)' : ''}</td>
+    </tr>`).join('');
+  table.innerHTML = `<thead><tr><th>#</th><th>Name</th><th>Pos</th><th>Team</th><th></th></tr></thead><tbody>${bodyRows}</tbody>`;
+
+  let draggingEl = null;
+  table.querySelectorAll('tr.drag-row').forEach(row => {
+    row.addEventListener('dragstart', () => { draggingEl = row; row.classList.add('dragging'); });
+    row.addEventListener('dragend', () => { row.classList.remove('dragging'); table.querySelectorAll('.drag-over').forEach(r => r.classList.remove('drag-over')); });
+    row.addEventListener('dragover', (e) => { e.preventDefault(); row.classList.add('drag-over'); });
+    row.addEventListener('dragleave', () => row.classList.remove('drag-over'));
+    row.addEventListener('drop', (e) => {
+      e.preventDefault();
+      row.classList.remove('drag-over');
+      if (draggingEl === row) return;
+      const fromId = draggingEl.dataset.id, toId = row.dataset.id;
+      const fromIdx = reorderList.findIndex(p => p.id === fromId);
+      const toIdx = reorderList.findIndex(p => p.id === toId);
+      const [moved] = reorderList.splice(fromIdx, 1);
+      reorderList.splice(toIdx, 0, moved);
+      renderReorderTable();
+    });
+  });
+}
+
+document.getElementById('reorderToggle').addEventListener('click', () => {
+  if (!reorderMode) {
+    enterReorderMode(cachedPlayers);
+    document.getElementById('reorderToggle').classList.add('active');
+    document.getElementById('reorderSaveBtn').classList.add('show');
+    renderReorderTable();
+  } else {
+    reorderMode = false;
+    document.getElementById('reorderToggle').classList.remove('active');
+    document.getElementById('reorderSaveBtn').classList.remove('show');
+    document.getElementById('reorderNote').textContent = '';
+    document.getElementById('reorderStatus').textContent = '';
+    renderTable(cachedPlayers);
+  }
+});
+
+document.getElementById('reorderSaveBtn').addEventListener('click', async () => {
+  const status = document.getElementById('reorderStatus');
+  status.textContent = 'Saving...';
+  const result = await saveNewOrderToGitHub(naturalRankField(), reorderList.map(p => p.id));
+  status.textContent = result.message;
+});
 
 const params = new URLSearchParams(location.search);
 const posParam = params.get('pos') || 'overall';
@@ -269,6 +428,7 @@ document.getElementById('clearFilters').addEventListener('click', () => {
 
 // ---- Table ----
 function renderTable(allPlayers) {
+  if (reorderMode) { renderReorderTable(); return; }
   cachedPlayers = allPlayers;
   const peers = peerGroup(allPlayers);
   const coreKeys = Object.keys(CORE_LABELS);

@@ -140,6 +140,15 @@
     background: #ECECEC; color: #000; border: none; padding: 8px 16px; cursor: pointer;
   }
   .addplayer-status { font-size: 13px; font-weight: 400; color: #9A9A9A; margin-top: 8px; }
+  .paste-box {
+    background: #0D0D0D; border: 1px dashed #444; padding: 10px; margin-bottom: 12px;
+  }
+  .paste-box p { font-size: 12px; font-weight: 400; color: #9A9A9A; margin: 0 0 6px; }
+  .paste-box textarea {
+    width: 100%; min-height: 44px; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 6px; resize: vertical;
+  }
+  .paste-status { font-size: 11px; font-weight: 400; color: #3FCF5C; margin-top: 4px; min-height: 14px; }
   .util-tabs-row { display: flex; gap: 16px; flex-wrap: wrap; padding: 0 24px 60px; }
   .util-tabs-row .addplayer-section { padding: 0; flex: 1; min-width: 280px; }
   .tracker-list { max-height: 400px; overflow-y: auto; margin-top: 10px; }
@@ -206,6 +215,12 @@
   <div class="addplayer-section">
     <button class="addplayer-toggle" id="addPlayerToggle">+ Add Player</button>
     <div class="addplayer-form" id="addPlayerForm">
+    <div class="paste-box">
+      <p>Fastest option: select a full row in your source sheet, copy it (Ctrl/Cmd+C), and paste it here — it fills in every field below at once, including all 42 core stats and 12 advanced metrics.</p>
+      <textarea id="ap_pasteArea" placeholder="Paste a tab-separated row here..."></textarea>
+      <div class="paste-status" id="ap_pasteStatus"></div>
+    </div>
+
     <label>Name *</label>
     <input id="ap_name" type="text" placeholder="e.g. John Smith">
 
@@ -463,6 +478,99 @@ document.getElementById('apAdvGrid').innerHTML = Object.entries(ADV_LABELS).map(
   `<div><label>${label}</label><input type="number" step="any" data-adv="${key}"></div>`
 ).join('');
 
+// Exact column order of the real source sheet's "All Players" tab — paste a
+// full row copied from there and it maps 1:1 onto every field below.
+const SHEET_COLUMN_ORDER = [
+  'position', 'height', 'name', 'team', 'overallRank', 'tier', 'rankWithinTier', 'positionalRank',
+  'availabilityCode', 'latino', 'rk', 'class', 'conf',
+  ...Object.keys(STAT_LABELS), ...Object.keys(ADV_LABELS),
+];
+
+// Fields with no visible input (tier/rankWithinTier/rk/conf) still get
+// captured from a paste and carried through to Save.
+let pastedExtra = {};
+const TIER_LABELS_AP = { 0: 'G League +', 1: 'G League Starter', 2: 'G League Rotation', 3: 'Sub G League Lvl' };
+
+function parsePastedHeight(raw) {
+  const s = String(raw).trim();
+  // "6-5" or "6'5" style
+  let m = s.match(/^(\d+)[-'](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2]}`;
+  // Excel-mangled date text, e.g. "6/5/2026" (month=feet, day=inches)
+  m = s.match(/^(\d{1,2})\/(\d{1,2})\/\d{4}/);
+  if (m) return `${m[1]}-${m[2]}`;
+  // raw total inches, e.g. "84"
+  const n = Number(s);
+  if (Number.isFinite(n) && n > 40 && n < 100) return `${Math.floor(n / 12)}-${n % 12}`;
+  return '';
+}
+
+const AVAIL_NOTE_LABELS_AP = {
+  '1': 'Summer League w/ PT or Exhibit 10+', '2': 'Summer League, no PT',
+  'WW': 'Waiver Watch', 'Retired': 'Retired',
+};
+function simplifyAvailabilityCode(code) {
+  const c = String(code).trim();
+  if (c === '3') return { simple: 'yes', note: '' };
+  if (c === '0') return { simple: 'no', note: '' };
+  if (c === '?' || c === '') return { simple: 'unknown', note: '' };
+  return { simple: 'unknown', note: AVAIL_NOTE_LABELS_AP[c] || c };
+}
+
+document.getElementById('ap_pasteArea').addEventListener('paste', (e) => {
+  setTimeout(() => {
+    const status = document.getElementById('ap_pasteStatus');
+    const raw = document.getElementById('ap_pasteArea').value;
+    const firstRow = raw.split('\n')[0];
+    const cells = firstRow.split('\t');
+    const map = {};
+    SHEET_COLUMN_ORDER.forEach((key, i) => { map[key] = (cells[i] ?? '').trim(); });
+
+    if (map.name) document.getElementById('ap_name').value = map.name;
+    if (map.team) document.getElementById('ap_team').value = map.team;
+    if (map['class']) document.getElementById('ap_class').value = map['class'];
+    if (map.position && ['Guard', 'Wing', 'Big'].includes(map.position)) {
+      document.getElementById('ap_position').value = map.position;
+    }
+    if (map.height) document.getElementById('ap_height').value = parsePastedHeight(map.height);
+    if (map.overallRank) document.getElementById('ap_overallRank').value = Number(map.overallRank) || '';
+    if (map.positionalRank) document.getElementById('ap_positionalRank').value = Number(map.positionalRank) || '';
+    if (map.latino) {
+      const l = map.latino.toLowerCase();
+      document.getElementById('ap_latino').value = l === 'yes' ? 'yes' : l === 'no' ? 'no' : 'unknown';
+    }
+    if (map.availabilityCode) {
+      const { simple, note } = simplifyAvailabilityCode(map.availabilityCode);
+      document.getElementById('ap_availabilitySimple').value = simple;
+      document.getElementById('ap_availabilityNote').value = note;
+    }
+    pastedExtra = {
+      tier: map.tier ? Number(map.tier) : null,
+      rankWithinTier: map.rankWithinTier ? Number(map.rankWithinTier) : null,
+      rk: map.rk ? Number(map.rk) : null,
+      conf: map.conf || null,
+    };
+
+    let statsFilled = 0;
+    Object.keys(STAT_LABELS).forEach(key => {
+      if (map[key] !== '' && map[key] !== undefined) {
+        const el = document.querySelector(`[data-stat="${key}"]`);
+        if (el) { el.value = map[key]; statsFilled++; }
+      }
+    });
+    Object.keys(ADV_LABELS).forEach(key => {
+      if (map[key] !== '' && map[key] !== undefined) {
+        const el = document.querySelector(`[data-adv="${key}"]`);
+        if (el) el.value = map[key];
+      }
+    });
+    // Expand the stat/advanced sections so what just got filled is visible
+    document.getElementById('apg-stats').classList.add('open');
+    document.getElementById('apg-adv').classList.add('open');
+    status.textContent = `Filled from paste — ${statsFilled} of ${Object.keys(STAT_LABELS).length} core stats matched.`;
+  }, 0);
+});
+
 document.querySelectorAll('.addplayer-group-toggle').forEach(btn => {
   btn.addEventListener('click', () => {
     document.getElementById(btn.dataset.target).classList.toggle('open');
@@ -603,17 +711,19 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
     name,
     position: document.getElementById('ap_position').value,
     team: document.getElementById('ap_team').value.trim() || null,
-    conf: null,
+    conf: pastedExtra.conf || null,
     class: document.getElementById('ap_class').value.trim() || null,
     heightIn, heightDisplay,
     overallRank: overallRankVal ? Number(overallRankVal) : null,
     positionalRank: positionalRankVal ? Number(positionalRankVal) : null,
-    tier: null, tierLabel: null, rankWithinTier: null,
+    tier: pastedExtra.tier ?? null,
+    tierLabel: TIER_LABELS_AP[pastedExtra.tier] || null,
+    rankWithinTier: pastedExtra.rankWithinTier ?? null,
     availability: null, availabilityLabel: null,
     availabilitySimple: availSimple,
     availabilityNote: document.getElementById('ap_availabilityNote').value.trim() || null,
     latino: latinoVal === 'yes' ? true : latinoVal === 'no' ? false : null,
-    rk: null,
+    rk: pastedExtra.rk ?? null,
     stats: statsObj,
     advanced: advancedObj,
     biography,
@@ -631,6 +741,8 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
       .forEach(id => document.getElementById(id).value = '');
     document.getElementById('ap_onRoster').checked = false;
     document.querySelectorAll('#apStatGrid input, #apAdvGrid input').forEach(el => el.value = '');
+    document.getElementById('ap_pasteArea').value = '';
+    pastedExtra = {};
   }
 });
 

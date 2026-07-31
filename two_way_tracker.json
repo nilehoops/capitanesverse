@@ -1,0 +1,758 @@
+[
+  {
+    "name": "Isaac McKneely",
+    "team": "Atlanta Hawks",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Tucker DeVries",
+    "team": "Boston Celtics",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Milos Uzan",
+    "team": "Boston Celtics",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Dion Brown",
+    "team": "Brooklyn Nets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Ben Humrichous",
+    "team": "Brooklyn Nets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Max Mackinnon",
+    "team": "Charlotte Hornets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Latrell Wrightsell Jr.",
+    "team": "Charlotte Hornets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Wyatt Fricks",
+    "team": "Charlotte Hornets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Donovan Atwell",
+    "team": "Chicago Bulls",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Xaivian Lee",
+    "team": "Cleveland Cavaliers",
+    "contractType": "Exhibit Ten",
+    "playerId": "xaivian-lee"
+  },
+  {
+    "name": "Rashaun Agee",
+    "team": "Cleveland Cavaliers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Mark Mitchell Jr.",
+    "team": "Denver Nuggets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Giovannu Emejuru",
+    "team": "Denver Nuggets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Aaron Nkrumah",
+    "team": "Denver Nuggets",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "laden Henley",
+    "team": "Detroit Pistons",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Drake Allen",
+    "team": "Detroit Pistons",
+    "contractType": "Exhibit Ten",
+    "playerId": "drake-allen"
+  },
+  {
+    "name": "Corey Stephenson",
+    "team": "Detroit Pistons",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Graham Ike",
+    "team": "Golden State Warriors",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Nick Boyd",
+    "team": "Golden State Warriors",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Tamin Lipsey",
+    "team": "Indiana Pacers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Keba Kieta",
+    "team": "Indiana Pacers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Kowacie Reeves Jr.",
+    "team": "Indiana Pacers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Rienk Mast",
+    "team": "Indiana Pacers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Yuki Kawamura",
+    "team": "Indiana Pacers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Fletcher Loyer",
+    "team": "Los Angeles Clippers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "William Kyle III",
+    "team": "Los Angeles Lakers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Robert McCray V",
+    "team": "Los Angeles Lakers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Robbie Avila",
+    "team": "Los Angeles Lakers",
+    "contractType": "Exhibit Ten",
+    "playerId": "robbie-avila"
+  },
+  {
+    "name": "Chase Ross",
+    "team": "Los Angeles Lakers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Zach Cleveland",
+    "team": "Memphis Grizzlies",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Keyshawn Hall",
+    "team": "Miami Heat",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "J'Vonne Hadley",
+    "team": "Miami Heat",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Tre White",
+    "team": "Miami Heat",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Chris Bel",
+    "team": "New Orleans Pelicans",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Melvin Council Jr.",
+    "team": "New Orleans Pelicans",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Kobe Bufkin",
+    "team": "New Orleans Pelicans",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Lamar Wilkerson",
+    "team": "Oklahoma City Thunder",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Nate Johnson",
+    "team": "Oklahoma City Thunder",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Christoph Tilly",
+    "team": "Oklahoma City Thunder",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Malik Reneau",
+    "team": "Orlando Magic",
+    "contractType": "Exhibit Ten",
+    "playerId": "malik-reneau"
+  },
+  {
+    "name": "Duke Miles",
+    "team": "Philadelphia 76ers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Sam Hoiberg",
+    "team": "Phoenix Suns",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Corey Camper Jr",
+    "team": "Phoenix Suns",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Barry Dunning Jr.",
+    "team": "Portland Trail Blazers",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "BJ Edwards",
+    "team": "Sacramento Kings",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Nimari Burnett",
+    "team": "Toronto Raptors",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Nate Bittle",
+    "team": "Toronto Raptors",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Jaxon Kohler",
+    "team": "Utah Jazz",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Micah Handlogten",
+    "team": "Utah Jazz",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Harrison Ingram",
+    "team": "Utah Jazz",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "KeShawn Murphy",
+    "team": "Washington Wizards",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Seth Trimble",
+    "team": "Washington Wizards",
+    "contractType": "Exhibit Ten",
+    "playerId": null
+  },
+  {
+    "name": "Jalen Wilson",
+    "team": "Atlanta Hawks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "RayJ Dennis",
+    "team": "Atlanta Hawks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Keshon Gilbert",
+    "team": "Atlanta Hawks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Amari Williams",
+    "team": "Boston Celtics",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Tyler Bilodeau",
+    "team": "Brooklyn Nets",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Chaney Johnson",
+    "team": "Brooklyn Nets",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Michael Ajayi",
+    "team": "Charlotte Hornets",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Kylan Boswell",
+    "team": "Charlotte Hornets",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "PJ Hall",
+    "team": "Charlotte Hornets",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jaylin Sellers",
+    "team": "Chicago Bulls",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Tobe Awaka",
+    "team": "Chicago Bulls",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Ernest Udeh Jr.",
+    "team": "Cleveland Cavaliers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Tristan Enaruna",
+    "team": "Cleveland Cavaliers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Riley Minix",
+    "team": "Cleveland Cavaliers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "John Poulakidas",
+    "team": "Dallas Mavericks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Tobi Lawal",
+    "team": "Dallas Mavericks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jett Howard",
+    "team": "Dallas Mavericks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "KJ Simpson",
+    "team": "Denver Nuggets",
+    "contractType": "NBA Two-Way",
+    "playerId": "kj-simpson"
+  },
+  {
+    "name": "Ugonna Onyenso",
+    "team": "Detroit Pistons",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Isaac Jones",
+    "team": "Detroit Pistons",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Elijah Harkless",
+    "team": "Detroit Pistons",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "LJ Cryer",
+    "team": "Golden State Warriors",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Malevy Leons",
+    "team": "Golden State Warriors",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Quadir Copeland",
+    "team": "Houston Rockets",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Tristen Newton",
+    "team": "Houston Rockets",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Braden Smith",
+    "team": "Indiana Pacers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Kobe Brown",
+    "team": "Indiana Pacers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jalen Slawson",
+    "team": "Indiana Pacers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Sean Pedulla",
+    "team": "Los Angeles Clippers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Nick Martinelli",
+    "team": "Los Angeles Clippers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jamarion Sharp",
+    "team": "Los Angeles Clippers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "AK Okereke",
+    "team": "Los Angeles Lakers",
+    "contractType": "NBA Two-Way",
+    "playerId": "ak-okereke"
+  },
+  {
+    "name": "Arthur Kaluma",
+    "team": "Los Angeles Lakers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Chris Manon",
+    "team": "Los Angeles Lakers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Carson Cooper",
+    "team": "Memphis Grizzlies",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Javon Small",
+    "team": "Memphis Grizzlies",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jahmai Mashack",
+    "team": "Memphis Grizzlies",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Tre Donaldson",
+    "team": "Miami Heat",
+    "contractType": "NBA Two-Way",
+    "playerId": "tre-donaldson"
+  },
+  {
+    "name": "Vlad Goldin",
+    "team": "Miami Heat",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Kam Jones",
+    "team": "Milwaukee Bucks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Cormac Ryan",
+    "team": "Milwaukee Bucks",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Enrique Freeman",
+    "team": "Minnesota Timberwolves",
+    "contractType": "NBA Two-Way",
+    "playerId": "enrique-freeman"
+  },
+  {
+    "name": "Zyon Pullin",
+    "team": "Minnesota Timberwolves",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Rocco Zikarsky",
+    "team": "Minnesota Timberwolves",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Hunter Dickinson",
+    "team": "New Orleans Pelicans",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jaron Pierre Jr.",
+    "team": "New Orleans Pelicans",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Josh Dix",
+    "team": "Oklahoma City Thunder",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Otega Oweh",
+    "team": "Oklahoma City Thunder",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Brooks Barnhizer",
+    "team": "Oklahoma City Thunder",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Alex Morales",
+    "team": "Orlando Magic",
+    "contractType": "NBA Two-Way",
+    "playerId": "alex-morales"
+  },
+  {
+    "name": "Izaiyah Nelson",
+    "team": "Orlando Magic",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Colin Castleton",
+    "team": "Orlando Magic",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Rayan Rupert",
+    "team": "Philadelphia 76ers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Caleb Love",
+    "team": "Philadelphia 76ers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Pat Spencer",
+    "team": "Phoenix Suns",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "CJ Huntley",
+    "team": "Phoenix Suns",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Koby Brea",
+    "team": "Phoenix Suns",
+    "contractType": "NBA Two-Way",
+    "playerId": "koby-brea"
+  },
+  {
+    "name": "Chris Youngblood",
+    "team": "Portland Trail Blazers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jayson Kent",
+    "team": "Portland Trail Blazers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "John Tonje",
+    "team": "Portland Trail Blazers",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Isaiah Stevens",
+    "team": "Sacramento Kings",
+    "contractType": "NBA Two-Way",
+    "playerId": "isaiah-stevens"
+  },
+  {
+    "name": "Adam Flagler",
+    "team": "Sacramento Kings",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jonathan Mogbo",
+    "team": "Sacramento Kings",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Maliq Brown",
+    "team": "San Antonio Spurs",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Ja'Kobi Gillespie",
+    "team": "San Antonio Spurs",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "David Jones-Garcia",
+    "team": "San Antonio Spurs",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Chucky Hepburn",
+    "team": "Toronto Raptors",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jaden Bradley",
+    "team": "Toronto Raptors",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Blake Hinson",
+    "team": "Utah Jazz",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Tamar Bates",
+    "team": "Utah Jazz",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Trey Alexander",
+    "team": "Utah Jazz",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Felix Okpara",
+    "team": "Washington Wizards",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Jamir Watkins",
+    "team": "Washington Wizards",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  },
+  {
+    "name": "Julian Reese",
+    "team": "Washington Wizards",
+    "contractType": "NBA Two-Way",
+    "playerId": null
+  }
+]

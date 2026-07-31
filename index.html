@@ -111,7 +111,7 @@
     background: none; border: none; color: #9A9A9A; font-family: 'Lora', serif;
     font-weight: 700; font-size: 17px; cursor: pointer; margin-right: 14px; padding: 2px 0;
   }
-  .avail-toggle button.active { color: #ECECEC; border-bottom: 2px solid #ECECEC; }
+  .avail-toggle button.excluded { text-decoration: line-through; color: #5A5A5A; }
 
   .notes-section { padding: 0 24px 60px; }
   .notes-title { font-size: 22px; border-bottom: 2px solid #ECECEC; padding-bottom: 4px; margin-bottom: 8px; }
@@ -140,6 +140,16 @@
     background: #ECECEC; color: #000; border: none; padding: 8px 16px; cursor: pointer;
   }
   .addplayer-status { font-size: 13px; font-weight: 400; color: #9A9A9A; margin-top: 8px; }
+  .util-tabs-row { display: flex; gap: 16px; flex-wrap: wrap; padding: 0 24px 60px; }
+  .util-tabs-row .addplayer-section { padding: 0; flex: 1; min-width: 280px; }
+  .tracker-list { max-height: 400px; overflow-y: auto; margin-top: 10px; }
+  .tracker-row {
+    display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid #1A1A1A;
+    font-size: 13px; font-weight: 400;
+  }
+  .tracker-row .tr-type { font-size: 10px; font-weight: 700; color: #7A7A7A; min-width: 78px; }
+  .tracker-row .tr-team { color: #9A9A9A; }
+  .tracker-row a { text-decoration: underline; }
   .addplayer-group { margin-top: 16px; border-top: 1px solid #333; padding-top: 10px; }
   .addplayer-group-toggle {
     background: none; border: none; color: #ECECEC; font-family: 'Lora', serif;
@@ -192,9 +202,10 @@
   <div class="notes-rows" id="notesRows"></div>
 </div>
 
-<div class="addplayer-section">
-  <button class="addplayer-toggle" id="addPlayerToggle">+ Add Player</button>
-  <div class="addplayer-form" id="addPlayerForm">
+<div class="util-tabs-row">
+  <div class="addplayer-section">
+    <button class="addplayer-toggle" id="addPlayerToggle">+ Add Player</button>
+    <div class="addplayer-form" id="addPlayerForm">
     <label>Name *</label>
     <input id="ap_name" type="text" placeholder="e.g. John Smith">
 
@@ -292,6 +303,15 @@
     <button class="addplayer-save" id="addPlayerSave">Save Player</button>
     <div class="addplayer-status" id="addPlayerStatus"></div>
   </div>
+  </div>
+
+  <div class="addplayer-section">
+    <button class="addplayer-toggle" id="trackerToggle">+ Two-Way / E10 Tracker</button>
+    <div class="addplayer-form" id="trackerForm">
+      <input class="pane-search" id="trackerSearch" type="text" placeholder="Search team or player...">
+      <div class="tracker-list" id="trackerList"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -333,16 +353,18 @@ function renderBoard(title, list, href) {
 
 // availabilitySimple ('yes'/'no'/'unknown') and availabilityNote are now real
 // persisted fields (see player.html's editor), not derived here anymore.
-let availFilter = null; // null = no filter (show everyone)
+let excludedAvail = new Set(); // statuses currently struck through / hidden
 let cachedPlayers = null;
 
 function withAvail(href) {
-  return !availFilter ? href : href + (href.includes('?') ? '&' : '?') + 'availability=' + availFilter;
+  if (!excludedAvail.size) return href;
+  const param = 'excludeAvailability=' + [...excludedAvail].join(',');
+  return href + (href.includes('?') ? '&' : '?') + param;
 }
 
 function renderBoards(players) {
   let pool = players;
-  if (availFilter) pool = pool.filter(p => p.availabilitySimple === availFilter);
+  if (excludedAvail.size) pool = pool.filter(p => !excludedAvail.has(p.availabilitySimple));
 
   const overall = pool.filter(p => p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
   const latino = pool.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
@@ -369,13 +391,14 @@ function renderNotes(players) {
     : '<div class="board-empty">No notes yet.</div>';
 }
 
+// Each button independently toggles strikethrough — struck-through statuses
+// are excluded from the boards, everything else shows together (e.g. striking
+// "No" leaves Yes + Unknown visible at once).
 document.querySelectorAll('#availToggle button').forEach(btn => {
   btn.addEventListener('click', () => {
     const val = btn.dataset.avail;
-    const turningOff = availFilter === val;
-    availFilter = turningOff ? null : val;
-    document.querySelectorAll('#availToggle button').forEach(b => b.classList.remove('active'));
-    if (!turningOff) btn.classList.add('active');
+    if (excludedAvail.has(val)) { excludedAvail.delete(val); btn.classList.remove('excluded'); }
+    else { excludedAvail.add(val); btn.classList.add('excluded'); }
     if (cachedPlayers) renderBoards(cachedPlayers);
   });
 });
@@ -498,6 +521,39 @@ async function addPlayerToGitHub(newPlayer) {
 document.getElementById('addPlayerToggle').addEventListener('click', () => {
   document.getElementById('addPlayerForm').classList.toggle('open');
 });
+
+// ---- Two-Way / E10 Tracker ----
+let trackerData = [];
+let trackerSearchTerm = '';
+
+function renderTracker() {
+  const term = trackerSearchTerm.toLowerCase();
+  const shown = trackerData.filter(e =>
+    e.name.toLowerCase().includes(term) || e.team.toLowerCase().includes(term)
+  );
+  document.getElementById('trackerList').innerHTML = shown.length
+    ? shown.map(e => `
+        <div class="tracker-row">
+          <span class="tr-type">${e.contractType}</span>
+          <span class="tr-team">${e.team}</span>
+          ${e.playerId ? `<a href="player.html?id=${e.playerId}">${e.name}</a>` : `<span>${e.name}</span>`}
+        </div>`).join('')
+    : `<div class="pane-empty">No matches.</div>`;
+}
+
+document.getElementById('trackerSearch').addEventListener('input', (e) => {
+  trackerSearchTerm = e.target.value;
+  renderTracker();
+});
+
+document.getElementById('trackerToggle').addEventListener('click', () => {
+  document.getElementById('trackerForm').classList.toggle('open');
+});
+
+fetch('data/two_way_tracker.json?v=' + Date.now())
+  .then(r => r.json())
+  .then(data => { trackerData = data; renderTracker(); })
+  .catch(err => console.error('Could not load tracker data', err));
 
 document.getElementById('addPlayerSave').addEventListener('click', async () => {
   const status = document.getElementById('addPlayerStatus');

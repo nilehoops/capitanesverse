@@ -91,8 +91,6 @@
   .crowd .box-sub { font-size: 13px; font-weight: 400; color: #303030; }
   .crowd textarea { width: 100%; font-family: 'Lora', serif; font-size: 13px; padding: 6px; margin-top: 8px; border: 1px solid #999; }
   .crowd button { margin-top: 6px; font-family: 'Lora', serif; font-weight: 700; font-size: 13px; padding: 6px 12px; background: #101010; color: #ECECEC; border: none; cursor: pointer; }
-  .crowd-list { margin-top: 10px; font-size: 13px; font-weight: 400; }
-  .crowd-list .entry { border-top: 1px solid #999; padding: 6px 0; }
 
   /* ---- sidebar internals ---- */
   .sb-search { padding: 10px; }
@@ -445,16 +443,14 @@ function render(player, players) {
 
       <div class="crowd">
         <div class="box-title">Community Notes</div>
-        <div class="box-sub">A section where anyone with access to the site can add their notes on a player, and it's visible to everyone else.</div>
-        <textarea id="noteInput" rows="2" placeholder="Add a note..."></textarea><br>
-        <button id="addNoteBtn">Add Note</button>
-        <div class="crowd-list" id="crowdList"></div>
+        <div class="box-sub">Real, shared comments via GitHub Discussions — visible to everyone.</div>
+        <div id="giscusContainer"></div>
       </div>
     </div>
   `;
 
   setupSearch(players);
-  setupCrowdNotes(player.id);
+  loadGiscus(player);
   setupAvailabilitySave(player);
   setupCustomVideo(player);
   renderCompareTo(players, player);
@@ -527,34 +523,42 @@ function setupAvailabilitySave(player) {
   });
 }
 
-// ---- Community notes: front-end shell only ----
-// No backend is wired up yet — see the chat response for free hosting options
-// (Firebase, Supabase, a Sheets-backed Apps Script endpoint, giscus, etc).
-// Whichever is picked, replace loadNotes()/saveNote() below with real calls.
-function loadNotes(playerId) {
-  return JSON.parse(sessionStorage.getItem('notes:' + playerId) || '[]');
-}
-function saveNoteLocally(playerId, text) {
-  const notes = loadNotes(playerId);
-  notes.push({ text, ts: new Date().toISOString() });
-  sessionStorage.setItem('notes:' + playerId, JSON.stringify(notes));
-}
-function setupCrowdNotes(playerId) {
-  const list = document.getElementById('crowdList');
-  const renderList = () => {
-    const notes = loadNotes(playerId);
-    list.innerHTML = notes.length
-      ? notes.map(n => `<div class="entry">${n.text}</div>`).join('')
-      : '<div class="entry">No notes yet.</div>';
-  };
-  renderList();
-  document.getElementById('addNoteBtn').addEventListener('click', () => {
-    const input = document.getElementById('noteInput');
-    if (!input.value.trim()) return;
-    saveNoteLocally(playerId, input.value.trim()); // TEMPORARY — session-only, not shared
-    input.value = '';
-    renderList();
-  });
+// ---- Community notes: real, shared comments via giscus (GitHub Discussions) ----
+// Requires one-time setup on github.com before this works:
+//   1. Repo Settings -> General -> Features -> check "Discussions"
+//   2. On the repo's Discussions tab, create a category (e.g. "Player Comments"),
+//      format = Announcement, so only giscus's bot can open new threads
+//   3. Install the giscus app for this repo: https://github.com/apps/giscus
+//   4. Go to https://giscus.app, enter nilehoops/capitanesverse, pick that category
+//      -> it generates real values for GISCUS_REPO_ID / GISCUS_CATEGORY_ID below
+const GISCUS_REPO_ID = 'R_kgDOTmW7rg';
+const GISCUS_CATEGORY = 'Player Comments';        // must match the category name from step 2
+const GISCUS_CATEGORY_ID = 'DIC_kwDOTmW7rs4DCXTk';
+
+function loadGiscus(player) {
+  const container = document.getElementById('giscusContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.setAttribute('data-repo', `${REPO_OWNER}/${REPO_NAME}`);
+  script.setAttribute('data-repo-id', GISCUS_REPO_ID);
+  script.setAttribute('data-category', GISCUS_CATEGORY);
+  script.setAttribute('data-category-id', GISCUS_CATEGORY_ID);
+  // "specific" + a per-player term (not the default "pathname") — every player
+  // shares the same physical file (player.html?id=X), so pathname mapping would
+  // incorrectly dump every player's comments into one shared thread.
+  script.setAttribute('data-mapping', 'specific');
+  script.setAttribute('data-term', `player-${player.id}`);
+  script.setAttribute('data-strict', '1'); // avoid fuzzy-matching similar player names to the wrong thread
+  script.setAttribute('data-reactions-enabled', '1');
+  script.setAttribute('data-emit-metadata', '0');
+  script.setAttribute('data-input-position', 'top');
+  script.setAttribute('data-theme', 'dark_dimmed');
+  script.setAttribute('data-lang', 'en');
+  script.crossOrigin = 'anonymous';
+  script.async = true;
+  container.appendChild(script);
 }
 
 function setupSearch(players) {

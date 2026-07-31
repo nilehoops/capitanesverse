@@ -242,10 +242,28 @@ async function ghPutJson(path, obj, sha, message) {
   return { ok: true, message: 'Saved.' };
 }
 
+// Public, unauthenticated read — no token needed since this repo is public.
+// This is the ONLY GitHub call the ranking flow makes for regular contributors;
+// they never see a token prompt. Writing (see ghPutJson above) is owner-only,
+// used solely by the "+ Add User" admin action.
+async function fetchPublicJson(path) {
+  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${path}?v=${Date.now()}`;
+  const resp = await fetch(url);
+  if (resp.status === 404) return { ok: true, notFound: true, data: null };
+  if (!resp.ok) return { ok: false, notFound: false, data: null };
+  return { ok: true, notFound: false, data: await resp.json() };
+}
+function downloadJson(filename, obj) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+
 // ---- App state ----
 let allPlayers = [];
 let currentUser = null;
-let userFileSha = null;
 let userData = null;     // { guard: {order,tiers,cursor}, wing:{...}, big:{...} }
 let currentPos = null;   // 'guard' | 'wing' | 'big'
 const POS_KEY_TO_LABEL = { guard: 'Guard', wing: 'Wing', big: 'Big' };
@@ -315,9 +333,8 @@ function renderLogin(users) {
     if (!users[u] || users[u] !== pin) { err.textContent = 'Unknown username or wrong PIN.'; return; }
     err.textContent = 'Loading...';
     currentUser = u;
-    const result = await ghGetJson(userDataPath(u));
-    if (!result.ok) { err.textContent = 'Could not reach GitHub — check your token.'; return; }
-    userFileSha = result.sha;
+    const result = await fetchPublicJson(userDataPath(u));
+    if (!result.ok) { err.textContent = 'Could not reach GitHub.'; return; }
     userData = result.notFound
       ? { guard: freshPositionState('guard'), wing: freshPositionState('wing'), big: freshPositionState('big') }
       : result.data;
@@ -339,6 +356,7 @@ function renderMenu() {
       <div class="menu-footer">
         <span>User: ${currentUser}</span>
         <div>
+          <button id="downloadBtn">Download My Rankings</button>
           <button id="loadBtn">Load Previous Rankings</button>
           <button id="clearBtn">Clear Current Rankings</button>
         </div>
@@ -349,29 +367,28 @@ function renderMenu() {
   document.querySelectorAll('.pos-btn').forEach(btn => {
     btn.addEventListener('click', () => { currentPos = btn.dataset.pos; renderRankingScreen(); });
   });
+  document.getElementById('downloadBtn').addEventListener('click', () => {
+    downloadJson(`blindrank_${currentUser}.json`, userData);
+    document.getElementById('menuStatus').textContent =
+      `Downloaded. Send this file to the site owner to upload to data/blind_rankings/${currentUser}.json`;
+  });
   document.getElementById('loadBtn').addEventListener('click', async () => {
     const status = document.getElementById('menuStatus');
     status.textContent = 'Loading...';
-    const result = await ghGetJson(userDataPath(currentUser));
-    if (result.ok && !result.notFound) { userData = result.data; userFileSha = result.sha; renderMenu(); }
-    else status.textContent = 'No saved progress found on GitHub yet.';
+    const result = await fetchPublicJson(userDataPath(currentUser));
+    if (result.ok && !result.notFound) { userData = result.data; renderMenu(); }
+    else status.textContent = 'No saved progress found on GitHub yet — the owner may not have uploaded your last download.';
   });
   document.getElementById('clearBtn').addEventListener('click', () => {
-    if (!confirm('Clear ALL current rankings for this user? This cannot be undone locally (your last save on GitHub is unaffected until you Save Progress again).')) return;
+    if (!confirm('Clear ALL current rankings for this user? This only affects what\'s in your browser right now — anything already uploaded to GitHub is unaffected.')) return;
     userData = { guard: freshPositionState('guard'), wing: freshPositionState('wing'), big: freshPositionState('big') };
     renderMenu();
   });
 }
 
-async function saveProgress(statusEl) {
-  if (statusEl) statusEl.textContent = 'Saving...';
-  const result = await ghPutJson(userDataPath(currentUser), userData, userFileSha, `Update blind rankings: ${currentUser}`);
-  if (result.ok) {
-    const fresh = await ghGetJson(userDataPath(currentUser));
-    if (fresh.ok && !fresh.notFound) userFileSha = fresh.sha;
-  }
-  if (statusEl) statusEl.textContent = result.message;
-  return result;
+function saveProgress(statusEl) {
+  downloadJson(`blindrank_${currentUser}.json`, userData);
+  if (statusEl) statusEl.textContent = `Downloaded — send to the site owner to upload.`;
 }
 
 // ---- Ranking screen ----
@@ -401,7 +418,7 @@ function renderRankingScreen() {
     <div class="rank-grid">
       <div class="rank-util">
         <a class="link-menu" onclick="renderMenu()">Main Menu</a>
-        <a class="link-save" id="saveProgressLink">Save Progress</a>
+        <a class="link-save" id="saveProgressLink">Download Progress</a>
         <div class="tally">
           ${tally[0]} GLg All Star+<br>
           ${tally[2]} G League Rotation<br>

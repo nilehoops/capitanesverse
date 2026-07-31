@@ -1575,7 +1575,9 @@
       "weight": "190 lbs",
       "hometown": "San Jose (CA)",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2+manual-lookup"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup+user-followup",
+      "age": 24,
+      "born": "Mar 14, 2002"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -1657,7 +1659,17 @@
       "jumperRate": 0.7209
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 25,
+      "born": "Nov 2, 2000",
+      "weight": "194 lbs",
+      "agent": "Evan Laufer",
+      "hometown": "New Market, Alabama",
+      "currentStatus": "Bnei Herzliya (Israel Premier League)",
+      "found": true,
+      "source": "manual-lookup+user-followup"
+    }
   },
   {
     "id": "javontae-campbell",
@@ -1824,7 +1836,17 @@
       "jumperRate": 0.8785
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 35,
+      "born": "Aug 24, 1990",
+      "weight": "190 lbs",
+      "agent": "Pro Sports",
+      "hometown": "Bismarck, North Dakota",
+      "currentStatus": "Free agent; previously Mexico City Capitanes (G League)",
+      "found": true,
+      "source": "manual-lookup+user-followup"
+    }
   },
   {
     "id": "travis-harper-ii",
@@ -1904,10 +1926,11 @@
     },
     "biography": {
       "weight": "190 lbs",
-      "hometown": "Columbus (GA)",
+      "hometown": "Columbus, Georgia",
       "highSchool": "St. Anne-Pacelli Catholic School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup",
+      "agent": "Lin Huynh"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -1993,7 +2016,9 @@
       "hometown": "Agoura Hills (CA)",
       "highSchool": "Agoura High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2+manual-lookup"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup+user-followup",
+      "age": 23,
+      "born": "May 9, 2003"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -2075,7 +2100,13 @@
       "jumperRate": 0.6306
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 27,
+      "born": "Mar 15, 1999",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "justin-wright-foreman",
@@ -2244,7 +2275,13 @@
       "jumperRate": 0.5519
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 25,
+      "born": "May 10, 2001",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "boo-buie",
@@ -2940,7 +2977,13 @@
       "jumperRate": 0.4148
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 24,
+      "born": "Jan 22, 2002",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "melo-trimble",
@@ -3199,7 +3242,13 @@
       "jumperRate": 0.5328
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League w/ PT or Exhibit 10+"
+    "availabilityNote": "Summer League w/ PT or Exhibit 10+",
+    "biography": {
+      "age": 24,
+      "born": "Aug 30, 2001",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "justin-bailey",
@@ -3636,7 +3685,13 @@
       "jumperRate": 0.5944
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 27,
+      "born": "Jun 12, 1999",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "dashon-gittens",
@@ -4159,7 +4214,9 @@
       "hometown": "Tampa (FL)",
       "highSchool": "Wharton High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2+manual-lookup"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup+user-followup",
+      "age": 23,
+      "born": "Jan 20, 2003"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -4329,7 +4386,13 @@
       "jumperRate": 0.7532
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 24,
+      "born": "Jan 19, 2002",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "b-j-edwards",
@@ -4497,7 +4560,16 @@
       "jumperRate": 0.6308
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 32,
+      "born": "Jan 31, 1994",
+      "weight": "240 lbs",
+      "hometown": "Milwaukee, Wisconsin",
+      "currentStatus": "Guangzhou Loong Lions (China CBA)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "nate-pierre-louis",
@@ -4576,7 +4648,17 @@
       "jumperRate": 0.4781
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 27,
+      "born": "Dec 23, 1998",
+      "weight": "205 lbs",
+      "agent": "Keith Glass",
+      "hometown": "Jersey City, New Jersey",
+      "currentStatus": "Igokea (Bosnia/ABA League); previously Mexico City Capitanes",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "dylan-penn",
@@ -4742,7 +4824,17 @@
       "jumperRate": 0.8507
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 24,
+      "born": "Sep 14, 2001",
+      "weight": "190 lbs",
+      "agent": "Zach Kurtin",
+      "hometown": "Montevideo, Uruguay",
+      "currentStatus": "Pe\u00f1arol (Uruguay)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "caleb-grill",
@@ -5266,7 +5358,17 @@
       "jumperRate": 0.6538
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "Dec 17, 1999",
+      "weight": "183 lbs",
+      "agent": "Jared Mucha",
+      "hometown": "Orlando, Florida",
+      "currentStatus": "T\u00fcrk Telekom (Turkey BSL)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "francisco-cruz",
@@ -5520,10 +5622,10 @@
     },
     "biography": {
       "weight": "246 lbs",
-      "hometown": "Montvale (NJ)",
+      "hometown": "Montvale, New Jersey",
       "highSchool": "Pascack Hills High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -5692,7 +5794,17 @@
       "jumperRate": 0.7164
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 23,
+      "born": "Aug 2, 2002",
+      "weight": "171 lbs",
+      "agent": "Joey Pennavaria, Daniel Hennes",
+      "hometown": "Long Island City, New York",
+      "currentStatus": "Nanterre 92 (France LNB Pro A)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "dontae-horne",
@@ -5947,7 +6059,17 @@
       "jumperRate": 0.6038
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 23,
+      "born": "Sep 15, 2002",
+      "weight": "210 lbs",
+      "agent": "Wallace Prather",
+      "hometown": "Milton, Georgia",
+      "currentStatus": "Salt Lake City Stars, G League",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "oscar-cluff",
@@ -6210,10 +6332,11 @@
     },
     "biography": {
       "weight": "185 lbs",
-      "hometown": "Dayton (OH)",
+      "hometown": "Dayton, Ohio",
       "highSchool": "Wayne High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup",
+      "agent": "George Hemmingsen"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -6381,7 +6504,17 @@
       "jumperRate": 0.8575
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "Mar 5, 2000",
+      "weight": "208 lbs",
+      "agent": "Adie von Gontard",
+      "hometown": "Fairburn, Georgia",
+      "currentStatus": "SLUC Nancy Basket (France LNB Pro A)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "jemel-jones",
@@ -6465,7 +6598,8 @@
       "age": 24,
       "born": "Mar 12, 2002",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+user-followup",
+      "weight": "190 lbs"
     },
     "availabilitySimple": "unknown",
     "availabilityNote": "Waiver Watch"
@@ -6722,7 +6856,17 @@
       "jumperRate": 0.4901
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 33,
+      "born": "Apr 10, 1993",
+      "weight": "209 lbs",
+      "agent": "Rich Paul",
+      "hometown": "Oakland, California",
+      "currentStatus": "Pallacanestro Trieste (Italy LBA); NBA champion 2022; multiple stints with Mexico City Capitanes",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "jarvis-moss",
@@ -7248,7 +7392,17 @@
       "jumperRate": 0.7298
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 28,
+      "born": "Sep 14, 1997",
+      "weight": "194 lbs",
+      "agent": "Saulius Svetkauskas",
+      "hometown": "Caguas, Puerto Rico",
+      "currentStatus": "Free agent; previously Mexico City Capitanes",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "cameron-thomas",
@@ -7594,7 +7748,14 @@
       "jumperRate": 0.7753
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "Jan 12, 2000",
+      "weight": "192 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "chris-duarte",
@@ -8120,7 +8281,14 @@
       "jumperRate": 0.5159
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "May 9, 2000",
+      "weight": "190 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "jalen-harris",
@@ -8380,7 +8548,9 @@
       "hometown": "Brooklyn (NY)",
       "highSchool": "Perkiomen School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+user-followup",
+      "age": 24,
+      "born": "May 26, 2002"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -8466,7 +8636,9 @@
       "hometown": "Louisville (KY)",
       "highSchool": "Butler Traditional High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+user-followup",
+      "age": 23,
+      "born": "Jul 11, 2003"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null,
@@ -8549,11 +8721,13 @@
       "jumperRate": 0.8719
     },
     "biography": {
-      "weight": "185 lbs",
+      "weight": "190 lbs",
       "hometown": "Montebello (CA)",
       "highSchool": "St. Anthony High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2+manual-lookup"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup+user-followup",
+      "age": 24,
+      "born": "Jan 15, 2002"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -8988,7 +9162,17 @@
       "jumperRate": 0.4675
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 29,
+      "born": "Feb 28, 1997",
+      "weight": "250 lbs",
+      "agent": "Brian Jungreis",
+      "hometown": "San Antonio, Texas",
+      "currentStatus": "Leones de Ponce (Puerto Rico BSN); previously Mexico City Capitanes",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "jamar-brown",
@@ -9155,7 +9339,17 @@
       "jumperRate": 0.546
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 27,
+      "born": "Jul 25, 1998",
+      "weight": "215 lbs",
+      "agent": "Trinity Best",
+      "hometown": "Brooklyn, New York",
+      "currentStatus": "Digenis Morphou (Cyprus)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "mostapha-el-moutaouakkil",
@@ -9322,7 +9516,17 @@
       "jumperRate": 0.3276
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 29,
+      "born": "Nov 28, 1996",
+      "weight": "215 lbs",
+      "agent": "Jamie Knox",
+      "hometown": "Raleigh, North Carolina",
+      "currentStatus": "Phoenix Super LPG Fuel Masters (Philippines PBA)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "sam-alexis",
@@ -9489,7 +9693,13 @@
       "jumperRate": 0.1588
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "weight": "250 lbs",
+      "hometown": "Layton, Utah",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "felipe-haase",
@@ -9568,7 +9778,17 @@
       "jumperRate": 0.7944
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 28,
+      "born": "Mar 19, 1998",
+      "weight": "253 lbs",
+      "agent": "Ehud Barnea",
+      "hometown": "Valdivia, Chile",
+      "currentStatus": "Mexico City Capitanes, G League",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "kadary-richmond",
@@ -9917,7 +10137,17 @@
       "jumperRate": 0.6209
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League, no PT"
+    "availabilityNote": "Summer League, no PT",
+    "biography": {
+      "age": 27,
+      "born": "May 27, 1999",
+      "weight": "180 lbs",
+      "agent": "Mitch Butler, K.J. Ross",
+      "hometown": "Louisville, Kentucky",
+      "currentStatus": "Pinheiros (Brazil NBB)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "cj-elleby",
@@ -10174,7 +10404,16 @@
       "jumperRate": 0.7349
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 33,
+      "born": "Dec 27, 1992",
+      "weight": "175 lbs",
+      "hometown": "Aurora, Illinois",
+      "currentStatus": "Brillantes del Zulia (Venezuela)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "jevin-muniz",
@@ -10342,12 +10581,12 @@
     },
     "biography": {
       "found": true,
-      "source": "manual-lookup",
+      "source": "manual-lookup+user-followup",
       "realgmId": 127817,
       "summaryUrl": "https://basketball.realgm.com/player/Lester-Quinones/Summary/127817",
       "age": 25,
       "born": "Nov 16, 2000",
-      "weight": null,
+      "weight": "208 lbs",
       "agent": "Scott Nichols",
       "lastTeam": "Memphis (Jr)",
       "nationality": "United States",
@@ -10433,7 +10672,17 @@
       "jumperRate": 0.6537
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 24,
+      "born": "Nov 9, 2001",
+      "weight": "215 lbs",
+      "agent": "Adam Godes",
+      "hometown": "Geneva, Illinois",
+      "currentStatus": "Iowa Wolves, G League",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "skylar-mays",
@@ -10695,7 +10944,13 @@
       "jumperRate": 0.6769
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "weight": "220 lbs",
+      "hometown": "Atlanta, Georgia",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "jaelen-house",
@@ -12019,7 +12274,15 @@
       "jumperRate": 0.4779
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 22,
+      "born": "Oct 9, 2003",
+      "weight": "200 lbs",
+      "currentStatus": "Southland Player of the Year 2026",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "ty-gordon",
@@ -12098,7 +12361,17 @@
       "jumperRate": 0.657
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 27,
+      "born": "Oct 20, 1998",
+      "weight": "200 lbs",
+      "agent": "John Anthony Spencer",
+      "hometown": "Tunica, Mississippi",
+      "currentStatus": "Band\u0131rma Bordo (Turkey TBL)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "iverson-molinar",
@@ -12177,7 +12450,17 @@
       "jumperRate": 0.7098
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "Dec 3, 1999",
+      "weight": "190 lbs",
+      "agent": "Misko Raznatovic",
+      "hometown": "Panama City, Panama",
+      "currentStatus": "U-BT Cluj-Napoca (Romania); previously Mexico City Capitanes",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "jt-shumate",
@@ -12530,10 +12813,10 @@
     },
     "biography": {
       "weight": "190 lbs",
-      "hometown": "North Little Rock (AR)",
+      "hometown": "North Little Rock, Arkansas",
       "highSchool": "North Little Rock High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup"
     },
     "availabilitySimple": "unknown",
     "availabilityNote": null
@@ -12793,7 +13076,14 @@
       "jumperRate": 0.6361
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 22,
+      "born": "Aug 26, 2003",
+      "weight": "205 lbs",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "deandre-williams",
@@ -13225,7 +13515,17 @@
       "jumperRate": 0.2279
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "Dec 12, 1999",
+      "weight": "220 lbs",
+      "agent": "Tod Seidel",
+      "hometown": "Greensboro, North Carolina",
+      "currentStatus": "Brampton Honey Badgers (Canada CEBL)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "darrion-williams",
@@ -13392,7 +13692,17 @@
       "jumperRate": 0.1484
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League, no PT"
+    "availabilityNote": "Summer League, no PT",
+    "biography": {
+      "age": 23,
+      "born": "Sep 19, 2002",
+      "weight": "255 lbs",
+      "agent": "Jeffrey Abankwa",
+      "hometown": "Pickering, Canada",
+      "currentStatus": "Calgary Surge (Canada CEBL)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "dan-skillings-jr",
@@ -13471,7 +13781,15 @@
       "jumperRate": 0.5101
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 23,
+      "born": "Jan 27, 2003",
+      "weight": "215 lbs",
+      "hometown": "Blackwood, New Jersey",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "deyton-albury",
@@ -13639,10 +13957,10 @@
     },
     "biography": {
       "weight": "230 lbs",
-      "hometown": "Los Angeles (CA)",
+      "hometown": "Los Angeles, California",
       "highSchool": "Crespi Carmelite High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -13992,10 +14310,11 @@
     },
     "biography": {
       "weight": "280 lbs",
-      "hometown": "Hoxie (KS)",
+      "hometown": "Hoxie, Kansas",
       "highSchool": "Hoxie High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup",
+      "agent": "Garry Rosenfield"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -14874,7 +15193,17 @@
       "jumperRate": 0.7091
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "Sep 15, 1999",
+      "weight": "185 lbs",
+      "agent": "Brian Jungreis",
+      "hometown": "Solon, Ohio",
+      "currentStatus": "HKK \u0160iroki (Bosnia)",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "terri-miller-jr",
@@ -15043,7 +15372,17 @@
       "jumperRate": 0.6703
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 23,
+      "born": "Mar 17, 2003",
+      "weight": "190 lbs",
+      "agent": "Christopher Gaston",
+      "hometown": "Mouth of Wilson, Virginia",
+      "currentStatus": "Sioux Falls Skyforce, G League",
+      "found": true,
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "warith-alatishe",
@@ -15299,92 +15638,17 @@
       "jumperRate": 0.6943
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
-  },
-  {
-    "id": "cris-carroll",
-    "name": "Cris Carroll",
-    "position": "Wing",
-    "team": "Youngstown St.",
-    "conf": "Horz",
-    "class": "Sr",
-    "heightIn": 78.0,
-    "heightDisplay": "6'6\"",
-    "overallRank": 162.0,
-    "positionalRank": 53.0,
-    "tier": 2,
-    "tierLabel": "G League Rotation",
-    "rankWithinTier": 29.0,
-    "availability": "?",
-    "availabilityLabel": "Unknown",
-    "latino": false,
-    "rk": 1,
-    "stats": {
-      "gp": 61.0,
-      "minPct": 58.7,
-      "prpg": 1.6,
-      "dPrpg": 2.6,
-      "bpm": 1.2,
-      "obpm": 0.6,
-      "dbpm": 0.6,
-      "ortg": 105.7,
-      "drtg": 104.1,
-      "usg": 25.1,
-      "efg": 56.1,
-      "ts": 60.3,
-      "orb": 3.8,
-      "drb": 19.2,
-      "ast": 12.0,
-      "tov": 21.1,
-      "astToRatio": 0.7,
-      "blk": 1.5,
-      "stl": 2.5,
-      "ftr": 36.7,
-      "fc40": 4.5,
-      "dunks": 2.0,
-      "dunkAttempts": 4.0,
-      "dunkPct": 0.5,
-      "rimMakes": 114.0,
-      "rimAttempts": 177.0,
-      "rimPct": 0.644,
-      "nonRim2Makes": 32.0,
-      "nonRim2Attempts": 79.0,
-      "nonRim2Pct": 0.405,
-      "ftMakes": 158.0,
-      "ftAttempts": 205.0,
-      "ftPct": 0.771,
-      "twoPM": 146.0,
-      "twoPA": 256.0,
-      "twoPct": 0.57,
-      "threePRate": 54.7,
-      "threePer100": 11.5,
-      "threePM": 114.0,
-      "threePA": 309.0,
-      "threePct": 0.369,
-      "fga": 565
-    },
-    "advanced": {
-      "ftrPctile": 0.551,
-      "threePARPctile": 0.855,
-      "dunkRate": 0.0035,
-      "dunksPerRimAtt": 0.0113,
-      "rimRate": 0.3133,
-      "rimRatePctile": 0.322,
-      "rimToNonRim2Ratio": 2.2405,
-      "moreyballPct": 0.8602,
-      "moreyballPctile": 0.843,
-      "griftRate": 11714.9718,
-      "griftRatePctile": 0.821,
-      "jumperRate": 0.6867
-    },
+    "availabilityNote": null,
     "biography": {
-      "weight": "230 lbs",
-      "hometown": "Tallahassee (FL)",
+      "age": 25,
+      "born": "Feb 17, 2001",
+      "weight": "180 lbs",
+      "agent": "Keith Kreiter, Sam Cipriano",
+      "hometown": "Ypsilanti, Michigan",
+      "currentStatus": "Cleveland Charge, G League",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
-    },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null
+      "source": "manual-lookup"
+    }
   },
   {
     "id": "kaleb-lowery",
@@ -15464,10 +15728,10 @@
     },
     "biography": {
       "weight": "212 lbs",
-      "hometown": "Santa Clarita (CA)",
+      "hometown": "Santa Clarita, California",
       "highSchool": "Santa Clarita Christian School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -15549,7 +15813,14 @@
       "jumperRate": 0.2606
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 24,
+      "born": "Apr 18, 2002",
+      "weight": "210 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "eric-mulder",
@@ -15988,7 +16259,14 @@
       "jumperRate": 0.6452
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 24,
+      "born": "Dec 23, 2001",
+      "weight": "190 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "tayton-conerway",
@@ -16243,7 +16521,14 @@
       "jumperRate": 0.741
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 25,
+      "born": "Jan 1, 2001",
+      "weight": "215 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "mwani-wilkinson",
@@ -16322,7 +16607,14 @@
       "jumperRate": 0.7717
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 23,
+      "born": "Aug 12, 2002",
+      "weight": "215 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "myron-amey-jr",
@@ -16401,7 +16693,14 @@
       "jumperRate": 0.6894
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 22,
+      "born": "Aug 18, 2003",
+      "weight": "205 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "garry-clark",
@@ -16484,8 +16783,10 @@
       "hometown": "St. Louis (MO)",
       "highSchool": "Cardinal Ritter College Prep High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2",
-      "heightMismatchNote": "sheet says 6'8\", dataset has 6'9\""
+      "source": "user-xlsx+user-xlsx-2+user-followup",
+      "heightMismatchNote": "sheet says 6'8\", dataset has 6'9\"",
+      "age": 24,
+      "born": "Mar 28, 2002"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -16746,7 +17047,9 @@
       "hometown": "San Diego (CA)",
       "highSchool": "University City High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+user-followup",
+      "age": 23,
+      "born": "Oct 11, 2002"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -17012,7 +17315,9 @@
       "hometown": "Raleigh (NC)",
       "highSchool": "Word of God Christian Academy",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2"
+      "source": "user-xlsx+user-xlsx-2+user-followup",
+      "age": 24,
+      "born": "Jun 18, 2002"
     },
     "availabilitySimple": "yes",
     "availabilityNote": null
@@ -17094,7 +17399,14 @@
       "jumperRate": 0.67
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 25,
+      "born": "Sep 8, 2000",
+      "weight": "209 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "mason-miller",
@@ -17349,7 +17661,14 @@
       "jumperRate": 0.8155
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 23,
+      "born": "Oct 1, 2002",
+      "weight": "200 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "kihei-clark",
@@ -17428,7 +17747,14 @@
       "jumperRate": 0.6604
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 26,
+      "born": "Jan 25, 2000",
+      "weight": "167 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "tyrin-lawrence",
@@ -17507,7 +17833,14 @@
       "jumperRate": 0.5861
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null
+    "availabilityNote": null,
+    "biography": {
+      "age": 25,
+      "born": "Nov 1, 2000",
+      "weight": "200 lbs",
+      "found": true,
+      "source": "user-followup"
+    }
   },
   {
     "id": "cam-martin",
@@ -21387,7 +21720,9 @@
       "hometown": "Aurora (CO)",
       "highSchool": "Smoky Hill High School",
       "found": true,
-      "source": "user-xlsx+user-xlsx-2+manual-lookup"
+      "source": "user-xlsx+user-xlsx-2+manual-lookup+user-followup",
+      "age": 22,
+      "born": "Aug 24, 2003"
     },
     "availabilitySimple": "unknown",
     "availabilityNote": "Waiver Watch"

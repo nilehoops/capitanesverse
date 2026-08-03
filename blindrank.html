@@ -66,6 +66,13 @@
   .rank-stat-grid .k { color: #9A9A9A; }
   .rank-stat-grid .v { color: #ECECEC; font-weight: 600; }
 
+  .rank-prostints { background: #000; padding: 10px; overflow-y: auto; }
+  .prostint-card { border: 1px solid #262626; padding: 8px 10px; margin-bottom: 8px; }
+  .prostint-league { font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; }
+  .prostint-league .strength { font-size: 11px; font-weight: 400; color: #8A8A8A; }
+  .prostint-stats { font-size: 12px; font-weight: 400; color: #ECECEC; margin-top: 4px; line-height: 1.5; }
+  .prostint-stats .k { color: #9A9A9A; }
+  .no-prostints { font-size: 12px; color: #6A6A6A; padding: 8px 0; }
   .rank-right { display: flex; flex-direction: column; }
   .sw-row { display: grid; grid-template-columns: 1fr 1fr; flex: 1; }
   .sw-box { padding: 14px; }
@@ -73,8 +80,9 @@
   .sw-box.weaknesses { background: #D81F2A; }
   .sw-box .sw-title { font-size: 20px; margin-bottom: 8px; }
   .sw-box .sw-item { font-size: 14px; margin: 3px 0; display: flex; align-items: center; gap: 6px; }
-  .sw-dot-row { display: flex; gap: 3px; }
-  .sw-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #ECECEC; flex-shrink: 0; }
+  .sw-sym { display: inline-block; min-width: 32px; font-weight: 700; letter-spacing: -1px; }
+  .sw-sym-pos { color: #ECECEC; }
+  .sw-sym-neg { color: #ECECEC; }
   .sw-box .sw-empty { font-size: 12px; font-weight: 400; }
 
   .tier-grid { display: grid; grid-template-columns: 1fr 1fr; }
@@ -127,28 +135,126 @@ const STAT_LABELS = {
   ortg:"ORtg", drtg:"D-Rtg", usg:"Usg", efg:"eFG", ts:"TS", orb:"OR", drb:"DR", ast:"Ast",
   tov:"TO", blk:"Blk", stl:"Stl", ftr:"FTR", ftPct:"FT%", twoPct:"2P%", threePct:"3P%",
 };
-// Full stat set (not the smaller display grid below) — same broad list used
-// on player.html's own Strengths/Weaknesses box.
-const SW_LABELS = {
-  minPct:"Min%", prpg:"PRPG!", dPrpg:"D-PRPG", bpm:"BPM", obpm:"OBPM", dbpm:"DBPM",
-  ortg:"ORtg", drtg:"D-Rtg", usg:"Usg", efg:"eFG", ts:"TS", orb:"OR", drb:"DR", ast:"Ast",
-  tov:"TO", astToRatio:"A/TO", blk:"Blk", stl:"Stl", ftr:"FTR", fc40:"FC/40",
-  dunkPct:"Dunk%", rimPct:"Rim%", nonRim2Pct:"NonRim2%", ftPct:"FT%",
-  twoPct:"2P%", threePRate:"3PR", threePct:"3P%",
-};
-const PERCENTILE_KEYS = Object.keys(SW_LABELS);
-const LOWER_IS_BETTER = new Set(['tov', 'drtg', 'fc40']);
+// Full stat set used by Strengths/Weaknesses. min%/dunk%/fc40 removed per
+// request; dunksPerGame and bmi added as computed (non-`stats`-object) getters.
+// scale100: true means the raw value is already 0-100 (append % as-is);
+// scale100 absent/false + pct:true means it's a 0-1 fraction (×100 first).
+const SW_STATS = [
+  { key: 'prpg', label: 'PRPG!' }, { key: 'dPrpg', label: 'D-PRPG' },
+  { key: 'bpm', label: 'BPM' }, { key: 'obpm', label: 'OBPM' }, { key: 'dbpm', label: 'DBPM' },
+  { key: 'ortg', label: 'ORtg' }, { key: 'drtg', label: 'D-Rtg' },
+  { key: 'usg', label: 'Usg', pct: true, scale100: true },
+  { key: 'efg', label: 'eFG', pct: true, scale100: true },
+  { key: 'ts', label: 'TS', pct: true, scale100: true },
+  { key: 'orb', label: 'OR', pct: true, scale100: true },
+  { key: 'drb', label: 'DR', pct: true, scale100: true },
+  { key: 'ast', label: 'Ast', pct: true, scale100: true },
+  { key: 'tov', label: 'TO', pct: true, scale100: true },
+  { key: 'astToRatio', label: 'A/TO', suffix: 'x' },
+  { key: 'blk', label: 'Blk', pct: true, scale100: true },
+  { key: 'stl', label: 'Stl', pct: true, scale100: true },
+  { key: 'ftr', label: 'FTR', pct: true, scale100: true },
+  { key: 'rimPct', label: 'Rim%', pct: true },
+  { key: 'nonRim2Pct', label: 'NonRim2%', pct: true },
+  { key: 'ftPct', label: 'FT%', pct: true },
+  { key: 'twoPct', label: '2P%', pct: true },
+  { key: 'threePRate', label: '3PR', pct: true, scale100: true },
+  { key: 'threePct', label: '3P%', pct: true },
+  { key: 'dunksPerGame', label: 'Dunks/G' },
+  { key: 'bmi', label: 'BMI' },
+];
+const LOWER_IS_BETTER = new Set(['tov', 'drtg']);
+
+// dunksPerGame and bmi aren't plain `stats` fields — computed here instead.
+function getSwValue(player, key) {
+  if (key === 'dunksPerGame') {
+    const d = player.stats?.dunks, gp = player.stats?.gp;
+    return (d != null && gp) ? d / gp : null;
+  }
+  if (key === 'bmi') {
+    const w = player.biography?.weight, h = player.heightIn;
+    if (!w || !h) return null;
+    const lbs = parseFloat(String(w).match(/^\d+/)?.[0]);
+    return lbs ? 703 * lbs / (h * h) : null;
+  }
+  return player.stats?.[key];
+}
+function formatSwValue(descriptor, value) {
+  if (value == null) return '';
+  let v = value;
+  if (descriptor.pct && !descriptor.scale100) v = v * 100;
+  let s = v.toFixed(1);
+  if (descriptor.pct) s += '%';
+  if (descriptor.suffix) s += descriptor.suffix;
+  return s;
+}
 
 function percentileRank(players, position, key, value) {
-  const peers = players.filter(p => p.position === position && p.stats[key] != null);
+  const peers = players.map(p => ({ p, v: getSwValue(p, key) })).filter(x => x.p.position === position && x.v != null);
   if (peers.length < 5 || value == null) return null;
   const better = LOWER_IS_BETTER.has(key)
-    ? peers.filter(p => p.stats[key] >= value).length
-    : peers.filter(p => p.stats[key] <= value).length;
+    ? peers.filter(x => x.v >= value).length
+    : peers.filter(x => x.v <= value).length;
   return better / peers.length;
 }
+
+// Shot diet: where a player's shots come from (rim / mid-range / three),
+// each shown with its percentile rank vs. same-position peers, subscripted.
+// rimRate is stored 0-1; threePRate is already 0-100 — normalize both to 0-100.
+function rimRatePct(p) { return p.advanced?.rimRate != null ? p.advanced.rimRate * 100 : null; }
+function midRangeRate(p) {
+  const rim = rimRatePct(p), three = p.stats?.threePRate;
+  return (rim != null && three != null) ? Math.max(0, 100 - rim - three) : null;
+}
+function pctRankGeneric(players, position, value, getter) {
+  const peers = players.map(p => ({ p, v: getter(p) })).filter(x => x.p.position === position && x.v != null);
+  if (peers.length < 5 || value == null) return null;
+  return peers.filter(x => x.v <= value).length / peers.length;
+}
+function proStintsHtml(player) {
+  const stints = player.proStints || [];
+  if (!stints.length) return '<div class="no-prostints">No pro/other-league stints on file.</div>';
+  return stints.map(s => {
+    const pctile = s.leagueStrengthPctile != null ? Math.round(s.leagueStrengthPctile * 100) : null;
+    const fmt = (v, isPct) => v == null ? '—' : (isPct ? (v * 100).toFixed(1) + '%' : v);
+    return `
+      <div class="prostint-card">
+        <div class="prostint-league">
+          <span>${s.league}</span>
+          <span class="strength">${pctile != null ? `League Strength: ${pctile}th %ile` : 'League strength n/a'}</span>
+        </div>
+        <div class="prostint-stats">
+          <span class="k">PTS/40:</span> ${fmt(s.pts40)}
+          &nbsp; <span class="k">ORB/40:</span> ${fmt(s.orb40)}
+          &nbsp; <span class="k">DRB/40:</span> ${fmt(s.drb40)}
+          &nbsp; <span class="k">AST/40:</span> ${fmt(s.ast40)}<br>
+          <span class="k">TOV/40:</span> ${fmt(s.tov40)}
+          &nbsp; <span class="k">STL/40:</span> ${fmt(s.stl40)}
+          &nbsp; <span class="k">BLK/40:</span> ${fmt(s.blk40)}
+          &nbsp; <span class="k">PER:</span> ${fmt(s.per)}<br>
+          <span class="k">2P%:</span> ${fmt(s['2p_pct'], true)}
+          &nbsp; <span class="k">3P%:</span> ${fmt(s['3p_pct'], true)}
+          &nbsp; <span class="k">FT%:</span> ${fmt(s.ft_pct, true)}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function shotDietHtml(players, player) {
+  const rows = [
+    { label: 'Rim Rate', value: rimRatePct(player), getter: rimRatePct },
+    { label: 'Mid-Range Rate', value: midRangeRate(player), getter: midRangeRate },
+    { label: '3PT Rate', value: player.stats?.threePRate, getter: p => p.stats?.threePRate },
+  ];
+  return rows.map(r => {
+    if (r.value == null) return '';
+    const pct = pctRankGeneric(players, player.position, r.value, r.getter);
+    const pctDisplay = pct != null ? Math.round(pct * 100) : null;
+    return `<div><span class="k">${r.label}:</span> <span class="v">${r.value.toFixed(1)}%</span>${pctDisplay != null ? `<sub style="color:#8A8A8A;">${pctDisplay}</sub>` : ''}</div>`;
+  }).join('');
+}
 // Tankathon-style tiers: only stats clearing the lowest tier show at all —
-// everything else is "average" and omitted, same thresholds as player.html.
+// everything else is "average" and omitted.
 function strengthTier(pct) {
   if (pct >= 0.97) return 4;
   if (pct >= 0.90) return 3;
@@ -165,18 +271,21 @@ function weaknessTier(pct) {
 }
 function topStrengthsWeaknesses(players, player) {
   const strengths = [], weaknesses = [];
-  for (const key of PERCENTILE_KEYS) {
-    const pct = percentileRank(players, player.position, key, player.stats[key]);
+  for (const d of SW_STATS) {
+    const value = getSwValue(player, d.key);
+    const pct = percentileRank(players, player.position, d.key, value);
     if (pct == null) continue;
     const sTier = strengthTier(pct), wTier = weaknessTier(pct);
-    if (sTier > 0) strengths.push({ label: SW_LABELS[key] || key, pct, tier: sTier });
-    else if (wTier > 0) weaknesses.push({ label: SW_LABELS[key] || key, pct, tier: wTier });
+    const row = { label: d.label, pct, valueDisplay: formatSwValue(d, value) };
+    if (sTier > 0) strengths.push({ ...row, tier: sTier });
+    else if (wTier > 0) weaknesses.push({ ...row, tier: wTier });
   }
   strengths.sort((a, b) => b.tier - a.tier || b.pct - a.pct);
   weaknesses.sort((a, b) => b.tier - a.tier || a.pct - b.pct);
   return { strengths, weaknesses };
 }
-function dotsHtml(tier) { return '<span class="sw-dot-row">' + '<span class="sw-dot"></span>'.repeat(tier) + '</span>'; }
+// +/- replace the old dots — more descriptive of direction and strength.
+function tierSymbol(tier, isStrength) { return (isStrength ? '+' : '\u2212').repeat(tier); }
 
 
 function shuffle(arr) {
@@ -259,6 +368,22 @@ function downloadJson(filename, obj) {
   a.href = URL.createObjectURL(blob);
   a.download = filename;
   a.click();
+}
+
+// A browser can't attach a file or actually send an email on its own — that's
+// a hard security restriction, not something codeable around. This downloads
+// the file, then opens a pre-filled draft in the user's own mail app; they
+// still have to attach the just-downloaded file and hit send themselves.
+const NILE_EMAIL = 'PASTE_EMAIL_HERE';
+function emailRankings(username, userData) {
+  const filename = `blindrank_${username}.json`;
+  downloadJson(filename, userData);
+  const subject = `Blind Rankings — ${username}`;
+  const body = `Hi Nile,\n\nAttached: ${filename} (just downloaded to your Downloads folder — please attach it before sending).\n\nProgress: `
+    + `${Object.keys(userData.guard.tiers).length}/${userData.guard.order.length} Guards, `
+    + `${Object.keys(userData.wing.tiers).length}/${userData.wing.order.length} Wings, `
+    + `${Object.keys(userData.big.tiers).length}/${userData.big.order.length} Bigs ranked.\n\n— ${username}`;
+  window.location.href = `mailto:${NILE_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 // ---- App state ----
@@ -412,7 +537,6 @@ function renderRankingScreen() {
   const tally = TIER_INFO.map(t => Object.values(pos.tiers).filter(v => v === t.value).length);
   const { strengths, weaknesses } = topStrengthsWeaknesses(allPlayers, player);
   const age = computeDecimalAge(player.biography);
-  const video = (player.videos || [])[0];
 
   app.innerHTML = `
     <div class="rank-grid">
@@ -421,27 +545,28 @@ function renderRankingScreen() {
         <a class="link-save" id="saveProgressLink">Download Progress</a>
         <div class="tally">
           ${tally[0]} GLg All Star+<br>
-          ${tally[2]} G League Rotation<br>
-          ${tally[1]} G League Starter<br>
+          ${tally[1]} G League Rotation<br>
+          ${tally[2]} G League Starter<br>
           ${tally[3]} Sub G League
         </div>
         <a class="link-skip" id="skipTop">Skip Player</a>
         <div class="menu-status" id="rankStatus"></div>
       </div>
 
-      <div class="rank-video">
-        ${video ? `<iframe src="https://www.youtube.com/embed/${video.id}" allowfullscreen></iframe>` : `<div class="novideo">No video on file for this player yet.</div>`}
+      <div class="rank-prostints">
+        <div class="box-title" style="font-size:14px;margin-bottom:8px;">Pro/Other League Stints (Per-40)</div>
+        ${proStintsHtml(player)}
       </div>
 
       <div class="rank-right">
         <div class="sw-row">
           <div class="sw-box strengths">
             <div class="sw-title">Stat Strengths</div>
-            ${strengths.length ? strengths.map(s => `<div class="sw-item">${dotsHtml(s.tier)}${s.label}</div>`).join('') : `<div class="sw-empty">No standout strengths yet.</div>`}
+            ${strengths.length ? strengths.map(s => `<div class="sw-item"><span class="sw-sym sw-sym-pos">${tierSymbol(s.tier, true)}</span>${s.label}: ${s.valueDisplay}</div>`).join('') : `<div class="sw-empty">No standout strengths yet.</div>`}
           </div>
           <div class="sw-box weaknesses">
             <div class="sw-title">Stat Weaknesses</div>
-            ${weaknesses.length ? weaknesses.map(s => `<div class="sw-item">${dotsHtml(s.tier)}${s.label}</div>`).join('') : `<div class="sw-empty">No notable weaknesses yet.</div>`}
+            ${weaknesses.length ? weaknesses.map(s => `<div class="sw-item"><span class="sw-sym sw-sym-neg">${tierSymbol(s.tier, false)}</span>${s.label}: ${s.valueDisplay}</div>`).join('') : `<div class="sw-empty">No notable weaknesses yet.</div>`}
           </div>
         </div>
         <div class="tier-grid">
@@ -450,9 +575,10 @@ function renderRankingScreen() {
       </div>
 
       <div class="rank-stats">
-        <h2>NCAA CAREER STATS</h2>
+        <h2>2026 Stats/Metrics</h2>
         <div class="rank-physicals">${age ?? 'xx.x'} years old, ${player.heightDisplay || 'height n/a'}, ${player.biography?.weight || 'weight n/a'}</div>
         <div class="rank-stat-grid">
+          ${shotDietHtml(allPlayers, player)}
           ${Object.entries(STAT_LABELS).map(([k, label]) => player.stats[k] != null ? `<div><span class="k">${label}:</span> <span class="v">${player.stats[k]}</span></div>` : '').join('')}
         </div>
       </div>

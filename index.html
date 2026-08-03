@@ -151,6 +151,35 @@
   .paste-status { font-size: 11px; font-weight: 400; color: #3FCF5C; margin-top: 4px; min-height: 14px; }
   .util-tabs-row { display: flex; gap: 16px; flex-wrap: wrap; padding: 0 24px 60px; }
   .util-tabs-row .addplayer-section { padding: 0; flex: 1; min-width: 280px; }
+
+  .incomplete-section { padding: 0 24px 60px; }
+  .incomplete-bars { margin-bottom: 14px; max-width: 500px; }
+  .incomplete-bar-row { display: flex; align-items: center; gap: 10px; font-size: 13px; margin: 6px 0; }
+  .incomplete-bar-label { width: 90px; flex-shrink: 0; }
+  .incomplete-bar-track { flex: 1; height: 10px; background: #1A1A1A; position: relative; }
+  .incomplete-bar-fill { height: 100%; background: #128A3E; }
+  .incomplete-bar-count { width: 70px; flex-shrink: 0; color: #9A9A9A; font-weight: 400; text-align: right; }
+
+  .incomplete-list { max-height: 420px; overflow-y: auto; margin-top: 12px; }
+  .incomplete-row { border-bottom: 1px solid #1A1A1A; padding: 8px 0; font-size: 13px; }
+  .incomplete-row-top { display: flex; justify-content: space-between; align-items: baseline; }
+  .incomplete-row-name a { text-decoration: underline; }
+  .incomplete-row-team { color: #9A9A9A; font-weight: 400; font-size: 12px; }
+  .incomplete-tags { margin-top: 3px; }
+  .incomplete-tag {
+    display: inline-block; font-size: 10px; font-weight: 700; color: #D81F2A;
+    border: 1px solid #D81F2A; padding: 1px 5px; margin-right: 5px; margin-top: 3px;
+  }
+  .incomplete-note-row { display: flex; gap: 6px; margin-top: 5px; }
+  .incomplete-note-row input {
+    flex: 1; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 3px 6px;
+  }
+  .incomplete-note-row button {
+    font-family: 'Lora', serif; font-weight: 700; font-size: 11px;
+    background: #ECECEC; color: #000; border: none; padding: 3px 8px; cursor: pointer;
+  }
+  .incomplete-note-status { font-size: 10px; color: #8A8A8A; margin-left: 4px; }
   .tracker-list { max-height: 400px; overflow-y: auto; margin-top: 10px; }
   .tracker-row {
     display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid #1A1A1A;
@@ -327,6 +356,26 @@
       <div class="tracker-list" id="trackerList"></div>
     </div>
   </div>
+
+  <div class="addplayer-section">
+    <button class="addplayer-toggle" id="proStintToggle">+ Add Pro Stint</button>
+    <div class="addplayer-form" id="proStintForm">
+      <p style="font-size:12px;color:#9A9A9A;margin:0 0 6px;">
+        Paste a row matching: name, league, pts40, orb40, drb40, ast40, tov40, stl40, blk40, 3p_pct, ft_pct, 2p_pct, asttov, 3par, fta_rate, mins, per
+      </p>
+      <textarea id="ps_pasteArea" placeholder="Paste a tab-separated row here..." style="width:100%;min-height:44px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:12px;padding:6px;"></textarea>
+      <div id="ps_preview" style="font-size:13px;margin-top:8px;"></div>
+      <button class="addplayer-save" id="ps_saveBtn" style="display:none;margin-top:8px;">Save Stint</button>
+      <div class="addplayer-status" id="ps_status"></div>
+    </div>
+  </div>
+</div>
+
+<div class="incomplete-section">
+  <div class="notes-title">Incomplete Data</div>
+  <div class="incomplete-bars" id="incompleteBars"></div>
+  <input class="pane-search" id="incompleteSearch" type="text" placeholder="Search name or team...">
+  <div class="incomplete-list" id="incompleteList"></div>
 </div>
 
 <script>
@@ -393,6 +442,77 @@ function renderBoards(players) {
     renderBoard('Big Ranks:', byPos('Big'), withAvail('rankings.html?pos=big')),
   ].join('');
 }
+
+// ---- Incomplete Data: visualization + notatable gap list ----
+const GAP_FIELDS = [
+  { key: 'age', label: 'Age', check: p => !!p.biography?.age },
+  { key: 'weight', label: 'Weight', check: p => !!p.biography?.weight },
+  { key: 'photo', label: 'Photo', check: p => !!p.photoUrl },
+  { key: 'video', label: 'Video', check: p => !!(p.videos && p.videos.length) },
+];
+let incompleteSearchTerm = '';
+
+function renderIncompleteBars(players) {
+  const total = players.length;
+  document.getElementById('incompleteBars').innerHTML = GAP_FIELDS.map(f => {
+    const have = players.filter(f.check).length;
+    const pct = total ? Math.round((have / total) * 100) : 0;
+    return `
+      <div class="incomplete-bar-row">
+        <span class="incomplete-bar-label">${f.label}</span>
+        <span class="incomplete-bar-track"><span class="incomplete-bar-fill" style="width:${pct}%;"></span></span>
+        <span class="incomplete-bar-count">${have}/${total} (${pct}%)</span>
+      </div>`;
+  }).join('');
+}
+
+function renderIncompleteList(players) {
+  const term = incompleteSearchTerm.toLowerCase();
+  const withGaps = players
+    .map(p => ({ p, missing: GAP_FIELDS.filter(f => !f.check(p)) }))
+    .filter(x => x.missing.length > 0)
+    .filter(x => !term || x.p.name.toLowerCase().includes(term) || (x.p.team || '').toLowerCase().includes(term))
+    .sort((a, b) => (a.p.overallRank ?? 999) - (b.p.overallRank ?? 999));
+
+  document.getElementById('incompleteList').innerHTML = withGaps.length
+    ? withGaps.map(({ p, missing }) => `
+        <div class="incomplete-row" data-id="${p.id}">
+          <div class="incomplete-row-top">
+            <span class="incomplete-row-name"><a href="player.html?id=${p.id}">${p.name}</a> <span class="incomplete-row-team">${p.team || ''}</span></span>
+          </div>
+          <div class="incomplete-tags">${missing.map(f => `<span class="incomplete-tag">${f.label}</span>`).join('')}</div>
+          <div class="incomplete-note-row">
+            <input type="text" class="incomplete-note-input" data-id="${p.id}" placeholder="Note (e.g. checked, unfindable)" value="${p.dataGapNote || ''}">
+            <button class="incomplete-note-save" data-id="${p.id}">Save</button>
+            <span class="incomplete-note-status" data-id="${p.id}"></span>
+          </div>
+        </div>`).join('')
+    : `<div class="board-empty">No gaps match.</div>`;
+
+  document.querySelectorAll('.incomplete-note-save').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const id = btn.dataset.id;
+      const input = document.querySelector(`.incomplete-note-input[data-id="${id}"]`);
+      const status = document.querySelector(`.incomplete-note-status[data-id="${id}"]`);
+      status.textContent = 'Saving...';
+      const result = await commitPlayerUpdate(
+        id,
+        (target) => { target.dataGapNote = input.value.trim() || null; },
+        (target) => `Data-gap note: ${target.name}`
+      );
+      status.textContent = result.ok ? 'Saved' : result.message;
+    });
+  });
+}
+
+function renderIncompleteData(players) {
+  renderIncompleteBars(players);
+  renderIncompleteList(players);
+}
+document.getElementById('incompleteSearch').addEventListener('input', (e) => {
+  incompleteSearchTerm = e.target.value;
+  renderIncompleteList(cachedPlayers);
+});
 
 function renderNotes(players) {
   const withNotes = players
@@ -584,6 +704,38 @@ function parseHeight(input) {
   return { heightIn: feet * 12 + inches, heightDisplay: `${feet}'${inches}"` };
 }
 
+// Generic: fetch the live file, mutate one player, commit — same pattern as
+// player.html's Availability/Video editors. Used by Add Pro Stint.
+async function commitPlayerUpdate(playerId, mutate, commitMessage) {
+  if (!githubToken) {
+    githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
+    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
+  }
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  try {
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).` };
+    const fileData = await getResp.json();
+    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const target = allPlayers.find(p => p.id === playerId);
+    if (!target) return { ok: false, message: 'Player not found in remote file.' };
+    mutate(target);
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: commitMessage(target), content: utf8ToBase64(JSON.stringify(allPlayers, null, 2)), sha: fileData.sha }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}` };
+    }
+    return { ok: true, message: 'Saved — live site updates in ~1 min.' };
+  } catch (e) {
+    return { ok: false, message: `Network error: ${e.message}` };
+  }
+}
+
 async function addPlayerToGitHub(newPlayer) {
   if (!githubToken) {
     githubToken = prompt(
@@ -656,6 +808,70 @@ document.getElementById('trackerSearch').addEventListener('input', (e) => {
 
 document.getElementById('trackerToggle').addEventListener('click', () => {
   document.getElementById('trackerForm').classList.toggle('open');
+});
+
+// ---- Add Pro Stint ----
+const PS_COLUMN_ORDER = ['name','league','pts40','orb40','drb40','ast40','tov40','stl40','blk40','3p_pct','ft_pct','2p_pct','asttov','3par','fta_rate','mins','per'];
+const LEAGUE_ALIAS_PS = {
+  'NBB': 'Brazilian NBB', 'Austrian Bundesliga': 'Austrian A Bundesliga', 'Primera FEB': 'Spanish Primera FEB',
+  'Greek HEBA A1': 'Greek HEBA (A1)', 'Greek HEBA A2': 'Greek HEBA (A2)', 'Mexican LNBP (2025)': 'Mexican LNBP',
+  'LNBP (2025)': 'Mexican LNBP', 'BSN': 'Puerto Rican BSN', 'CEBL': 'Canadian Elite Basketball League',
+  'Jeep Elite': 'French Jeep Elite', 'CIBACOPA': 'Mexican CIBACOPA', 'VTB United': 'VTB United League',
+  'BXNT': 'BNXT League', 'I-BSL': 'Israeli BSL', 'Adriatic ACB': 'Adriatic League Liga ABA',
+  'Legadue Gold': 'Italian Serie A2 Basket', 'ACB': 'Spanish ACB',
+};
+let leagueStrengthMap = {};
+fetch('data/league_strength.json?v=' + Date.now()).then(r => r.json()).then(d => { leagueStrengthMap = d; });
+
+let psParsedRow = null;
+document.getElementById('proStintToggle').addEventListener('click', () => {
+  document.getElementById('proStintForm').classList.toggle('open');
+});
+document.getElementById('ps_pasteArea').addEventListener('paste', () => {
+  setTimeout(() => {
+    const preview = document.getElementById('ps_preview');
+    const saveBtn = document.getElementById('ps_saveBtn');
+    const raw = document.getElementById('ps_pasteArea').value.split('\n')[0];
+    const cells = raw.split('\t');
+    const map = {};
+    PS_COLUMN_ORDER.forEach((key, i) => { map[key] = (cells[i] ?? '').trim(); });
+
+    const match = (cachedPlayers || []).find(p => p.name.toLowerCase() === map.name.toLowerCase());
+    if (!match) {
+      preview.innerHTML = `<span style="color:#D81F2A;">No player named "${map.name}" found — use + Add Player first.</span>`;
+      saveBtn.style.display = 'none';
+      psParsedRow = null;
+      return;
+    }
+    const strength = leagueStrengthMap[map.league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[map.league]] ?? null;
+    psParsedRow = { playerId: match.id, playerName: match.name, stint: {
+      league: map.league, leagueStrengthPctile: strength,
+      pts40: Number(map.pts40)||null, orb40: Number(map.orb40)||null, drb40: Number(map.drb40)||null,
+      ast40: Number(map.ast40)||null, tov40: Number(map.tov40)||null, stl40: Number(map.stl40)||null,
+      blk40: Number(map.blk40)||null, '3p_pct': Number(map['3p_pct'])||null, ft_pct: Number(map.ft_pct)||null,
+      '2p_pct': Number(map['2p_pct'])||null, asttov: Number(map.asttov)||null, '3par': Number(map['3par'])||null,
+      fta_rate: Number(map.fta_rate)||null, mins: Number(map.mins)||null, per: Number(map.per)||null,
+    }};
+    preview.innerHTML = `Matched: <b>${match.name}</b> — ${map.league}${strength!=null ? ` (strength ${Math.round(strength*100)}th %ile)` : ' (league strength not found)'}`;
+    saveBtn.style.display = 'inline-block';
+  }, 0);
+});
+document.getElementById('ps_saveBtn').addEventListener('click', async () => {
+  if (!psParsedRow) return;
+  const status = document.getElementById('ps_status');
+  status.textContent = 'Saving...';
+  const result = await commitPlayerUpdate(
+    psParsedRow.playerId,
+    (target) => { target.proStints = target.proStints || []; target.proStints.push(psParsedRow.stint); },
+    (target) => `Add pro stint: ${target.name} — ${psParsedRow.stint.league}`
+  );
+  status.textContent = result.message;
+  if (result.ok) {
+    document.getElementById('ps_pasteArea').value = '';
+    document.getElementById('ps_preview').innerHTML = '';
+    document.getElementById('ps_saveBtn').style.display = 'none';
+    psParsedRow = null;
+  }
 });
 
 fetch('data/two_way_tracker.json?v=' + Date.now())
@@ -749,7 +965,7 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
 renderRoster();
 fetch('data/players.json?v=' + Date.now())
   .then(r => r.json())
-  .then(players => { cachedPlayers = players; renderBoards(players); renderNotes(players); setupSearch(players); })
+  .then(players => { cachedPlayers = players; renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players); })
   .catch(err => {
     console.error('Could not load data/players.json', err);
     document.getElementById('boards').innerHTML = '<div class="board-empty">Could not load data/players.json.</div>';

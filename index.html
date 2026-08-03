@@ -152,7 +152,6 @@
   .util-tabs-row { display: flex; gap: 16px; flex-wrap: wrap; padding: 0 24px 60px; }
   .util-tabs-row .addplayer-section { padding: 0; flex: 1; min-width: 280px; }
 
-  .incomplete-section { padding: 0 24px 60px; }
   .incomplete-bars { margin-bottom: 14px; max-width: 500px; }
   .incomplete-bar-row { display: flex; align-items: center; gap: 10px; font-size: 13px; margin: 6px 0; }
   .incomplete-bar-label { width: 90px; flex-shrink: 0; }
@@ -371,11 +370,32 @@
   </div>
 </div>
 
-<div class="incomplete-section">
-  <div class="notes-title">Incomplete Data</div>
-  <div class="incomplete-bars" id="incompleteBars"></div>
-  <input class="pane-search" id="incompleteSearch" type="text" placeholder="Search name or team...">
-  <div class="incomplete-list" id="incompleteList"></div>
+<div class="util-tabs-row">
+  <div class="addplayer-section">
+    <button class="addplayer-toggle" id="incompleteToggle">+ Incomplete Data</button>
+    <div class="addplayer-form" id="incompleteForm">
+      <div class="incomplete-bars" id="incompleteBars"></div>
+      <input class="pane-search" id="incompleteSearch" type="text" placeholder="Search name or team...">
+      <div class="incomplete-list" id="incompleteList"></div>
+    </div>
+  </div>
+
+  <div class="addplayer-section">
+    <button class="addplayer-toggle" id="availIOToggle">+ Availability Import/Export</button>
+    <div class="addplayer-form" id="availIOForm">
+      <p style="font-size:12px;color:#9A9A9A;margin:0 0 8px;">
+        Export current availability to edit in a spreadsheet, then paste the edited rows back in — this only ever touches the two availability fields, everything else on each player is left alone.
+      </p>
+      <button class="addplayer-toggle" id="availExportBtn" style="width:auto;display:inline-block;">Export CSV</button>
+      <div style="margin-top:12px;">
+        <label style="font-size:12px;font-weight:700;">Paste edited rows (id, availabilitySimple, availabilityNote):</label>
+        <textarea id="availImportArea" placeholder="Paste tab-separated rows here..." style="width:100%;min-height:70px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:12px;padding:6px;margin-top:4px;"></textarea>
+      </div>
+      <div id="availImportPreview" style="font-size:13px;margin-top:8px;"></div>
+      <button class="addplayer-save" id="availImportBtn" style="display:none;margin-top:8px;">Import (1 commit)</button>
+      <div class="addplayer-status" id="availImportStatus"></div>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -804,6 +824,102 @@ function renderTracker() {
 document.getElementById('trackerSearch').addEventListener('input', (e) => {
   trackerSearchTerm = e.target.value;
   renderTracker();
+});
+
+document.getElementById('incompleteToggle').addEventListener('click', () => {
+  document.getElementById('incompleteForm').classList.toggle('open');
+});
+
+// ---- Availability Import/Export ----
+document.getElementById('availIOToggle').addEventListener('click', () => {
+  document.getElementById('availIOForm').classList.toggle('open');
+});
+
+function csvEscape(v) {
+  const s = String(v ?? '');
+  return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+document.getElementById('availExportBtn').addEventListener('click', () => {
+  const rows = (cachedPlayers || []).map(p =>
+    [p.id, p.name, p.team || '', p.availabilitySimple || '', p.availabilityNote || ''].map(csvEscape).join(',')
+  );
+  const csv = 'id,name,team,availabilitySimple,availabilityNote\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'availability_export.csv';
+  a.click();
+});
+
+let availImportRows = null;
+document.getElementById('availImportArea').addEventListener('input', () => {
+  const preview = document.getElementById('availImportPreview');
+  const importBtn = document.getElementById('availImportBtn');
+  const raw = document.getElementById('availImportArea').value.trim();
+  if (!raw) { preview.innerHTML = ''; importBtn.style.display = 'none'; availImportRows = null; return; }
+
+  const lines = raw.split('\n').filter(l => l.trim());
+  const byId = new Map((cachedPlayers || []).map(p => [p.id, p]));
+  let matched = 0, unmatched = [];
+  availImportRows = [];
+  for (const line of lines) {
+    const cells = line.includes('\t') ? line.split('\t') : line.split(',');
+    const id = (cells[0] || '').trim();
+    if (id === 'id') continue; // skip a re-pasted header row
+    const simple = (cells[3] ?? cells[1] ?? '').trim(); // tolerate either full or id+simple+note-only paste
+    const note = (cells[4] ?? cells[2] ?? '').trim();
+    if (byId.has(id)) { matched++; availImportRows.push({ id, availabilitySimple: simple || null, availabilityNote: note || null }); }
+    else unmatched.push(id);
+  }
+  preview.innerHTML = `${matched} row(s) matched.` + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched id(s): ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
+  importBtn.textContent = `Import (1 commit, ${matched} player${matched===1?'':'s'})`;
+  importBtn.style.display = matched ? 'inline-block' : 'none';
+});
+
+document.getElementById('availImportBtn').addEventListener('click', async () => {
+  if (!availImportRows || !availImportRows.length) return;
+  const status = document.getElementById('availImportStatus');
+  status.textContent = 'Saving...';
+  const rowsById = new Map(availImportRows.map(r => [r.id, r]));
+
+  if (!githubToken) {
+    githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
+    if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; return; }
+  }
+  try {
+    const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+    const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) { status.textContent = `Could not read file (${getResp.status}).`; return; }
+    const fileData = await getResp.json();
+    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    let updated = 0;
+    for (const p of allPlayers) {
+      const row = rowsById.get(p.id);
+      if (row) { p.availabilitySimple = row.availabilitySimple; p.availabilityNote = row.availabilityNote; updated++; }
+    }
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Bulk availability import (${updated} players)`,
+        content: utf8ToBase64(JSON.stringify(allPlayers, null, 2)),
+        sha: fileData.sha,
+      }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      status.textContent = `Save failed (${putResp.status}): ${err.message || 'unknown error'}`;
+      return;
+    }
+    status.textContent = `Saved — updated ${updated} players in one commit.`;
+    document.getElementById('availImportArea').value = '';
+    document.getElementById('availImportPreview').innerHTML = '';
+    document.getElementById('availImportBtn').style.display = 'none';
+    availImportRows = null;
+  } catch (e) {
+    status.textContent = `Network error: ${e.message}`;
+  }
 });
 
 document.getElementById('trackerToggle').addEventListener('click', () => {

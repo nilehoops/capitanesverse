@@ -378,30 +378,56 @@ function pctRankGeneric(players, position, value, getter) {
   if (peers.length < 5 || value == null) return null;
   return peers.filter(x => x.v <= value).length / peers.length;
 }
-function proStintsHtml(player) {
+// Percentile for a stint stat, computed across the flattened pool of ALL
+// stints from same-position players (not narrowed to the same league — with
+// most leagues having only a handful of tracked players, a same-league-only
+// sample would be too small to mean anything; this is a broader "how does
+// this compare to other tracked players' pro-level production" signal).
+const STINT_LOWER_IS_BETTER = new Set(['tov40']);
+function stintPercentile(players, position, key, value) {
+  if (value == null) return null;
+  const pool = [];
+  for (const p of players) {
+    if (p.position !== position) continue;
+    for (const s of (p.proStints || [])) {
+      if (s[key] != null) pool.push(s[key]);
+    }
+  }
+  if (pool.length < 5) return null;
+  const better = STINT_LOWER_IS_BETTER.has(key)
+    ? pool.filter(v => v >= value).length
+    : pool.filter(v => v <= value).length;
+  return Math.round((better / pool.length) * 100);
+}
+function proStintsHtml(players, player) {
   const stints = player.proStints || [];
   if (!stints.length) return '<div class="no-prostints">No pro/other-league stints on file.</div>';
   return stints.map(s => {
-    const pctile = s.leagueStrengthPctile != null ? Math.round(s.leagueStrengthPctile * 100) : null;
-    const fmt = (v, isPct) => v == null ? '—' : (isPct ? (v * 100).toFixed(1) + '%' : v);
+    const leaguePctile = s.leagueStrengthPctile != null ? Math.round(s.leagueStrengthPctile * 100) : null;
+    const fmt = (key, isPct) => {
+      const v = s[key];
+      if (v == null) return '—';
+      const display = isPct ? (v * 100).toFixed(1) + '%' : v;
+      const pct = stintPercentile(players, player.position, key, v);
+      return `${display}${pct != null ? `<sub style="color:#8A8A8A;">${pct}</sub>` : ''}`;
+    };
     return `
       <div class="prostint-card">
         <div class="prostint-league">
-          <span>${s.league}</span>
-          <span class="strength">${pctile != null ? `League Strength: ${pctile}th %ile` : 'League strength n/a'}</span>
+          <span class="strength">${leaguePctile != null ? `${leaguePctile}th %ile (${s.league})` : `League strength n/a (${s.league})`}</span>
         </div>
         <div class="prostint-stats">
-          <span class="k">PTS/40:</span> ${fmt(s.pts40)}
-          &nbsp; <span class="k">ORB/40:</span> ${fmt(s.orb40)}
-          &nbsp; <span class="k">DRB/40:</span> ${fmt(s.drb40)}
-          &nbsp; <span class="k">AST/40:</span> ${fmt(s.ast40)}<br>
-          <span class="k">TOV/40:</span> ${fmt(s.tov40)}
-          &nbsp; <span class="k">STL/40:</span> ${fmt(s.stl40)}
-          &nbsp; <span class="k">BLK/40:</span> ${fmt(s.blk40)}
-          &nbsp; <span class="k">PER:</span> ${fmt(s.per)}<br>
-          <span class="k">2P%:</span> ${fmt(s['2p_pct'], true)}
-          &nbsp; <span class="k">3P%:</span> ${fmt(s['3p_pct'], true)}
-          &nbsp; <span class="k">FT%:</span> ${fmt(s.ft_pct, true)}
+          <span class="k">PTS/40:</span> ${fmt('pts40')}
+          &nbsp; <span class="k">ORB/40:</span> ${fmt('orb40')}
+          &nbsp; <span class="k">DRB/40:</span> ${fmt('drb40')}
+          &nbsp; <span class="k">AST/40:</span> ${fmt('ast40')}<br>
+          <span class="k">TOV/40:</span> ${fmt('tov40')}
+          &nbsp; <span class="k">STL/40:</span> ${fmt('stl40')}
+          &nbsp; <span class="k">BLK/40:</span> ${fmt('blk40')}
+          &nbsp; <span class="k">PER:</span> ${s.per ?? '—'}<br>
+          <span class="k">2P%:</span> ${fmt('2p_pct', true)}
+          &nbsp; <span class="k">3P%:</span> ${fmt('3p_pct', true)}
+          &nbsp; <span class="k">FT%:</span> ${fmt('ft_pct', true)}
         </div>
       </div>`;
   }).join('');
@@ -541,7 +567,7 @@ function render(player, players) {
 
       <div class="prostints">
         <div class="stats-head" style="font-size:18px;">Pro/Other League Stints (Per-40)</div>
-        ${proStintsHtml(player)}
+        ${proStintsHtml(players, player)}
       </div>
 
       <div class="strong">

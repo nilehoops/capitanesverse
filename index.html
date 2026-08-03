@@ -179,6 +179,18 @@
     background: #ECECEC; color: #000; border: none; padding: 3px 8px; cursor: pointer;
   }
   .incomplete-note-status { font-size: 10px; color: #8A8A8A; margin-left: 4px; }
+  .incomplete-fillin-toggle { font-size: 11px; text-decoration: underline; cursor: pointer; color: #9A9A9A; flex-shrink: 0; }
+  .incomplete-fillin-panel { display: none; margin-top: 6px; }
+  .incomplete-fillin-panel.open { display: block; }
+  .incomplete-fillin-row { display: flex; gap: 6px; margin-bottom: 5px; }
+  .incomplete-fillin-row input {
+    flex: 1; min-width: 0; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 3px 6px;
+  }
+  .incomplete-stats-paste {
+    width: 100%; min-height: 32px; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 11px; padding: 4px 6px; margin-bottom: 5px;
+  }
   .addplayer-group { margin-top: 16px; border-top: 1px solid #333; padding-top: 10px; }
   .addplayer-group-toggle {
     background: none; border: none; color: #ECECEC; font-family: 'Lora', serif;
@@ -447,12 +459,13 @@ function renderBoards(players) {
   ].join('');
 }
 
-// ---- Incomplete Data: visualization + notatable gap list ----
+// ---- Incomplete Data: visualize gaps AND fill them in directly, condensed ----
 const GAP_FIELDS = [
   { key: 'age', label: 'Age', check: p => !!p.biography?.age },
   { key: 'weight', label: 'Weight', check: p => !!p.biography?.weight },
   { key: 'photo', label: 'Photo', check: p => !!p.photoUrl },
   { key: 'video', label: 'Video', check: p => !!(p.videos && p.videos.length) },
+  { key: 'stats', label: 'Stats', check: p => !!(p.stats && Object.values(p.stats).some(v => v != null)) },
 ];
 let incompleteSearchTerm = '';
 
@@ -479,30 +492,68 @@ function renderIncompleteList(players) {
     .sort((a, b) => (a.p.overallRank ?? 999) - (b.p.overallRank ?? 999));
 
   document.getElementById('incompleteList').innerHTML = withGaps.length
-    ? withGaps.map(({ p, missing }) => `
+    ? withGaps.map(({ p, missing }) => {
+        const missKeys = new Set(missing.map(f => f.key));
+        return `
         <div class="incomplete-row" data-id="${p.id}">
           <div class="incomplete-row-top">
             <span class="incomplete-row-name"><a href="player.html?id=${p.id}">${p.name}</a> <span class="incomplete-row-team">${p.team || ''}</span></span>
+            <a class="incomplete-fillin-toggle" data-id="${p.id}">+ Fill In</a>
           </div>
           <div class="incomplete-tags">${missing.map(f => `<span class="incomplete-tag">${f.label}</span>`).join('')}</div>
-          <div class="incomplete-note-row">
-            <input type="text" class="incomplete-note-input" data-id="${p.id}" placeholder="Note (e.g. checked, unfindable)" value="${p.dataGapNote || ''}">
-            <button class="incomplete-note-save" data-id="${p.id}">Save</button>
-            <span class="incomplete-note-status" data-id="${p.id}"></span>
+          <div class="incomplete-fillin-panel" id="fillin-${p.id}">
+            <div class="incomplete-fillin-row">
+              ${missKeys.has('age') ? `<input type="number" placeholder="Age" data-field="age" data-id="${p.id}">` : ''}
+              ${missKeys.has('weight') ? `<input type="text" placeholder="Weight (e.g. 210 lbs)" data-field="weight" data-id="${p.id}">` : ''}
+              ${missKeys.has('photo') ? `<input type="text" placeholder="Photo URL" data-field="photoUrl" data-id="${p.id}">` : ''}
+            </div>
+            ${missKeys.has('stats') ? `<textarea class="incomplete-stats-paste" data-id="${p.id}" placeholder="Paste a stat row (42 core + 12 advanced, matching the source sheet order)..."></textarea>` : ''}
+            <div class="incomplete-note-row">
+              <input type="text" class="incomplete-note-input" data-id="${p.id}" placeholder="Note (optional)" value="${p.dataGapNote || ''}">
+              <button class="incomplete-save-all" data-id="${p.id}">Save</button>
+              <span class="incomplete-note-status" data-id="${p.id}"></span>
+            </div>
           </div>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : `<div class="board-empty">No gaps match.</div>`;
 
-  document.querySelectorAll('.incomplete-note-save').forEach(btn => {
+  document.querySelectorAll('.incomplete-fillin-toggle').forEach(a => {
+    a.addEventListener('click', () => {
+      document.getElementById(`fillin-${a.dataset.id}`).classList.toggle('open');
+    });
+  });
+
+  document.querySelectorAll('.incomplete-save-all').forEach(btn => {
     btn.addEventListener('click', async () => {
       const id = btn.dataset.id;
-      const input = document.querySelector(`.incomplete-note-input[data-id="${id}"]`);
       const status = document.querySelector(`.incomplete-note-status[data-id="${id}"]`);
+      const ageInput = document.querySelector(`input[data-field="age"][data-id="${id}"]`);
+      const weightInput = document.querySelector(`input[data-field="weight"][data-id="${id}"]`);
+      const photoInput = document.querySelector(`input[data-field="photoUrl"][data-id="${id}"]`);
+      const statsArea = document.querySelector(`.incomplete-stats-paste[data-id="${id}"]`);
+      const noteInput = document.querySelector(`.incomplete-note-input[data-id="${id}"]`);
+
+      const statKeys = Object.keys(STAT_LABELS), advKeys = Object.keys(ADV_LABELS);
+      let statsObj = null, advObj = null;
+      if (statsArea && statsArea.value.trim()) {
+        const cells = statsArea.value.split('\n')[0].split('\t');
+        statsObj = {}; advObj = {};
+        statKeys.forEach((k, i) => { const v = cells[i]; statsObj[k] = v !== undefined && v.trim() !== '' ? Number(v) : null; });
+        advKeys.forEach((k, i) => { const v = cells[statKeys.length + i]; advObj[k] = v !== undefined && v.trim() !== '' ? Number(v) : null; });
+      }
+
       status.textContent = 'Saving...';
       const result = await commitPlayerUpdate(
         id,
-        (target) => { target.dataGapNote = input.value.trim() || null; },
-        (target) => `Data-gap note: ${target.name}`
+        (target) => {
+          if (ageInput && ageInput.value.trim()) { target.biography = target.biography || {}; target.biography.age = Number(ageInput.value); target.biography.found = true; }
+          if (weightInput && weightInput.value.trim()) { target.biography = target.biography || {}; target.biography.weight = weightInput.value.trim(); target.biography.found = true; }
+          if (photoInput && photoInput.value.trim()) target.photoUrl = photoInput.value.trim();
+          if (statsObj) { target.stats = { ...(target.stats || {}), ...statsObj }; target.advanced = { ...(target.advanced || {}), ...advObj }; }
+          target.dataGapNote = noteInput.value.trim() || null;
+        },
+        (target) => `Fill incomplete data: ${target.name}`
       );
       status.textContent = result.ok ? 'Saved' : result.message;
     });
@@ -944,6 +995,14 @@ function numFrom(s) {
   return Number.isFinite(n) ? n : null;
 }
 function safeDiv(a, b) { return (a != null && b != null && b !== 0) ? a / b : null; }
+// Different stats tables format percentages differently — some as "0.277",
+// some as "38.2" (already ×100, no decimal-fraction). Anything > 1 is treated
+// as already-scaled and divided down, so the stored value is always a clean
+// 0-1 fraction regardless of which style was pasted.
+function normalizePct(v) {
+  if (v == null) return null;
+  return v > 1 ? v / 100 : v;
+}
 
 let psParsedRow = null;
 document.getElementById('proStintToggle').addEventListener('click', () => {
@@ -975,8 +1034,8 @@ document.getElementById('ps_pasteArea').addEventListener('paste', () => {
 
     const gp = numFrom(map.gp), min = numFrom(map.min), pts = numFrom(map.pts);
     const fgm = numFrom(map.fgm), fga = numFrom(map.fga);
-    const p3m = numFrom(map.threePM), p3a = numFrom(map.threePA), p3pct = numFrom(map.threePct);
-    const ftm = numFrom(map.ftm), fta = numFrom(map.fta), ftpct = numFrom(map.ftPct);
+    const p3m = numFrom(map.threePM), p3a = numFrom(map.threePA), p3pct = normalizePct(numFrom(map.threePct));
+    const ftm = numFrom(map.ftm), fta = numFrom(map.fta), ftpct = normalizePct(numFrom(map.ftPct));
     const orb = numFrom(map.orb), drb = numFrom(map.drb), ast = numFrom(map.ast);
     const stl = numFrom(map.stl), blk = numFrom(map.blk), tov = numFrom(map.tov);
     const per40 = (total) => (total != null && min) ? total / min * 40 : null;
@@ -1003,7 +1062,13 @@ document.getElementById('ps_saveBtn').addEventListener('click', async () => {
   status.textContent = 'Saving...';
   const result = await commitPlayerUpdate(
     psParsedRow.playerId,
-    (target) => { target.proStints = target.proStints || []; target.proStints.push(psParsedRow.stint); },
+    (target) => {
+      target.proStints = target.proStints || [];
+      const isExactDup = target.proStints.some(s =>
+        s.league === psParsedRow.stint.league && s.mins === psParsedRow.stint.mins && s.pts40 === psParsedRow.stint.pts40
+      );
+      if (!isExactDup) target.proStints.push(psParsedRow.stint);
+    },
     (target) => `Add pro stint: ${target.name} — ${psParsedRow.stint.league}`
   );
   status.textContent = result.message;

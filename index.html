@@ -179,14 +179,6 @@
     background: #ECECEC; color: #000; border: none; padding: 3px 8px; cursor: pointer;
   }
   .incomplete-note-status { font-size: 10px; color: #8A8A8A; margin-left: 4px; }
-  .tracker-list { max-height: 400px; overflow-y: auto; margin-top: 10px; }
-  .tracker-row {
-    display: flex; gap: 8px; padding: 5px 0; border-bottom: 1px solid #1A1A1A;
-    font-size: 13px; font-weight: 400;
-  }
-  .tracker-row .tr-type { font-size: 10px; font-weight: 700; color: #7A7A7A; min-width: 78px; }
-  .tracker-row .tr-team { color: #9A9A9A; }
-  .tracker-row a { text-decoration: underline; }
   .addplayer-group { margin-top: 16px; border-top: 1px solid #333; padding-top: 10px; }
   .addplayer-group-toggle {
     background: none; border: none; color: #ECECEC; font-family: 'Lora', serif;
@@ -240,6 +232,15 @@
 </div>
 
 <div class="util-tabs-row">
+  <div class="addplayer-section">
+    <button class="addplayer-toggle" id="incompleteToggle">+ Incomplete Data</button>
+    <div class="addplayer-form" id="incompleteForm">
+      <div class="incomplete-bars" id="incompleteBars"></div>
+      <input class="pane-search" id="incompleteSearch" type="text" placeholder="Search name or team...">
+      <div class="incomplete-list" id="incompleteList"></div>
+    </div>
+  </div>
+
   <div class="addplayer-section">
     <button class="addplayer-toggle" id="addPlayerToggle">+ Add Player</button>
     <div class="addplayer-form" id="addPlayerForm">
@@ -349,34 +350,17 @@
   </div>
 
   <div class="addplayer-section">
-    <button class="addplayer-toggle" id="trackerToggle">+ Two-Way / E10 Tracker</button>
-    <div class="addplayer-form" id="trackerForm">
-      <input class="pane-search" id="trackerSearch" type="text" placeholder="Search team or player...">
-      <div class="tracker-list" id="trackerList"></div>
-    </div>
-  </div>
-
-  <div class="addplayer-section">
     <button class="addplayer-toggle" id="proStintToggle">+ Add Pro Stint</button>
     <div class="addplayer-form" id="proStintForm">
       <p style="font-size:12px;color:#9A9A9A;margin:0 0 6px;">
-        Paste a row matching: name, league, pts40, orb40, drb40, ast40, tov40, stl40, blk40, 3p_pct, ft_pct, 2p_pct, asttov, 3par, fta_rate, mins, per
+        Paste a season-totals row copied straight from a stats table (Split, Team, League, GP, GS, MIN, PTS, FGM, FGA, FG%, 3PM, 3PA, 3P%, FTM, FTA, FT%, ORB, DRB, TRB, AST, STL, BLK, TOV, PF) — per-40 rates, 2P%, AST/TOV, 3PAr, and FTr are all computed automatically from these totals. The player's name isn't in that table, so enter it separately below.
       </p>
-      <textarea id="ps_pasteArea" placeholder="Paste a tab-separated row here..." style="width:100%;min-height:44px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:12px;padding:6px;"></textarea>
+      <label style="font-size:12px;font-weight:700;">Player Name</label>
+      <input id="ps_playerName" type="text" placeholder="e.g. Lynn Kidd" style="width:100%;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:5px;margin:2px 0 8px;">
+      <textarea id="ps_pasteArea" placeholder="Paste a tab-separated totals row here..." style="width:100%;min-height:44px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:12px;padding:6px;"></textarea>
       <div id="ps_preview" style="font-size:13px;margin-top:8px;"></div>
       <button class="addplayer-save" id="ps_saveBtn" style="display:none;margin-top:8px;">Save Stint</button>
       <div class="addplayer-status" id="ps_status"></div>
-    </div>
-  </div>
-</div>
-
-<div class="util-tabs-row">
-  <div class="addplayer-section">
-    <button class="addplayer-toggle" id="incompleteToggle">+ Incomplete Data</button>
-    <div class="addplayer-form" id="incompleteForm">
-      <div class="incomplete-bars" id="incompleteBars"></div>
-      <input class="pane-search" id="incompleteSearch" type="text" placeholder="Search name or team...">
-      <div class="incomplete-list" id="incompleteList"></div>
     </div>
   </div>
 
@@ -384,12 +368,12 @@
     <button class="addplayer-toggle" id="availIOToggle">+ Availability Import/Export</button>
     <div class="addplayer-form" id="availIOForm">
       <p style="font-size:12px;color:#9A9A9A;margin:0 0 8px;">
-        Export current availability to edit in a spreadsheet, then paste the edited rows back in — this only ever touches the two availability fields, everything else on each player is left alone.
+        Export current availability to edit in a spreadsheet, then import the edited file back — this only ever touches the two availability fields, everything else on each player is left alone.
       </p>
       <button class="addplayer-toggle" id="availExportBtn" style="width:auto;display:inline-block;">Export CSV</button>
       <div style="margin-top:12px;">
-        <label style="font-size:12px;font-weight:700;">Paste edited rows (id, availabilitySimple, availabilityNote):</label>
-        <textarea id="availImportArea" placeholder="Paste tab-separated rows here..." style="width:100%;min-height:70px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:12px;padding:6px;margin-top:4px;"></textarea>
+        <label style="font-size:12px;font-weight:700;">Import edited CSV:</label><br>
+        <input type="file" id="availImportFile" accept=".csv" style="margin-top:4px;color:#ECECEC;font-family:'Lora',serif;font-size:12px;">
       </div>
       <div id="availImportPreview" style="font-size:13px;margin-top:8px;"></div>
       <button class="addplayer-save" id="availImportBtn" style="display:none;margin-top:8px;">Import (1 commit)</button>
@@ -802,30 +786,6 @@ document.getElementById('addPlayerToggle').addEventListener('click', () => {
   document.getElementById('addPlayerForm').classList.toggle('open');
 });
 
-// ---- Two-Way / E10 Tracker ----
-let trackerData = [];
-let trackerSearchTerm = '';
-
-function renderTracker() {
-  const term = trackerSearchTerm.toLowerCase();
-  const shown = trackerData.filter(e =>
-    e.name.toLowerCase().includes(term) || e.team.toLowerCase().includes(term)
-  );
-  document.getElementById('trackerList').innerHTML = shown.length
-    ? shown.map(e => `
-        <div class="tracker-row">
-          <span class="tr-type">${e.contractType}</span>
-          <span class="tr-team">${e.team}</span>
-          ${e.playerId ? `<a href="player.html?id=${e.playerId}">${e.name}</a>` : `<span>${e.name}</span>`}
-        </div>`).join('')
-    : `<div class="pane-empty">No matches.</div>`;
-}
-
-document.getElementById('trackerSearch').addEventListener('input', (e) => {
-  trackerSearchTerm = e.target.value;
-  renderTracker();
-});
-
 document.getElementById('incompleteToggle').addEventListener('click', () => {
   document.getElementById('incompleteForm').classList.toggle('open');
 });
@@ -851,29 +811,52 @@ document.getElementById('availExportBtn').addEventListener('click', () => {
   a.click();
 });
 
+function parseCsvLine(line) {
+  const cells = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"' && line[i+1] === '"') { cur += '"'; i++; }
+      else if (c === '"') { inQuotes = false; }
+      else cur += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ',') { cells.push(cur); cur = ''; }
+      else cur += c;
+    }
+  }
+  cells.push(cur);
+  return cells;
+}
+
 let availImportRows = null;
-document.getElementById('availImportArea').addEventListener('input', () => {
+document.getElementById('availImportFile').addEventListener('change', (e) => {
   const preview = document.getElementById('availImportPreview');
   const importBtn = document.getElementById('availImportBtn');
-  const raw = document.getElementById('availImportArea').value.trim();
-  if (!raw) { preview.innerHTML = ''; importBtn.style.display = 'none'; availImportRows = null; return; }
+  const file = e.target.files[0];
+  if (!file) { preview.innerHTML = ''; importBtn.style.display = 'none'; availImportRows = null; return; }
 
-  const lines = raw.split('\n').filter(l => l.trim());
-  const byId = new Map((cachedPlayers || []).map(p => [p.id, p]));
-  let matched = 0, unmatched = [];
-  availImportRows = [];
-  for (const line of lines) {
-    const cells = line.includes('\t') ? line.split('\t') : line.split(',');
-    const id = (cells[0] || '').trim();
-    if (id === 'id') continue; // skip a re-pasted header row
-    const simple = (cells[3] ?? cells[1] ?? '').trim(); // tolerate either full or id+simple+note-only paste
-    const note = (cells[4] ?? cells[2] ?? '').trim();
-    if (byId.has(id)) { matched++; availImportRows.push({ id, availabilitySimple: simple || null, availabilityNote: note || null }); }
-    else unmatched.push(id);
-  }
-  preview.innerHTML = `${matched} row(s) matched.` + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched id(s): ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
-  importBtn.textContent = `Import (1 commit, ${matched} player${matched===1?'':'s'})`;
-  importBtn.style.display = matched ? 'inline-block' : 'none';
+  const reader = new FileReader();
+  reader.onload = () => {
+    const lines = String(reader.result).split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim());
+    const byId = new Map((cachedPlayers || []).map(p => [p.id, p]));
+    let matched = 0, unmatched = [];
+    availImportRows = [];
+    for (const line of lines) {
+      const cells = parseCsvLine(line);
+      const id = (cells[0] || '').trim();
+      if (id === 'id') continue; // skip the header row
+      const simple = (cells[3] || '').trim();
+      const note = (cells[4] || '').trim();
+      if (byId.has(id)) { matched++; availImportRows.push({ id, availabilitySimple: simple || null, availabilityNote: note || null }); }
+      else if (id) unmatched.push(id);
+    }
+    preview.innerHTML = `${matched} row(s) matched.` + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched id(s): ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
+    importBtn.textContent = `Import (1 commit, ${matched} player${matched===1?'':'s'})`;
+    importBtn.style.display = matched ? 'inline-block' : 'none';
+  };
+  reader.readAsText(file);
 });
 
 document.getElementById('availImportBtn').addEventListener('click', async () => {
@@ -913,7 +896,7 @@ document.getElementById('availImportBtn').addEventListener('click', async () => 
       return;
     }
     status.textContent = `Saved — updated ${updated} players in one commit.`;
-    document.getElementById('availImportArea').value = '';
+    document.getElementById('availImportFile').value = '';
     document.getElementById('availImportPreview').innerHTML = '';
     document.getElementById('availImportBtn').style.display = 'none';
     availImportRows = null;
@@ -922,22 +905,45 @@ document.getElementById('availImportBtn').addEventListener('click', async () => 
   }
 });
 
-document.getElementById('trackerToggle').addEventListener('click', () => {
-  document.getElementById('trackerForm').classList.toggle('open');
-});
-
 // ---- Add Pro Stint ----
-const PS_COLUMN_ORDER = ['name','league','pts40','orb40','drb40','ast40','tov40','stl40','blk40','3p_pct','ft_pct','2p_pct','asttov','3par','fta_rate','mins','per'];
+const PS_COLUMN_ORDER = ['split','team','league','gp','gs','min','pts','fgm','fga','fg_pct','threePM','threePA','threePct','ftm','fta','ftPct','orb','drb','trb','ast','stl','blk','tov','pf'];
 const LEAGUE_ALIAS_PS = {
   'NBB': 'Brazilian NBB', 'Austrian Bundesliga': 'Austrian A Bundesliga', 'Primera FEB': 'Spanish Primera FEB',
   'Greek HEBA A1': 'Greek HEBA (A1)', 'Greek HEBA A2': 'Greek HEBA (A2)', 'Mexican LNBP (2025)': 'Mexican LNBP',
   'LNBP (2025)': 'Mexican LNBP', 'BSN': 'Puerto Rican BSN', 'CEBL': 'Canadian Elite Basketball League',
   'Jeep Elite': 'French Jeep Elite', 'CIBACOPA': 'Mexican CIBACOPA', 'VTB United': 'VTB United League',
   'BXNT': 'BNXT League', 'I-BSL': 'Israeli BSL', 'Adriatic ACB': 'Adriatic League Liga ABA',
-  'Legadue Gold': 'Italian Serie A2 Basket', 'ACB': 'Spanish ACB',
+  'Legadue Gold': 'Italian Serie A2 Basket', 'ACB': 'Spanish ACB', 'Chinese-CBA': 'Chinese CBA',
 };
 let leagueStrengthMap = {};
 fetch('data/league_strength.json?v=' + Date.now()).then(r => r.json()).then(d => { leagueStrengthMap = d; });
+
+// Same name-format variants (periods in initials, Jr./Jr, nicknames) hit
+// during the original bulk per40 merge — needed here too, or a paste of a
+// real row from that same source sheet would silently fail to match.
+const NAME_ALIAS_PS = {
+  'Kira Lewis Jr': 'Kira Lewis Jr.', 'L.J. Figueroa': 'LJ Figueroa', 'D.J. Burns': 'DJ Burns',
+  'J.T. Shumate': 'JT Shumate', 'R.J. Melendez': 'RJ Melendez', 'Juan Toscano-Anderson': 'Juan Anderson',
+  'Alvaro Cardenas Torre': 'Alvaro Cardenas', 'C.J. Elleby': 'CJ Elleby',
+  'Marcus Bingham, Jr.': 'Marcus Bingham Jr.', 'Pako Cruz': 'Francisco Cruz',
+  'Warren Kidd': 'Lynn Kidd', 'David Jones-Garcia': 'David Jones',
+};
+function resolvePlayerByName(rawName, players) {
+  const exact = players.find(p => p.name.toLowerCase() === rawName.toLowerCase());
+  if (exact) return exact;
+  if (NAME_ALIAS_PS[rawName]) {
+    const aliased = players.find(p => p.name.toLowerCase() === NAME_ALIAS_PS[rawName].toLowerCase());
+    if (aliased) return aliased;
+  }
+  const norm = rawName.replace(/[.,]/g, '').trim().toLowerCase();
+  return players.find(p => p.name.replace(/[.,]/g, '').trim().toLowerCase() === norm) || null;
+}
+
+function numFrom(s) {
+  const n = Number(String(s || '').replace(/,/g, '').trim());
+  return Number.isFinite(n) ? n : null;
+}
+function safeDiv(a, b) { return (a != null && b != null && b !== 0) ? a / b : null; }
 
 let psParsedRow = null;
 document.getElementById('proStintToggle').addEventListener('click', () => {
@@ -947,28 +953,47 @@ document.getElementById('ps_pasteArea').addEventListener('paste', () => {
   setTimeout(() => {
     const preview = document.getElementById('ps_preview');
     const saveBtn = document.getElementById('ps_saveBtn');
+    const playerName = document.getElementById('ps_playerName').value.trim();
+    if (!playerName) {
+      preview.innerHTML = `<span style="color:#D81F2A;">Enter the player's name above first — it isn't part of the pasted table.</span>`;
+      saveBtn.style.display = 'none';
+      psParsedRow = null;
+      return;
+    }
     const raw = document.getElementById('ps_pasteArea').value.split('\n')[0];
     const cells = raw.split('\t');
     const map = {};
     PS_COLUMN_ORDER.forEach((key, i) => { map[key] = (cells[i] ?? '').trim(); });
 
-    const match = (cachedPlayers || []).find(p => p.name.toLowerCase() === map.name.toLowerCase());
+    const match = resolvePlayerByName(playerName, cachedPlayers || []);
     if (!match) {
-      preview.innerHTML = `<span style="color:#D81F2A;">No player named "${map.name}" found — use + Add Player first.</span>`;
+      preview.innerHTML = `<span style="color:#D81F2A;">No player named "${playerName}" found — use + Add Player first.</span>`;
       saveBtn.style.display = 'none';
       psParsedRow = null;
       return;
     }
-    const strength = leagueStrengthMap[map.league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[map.league]] ?? null;
+
+    const gp = numFrom(map.gp), min = numFrom(map.min), pts = numFrom(map.pts);
+    const fgm = numFrom(map.fgm), fga = numFrom(map.fga);
+    const p3m = numFrom(map.threePM), p3a = numFrom(map.threePA), p3pct = numFrom(map.threePct);
+    const ftm = numFrom(map.ftm), fta = numFrom(map.fta), ftpct = numFrom(map.ftPct);
+    const orb = numFrom(map.orb), drb = numFrom(map.drb), ast = numFrom(map.ast);
+    const stl = numFrom(map.stl), blk = numFrom(map.blk), tov = numFrom(map.tov);
+    const per40 = (total) => (total != null && min) ? total / min * 40 : null;
+
+    const league = map.league;
+    const strength = leagueStrengthMap[league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[league]] ?? null;
     psParsedRow = { playerId: match.id, playerName: match.name, stint: {
-      league: map.league, leagueStrengthPctile: strength,
-      pts40: Number(map.pts40)||null, orb40: Number(map.orb40)||null, drb40: Number(map.drb40)||null,
-      ast40: Number(map.ast40)||null, tov40: Number(map.tov40)||null, stl40: Number(map.stl40)||null,
-      blk40: Number(map.blk40)||null, '3p_pct': Number(map['3p_pct'])||null, ft_pct: Number(map.ft_pct)||null,
-      '2p_pct': Number(map['2p_pct'])||null, asttov: Number(map.asttov)||null, '3par': Number(map['3par'])||null,
-      fta_rate: Number(map.fta_rate)||null, mins: Number(map.mins)||null, per: Number(map.per)||null,
+      league, leagueStrengthPctile: strength,
+      pts40: per40(pts), orb40: per40(orb), drb40: per40(drb), ast40: per40(ast),
+      tov40: per40(tov), stl40: per40(stl), blk40: per40(blk),
+      '3p_pct': p3pct, ft_pct: ftpct,
+      '2p_pct': safeDiv((fgm != null && p3m != null) ? fgm - p3m : null, (fga != null && p3a != null) ? fga - p3a : null),
+      asttov: safeDiv(ast, tov), '3par': safeDiv(p3a, fga), fta_rate: safeDiv(fta, fga),
+      mins: min, per: null, // PER isn't in this table — no reliable way to derive it from a basic box score alone
     }};
-    preview.innerHTML = `Matched: <b>${match.name}</b> — ${map.league}${strength!=null ? ` (strength ${Math.round(strength*100)}th %ile)` : ' (league strength not found)'}`;
+    preview.innerHTML = `Matched: <b>${match.name}</b> — ${league}${strength!=null ? ` (strength ${Math.round(strength*100)}th %ile)` : ' (league strength not found)'}. `
+      + `PTS/40 ${psParsedRow.stint.pts40?.toFixed(1) ?? '—'}, AST/40 ${psParsedRow.stint.ast40?.toFixed(1) ?? '—'}, 2P% ${psParsedRow.stint['2p_pct'] != null ? (psParsedRow.stint['2p_pct']*100).toFixed(1)+'%' : '—'}`;
     saveBtn.style.display = 'inline-block';
   }, 0);
 });
@@ -984,16 +1009,12 @@ document.getElementById('ps_saveBtn').addEventListener('click', async () => {
   status.textContent = result.message;
   if (result.ok) {
     document.getElementById('ps_pasteArea').value = '';
+    document.getElementById('ps_playerName').value = '';
     document.getElementById('ps_preview').innerHTML = '';
     document.getElementById('ps_saveBtn').style.display = 'none';
     psParsedRow = null;
   }
 });
-
-fetch('data/two_way_tracker.json?v=' + Date.now())
-  .then(r => r.json())
-  .then(data => { trackerData = data; renderTracker(); })
-  .catch(err => console.error('Could not load tracker data', err));
 
 document.getElementById('addPlayerSave').addEventListener('click', async () => {
   const status = document.getElementById('addPlayerStatus');

@@ -33998,7 +33998,11 @@
       "griftRatePctile": null,
       "jumperRate": null
     },
-    "biography": null,
+    "biography": {
+      "age": 26,
+      "found": true,
+      "weight": "240"
+    },
     "onRoster": false,
     "photoUrl": null,
     "videos": [],

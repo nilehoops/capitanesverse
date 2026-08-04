@@ -38,6 +38,37 @@
   .pos-btn { background: none; border: none; text-align: center; }
   .pos-btn .pos-name { font-size: clamp(48px, 9vw, 110px); line-height: 1; display: block; }
   .pos-btn .pos-progress { font-size: 13px; font-weight: 400; color: #9A9A9A; display: block; margin-top: 6px; }
+  .complete-rankings-section { text-align: center; margin: 36px 0 0; }
+  .complete-rankings-btn {
+    font-family: 'Lora', serif; font-weight: 700; font-size: 22px; padding: 14px 34px;
+    background: #FFD400; color: #000; border: none; cursor: pointer;
+  }
+  .complete-rankings-section.locked .complete-rankings-btn {
+    background: #2A2A2A; color: #6A6A6A; cursor: not-allowed;
+  }
+  .complete-rankings-note { font-size: 13px; font-weight: 400; color: #9A9A9A; margin-top: 8px; }
+
+  .pane-search {
+    width: 100%; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 13px; padding: 6px 8px;
+  }
+  .incomplete-list { overflow-y: auto; }
+  .pane-empty { padding: 14px; font-size: 12px; color: #6A6A6A; }
+  .final-card {
+    display: flex; align-items: center; gap: 8px; padding: 6px 0;
+    border-bottom: 1px solid #1A1A1A; font-size: 13px; font-weight: 400;
+  }
+  .final-card .rank-num { font-family: 'Lora', serif; font-weight: 700; color: #FFD400; min-width: 30px; }
+  .final-card .cname { flex: 1; }
+  .final-card .nudge {
+    background: none; border: 1px solid #444; color: #ECECEC; font-size: 11px;
+    width: 22px; height: 22px; cursor: pointer; padding: 0;
+  }
+  .final-card .jumpinput {
+    width: 44px; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 11px; padding: 3px;
+  }
+
   .menu-footer {
     display: flex; justify-content: space-between; align-items: center;
     max-width: 900px; margin: 50px auto 0; padding: 0 10px; font-size: 15px; flex-wrap: wrap; gap: 10px;
@@ -84,8 +115,8 @@
   .sw-box .sw-item { font-size: 14px; margin: 3px 0; display: flex; align-items: center; gap: 6px; }
   .pbar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 13px; }
   .pbar-label { width: 76px; flex-shrink: 0; font-weight: 700; }
-  .pbar-track { flex: 1; height: 12px; background: rgba(0,0,0,0.25); position: relative; }
-  .pbar-fill { height: 100%; }
+  .pbar-track { flex: 1; height: 12px; background: rgba(0,0,0,0.3); position: relative; }
+  .pbar-fill { display: block; height: 100%; background: #ECECEC; }
   .pbar-value { width: 60px; flex-shrink: 0; text-align: right; font-weight: 400; }
   .pbar-value sub { margin-left: 3px; opacity: 0.75; }
 
@@ -321,14 +352,6 @@ function proStintsHtml(players, player) {
   }).join('');
 }
 
-function pctColor(pct) {
-  if (pct == null) return '#9A9A9A';
-  const red = [216, 31, 42], green = [18, 138, 62];
-  const t = pct / 100;
-  const mix = (a, b) => Math.round(a + (b - a) * t);
-  return `rgb(${mix(red[0], green[0])},${mix(red[1], green[1])},${mix(red[2], green[2])})`;
-}
-
 function shotDietHtml(players, player) {
   const rim = rimRatePct(player), mid = midRangeRate(player), three = player.stats?.threePRate;
   if (rim == null || mid == null || three == null) return '';
@@ -340,13 +363,13 @@ function shotDietHtml(players, player) {
     <div class="shotdiet-wrap">
       <div class="shotdiet-bar">
         <span class="shotdiet-seg rim" style="width:${rim}%;" title="Rim Rate: ${rim.toFixed(1)}%"></span>
-        <span class="shotdiet-seg mid" style="width:${mid}%;" title="Mid-Range Rate: ${mid.toFixed(1)}%"></span>
-        <span class="shotdiet-seg three" style="width:${three}%;" title="3PT Rate: ${three.toFixed(1)}%"></span>
+        <span class="shotdiet-seg mid" style="width:${mid}%;" title="NonRim2 Rate: ${mid.toFixed(1)}%"></span>
+        <span class="shotdiet-seg three" style="width:${three}%;" title="3PAr: ${three.toFixed(1)}%"></span>
       </div>
       <div class="shotdiet-legend">
-        <span><span class="dot rim"></span>Rim ${rim.toFixed(1)}%${r(rimPct)!=null?`<sub>${r(rimPct)}</sub>`:''}</span>
-        <span><span class="dot mid"></span>Mid ${mid.toFixed(1)}%${r(midPct)!=null?`<sub>${r(midPct)}</sub>`:''}</span>
-        <span><span class="dot three"></span>3PT ${three.toFixed(1)}%${r(threePct)!=null?`<sub>${r(threePct)}</sub>`:''}</span>
+        <span><span class="dot rim"></span>Rim Rate ${rim.toFixed(1)}%${r(rimPct)!=null?`<sub>${r(rimPct)}</sub>`:''}</span>
+        <span><span class="dot mid"></span>NonRim2 Rate ${mid.toFixed(1)}%${r(midPct)!=null?`<sub>${r(midPct)}</sub>`:''}</span>
+        <span><span class="dot three"></span>3PAr ${three.toFixed(1)}%${r(threePct)!=null?`<sub>${r(threePct)}</sub>`:''}</span>
       </div>
     </div>`;
 }
@@ -368,7 +391,7 @@ function pbarRow(row) {
   return `
     <div class="pbar-row">
       <span class="pbar-label">${row.label}</span>
-      <span class="pbar-track"><span class="pbar-fill" style="width:${row.pct}%;background:${pctColor(row.pct)};"></span></span>
+      <span class="pbar-track"><span class="pbar-fill" style="width:${row.pct}%;"></span></span>
       <span class="pbar-value">${row.valueDisplay}<sub>${row.pct}</sub></span>
     </div>`;
 }
@@ -493,6 +516,9 @@ function rankedCount(posKey) {
 function totalCount(posKey) {
   return userData[posKey].order.length;
 }
+function allPositionsComplete() {
+  return ['guard', 'wing', 'big'].every(pk => rankedCount(pk) === totalCount(pk) && totalCount(pk) > 0);
+}
 
 // ---- Login screen ----
 function renderLogin(users) {
@@ -557,7 +583,115 @@ function renderLogin(users) {
 }
 
 // ---- Menu screen ----
+// ---- Complete Rankings: combine all three tiered position groups into one
+// true overall 1-N order. Default-sorted by tier (0=best...3=worst), then by
+// each position's within-tier refinement if set — a starting point, not a
+// final answer, since only a human can judge across positions.
+let overallSearchTerm = '';
+function buildDefaultOverallOrder() {
+  const rows = [];
+  ['guard', 'wing', 'big'].forEach(pk => {
+    const pos = userData[pk];
+    const tierOrderForPos = pos.tierOrder || {};
+    [0, 1, 2, 3].forEach(tierVal => {
+      const inTier = pos.order.filter(id => pos.tiers[id] === tierVal);
+      const ordered = (tierOrderForPos[tierVal] || []).filter(id => inTier.includes(id));
+      inTier.forEach(id => { if (!ordered.includes(id)) ordered.push(id); });
+      ordered.forEach(id => rows.push({ id, tier: tierVal, posKey: pk }));
+    });
+  });
+  rows.sort((a, b) => a.tier - b.tier);
+  return rows.map(r => r.id);
+}
+function openCompleteRankings() {
+  userData.overallOrder = userData.overallOrder && userData.overallOrder.length
+    ? userData.overallOrder
+    : buildDefaultOverallOrder();
+  renderCompleteRankings();
+}
+function getTierFor(p) {
+  const pk = p.position === 'Guard' ? 'guard' : p.position === 'Wing' ? 'wing' : 'big';
+  return userData[pk].tiers[p.id];
+}
+function renderCompleteRankings() {
+  const term = overallSearchTerm.toLowerCase();
+  const fullList = userData.overallOrder.map(id => allPlayers.find(p => p.id === id)).filter(Boolean);
+  // Sub G League doesn't need fine-grained ordering — excluded from the
+  // interactive list entirely, shown as a simple count instead.
+  const rankable = fullList.filter(p => getTierFor(p) !== 3);
+  const subG = fullList.filter(p => getTierFor(p) === 3);
+
+  document.getElementById('app').innerHTML = `
+    <div class="menu-wrap" style="text-align:left;max-width:800px;margin:0 auto;padding:30px 20px;">
+      <a onclick="renderMenu()" style="color:#4FD1FF;text-decoration:underline;font-size:15px;cursor:pointer;">&larr; Back to Main Menu</a>
+      <div class="menu-title" style="font-size:32px;margin-top:14px;">Complete Rankings — Overall</div>
+      <div class="menu-sub" style="font-size:15px;text-align:left;margin-bottom:16px;">
+        Starting order is by tier (All Star+ &rarr; Starter &rarr; Rotation), then your within-tier order. Sub G League players aren't included here — no need to fine-rank them.
+        Type a number and hit Enter, or use the arrows, to place a player precisely — this is the step where you actually compare across positions.
+      </div>
+      <input class="pane-search" id="overallSearch" type="text" placeholder="Search name or team..." style="margin-bottom:12px;">
+      <div class="incomplete-list" id="overallList" style="max-height:60vh;"></div>
+      <div class="menu-status" style="margin-top:10px;">${subG.length} Sub G League player${subG.length===1?'':'s'} excluded from ranking, still included in the export.</div>
+      <div style="margin-top:16px;">
+        <button class="addplayer-save" id="overallSaveBtn">Download Overall Rankings</button>
+        <span class="menu-status" id="overallStatus"></span>
+      </div>
+    </div>`;
+
+  document.getElementById('overallList').innerHTML = rankable.length
+    ? rankable.map((p, i) => {
+        if (term && !p.name.toLowerCase().includes(term) && !(p.team || '').toLowerCase().includes(term)) return '';
+        const tierInfo = TIER_INFO.find(t => t.value === getTierFor(p));
+        return `
+          <div class="final-card" data-id="${p.id}">
+            <span class="rank-num">${i + 1}</span>
+            <span class="cname">${p.name} <span style="color:#8A8A8A;font-weight:400;font-size:11px;">${p.position} — ${tierInfo ? tierInfo.label : ''}</span></span>
+            <button class="nudge" data-dir="-1" data-id="${p.id}">&uarr;</button>
+            <button class="nudge" data-dir="1" data-id="${p.id}">&darr;</button>
+            <input class="jumpinput" type="number" placeholder="#" data-id="${p.id}">
+          </div>`;
+      }).join('')
+    : `<div class="pane-empty">No players match.</div>`;
+
+  document.getElementById('overallSearch').addEventListener('input', (e) => {
+    overallSearchTerm = e.target.value;
+    renderCompleteRankings();
+  });
+
+  document.querySelectorAll('#overallList .nudge').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const rankableIds = rankable.map(p => p.id);
+      const idx = rankableIds.indexOf(btn.dataset.id);
+      const dir = Number(btn.dataset.dir);
+      const swapWith = idx + dir;
+      if (swapWith < 0 || swapWith >= rankableIds.length) return;
+      const realIdx = userData.overallOrder.indexOf(btn.dataset.id);
+      const realSwapIdx = userData.overallOrder.indexOf(rankableIds[swapWith]);
+      [userData.overallOrder[realIdx], userData.overallOrder[realSwapIdx]] = [userData.overallOrder[realSwapIdx], userData.overallOrder[realIdx]];
+      renderCompleteRankings();
+    });
+  });
+  document.querySelectorAll('#overallList .jumpinput').forEach(input => {
+    input.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter') return;
+      const rankableIds = rankable.map(p => p.id);
+      const target = Math.max(1, Math.min(rankableIds.length, parseInt(input.value, 10) || 1)) - 1;
+      const fromIdx = rankableIds.indexOf(input.dataset.id);
+      const [movedId] = rankableIds.splice(fromIdx, 1);
+      rankableIds.splice(target, 0, movedId);
+      // Sub G League always stays appended after — rebuild in that order.
+      userData.overallOrder = [...rankableIds, ...subG.map(p => p.id)];
+      renderCompleteRankings();
+    });
+  });
+  document.getElementById('overallSaveBtn').addEventListener('click', () => {
+    downloadJson(`blindrank_${currentUser}.json`, userData);
+    document.getElementById('overallStatus').textContent = 'Downloaded — send to the site owner to upload.';
+  });
+}
+
 function renderMenu() {
+  const complete = allPositionsComplete();
   document.getElementById('app').innerHTML = `
     <div class="menu-wrap">
       <div class="menu-title">2027 Capitanes Talent Pool Ranking Creator</div>
@@ -567,6 +701,14 @@ function renderMenu() {
         <button class="pos-btn" data-pos="wing"><span class="pos-name">Wings</span><span class="pos-progress">${rankedCount('wing')}/${totalCount('wing')} Players</span></button>
         <button class="pos-btn" data-pos="big"><span class="pos-name">Bigs</span><span class="pos-progress">${rankedCount('big')}/${totalCount('big')} Players</span></button>
       </div>
+
+      <div class="complete-rankings-section ${complete ? '' : 'locked'}">
+        <button class="complete-rankings-btn" id="completeRankingsBtn" ${complete ? '' : 'disabled'}>Complete Rankings (Overall)</button>
+        <div class="complete-rankings-note">${complete
+          ? 'All three position groups are fully tiered — build the combined overall ranking.'
+          : 'Locked until Guards, Wings, and Bigs are all fully tiered.'}</div>
+      </div>
+
       <div class="menu-footer">
         <span>User: ${currentUser}</span>
         <div>
@@ -581,6 +723,9 @@ function renderMenu() {
   document.querySelectorAll('.pos-btn').forEach(btn => {
     btn.addEventListener('click', () => { currentPos = btn.dataset.pos; renderRankingScreen(); });
   });
+  if (complete) {
+    document.getElementById('completeRankingsBtn').addEventListener('click', () => openCompleteRankings());
+  }
   document.getElementById('downloadBtn').addEventListener('click', () => {
     downloadJson(`blindrank_${currentUser}.json`, userData);
     document.getElementById('menuStatus').textContent =
@@ -649,7 +794,7 @@ function renderRankingScreen() {
         </div>
 
         <div class="rank-stats">
-          <h2>2026 Stats/Metrics</h2>
+          <h2>NCAA Career Stats/Metrics</h2>
           <div class="rank-physicals">${age ?? 'xx.x'} years old, ${player.heightDisplay || 'height n/a'}, ${player.biography?.weight || 'weight n/a'}</div>
           ${shotDietHtml(allPlayers, player)}
           <div class="rank-stat-grid">

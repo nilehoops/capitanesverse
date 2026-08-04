@@ -88,8 +88,8 @@
   .box-sub { font-size: 13px; font-weight: 400; margin-bottom: 8px; }
   .pbar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 13px; }
   .pbar-label { width: 76px; flex-shrink: 0; font-weight: 700; }
-  .pbar-track { flex: 1; height: 12px; background: rgba(0,0,0,0.25); position: relative; }
-  .pbar-fill { height: 100%; }
+  .pbar-track { flex: 1; height: 12px; background: rgba(0,0,0,0.3); position: relative; }
+  .pbar-fill { display: block; height: 100%; background: #ECECEC; }
   .pbar-value { width: 60px; flex-shrink: 0; text-align: right; font-weight: 400; }
   .pbar-value sub { margin-left: 3px; opacity: 0.75; }
 
@@ -431,15 +431,6 @@ function proStintsHtml(players, player) {
   }).join('');
 }
 
-// Same red-to-green gradient used for percentile cells elsewhere on the site.
-function pctColor(pct) {
-  if (pct == null) return '#9A9A9A';
-  const red = [216, 31, 42], green = [18, 138, 62];
-  const t = pct / 100;
-  const mix = (a, b) => Math.round(a + (b - a) * t);
-  return `rgb(${mix(red[0], green[0])},${mix(red[1], green[1])},${mix(red[2], green[2])})`;
-}
-
 // Shot diet as one proportional stacked bar (Cleaning the Glass style) —
 // the shape of shot selection reads faster as one bar than three separate
 // percentile lines, since the three always sum to 100% of shot attempts.
@@ -454,13 +445,13 @@ function shotDietHtml(players, player) {
     <div class="shotdiet-wrap">
       <div class="shotdiet-bar">
         <span class="shotdiet-seg rim" style="width:${rim}%;" title="Rim Rate: ${rim.toFixed(1)}%"></span>
-        <span class="shotdiet-seg mid" style="width:${mid}%;" title="Mid-Range Rate: ${mid.toFixed(1)}%"></span>
-        <span class="shotdiet-seg three" style="width:${three}%;" title="3PT Rate: ${three.toFixed(1)}%"></span>
+        <span class="shotdiet-seg mid" style="width:${mid}%;" title="NonRim2 Rate: ${mid.toFixed(1)}%"></span>
+        <span class="shotdiet-seg three" style="width:${three}%;" title="3PAr: ${three.toFixed(1)}%"></span>
       </div>
       <div class="shotdiet-legend">
-        <span><span class="dot rim"></span>Rim ${rim.toFixed(1)}%${r(rimPct)!=null?`<sub>${r(rimPct)}</sub>`:''}</span>
-        <span><span class="dot mid"></span>Mid ${mid.toFixed(1)}%${r(midPct)!=null?`<sub>${r(midPct)}</sub>`:''}</span>
-        <span><span class="dot three"></span>3PT ${three.toFixed(1)}%${r(threePct)!=null?`<sub>${r(threePct)}</sub>`:''}</span>
+        <span><span class="dot rim"></span>Rim Rate ${rim.toFixed(1)}%${r(rimPct)!=null?`<sub>${r(rimPct)}</sub>`:''}</span>
+        <span><span class="dot mid"></span>NonRim2 Rate ${mid.toFixed(1)}%${r(midPct)!=null?`<sub>${r(midPct)}</sub>`:''}</span>
+        <span><span class="dot three"></span>3PAr ${three.toFixed(1)}%${r(threePct)!=null?`<sub>${r(threePct)}</sub>`:''}</span>
       </div>
     </div>`;
 }
@@ -486,7 +477,7 @@ function pbarRow(row) {
   return `
     <div class="pbar-row">
       <span class="pbar-label">${row.label}</span>
-      <span class="pbar-track"><span class="pbar-fill" style="width:${row.pct}%;background:${pctColor(row.pct)};"></span></span>
+      <span class="pbar-track"><span class="pbar-fill" style="width:${row.pct}%;"></span></span>
       <span class="pbar-value">${row.valueDisplay}<sub>${row.pct}</sub></span>
     </div>`;
 }
@@ -581,7 +572,7 @@ function render(player, players) {
       </div>
 
       <div class="stats">
-        <div class="stats-head">2026 Stats/Metrics</div>
+        <div class="stats-head">NCAA Career Stats/Metrics</div>
         ${shotDietHtml(players, player)}
         <div class="stat-table">
           ${Object.entries(STAT_LABELS).map(([key, label]) => {

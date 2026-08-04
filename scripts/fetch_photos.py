@@ -46,45 +46,57 @@ def normalize(s):
     return re.sub(r"[^a-z]", "", s.lower())
 
 
-def find_espn_photo(name, team):
-    """Returns an ESPN athlete id if a confident match is found, else None.
-    Confidence check: the returned player's displayName must match our name,
-    AND (if the API exposes team/school context) it should overlap with our
-    team — same safety idea as fetch_realgm.py's team_overlaps() check, so a
-    common name doesn't silently attach the wrong person's photo."""
+def find_espn_photo(name, team, debug=False):
+    """Returns (espn_id_or_None, diagnostic_string). The diagnostic string is
+    always returned (even on a match) so the run log can show real signal —
+    a 0/40 run with every player showing the exact same generic failure was
+    a sign the previous version of this script couldn't distinguish 'ESPN
+    blocked/errored' from 'ESPN responded but nothing matched'."""
     try:
         resp = requests.get(
             SEARCH_URL,
             params={"region": "us", "lang": "en", "query": name, "limit": 10, "mode": "prefix"},
             headers=HEADERS, timeout=15,
         )
-        resp.raise_for_status()
+    except requests.RequestException as e:
+        return None, f"REQUEST FAILED: {type(e).__name__}: {e}"
+
+    if resp.status_code != 200:
+        return None, f"HTTP {resp.status_code}: {resp.text[:200]}"
+
+    try:
         data = resp.json()
-    except (requests.RequestException, ValueError):
-        return None
+    except ValueError:
+        return None, f"BAD JSON (status 200, body: {resp.text[:200]})"
 
     items = data.get("items", [])
-    name_norm = normalize(name)
+    if debug:
+        print(f"    [debug] raw response keys: {list(data.keys())}, {len(items)} items")
+        if items:
+            print(f"    [debug] first item raw: {json.dumps(items[0])[:300]}")
 
-    for item in items:
-        if item.get("type") != "player":
-            continue
+    if not items:
+        return None, f"0 items in response (top-level keys: {list(data.keys())})"
+
+    player_items = [i for i in items if i.get("type") == "player"]
+    if not player_items:
+        types_seen = sorted(set(i.get("type") for i in items))
+        return None, f"{len(items)} items, none type=='player' (types seen: {types_seen})"
+
+    name_norm = normalize(name)
+    for item in player_items:
         display_norm = normalize(item.get("displayName", ""))
         if display_norm != name_norm:
-            continue  # exact-normalized-name match only — no fuzzy guessing on a common name
-
-        # Team/school context, if present on the result, gets checked as a
-        # sanity cross-reference; if the field isn't present at all, this
-        # falls through to accepting the name-only match rather than
-        # blocking every result on an assumption about the schema.
+            continue
         team_field = item.get("team", {}).get("displayName", "") if isinstance(item.get("team"), dict) else ""
         if team_field and team and not (normalize(team) in normalize(team_field) or normalize(team_field) in normalize(team)):
-            continue
-
+            return None, f"name matched but team mismatch (ours: {team!r}, ESPN's: {team_field!r})"
         espn_id = item.get("id")
         if espn_id:
-            return str(espn_id)
-    return None
+            return str(espn_id), "matched"
+
+    seen_names = [i.get("displayName") for i in player_items][:5]
+    return None, f"{len(player_items)} player-type items, no displayName matched {name!r} (saw: {seen_names})"
 
 
 def main():
@@ -101,13 +113,13 @@ def main():
             print(f"Reached MAX_PLAYERS_PER_RUN ({MAX_PLAYERS_PER_RUN}); stopping for this run.")
             break
 
-        espn_id = find_espn_photo(player["name"], player.get("team"))
+        espn_id, diagnostic = find_espn_photo(player["name"], player.get("team"), debug=(processed < 3))
         processed += 1
         if espn_id:
             new_photos[player["id"]] = f"https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/{espn_id}.png"
             print(f"  {player['name']}: matched ESPN id {espn_id}")
         else:
-            print(f"  {player['name']}: no confident match.")
+            print(f"  {player['name']}: {diagnostic}")
 
         time.sleep(SLEEP_BETWEEN_REQUESTS)
 

@@ -86,8 +86,25 @@
 
   .box-title { font-size: 20px; margin: 0 0 6px; }
   .box-sub { font-size: 13px; font-weight: 400; margin-bottom: 8px; }
-  .stat-row { font-size: 14px; font-weight: 600; margin: 4px 0; display: flex; align-items: center; gap: 6px; }
-  .sw-sym { display: inline-block; min-width: 32px; font-weight: 700; letter-spacing: -1px; }
+  .pbar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 13px; }
+  .pbar-label { width: 76px; flex-shrink: 0; font-weight: 700; }
+  .pbar-track { flex: 1; height: 12px; background: rgba(0,0,0,0.25); position: relative; }
+  .pbar-fill { height: 100%; }
+  .pbar-value { width: 60px; flex-shrink: 0; text-align: right; font-weight: 400; }
+  .pbar-value sub { margin-left: 3px; opacity: 0.75; }
+
+  .shotdiet-wrap { margin: 10px 0 14px; }
+  .shotdiet-bar { display: flex; height: 22px; overflow: hidden; border: 1px solid #262626; }
+  .shotdiet-seg.rim { background: #D8641F; }
+  .shotdiet-seg.mid { background: #6A6A6A; }
+  .shotdiet-seg.three { background: #1B6FD1; }
+  .shotdiet-legend { display: flex; gap: 16px; margin-top: 6px; font-size: 12px; font-weight: 400; flex-wrap: wrap; }
+  .shotdiet-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+  .shotdiet-legend .dot.rim { background: #D8641F; }
+  .shotdiet-legend .dot.mid { background: #6A6A6A; }
+  .shotdiet-legend .dot.three { background: #1B6FD1; }
+  .shotdiet-legend sub { margin-left: 3px; opacity: 0.7; }
+
   .prostint-card { border: 1px solid #262626; padding: 8px 10px; margin-bottom: 8px; }
   .prostint-league { font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; }
   .prostint-league .strength { font-size: 11px; font-weight: 400; color: #8A8A8A; }
@@ -338,25 +355,6 @@ function formatSwValue(descriptor, value) {
   return s;
 }
 
-// Tankathon-style tiers: more +/- = more extreme percentile. Only stats
-// clearing the lowest tier are shown at all — everything else is "average."
-function strengthTier(pct) {
-  if (pct >= 0.97) return 4;
-  if (pct >= 0.90) return 3;
-  if (pct >= 0.80) return 2;
-  if (pct >= 0.65) return 1;
-  return 0;
-}
-function weaknessTier(pct) {
-  if (pct <= 0.03) return 4;
-  if (pct <= 0.10) return 3;
-  if (pct <= 0.20) return 2;
-  if (pct <= 0.35) return 1;
-  return 0;
-}
-// +/- replace the old dots — more descriptive of direction and strength.
-function tierSymbol(tier, isStrength) { return (isStrength ? '+' : '\u2212').repeat(tier); }
-
 function percentileRank(players, position, key, value) {
   const peers = players.map(p => ({ p, v: getSwValue(p, key) })).filter(x => x.p.position === position && x.v != null);
   if (peers.length < 5 || value == null) return null;
@@ -433,36 +431,64 @@ function proStintsHtml(players, player) {
   }).join('');
 }
 
-function shotDietHtml(players, player) {
-  const rows = [
-    { label: 'Rim Rate', value: rimRatePct(player), getter: rimRatePct },
-    { label: 'Mid-Range Rate', value: midRangeRate(player), getter: midRangeRate },
-    { label: '3PT Rate', value: player.stats?.threePRate, getter: p => p.stats?.threePRate },
-  ];
-  return rows.map(r => {
-    if (r.value == null) return '';
-    const pct = pctRankGeneric(players, player.position, r.value, r.getter);
-    const pctDisplay = pct != null ? Math.round(pct * 100) : null;
-    return `<div><span class="k">${r.label}:</span> <span class="v">${r.value.toFixed(1)}%</span>${pctDisplay != null ? `<sub style="color:#8A8A8A;">${pctDisplay}</sub>` : ''}</div>`;
-  }).join('');
+// Same red-to-green gradient used for percentile cells elsewhere on the site.
+function pctColor(pct) {
+  if (pct == null) return '#9A9A9A';
+  const red = [216, 31, 42], green = [18, 138, 62];
+  const t = pct / 100;
+  const mix = (a, b) => Math.round(a + (b - a) * t);
+  return `rgb(${mix(red[0], green[0])},${mix(red[1], green[1])},${mix(red[2], green[2])})`;
 }
 
+// Shot diet as one proportional stacked bar (Cleaning the Glass style) —
+// the shape of shot selection reads faster as one bar than three separate
+// percentile lines, since the three always sum to 100% of shot attempts.
+function shotDietHtml(players, player) {
+  const rim = rimRatePct(player), mid = midRangeRate(player), three = player.stats?.threePRate;
+  if (rim == null || mid == null || three == null) return '';
+  const rimPct = pctRankGeneric(players, player.position, rim, rimRatePct);
+  const midPct = pctRankGeneric(players, player.position, mid, midRangeRate);
+  const threePct = pctRankGeneric(players, player.position, three, p => p.stats?.threePRate);
+  const r = (v) => v != null ? Math.round(v * 100) : null;
+  return `
+    <div class="shotdiet-wrap">
+      <div class="shotdiet-bar">
+        <span class="shotdiet-seg rim" style="width:${rim}%;" title="Rim Rate: ${rim.toFixed(1)}%"></span>
+        <span class="shotdiet-seg mid" style="width:${mid}%;" title="Mid-Range Rate: ${mid.toFixed(1)}%"></span>
+        <span class="shotdiet-seg three" style="width:${three}%;" title="3PT Rate: ${three.toFixed(1)}%"></span>
+      </div>
+      <div class="shotdiet-legend">
+        <span><span class="dot rim"></span>Rim ${rim.toFixed(1)}%${r(rimPct)!=null?`<sub>${r(rimPct)}</sub>`:''}</span>
+        <span><span class="dot mid"></span>Mid ${mid.toFixed(1)}%${r(midPct)!=null?`<sub>${r(midPct)}</sub>`:''}</span>
+        <span><span class="dot three"></span>3PT ${three.toFixed(1)}%${r(threePct)!=null?`<sub>${r(threePct)}</sub>`:''}</span>
+      </div>
+    </div>`;
+}
+
+// Percentile bars (Basketball-Reference / Cleaning the Glass style) — every
+// qualifying stat, not just outliers, bar length = percentile, color-graded.
+// Split at the 50th percentile into the existing Strengths/Weaknesses boxes
+// rather than one combined list, to keep the established two-box layout.
 function computeStrengthsWeaknesses(players, player) {
-  const strengths = [];
-  const weaknesses = [];
+  const strengths = [], weaknesses = [];
   for (const d of SW_STATS) {
     const value = getSwValue(player, d.key);
     const pct = percentileRank(players, player.position, d.key, value);
     if (pct == null) continue;
-    const sTier = strengthTier(pct);
-    const wTier = weaknessTier(pct);
-    const row = { key: d.key, label: d.label, pct, valueDisplay: formatSwValue(d, value) };
-    if (sTier > 0) strengths.push({ ...row, tier: sTier });
-    else if (wTier > 0) weaknesses.push({ ...row, tier: wTier });
+    const row = { key: d.key, label: d.label, pct: Math.round(pct * 100), valueDisplay: formatSwValue(d, value) };
+    if (row.pct >= 50) strengths.push(row); else weaknesses.push(row);
   }
-  strengths.sort((a, b) => b.tier - a.tier || b.pct - a.pct);
-  weaknesses.sort((a, b) => b.tier - a.tier || a.pct - b.pct);
+  strengths.sort((a, b) => b.pct - a.pct);
+  weaknesses.sort((a, b) => a.pct - b.pct);
   return { strengths, weaknesses };
+}
+function pbarRow(row) {
+  return `
+    <div class="pbar-row">
+      <span class="pbar-label">${row.label}</span>
+      <span class="pbar-track"><span class="pbar-fill" style="width:${row.pct}%;background:${pctColor(row.pct)};"></span></span>
+      <span class="pbar-value">${row.valueDisplay}<sub>${row.pct}</sub></span>
+    </div>`;
 }
 
 // Derived ranks: the source sheet doesn't have explicit "Available Rank" or
@@ -556,8 +582,8 @@ function render(player, players) {
 
       <div class="stats">
         <div class="stats-head">2026 Stats/Metrics</div>
+        ${shotDietHtml(players, player)}
         <div class="stat-table">
-          ${shotDietHtml(players, player)}
           ${Object.entries(STAT_LABELS).map(([key, label]) => {
             const v = player.stats[key];
             return v == null ? '' : `<div><span class="k">${label}:</span> <span class="v">${v}</span></div>`;
@@ -573,13 +599,13 @@ function render(player, players) {
       <div class="strong">
         <div class="box-title">Stat Strengths</div>
         <div class="box-sub">Relative to the position group</div>
-        ${strengths.map(s => `<div class="stat-row"><span class="sw-sym">${tierSymbol(s.tier, true)}</span>${s.label}: ${s.valueDisplay}</div>`).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
+        ${strengths.map(pbarRow).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
       </div>
 
       <div class="weak">
         <div class="box-title">Stat Weaknesses</div>
         <div class="box-sub">Relative to the position group</div>
-        ${weaknesses.map(s => `<div class="stat-row"><span class="sw-sym">${tierSymbol(s.tier, false)}</span>${s.label}: ${s.valueDisplay}</div>`).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
+        ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
       </div>
 
       <div class="crowd">

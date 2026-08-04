@@ -257,7 +257,7 @@
     <button class="addplayer-toggle" id="addPlayerToggle">+ Add Player</button>
     <div class="addplayer-form" id="addPlayerForm">
     <div class="paste-box">
-      <p>Fastest option: select a full row in your source sheet, copy it (Ctrl/Cmd+C), and paste it here — it fills in every field below at once, including all 42 core stats and 12 advanced metrics.</p>
+      <p>Paste a full row copied directly from the stats table (RK, Yr, Ht, Player, Team, Conf, G, Min%, PRPG!, D-PRPG, BPM, OBPM, DBPM, ORTG, D-RTG, USG, EFG, TS, OR, DR, AST, TO, A/TO, BLK, STL, FTR, FC/40, Dunks, Close 2, Far 2, FT, 2P, 3PR, 3P/100, 3P) — it fills name, team, class, height, and the core stats, splits the "makes-attempts" cells, and computes all 12 Advanced Metrics + FGA automatically (they're derivative of these stats, not separate data — same formulas as the original sheet). Position, ranks, availability, and Latino still aren't in this table, so those stay manual.</p>
       <textarea id="ap_pasteArea" placeholder="Paste a tab-separated row here..."></textarea>
       <div class="paste-status" id="ap_pasteStatus"></div>
     </div>
@@ -653,13 +653,60 @@ document.getElementById('apAdvGrid').innerHTML = Object.entries(ADV_LABELS).map(
   `<div><label>${label}</label><input type="number" step="any" data-adv="${key}"></div>`
 ).join('');
 
-// Exact column order of the real source sheet's "All Players" tab — paste a
-// full row copied from there and it maps 1:1 onto every field below.
-const SHEET_COLUMN_ORDER = [
-  'position', 'height', 'name', 'team', 'overallRank', 'tier', 'rankWithinTier', 'positionalRank',
-  'availabilityCode', 'latino', 'rk', 'class', 'conf',
-  ...Object.keys(STAT_LABELS), ...Object.keys(ADV_LABELS),
+// Real column structure of the actual source table (confirmed against a live
+// screenshot): RK, Yr, Ht, Player, Team, Conf, then single-value rate stats,
+// then several "makes-attempts" hyphenated cells (e.g. "48-54") each followed
+// by their own pct cell — those need pair-parsing, not a straight 1:1 map.
+// This table doesn't include our rank/tier/availability/Latino fields or the
+// 12 Advanced Metrics — those stay manual, unaffected by this paste.
+const SHEET_COLUMNS_V2 = [
+  { type: 'skip' },                    // RK — Torvik's own page-sort rank, not our overallRank
+  { type: 'text', key: 'class' },
+  { type: 'text', key: 'height' },
+  { type: 'text', key: 'name' },
+  { type: 'text', key: 'team' },
+  { type: 'text', key: 'conf' },
+  { type: 'num', key: 'gp' }, { type: 'num', key: 'minPct' }, { type: 'num', key: 'prpg' },
+  { type: 'num', key: 'dPrpg' }, { type: 'num', key: 'bpm' }, { type: 'num', key: 'obpm' },
+  { type: 'num', key: 'dbpm' }, { type: 'num', key: 'ortg' }, { type: 'num', key: 'drtg' },
+  { type: 'num', key: 'usg' }, { type: 'num', key: 'efg' }, { type: 'num', key: 'ts' },
+  { type: 'num', key: 'orb' }, { type: 'num', key: 'drb' }, { type: 'num', key: 'ast' },
+  { type: 'num', key: 'tov' }, { type: 'num', key: 'astToRatio' }, { type: 'num', key: 'blk' },
+  { type: 'num', key: 'stl' }, { type: 'num', key: 'ftr' }, { type: 'num', key: 'fc40' },
+  { type: 'pair', makesKey: 'dunks', attKey: 'dunkAttempts', pctKey: 'dunkPct' },
+  { type: 'pair', makesKey: 'rimMakes', attKey: 'rimAttempts', pctKey: 'rimPct' },
+  { type: 'pair', makesKey: 'nonRim2Makes', attKey: 'nonRim2Attempts', pctKey: 'nonRim2Pct' },
+  { type: 'pair', makesKey: 'ftMakes', attKey: 'ftAttempts', pctKey: 'ftPct' },
+  { type: 'pair', makesKey: 'twoPM', attKey: 'twoPA', pctKey: 'twoPct' },
+  { type: 'num', key: 'threePRate' }, { type: 'num', key: 'threePer100' },
+  { type: 'pair', makesKey: 'threePM', attKey: 'threePA', pctKey: 'threePct' },
 ];
+function parseHyphenPair(cell) {
+  const m = String(cell || '').trim().match(/^(\d+)\s*-\s*(\d+)$/);
+  return m ? { makes: Number(m[1]), att: Number(m[2]) } : { makes: null, att: null };
+}
+function parseSheetRow(cells) {
+  const out = {};
+  let i = 0;
+  for (const col of SHEET_COLUMNS_V2) {
+    if (col.type === 'skip') { i += 1; continue; }
+    if (col.type === 'text') { out[col.key] = (cells[i] ?? '').trim(); i += 1; continue; }
+    if (col.type === 'num') {
+      const v = (cells[i] ?? '').trim();
+      out[col.key] = v === '' ? null : Number(v);
+      i += 1; continue;
+    }
+    if (col.type === 'pair') {
+      const { makes, att } = parseHyphenPair(cells[i]);
+      const pctRaw = (cells[i + 1] ?? '').trim();
+      out[col.makesKey] = makes;
+      out[col.attKey] = att;
+      out[col.pctKey] = pctRaw === '' ? null : Number(pctRaw);
+      i += 2; continue;
+    }
+  }
+  return out;
+}
 
 // Fields with no visible input (tier/rankWithinTier/rk/conf) still get
 // captured from a paste and carried through to Save.
@@ -680,69 +727,77 @@ function parsePastedHeight(raw) {
   return '';
 }
 
-const AVAIL_NOTE_LABELS_AP = {
-  '1': 'Summer League w/ PT or Exhibit 10+', '2': 'Summer League, no PT',
-  'WW': 'Waiver Watch', 'Retired': 'Retired',
-};
-function simplifyAvailabilityCode(code) {
-  const c = String(code).trim();
-  if (c === '3') return { simple: 'yes', note: '' };
-  if (c === '0') return { simple: 'no', note: '' };
-  if (c === '?' || c === '') return { simple: 'unknown', note: '' };
-  return { simple: 'unknown', note: AVAIL_NOTE_LABELS_AP[c] || c };
-}
-
 document.getElementById('ap_pasteArea').addEventListener('paste', (e) => {
   setTimeout(() => {
     const status = document.getElementById('ap_pasteStatus');
     const raw = document.getElementById('ap_pasteArea').value;
     const firstRow = raw.split('\n')[0];
     const cells = firstRow.split('\t');
-    const map = {};
-    SHEET_COLUMN_ORDER.forEach((key, i) => { map[key] = (cells[i] ?? '').trim(); });
+    const map = parseSheetRow(cells);
 
     if (map.name) document.getElementById('ap_name').value = map.name;
     if (map.team) document.getElementById('ap_team').value = map.team;
     if (map['class']) document.getElementById('ap_class').value = map['class'];
-    if (map.position && ['Guard', 'Wing', 'Big'].includes(map.position)) {
-      document.getElementById('ap_position').value = map.position;
-    }
     if (map.height) document.getElementById('ap_height').value = parsePastedHeight(map.height);
-    if (map.overallRank) document.getElementById('ap_overallRank').value = Number(map.overallRank) || '';
-    if (map.positionalRank) document.getElementById('ap_positionalRank').value = Number(map.positionalRank) || '';
-    if (map.latino) {
-      const l = map.latino.toLowerCase();
-      document.getElementById('ap_latino').value = l === 'yes' ? 'yes' : l === 'no' ? 'no' : 'unknown';
-    }
-    if (map.availabilityCode) {
-      const { simple, note } = simplifyAvailabilityCode(map.availabilityCode);
-      document.getElementById('ap_availabilitySimple').value = simple;
-      document.getElementById('ap_availabilityNote').value = note;
-    }
-    pastedExtra = {
-      tier: map.tier ? Number(map.tier) : null,
-      rankWithinTier: map.rankWithinTier ? Number(map.rankWithinTier) : null,
-      rk: map.rk ? Number(map.rk) : null,
-      conf: map.conf || null,
-    };
+    pastedExtra = { conf: map.conf || null };
 
     let statsFilled = 0;
     Object.keys(STAT_LABELS).forEach(key => {
-      if (map[key] !== '' && map[key] !== undefined) {
+      if (map[key] !== undefined && map[key] !== null) {
         const el = document.querySelector(`[data-stat="${key}"]`);
         if (el) { el.value = map[key]; statsFilled++; }
       }
     });
-    Object.keys(ADV_LABELS).forEach(key => {
-      if (map[key] !== '' && map[key] !== undefined) {
+
+    // Advanced Metrics are derivative of the stats above, not separate data —
+    // same formulas as the original source sheet (verified against its actual
+    // Excel formulas). FGA is derived too, since this table doesn't list it directly.
+    const fga = (map.twoPA != null && map.threePA != null) ? map.twoPA + map.threePA : null;
+    if (fga != null) {
+      const el = document.querySelector(`[data-stat="fga"]`);
+      if (el) { el.value = fga; statsFilled++; }
+    }
+    const dunkRate = (map.dunks != null && fga) ? map.dunks / fga : null;
+    const dunksPerRimAtt = (map.dunks != null && map.rimAttempts) ? map.dunks / map.rimAttempts : null;
+    const rimRate = (map.rimAttempts != null && fga) ? map.rimAttempts / fga : null;
+    const rimToNonRim2Ratio = (map.rimAttempts != null && map.nonRim2Attempts) ? map.rimAttempts / map.nonRim2Attempts : null;
+    const moreyballPct = (map.rimAttempts != null && map.threePA != null && fga) ? (map.rimAttempts + map.threePA) / fga : null;
+    const griftRate = (map.ftr != null && rimRate) ? 100 * (map.ftr / rimRate) : null;
+    const jumperRate = (map.nonRim2Attempts != null && map.threePA != null && fga) ? (map.nonRim2Attempts + map.threePA) / fga : null;
+
+    // The five "%ile" advanced fields need a peer pool — position-relative,
+    // same convention as everywhere else on the site.
+    const pos = document.getElementById('ap_position').value;
+    function pctileAmong(getter, value) {
+      if (value == null) return null;
+      const peers = (cachedPlayers || []).filter(p => p.position === pos && p.advanced && getter(p) != null).map(p => getter(p));
+      if (peers.length < 5) return null;
+      return peers.filter(v => v <= value).length / peers.length;
+    }
+    const advValues = {
+      ftrPctile: pctileAmong(p => p.stats?.ftr, map.ftr),
+      threePARPctile: pctileAmong(p => p.stats?.threePRate, map.threePRate),
+      dunkRate, dunksPerRimAtt, rimRate,
+      rimRatePctile: pctileAmong(p => p.advanced?.rimRate, rimRate),
+      rimToNonRim2Ratio, moreyballPct,
+      moreyballPctile: pctileAmong(p => p.advanced?.moreyballPct, moreyballPct),
+      griftRate,
+      griftRatePctile: pctileAmong(p => p.advanced?.griftRate, griftRate),
+      jumperRate,
+    };
+    let advFilled = 0;
+    Object.entries(advValues).forEach(([key, val]) => {
+      if (val != null) {
         const el = document.querySelector(`[data-adv="${key}"]`);
-        if (el) el.value = map[key];
+        if (el) { el.value = val.toFixed(4); advFilled++; }
       }
     });
-    // Expand the stat/advanced sections so what just got filled is visible
+
+    // Expand the stats/advanced sections so what just got filled is visible
     document.getElementById('apg-stats').classList.add('open');
     document.getElementById('apg-adv').classList.add('open');
-    status.textContent = `Filled from paste — ${statsFilled} of ${Object.keys(STAT_LABELS).length} core stats matched.`;
+    status.textContent = `Filled from paste — ${statsFilled} core stats, ${advFilled} of 12 advanced metrics computed automatically (position: ${pos}). `
+      + `Position, ranks, availability, and Latino still aren't in this table — fill those in manually, and re-paste if you change position, since the %ile fields depend on it.`;
   }, 0);
 });
 

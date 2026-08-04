@@ -466,8 +466,8 @@
       "found": true,
       "source": "user-xlsx+user-xlsx-2"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ antwerp giants",
     "proStints": [
       {
         "league": "NCAA",
@@ -2834,8 +2834,8 @@
       "source": "user-xlsx+user-xlsx-2+manual-lookup",
       "agent": "Lin Huynh"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Signed w/ Slavia Praha",
     "proStints": [
       {
         "league": "NCAA",
@@ -3598,8 +3598,8 @@
       "found": true,
       "source": "manual-lookup"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "unknown",
+    "availabilityNote": "Currently with Winnepeg SeaBears in CEBL",
     "proStints": [
       {
         "league": "VTB United",
@@ -5128,7 +5128,7 @@
       "currentStatus": "Signed 10-day contract, Utah Jazz (2026); also plays for Mexico City Capitanes, G League"
     },
     "availabilitySimple": "no",
-    "availabilityNote": null,
+    "availabilityNote": "Signed w/ Rio Breogan (Spanish ACB)",
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4702431.png",
     "proStints": [
       {
@@ -5766,8 +5766,8 @@
       "found": true,
       "source": "user-xlsx-2"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League w/ PT or Exhibit 10+",
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ Aquila Basket Trento",
     "proStints": [
       {
         "league": "G League",
@@ -7302,7 +7302,7 @@
       "currentStatus": "Two-Way Contract, San Antonio Spurs"
     },
     "availabilitySimple": "no",
-    "availabilityNote": null,
+    "availabilityNote": "Signed w/ San Antonio Spurs (2-way)",
     "proStints": [
       {
         "league": "G League",
@@ -7812,8 +7812,8 @@
       "griftRatePctile": 0.621,
       "jumperRate": 0.6538
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ RYTAS Vilnius 7/27",
     "biography": {
       "age": 26,
       "born": "Dec 17, 1999",
@@ -8062,8 +8062,8 @@
       "found": true,
       "source": "user-xlsx-2"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Signed with Boulazac Basket Dordogne (French Jeep Elite) 8/1",
     "proStints": [
       {
         "league": "BXNT",
@@ -8432,8 +8432,8 @@
       "griftRatePctile": 0.871,
       "jumperRate": 0.7164
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ Hamburg Towers (German BBL) 7/28",
     "biography": {
       "age": 23,
       "born": "Aug 2, 2002",
@@ -10396,8 +10396,8 @@
       "found": true,
       "source": "user-xlsx+user-xlsx-2"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League w/ PT or Exhibit 10+",
+    "availabilitySimple": "no",
+    "availabilityNote": "Drafted by MEX in 2026 International Draft",
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4702739.png",
     "proStints": [
       {
@@ -11190,7 +11190,7 @@
       "currentStatus": "Two-Way Contract, Indiana Pacers; previously Mexico City Capitanes (2023-24)"
     },
     "availabilitySimple": "no",
-    "availabilityNote": null,
+    "availabilityNote": "NBA Two-Way — Indiana Pacers",
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4278516.png",
     "proStints": [
       {
@@ -11434,8 +11434,8 @@
       "nationality": "Canada / Dominican Republic",
       "currentStatus": "Unicaja (Spain, Liga ACB); drafted 2021 Rd 1 Pick 13 by Indiana Pacers"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ baskonia",
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4592402.png",
     "proStints": [
       {
@@ -13242,7 +13242,7 @@
       "currentStatus": "UNICS Kazan (Russia, VTB United League)"
     },
     "availabilitySimple": "no",
-    "availabilityNote": null,
+    "availabilityNote": "signed w/ Fenerbahçe Erkek",
     "proStints": [
       {
         "league": "VTB United",
@@ -14624,7 +14624,7 @@
       "jumperRate": 0.6209
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League, no PT",
+    "availabilityNote": null,
     "biography": {
       "age": 27,
       "born": "May 27, 1999",
@@ -15538,7 +15538,7 @@
       "source": "user-xlsx+user-xlsx-2"
     },
     "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilityNote": "Verbal agreement with Mexico City Capitanes",
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4700877.png",
     "proStints": [
       {
@@ -17963,8 +17963,8 @@
       "nationality": "United States",
       "currentStatus": "Fenerbahce Beko (Turkey, EuroLeague)"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Signed w/ Maccabi Tel Aviv (Israeli BSL) 7/29",
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4431674.png",
     "proStints": [
       {
@@ -18183,7 +18183,7 @@
       "source": "user-xlsx+user-xlsx-2+manual-lookup"
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilityNote": "Pursuing '5 in 5' NCAA eligibility",
     "proStints": [
       {
         "league": "NCAA",
@@ -18541,7 +18541,7 @@
       "jumperRate": 0.6361
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilityNote": "Pursuing '5 in 5' NCAA eligibility",
     "biography": {
       "age": 22,
       "born": "Aug 26, 2003",
@@ -19509,7 +19509,7 @@
       "jumperRate": 0.5101
     },
     "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilityNote": "Pursuing '5 in 5' NCAA eligibility",
     "biography": {
       "age": 23,
       "born": "Jan 27, 2003",
@@ -21566,8 +21566,8 @@
       "age": 23,
       "born": "Apr 3, 2003"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "unknown",
+    "availabilityNote": "Verbal agreement with Mexico City Capitanes, could pursue '5 in 5' NCAA eligibility",
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5175976.png",
     "proStints": [
       {
@@ -23663,8 +23663,8 @@
       "found": true,
       "source": "manual-lookup"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": "Summer League, no PT",
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ bamberg baskets 7/27",
     "proStints": [
       {
         "league": "G League",
@@ -23770,8 +23770,8 @@
       "found": true,
       "source": "user-xlsx-2"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Signed with Phoenix Hagen (German BBL) 7/22",
     "proStints": [
       {
         "league": "Primera FEB",
@@ -24009,8 +24009,8 @@
       "found": true,
       "source": "manual-lookup"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Signed with MISTRZ POLSKI (Polish OBL) 7/27",
     "proStints": [
       {
         "league": "G League",
@@ -24692,8 +24692,8 @@
       "griftRatePctile": 0.743,
       "jumperRate": 0.8155
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ Hapoel Holon",
     "biography": {
       "age": 23,
       "born": "Oct 1, 2002",
@@ -26685,8 +26685,8 @@
       "found": true,
       "source": "manual-lookup"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ cholet basket",
     "proStints": [
       {
         "league": "Turkish BSL",
@@ -29310,8 +29310,8 @@
       "source": "user-xlsx-3",
       "heightMismatchNote": "sheet says 6'11\", dataset has 6'9\""
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ LEYMA CORUÑA",
     "proStints": [
       {
         "league": "Puerto Rican BSN",
@@ -32306,8 +32306,8 @@
       "found": true,
       "source": "user-xlsx+user-xlsx-2"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "signed w/ nanterre 92",
     "proStints": [
       {
         "league": "NCAA",
@@ -33788,8 +33788,8 @@
       "found": true,
       "source": "user-xlsx-3"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "yes",
+    "availabilityNote": "SAC reached out, avaliable via trade (8/1)",
     "proStints": [
       {
         "league": "G League",

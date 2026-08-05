@@ -606,8 +606,8 @@
       "age": 22,
       "born": "Feb 21, 2004"
     },
-    "availabilitySimple": "yes",
-    "availabilityNote": null,
+    "availabilitySimple": "unknown",
+    "availabilityNote": "Pursuing NCAA 5 in 5 eligibility",
     "proStints": [
       {
         "league": "NCAA",

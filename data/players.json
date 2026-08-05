@@ -31341,8 +31341,8 @@
       "found": true,
       "source": "user-xlsx-2"
     },
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Recieved offers from Barcelona and Baskonia.",
     "proStints": [
       {
         "league": "G League",

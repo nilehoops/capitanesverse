@@ -249,6 +249,7 @@
     <button class="addplayer-toggle" id="incompleteToggle">+ Incomplete Data</button>
     <div class="addplayer-form" id="incompleteForm">
       <div class="incomplete-bars" id="incompleteBars"></div>
+      <button class="addplayer-toggle" id="incompleteExtractBtn" style="width:auto;display:inline-block;margin-bottom:10px;">Extract</button>
       <input class="pane-search" id="incompleteSearch" type="text" placeholder="Search name or team...">
       <div class="incomplete-list" id="incompleteList"></div>
     </div>
@@ -404,7 +405,7 @@ const ROSTER = [
   { name: "Aly Khalifa",       id: "aly-khalifa",       photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4702739.png" },
   { name: "Chad Baker-Mazara", id: "chad-baker-mazara", photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4700877.png" },
   { name: "Terri Miller Jr.",  id: "terri-miller-jr",   photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5175976.png" },
-  { name: "Agapy Santos",      id: null,                photo: null },
+  { name: "Agapy Santos",      id: "agapy-santos",      photo: "https://www.proballers.com/media/cache/headshot_600/player/headshot/264126.png" },
 ];
 
 function renderRoster() {
@@ -464,9 +465,8 @@ function renderBoards(players) {
 const GAP_FIELDS = [
   { key: 'age', label: 'Age', check: p => !!p.biography?.age },
   { key: 'weight', label: 'Weight', check: p => !!p.biography?.weight },
-  { key: 'photo', label: 'Photo', check: p => !!p.photoUrl },
   { key: 'video', label: 'Video', check: p => !!(p.videos && p.videos.length) },
-  { key: 'stats', label: 'Stats', check: p => !!(p.stats && Object.values(p.stats).some(v => v != null)) },
+  { key: 'stats', label: 'Stats', check: p => !!(p.stats && Object.values(p.stats).every(v => v != null)) },
 ];
 let incompleteSearchTerm = '';
 
@@ -495,20 +495,25 @@ function renderIncompleteList(players) {
   document.getElementById('incompleteList').innerHTML = withGaps.length
     ? withGaps.map(({ p, missing }) => {
         const missKeys = new Set(missing.map(f => f.key));
+        const missingStatLabels = missKeys.has('stats')
+          ? Object.entries(STAT_LABELS).filter(([k]) => p.stats?.[k] == null).map(([, label]) => label)
+          : [];
+        const statsTagText = missingStatLabels.length ? `Stats (${missingStatLabels.length} missing)` : 'Stats';
         return `
         <div class="incomplete-row" data-id="${p.id}">
           <div class="incomplete-row-top">
             <span class="incomplete-row-name"><a href="player.html?id=${p.id}">${p.name}</a> <span class="incomplete-row-team">${p.team || ''}</span></span>
             <a class="incomplete-fillin-toggle" data-id="${p.id}">+ Fill In</a>
           </div>
-          <div class="incomplete-tags">${missing.map(f => `<span class="incomplete-tag">${f.label}</span>`).join('')}</div>
+          <div class="incomplete-tags">${missing.map(f => `<span class="incomplete-tag">${f.key === 'stats' ? statsTagText : f.label}</span>`).join('')}</div>
           <div class="incomplete-fillin-panel" id="fillin-${p.id}">
             <div class="incomplete-fillin-row">
               ${missKeys.has('age') ? `<input type="number" placeholder="Age" data-field="age" data-id="${p.id}">` : ''}
               ${missKeys.has('weight') ? `<input type="text" placeholder="Weight (e.g. 210 lbs)" data-field="weight" data-id="${p.id}">` : ''}
-              ${missKeys.has('photo') ? `<input type="text" placeholder="Photo URL" data-field="photoUrl" data-id="${p.id}">` : ''}
             </div>
-            ${missKeys.has('stats') ? `<textarea class="incomplete-stats-paste" data-id="${p.id}" placeholder="Paste a stat row (42 core + 12 advanced, matching the source sheet order)..."></textarea>` : ''}
+            ${missKeys.has('stats') ? `
+              <div style="font-size:11px;color:#9A9A9A;margin-bottom:4px;">Missing: ${missingStatLabels.join(', ')}</div>
+              <textarea class="incomplete-stats-paste" data-id="${p.id}" placeholder="Paste a stat row (42 core + 12 advanced, matching the source sheet order)..."></textarea>` : ''}
             <div class="incomplete-note-row">
               <input type="text" class="incomplete-note-input" data-id="${p.id}" placeholder="Note (optional)" value="${p.dataGapNote || ''}">
               <button class="incomplete-save-all" data-id="${p.id}">Save</button>
@@ -531,7 +536,6 @@ function renderIncompleteList(players) {
       const status = document.querySelector(`.incomplete-note-status[data-id="${id}"]`);
       const ageInput = document.querySelector(`input[data-field="age"][data-id="${id}"]`);
       const weightInput = document.querySelector(`input[data-field="weight"][data-id="${id}"]`);
-      const photoInput = document.querySelector(`input[data-field="photoUrl"][data-id="${id}"]`);
       const statsArea = document.querySelector(`.incomplete-stats-paste[data-id="${id}"]`);
       const noteInput = document.querySelector(`.incomplete-note-input[data-id="${id}"]`);
 
@@ -545,21 +549,10 @@ function renderIncompleteList(players) {
       }
 
       status.textContent = 'Saving...';
-      const messages = [];
-
-      if (photoInput && photoInput.value.trim()) {
-        const photoVal = photoInput.value.trim();
-        const r1 = await commitPlayerUpdate(
-          INDEX_PATH_IN_REPO, id,
-          (target) => { target.photoUrl = photoVal; },
-          (target) => `Fill incomplete data (photo): ${target.name}`
-        );
-        messages.push(r1.ok ? 'Photo saved' : `Photo failed: ${r1.message}`);
-      }
 
       const hasDetailChange = (ageInput && ageInput.value.trim()) || (weightInput && weightInput.value.trim()) || statsObj || noteInput.value.trim();
       if (hasDetailChange) {
-        const r2 = await commitPlayerUpdate(
+        const result = await commitPlayerUpdate(
           DETAIL_PATH_IN_REPO, id,
           (target) => {
             if (ageInput && ageInput.value.trim()) { target.biography = target.biography || {}; target.biography.age = Number(ageInput.value); target.biography.found = true; }
@@ -569,10 +562,10 @@ function renderIncompleteList(players) {
           },
           (target) => `Fill incomplete data: ${target.name}`
         );
-        messages.push(r2.ok ? 'Details saved' : `Details failed: ${r2.message}`);
+        status.textContent = result.ok ? 'Saved' : result.message;
+      } else {
+        status.textContent = 'Nothing to save.';
       }
-
-      status.textContent = messages.length ? messages.join(' — ') : 'Nothing to save.';
     });
   });
 }
@@ -581,6 +574,29 @@ function renderIncompleteData(players) {
   renderIncompleteBars(players);
   renderIncompleteList(players);
 }
+document.getElementById('incompleteExtractBtn').addEventListener('click', () => {
+  const term = incompleteSearchTerm.toLowerCase();
+  const withGaps = (cachedPlayers || [])
+    .map(p => ({ p, missing: GAP_FIELDS.filter(f => !f.check(p)) }))
+    .filter(x => x.missing.length > 0)
+    .filter(x => !term || x.p.name.toLowerCase().includes(term) || (x.p.team || '').toLowerCase().includes(term))
+    .sort((a, b) => (a.p.overallRank ?? 999) - (b.p.overallRank ?? 999));
+
+  const rows = withGaps.map(({ p, missing }) => {
+    const fieldList = missing.map(f => {
+      if (f.key !== 'stats') return f.label;
+      const missingStats = Object.entries(STAT_LABELS).filter(([k]) => p.stats?.[k] == null).map(([, label]) => label);
+      return `Stats: ${missingStats.join(', ')}`;
+    }).join(' | ');
+    return [p.id, p.name, p.team || '', p.overallRank ?? '', fieldList, p.dataGapNote || ''].map(csvEscape).join(',');
+  });
+  const csv = 'id,name,team,overallRank,missingFields,note\n' + rows.join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'incomplete_data.csv';
+  a.click();
+});
 document.getElementById('incompleteSearch').addEventListener('input', (e) => {
   incompleteSearchTerm = e.target.value;
   renderIncompleteList(cachedPlayers);

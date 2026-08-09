@@ -415,7 +415,7 @@ function proStintsHtml(players, player) {
     return `
       <div class="prostint-card">
         <div class="prostint-league">
-          <span class="strength">${leaguePctile != null ? `${leaguePctile}th %ile (${s.league})` : `League strength n/a (${s.league})`}</span>
+          <span class="strength">${leaguePctile != null ? `${leaguePctile}th %ile (${s.league}${s.season ? ', ' + s.season : ''})` : `League strength n/a (${s.league}${s.season ? ', ' + s.season : ''})`}</span>
         </div>
         <div class="prostint-stats">
           <span class="k">PTS/40:</span> ${fmt('pts40')}
@@ -759,5 +759,13 @@ Promise.all([
     document.getElementById('app').innerHTML = `<div class="notfound">Could not load player data: ${err.message}</div>`;
   });
 </script>
+<style>
+  .site-credit {
+    position: fixed; bottom: 6px; right: 10px; font-family: 'Lora', serif; font-size: 11px;
+    color: #4A4A4A; text-align: right; z-index: 1000; pointer-events: none; line-height: 1.3;
+  }
+  .site-credit .sc-sub { display: block; font-size: 9px; color: #333; }
+</style>
+<div class="site-credit">Capitanesverse<span class="sc-sub">presented by Nile G.</span></div>
 </body>
 </html>

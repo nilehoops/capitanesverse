@@ -1,4 +1,4 @@
-name: Explore ESPN Roster Endpoint (diagnostic, one-time)
+name: Explore ESPN Corrected Endpoints (diagnostic, one-time)
 
 on:
   workflow_dispatch: {}
@@ -19,5 +19,5 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Explore ESPN roster endpoint
-        run: python scripts/explore_espn_roster.py
+      - name: Test corrected ESPN endpoints
+        run: python scripts/explore_espn_corrected.py

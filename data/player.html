@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capitanesverse — Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #000000;
+    color: #ECECEC;
+    font-family: 'Lora', serif;
+    font-weight: 700;
+  }
+  a { color: inherit; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(11, 1fr) 1.4fr;
+    grid-template-rows: auto auto auto auto auto;
+    grid-template-areas:
+      "name  name  name  name  name  name  name  ranktop ranktop ranktop ranktop sidebar"
+      "video1 video1 video1 video2 video2 video2 video2 ranksmid ranksmid ranksmid ranksmid sidebar"
+      "stats stats stats stats stats stats stats crowd crowd crowd crowd sidebar"
+      "prostints prostints prostints prostints prostints prostints prostints crowd crowd crowd crowd sidebar"
+      "strong strong strong strong weak weak weak crowd crowd crowd crowd sidebar";
+    min-height: 100vh;
+  }
+
+  .name    { grid-area: name;    background: #1631FF; display:flex; align-items:center; padding: 14px 24px; }
+  .ranktop { grid-area: ranktop; background: #000; padding: 14px 18px; }
+  .video1  { grid-area: video1;  background: #000; padding: 14px; border-top: 1px solid #222; }
+  .video2  { grid-area: video2;  background: #000; padding: 14px; border-top: 1px solid #222; border-left: 1px solid #222; }
+  .ranksmid{ grid-area: ranksmid;background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .stats   { grid-area: stats;   background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .prostints { grid-area: prostints; background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .strong  { grid-area: strong;  background: #128A3E; padding: 14px 18px; }
+  .weak    { grid-area: weak;    background: #D81F2A; padding: 14px 18px; border-left: 1px solid #000; }
+  .crowd   { grid-area: crowd;   background: #C9C9C9; color: #101010; padding: 14px 18px; border-top: 1px solid #222; }
+  .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; }
+
+  .name h1 { font-size: clamp(30px, 4.4vw, 64px); margin: 0; color: #ECECEC; line-height: 1; }
+  .x-logo-link { color: #ECECEC; margin-left: 14px; display: inline-flex; vertical-align: middle; opacity: 0.85; }
+  .x-logo-link:hover { opacity: 1; }
+  .roster-tag { background: #FFD400; color: #1631FF; padding: 0 4px; }
+
+  .line { font-size: 21px; margin: 2px 0; }
+  .small-label { font-size: 15px; font-weight: 600; }
+
+  .yt-slot {
+    background: #0A0A0A;
+    border: 1px dashed #333;
+    color: #8A8A8A;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px;
+    min-height: 160px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .yt-slot iframe { width: 100%; height: 160px; border: 0; }
+  .yt-custom-row { display: flex; gap: 4px; margin-top: 6px; }
+  .yt-custom-row input {
+    flex: 1; background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 11px; padding: 4px;
+  }
+  .yt-custom-row button {
+    font-family: 'Lora', serif; font-weight: 700; font-size: 11px;
+    background: #ECECEC; color: #000; border: none; padding: 4px 8px; cursor: pointer;
+  }
+  .yt-custom-status { font-size: 10px; color: #8A8A8A; margin-top: 2px; }
+
+  .staff-head { font-size: 19px; margin-top: 10px; }
+  .staff-body { font-size: 15px; font-weight: 400; color: #C9C9C9; margin-top: 4px; }
+
+  .stats-head { font-size: 24px; margin-bottom: 8px; }
+  .stat-table { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 4px 14px; font-size: 13px; font-weight: 400; }
+  .stat-table .k { color: #9A9A9A; }
+  .stat-table .v { color: #ECECEC; font-weight: 600; }
+
+  .box-title { font-size: 20px; margin: 0 0 6px; }
+  .box-sub { font-size: 13px; font-weight: 400; margin-bottom: 8px; }
+  .pbar-row { display: flex; align-items: center; gap: 8px; margin: 5px 0; font-size: 13px; }
+  .pbar-label { width: 76px; flex-shrink: 0; font-weight: 700; }
+  .pbar-track { flex: 1; height: 12px; background: rgba(0,0,0,0.3); position: relative; }
+  .pbar-fill { display: block; height: 100%; background: #ECECEC; }
+  .pbar-value { width: 60px; flex-shrink: 0; text-align: right; font-weight: 400; }
+  .pbar-value sub { margin-left: 3px; opacity: 0.75; }
+
+  .shotdiet-wrap { margin: 10px 0 14px; }
+  .shotdiet-bar { display: flex; height: 22px; overflow: hidden; border: 1px solid #262626; }
+  .shotdiet-seg.rim { background: #D8641F; }
+  .shotdiet-seg.mid { background: #6A6A6A; }
+  .shotdiet-seg.three { background: #1B6FD1; }
+  .shotdiet-legend { display: flex; gap: 16px; margin-top: 6px; font-size: 12px; font-weight: 400; flex-wrap: wrap; }
+  .shotdiet-legend .dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; }
+  .shotdiet-legend .dot.rim { background: #D8641F; }
+  .shotdiet-legend .dot.mid { background: #6A6A6A; }
+  .shotdiet-legend .dot.three { background: #1B6FD1; }
+  .shotdiet-legend sub { margin-left: 3px; opacity: 0.7; }
+
+  .prostint-card { border: 1px solid #262626; padding: 8px 10px; margin-bottom: 8px; }
+  .prostint-league { font-size: 14px; font-weight: 700; display: flex; justify-content: space-between; }
+  .prostint-league .strength { font-size: 11px; font-weight: 400; color: #8A8A8A; }
+  .prostint-stats { font-size: 12px; font-weight: 400; color: #ECECEC; margin-top: 4px; line-height: 1.5; }
+  .prostint-stats .k { color: #9A9A9A; }
+  .no-prostints { font-size: 12px; color: #6A6A6A; padding: 8px 0; }
+
+  .crowd .box-sub { font-size: 13px; font-weight: 400; color: #303030; }
+  .crowd textarea { width: 100%; font-family: 'Lora', serif; font-size: 13px; padding: 6px; margin-top: 8px; border: 1px solid #999; }
+  .crowd button { margin-top: 6px; font-family: 'Lora', serif; font-weight: 700; font-size: 13px; padding: 6px 12px; background: #101010; color: #ECECEC; border: none; cursor: pointer; }
+
+  /* ---- sidebar internals ---- */
+  .sb-search { padding: 10px; }
+  .sb-search input {
+    width: 100%; background: #FFFFFF; color: #000; border: none;
+    font-family: 'Lora', serif; font-weight: 700; font-size: 14px; padding: 8px;
+  }
+  .sb-search-results a { display: block; font-size: 12px; font-weight: 600; color: #ECECEC; padding: 2px 0; }
+
+  .sb-fields { padding: 4px 10px 10px; font-size: 15px; line-height: 1.6; }
+  .sb-fields .lab { color: #ECECEC; }
+  .sb-fields .val { color: #9A9A9A; font-weight: 400; }
+  .avail-edit-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 15px; }
+  .avail-edit-row select {
+    background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 3px;
+  }
+  .avail-edit-row input[type=text] {
+    background: #000; color: #ECECEC; border: 1px solid #444;
+    font-family: 'Lora', serif; font-size: 12px; padding: 3px; width: 120px;
+  }
+  .avail-edit-row button {
+    font-family: 'Lora', serif; font-weight: 700; font-size: 11px;
+    background: #ECECEC; color: #000; border: none; padding: 3px 8px; cursor: pointer;
+  }
+  .avail-edit-row #availStatus { font-size: 11px; font-weight: 400; color: #9A9A9A; }
+
+  .compare-section { padding: 10px; border-top: 1px solid #222; }
+  .compare-title { font-size: 14px; font-weight: 700; color: #ECECEC; margin-bottom: 8px; }
+  .compare-group { margin-bottom: 12px; }
+  .compare-group-label { font-size: 11px; font-weight: 700; color: #8A8A8A; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .compare-players { display: flex; gap: 6px; }
+  .compare-player { width: 32%; text-align: center; }
+  .compare-player img, .compare-player .noimg {
+    width: 100%; aspect-ratio: 1; object-fit: cover; background: #1A1A1A; display: block;
+  }
+  .compare-player .noimg { display: flex; align-items: center; justify-content: center; font-size: 16px; color: #6A6A6A; }
+  .compare-player .cname { font-size: 10px; font-weight: 600; margin-top: 2px; line-height: 1.2; }
+  .compare-empty { font-size: 11px; font-weight: 400; color: #6A6A6A; }
+
+  .sb-logo {
+    padding: 10px;
+    font-size: 13px;
+    text-align: right;
+    color: #ECECEC;
+  }
+
+  .notfound { padding: 40px; font-size: 22px; }
+</style>
+</head>
+<body>
+
+<div id="app"></div>
+
+<script>
+// ---- Repo this page saves availability edits to ----
+const REPO_OWNER = 'nilehoops';
+const REPO_NAME = 'capitanesverse';
+const INDEX_PATH_IN_REPO = 'data/players_index.json';
+const DETAIL_PATH_IN_REPO = 'data/players_detail.json';
+
+// UTF-8-safe base64 helpers (plain btoa/atob mishandle non-ASCII names)
+function utf8ToBase64(str) {
+  const bytes = new TextEncoder().encode(str);
+  let binary = '';
+  bytes.forEach(b => binary += String.fromCharCode(b));
+  return btoa(binary);
+}
+function base64ToUtf8(b64) {
+  const binary = atob(b64);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+let githubToken = null; // held in memory only for this page load — never stored
+
+// Generic: fetch a given file, let `mutate(target)` change one player's fields,
+// then commit. Data is split into players_index.json (identity/rank/
+// availability) and players_detail.json (stats/advanced/biography/proStints/
+// videos) — callers pass whichever file holds the field(s) they're changing.
+async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
+  if (!githubToken) {
+    githubToken = prompt(
+      'GitHub personal access token (Contents: read/write on this repo).\n' +
+      'Only used for this save, kept in memory only, never stored.'
+    );
+    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
+  }
+
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
+  const headers = {
+    'Authorization': `Bearer ${githubToken}`,
+    'Accept': 'application/vnd.github+json',
+  };
+
+  try {
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}). Check token permissions.` };
+    const fileData = await getResp.json();
+    const content = base64ToUtf8(fileData.content);
+    const allPlayers = JSON.parse(content);
+
+    const target = allPlayers.find(p => p.id === playerId);
+    if (!target) return { ok: false, message: 'Player not found in remote file.' };
+    mutate(target);
+
+    const updatedContent = JSON.stringify(allPlayers);
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: commitMessage(target),
+        content: utf8ToBase64(updatedContent),
+        sha: fileData.sha,
+      }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}` };
+    }
+    return { ok: true, message: 'Saved — live site updates in ~1 min.' };
+  } catch (e) {
+    return { ok: false, message: `Network error: ${e.message}` };
+  }
+}
+
+function saveAvailabilityToGitHub(playerId, newSimple, newNote) {
+  return commitPlayerUpdate(
+    INDEX_PATH_IN_REPO, playerId,
+    (target) => { target.availabilitySimple = newSimple; target.availabilityNote = newNote || null; },
+    (target) => `Update availability: ${target.name} -> ${newSimple}${newNote ? ' (' + newNote + ')' : ''}`
+  );
+}
+
+// Accepts a full YouTube URL (watch?v=, youtu.be/, embed/) or a bare 11-char video ID.
+function extractYouTubeId(input) {
+  const s = input.trim();
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=)([\w-]{11})/,
+    /(?:youtu\.be\/)([\w-]{11})/,
+    /(?:youtube\.com\/embed\/)([\w-]{11})/,
+  ];
+  for (const p of patterns) {
+    const m = s.match(p);
+    if (m) return m[1];
+  }
+  if (/^[\w-]{11}$/.test(s)) return s;
+  return null;
+}
+
+function saveCustomVideo(playerId, slotIndex, videoId) {
+  return commitPlayerUpdate(
+    DETAIL_PATH_IN_REPO, playerId,
+    (target) => {
+      target.videos = target.videos || [null, null];
+      while (target.videos.length <= slotIndex) target.videos.push(null);
+      target.videos[slotIndex] = {
+        id: videoId,
+        title: 'Custom pick',
+        thumbnail: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+      };
+    },
+    (target) => `Set custom video ${slotIndex + 1} for ${target.name}`
+  );
+}
+
+// Precise age to 2 decimals when we have a clean, unqualified birthdate;
+// falls back to the stored whole-year age for fuzzy/uncertain birthdates.
+function computeDecimalAge(bio) {
+  if (!bio) return null;
+  if (bio.born && /^[A-Z][a-z]{2} \d{1,2}, \d{4}$/.test(bio.born.trim())) {
+    const d = new Date(bio.born);
+    if (!isNaN(d.getTime())) {
+      const msPerYear = 365.25 * 24 * 60 * 60 * 1000;
+      return ((Date.now() - d.getTime()) / msPerYear).toFixed(2);
+    }
+  }
+  return bio.age != null ? Number(bio.age).toFixed(2) : null;
+}
+
+const STAT_LABELS = {
+  gp:"GP", minPct:"Min%", prpg:"PRPG!", dPrpg:"D-PRPG", bpm:"BPM", obpm:"OBPM", dbpm:"DBPM",
+  ortg:"ORtg", drtg:"D-Rtg", usg:"Usg", efg:"eFG", ts:"TS", orb:"OR", drb:"DR", ast:"Ast",
+  tov:"TO", astToRatio:"A/TO", blk:"Blk", stl:"Stl", ftr:"FTR", fc40:"FC/40",
+  dunks:"Dunks", dunkAttempts:"Dunk Att", dunkPct:"Dunk%", rimMakes:"Rim M", rimAttempts:"Rim A",
+  rimPct:"Rim%", nonRim2Makes:"NonRim2 M", nonRim2Attempts:"NonRim2 A", nonRim2Pct:"NonRim2%",
+  ftMakes:"FT", ftAttempts:"FTA", ftPct:"FT%", twoPM:"2PM", twoPA:"2PA", twoPct:"2P%",
+  threePRate:"3PR", threePer100:"3P/100", threePM:"3P", threePA:"3PA", threePct:"3P%", fga:"FGA",
+};
+
+// Which direction is "good" for percentile purposes (used by Strengths/Weaknesses).
+const LOWER_IS_BETTER = new Set(['tov', 'drtg']);
+// min%/dunk%/fc40 removed per request; dunksPerGame and bmi added as computed
+// (non-`stats`-object) getters. scale100:true = raw value is already 0-100;
+// pct:true + no scale100 = stored as a 0-1 fraction (×100 before display).
+const SW_STATS = [
+  { key: 'prpg', label: 'PRPG!' }, { key: 'dPrpg', label: 'D-PRPG' },
+  { key: 'bpm', label: 'BPM' }, { key: 'obpm', label: 'OBPM' }, { key: 'dbpm', label: 'DBPM' },
+  { key: 'ortg', label: 'ORtg' }, { key: 'drtg', label: 'D-Rtg' },
+  { key: 'usg', label: 'Usg', pct: true, scale100: true },
+  { key: 'efg', label: 'eFG', pct: true, scale100: true },
+  { key: 'ts', label: 'TS', pct: true, scale100: true },
+  { key: 'orb', label: 'OR', pct: true, scale100: true },
+  { key: 'drb', label: 'DR', pct: true, scale100: true },
+  { key: 'ast', label: 'Ast', pct: true, scale100: true },
+  { key: 'tov', label: 'TO', pct: true, scale100: true },
+  { key: 'astToRatio', label: 'A/TO', suffix: 'x' },
+  { key: 'blk', label: 'Blk', pct: true, scale100: true },
+  { key: 'stl', label: 'Stl', pct: true, scale100: true },
+  { key: 'ftr', label: 'FTR', pct: true, scale100: true },
+  { key: 'rimPct', label: 'Rim%', pct: true },
+  { key: 'nonRim2Pct', label: 'NonRim2%', pct: true },
+  { key: 'ftPct', label: 'FT%', pct: true },
+  { key: 'twoPct', label: '2P%', pct: true },
+  { key: 'threePRate', label: '3PR', pct: true, scale100: true },
+  { key: 'threePct', label: '3P%', pct: true },
+  { key: 'dunksPerGame', label: 'Dunks/G' },
+  { key: 'bmi', label: 'BMI' },
+];
+
+function getSwValue(player, key) {
+  if (key === 'dunksPerGame') {
+    const d = player.stats?.dunks, gp = player.stats?.gp;
+    return (d != null && gp) ? d / gp : null;
+  }
+  if (key === 'bmi') {
+    const w = player.biography?.weight, h = player.heightIn;
+    if (!w || !h) return null;
+    const lbs = parseFloat(String(w).match(/^\d+/)?.[0]);
+    return lbs ? 703 * lbs / (h * h) : null;
+  }
+  return player.stats?.[key];
+}
+function formatSwValue(descriptor, value) {
+  if (value == null) return '';
+  let v = value;
+  if (descriptor.pct && !descriptor.scale100) v = v * 100;
+  let s = v.toFixed(1);
+  if (descriptor.pct) s += '%';
+  if (descriptor.suffix) s += descriptor.suffix;
+  return s;
+}
+
+function percentileRank(players, position, key, value) {
+  const peers = players.map(p => ({ p, v: getSwValue(p, key) })).filter(x => x.p.position === position && x.v != null);
+  if (peers.length < 5 || value == null) return null;
+  const better = LOWER_IS_BETTER.has(key)
+    ? peers.filter(x => x.v >= value).length
+    : peers.filter(x => x.v <= value).length;
+  return better / peers.length;
+}
+
+// Shot diet: where a player's shots come from (rim / mid-range / three),
+// each with its percentile vs. same-position peers, subscripted.
+function rimRatePct(p) { return p.advanced?.rimRate != null ? p.advanced.rimRate * 100 : null; }
+function midRangeRate(p) {
+  const rim = rimRatePct(p), three = p.stats?.threePRate;
+  return (rim != null && three != null) ? Math.max(0, 100 - rim - three) : null;
+}
+function pctRankGeneric(players, position, value, getter) {
+  const peers = players.map(p => ({ p, v: getter(p) })).filter(x => x.p.position === position && x.v != null);
+  if (peers.length < 5 || value == null) return null;
+  return peers.filter(x => x.v <= value).length / peers.length;
+}
+// Percentile for a stint stat, computed across the flattened pool of ALL
+// stints from same-position players (not narrowed to the same league — with
+// most leagues having only a handful of tracked players, a same-league-only
+// sample would be too small to mean anything; this is a broader "how does
+// this compare to other tracked players' pro-level production" signal).
+const STINT_LOWER_IS_BETTER = new Set(['tov40']);
+function stintPercentile(players, position, key, value) {
+  if (value == null) return null;
+  const pool = [];
+  for (const p of players) {
+    if (p.position !== position) continue;
+    for (const s of (p.proStints || [])) {
+      if (s[key] != null) pool.push(s[key]);
+    }
+  }
+  if (pool.length < 5) return null;
+  const better = STINT_LOWER_IS_BETTER.has(key)
+    ? pool.filter(v => v >= value).length
+    : pool.filter(v => v <= value).length;
+  return Math.round((better / pool.length) * 100);
+}
+function proStintsHtml(players, player) {
+  const stints = player.proStints || [];
+  if (!stints.length) return '<div class="no-prostints">No pro/other-league stints on file.</div>';
+  return stints.map(s => {
+    const leaguePctile = s.leagueStrengthPctile != null ? Math.round(s.leagueStrengthPctile * 100) : null;
+    const fmt = (key, isPct) => {
+      const v = s[key];
+      if (v == null) return '—';
+      const display = isPct ? (v * 100).toFixed(1) + '%' : v;
+      const pct = stintPercentile(players, player.position, key, v);
+      return `${display}${pct != null ? `<sub style="color:#8A8A8A;">${pct}</sub>` : ''}`;
+    };
+    return `
+      <div class="prostint-card">
+        <div class="prostint-league">
+          <span class="strength">${leaguePctile != null ? `${leaguePctile}th %ile (${s.league})` : `League strength n/a (${s.league})`}</span>
+        </div>
+        <div class="prostint-stats">
+          <span class="k">PTS/40:</span> ${fmt('pts40')}
+          &nbsp; <span class="k">ORB/40:</span> ${fmt('orb40')}
+          &nbsp; <span class="k">DRB/40:</span> ${fmt('drb40')}
+          &nbsp; <span class="k">AST/40:</span> ${fmt('ast40')}<br>
+          <span class="k">TOV/40:</span> ${fmt('tov40')}
+          &nbsp; <span class="k">STL/40:</span> ${fmt('stl40')}
+          &nbsp; <span class="k">BLK/40:</span> ${fmt('blk40')}
+          &nbsp; <span class="k">PER:</span> ${s.per ?? '—'}<br>
+          <span class="k">2P%:</span> ${fmt('2p_pct', true)}
+          &nbsp; <span class="k">3P%:</span> ${fmt('3p_pct', true)}
+          &nbsp; <span class="k">FT%:</span> ${fmt('ft_pct', true)}
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// Shot diet as one proportional stacked bar (Cleaning the Glass style) —
+// the shape of shot selection reads faster as one bar than three separate
+// percentile lines, since the three always sum to 100% of shot attempts.
+function shotDietHtml(players, player) {
+  const rim = rimRatePct(player), mid = midRangeRate(player), three = player.stats?.threePRate;
+  if (rim == null || mid == null || three == null) return '';
+  const rimPct = pctRankGeneric(players, player.position, rim, rimRatePct);
+  const midPct = pctRankGeneric(players, player.position, mid, midRangeRate);
+  const threePct = pctRankGeneric(players, player.position, three, p => p.stats?.threePRate);
+  const r = (v) => v != null ? Math.round(v * 100) : null;
+  return `
+    <div class="shotdiet-wrap">
+      <div class="shotdiet-bar">
+        <span class="shotdiet-seg rim" style="width:${rim}%;" title="Rim Rate: ${rim.toFixed(1)}%"></span>
+        <span class="shotdiet-seg mid" style="width:${mid}%;" title="NonRim2 Rate: ${mid.toFixed(1)}%"></span>
+        <span class="shotdiet-seg three" style="width:${three}%;" title="3PAr: ${three.toFixed(1)}%"></span>
+      </div>
+      <div class="shotdiet-legend">
+        <span><span class="dot rim"></span>Rim Rate ${rim.toFixed(1)}%${r(rimPct)!=null?`<sub>${r(rimPct)}</sub>`:''}</span>
+        <span><span class="dot mid"></span>NonRim2 Rate ${mid.toFixed(1)}%${r(midPct)!=null?`<sub>${r(midPct)}</sub>`:''}</span>
+        <span><span class="dot three"></span>3PAr ${three.toFixed(1)}%${r(threePct)!=null?`<sub>${r(threePct)}</sub>`:''}</span>
+      </div>
+    </div>`;
+}
+
+// Percentile bars (Basketball-Reference / Cleaning the Glass style) — every
+// qualifying stat, not just outliers, bar length = percentile, color-graded.
+// Split at the 50th percentile into the existing Strengths/Weaknesses boxes
+// rather than one combined list, to keep the established two-box layout.
+function computeStrengthsWeaknesses(players, player) {
+  const strengths = [], weaknesses = [];
+  for (const d of SW_STATS) {
+    const value = getSwValue(player, d.key);
+    const pct = percentileRank(players, player.position, d.key, value);
+    if (pct == null) continue;
+    const row = { key: d.key, label: d.label, pct: Math.round(pct * 100), valueDisplay: formatSwValue(d, value) };
+    if (row.pct >= 50) strengths.push(row); else weaknesses.push(row);
+  }
+  strengths.sort((a, b) => b.pct - a.pct);
+  weaknesses.sort((a, b) => a.pct - b.pct);
+  return { strengths, weaknesses };
+}
+function pbarRow(row) {
+  return `
+    <div class="pbar-row">
+      <span class="pbar-label">${row.label}</span>
+      <span class="pbar-track"><span class="pbar-fill" style="width:${row.pct}%;"></span></span>
+      <span class="pbar-value">${row.valueDisplay}<sub>${row.pct}</sub></span>
+    </div>`;
+}
+
+// Derived ranks: the source sheet doesn't have explicit "Available Rank" or
+// "Latino Rank" columns, so both are computed here from Overall Rank.
+function computeDerivedRanks(players, player) {
+  const availablePool = players.filter(p => p.availabilitySimple === 'yes' && p.overallRank != null)
+    .sort((a, b) => a.overallRank - b.overallRank);
+  const availableRank = player.availabilitySimple === 'yes'
+    ? availablePool.findIndex(p => p.id === player.id) + 1 : null;
+
+  const latinoPool = players.filter(p => p.latino === true && p.overallRank != null)
+    .sort((a, b) => a.overallRank - b.overallRank);
+  const latinoRank = player.latino === true
+    ? latinoPool.findIndex(p => p.id === player.id) + 1 : null;
+
+  return { availableRank: availableRank || null, latinoRank: latinoRank || null };
+}
+
+function videoSlot(video, label, slotIndex) {
+  const player = video
+    ? `<div class="yt-slot"><iframe src="https://www.youtube.com/embed/${video.id}" title="${video.title}" allowfullscreen></iframe></div>`
+    : `<div class="yt-slot">Youtube Embed of<br>"'${label}' highlight"<br>(populated by the fetch-videos Action)</div>`;
+  const customRow = `
+    <div class="yt-custom-row">
+      <input type="text" placeholder="Paste YouTube URL or ID" data-slot="${slotIndex}" class="yt-custom-input">
+      <button data-slot="${slotIndex}" class="yt-custom-btn">Set</button>
+    </div>
+    <div class="yt-custom-status" data-slot="${slotIndex}"></div>`;
+  return player + customRow;
+}
+
+function render(player, players) {
+  const { strengths, weaknesses } = computeStrengthsWeaknesses(players, player);
+  const { availableRank, latinoRank } = computeDerivedRanks(players, player);
+  const videos = player.videos || [];
+
+  document.getElementById('app').innerHTML = `
+    <div class="grid">
+      <div class="name">
+        <a href="index.html" style="font-size:15px; text-decoration:underline; margin-right:16px;">&larr; Main Menu</a>
+        <h1 style="display:inline;">${player.onRoster ? `<span class="roster-tag">${player.name}</span>` : player.name}</h1>
+        <a class="x-logo-link" href="https://x.com/search?q=${encodeURIComponent(player.name + ' basketball')}&f=live" target="_blank" rel="noopener" title="Search &quot;${player.name}&quot; on X">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+        </a>
+      </div>
+
+      <div class="ranktop">
+        <div class="line"><a href="rankings.html?pos=overall">Overall Rank: ${player.overallRank ? '#' + player.overallRank : 'N/A'}</a></div>
+        <div class="line"><a href="rankings.html?pos=${player.position ? player.position.toLowerCase() : 'overall'}">Positional Rank: ${player.positionalRank ? '#' + player.positionalRank : 'N/A'}</a></div>
+      </div>
+
+      <div class="sidebar">
+        <div class="sb-search">
+          <input id="searchInput" placeholder="Search:" autocomplete="off">
+          <div class="sb-search-results" id="searchResults"></div>
+        </div>
+        <div class="sb-fields">
+          <div><span class="lab">Position: </span><span class="val">${player.position || '—'}</span></div>
+          <div><span class="lab">Age: </span><span class="val">${computeDecimalAge(player.biography) ?? '—'}</span></div>
+          <div><span class="lab">Height: </span><span class="val">${player.heightDisplay || '—'}</span></div>
+          <div><span class="lab">Weight: </span><span class="val">${player.biography?.weight ?? '—'}</span></div>
+          <div><span class="lab">Last Team: </span><span class="val">${player.team || '—'}</span></div>
+          <div><span class="lab">Agency: </span><span class="val">${player.biography?.agent ?? '—'}</span></div>
+          <div class="avail-edit-row">
+            <span class="lab">Available: </span>
+            <select id="availSelect">
+              <option value="yes" ${player.availabilitySimple === 'yes' ? 'selected' : ''}>Yes</option>
+              <option value="no" ${player.availabilitySimple === 'no' ? 'selected' : ''}>No</option>
+              <option value="unknown" ${player.availabilitySimple === 'unknown' ? 'selected' : ''}>Unknown</option>
+            </select>
+            <input id="availNote" type="text" placeholder="Note (optional)" value="${player.availabilityNote || ''}">
+            <button id="saveAvailBtn">Save</button>
+            <span id="availStatus"></span>
+          </div>
+          <div><span class="lab">Latino: </span><span class="val">${player.latino === true ? 'Yes' : player.latino === false ? 'No' : '—'}</span></div>
+        </div>
+        ${player.biography?.hometown ? `<div class="sb-fields" style="padding-top:0;"><span class="lab">Hometown: </span><span class="val">${player.biography.hometown}</span></div>` : ''}
+        <div class="compare-section" id="compareSection"></div>
+        <div class="sb-logo">Capitanes 2026<br>Offseason Site</div>
+      </div>
+
+      <div class="video1">${videoSlot(videos[0], player.name, 0)}</div>
+      <div class="video2">${videoSlot(videos[1], player.name, 1)}</div>
+
+      <div class="ranksmid">
+        <div class="line"><a href="rankings.html?pos=overall&availability=available">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
+        <div class="line"><a href="rankings.html?pos=overall&latino=yes">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</a></div>
+        <div class="staff-head">Staff Notes/Overview:</div>
+        <div class="staff-body">${player.staffNotes || 'No staff notes yet.'}</div>
+      </div>
+
+      <div class="stats">
+        <div class="stats-head">NCAA Career Stats/Metrics</div>
+        ${shotDietHtml(players, player)}
+        <div class="stat-table">
+          ${Object.entries(STAT_LABELS).map(([key, label]) => {
+            const v = player.stats[key];
+            return v == null ? '' : `<div><span class="k">${label}:</span> <span class="v">${v}</span></div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <div class="prostints">
+        <div class="stats-head" style="font-size:18px;">Pro/Other League Stints (Per-40)</div>
+        ${proStintsHtml(players, player)}
+      </div>
+
+      <div class="strong">
+        <div class="box-title">Stat Strengths</div>
+        <div class="box-sub">Relative to the position group</div>
+        ${strengths.map(pbarRow).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
+      </div>
+
+      <div class="weak">
+        <div class="box-title">Stat Weaknesses</div>
+        <div class="box-sub">Relative to the position group</div>
+        ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
+      </div>
+
+      <div class="crowd">
+        <div class="box-title">Community Notes</div>
+        <div class="box-sub">Real, shared comments via GitHub Discussions — visible to everyone.</div>
+        <div id="giscusContainer"></div>
+      </div>
+    </div>
+  `;
+
+  setupSearch(players);
+  loadGiscus(player);
+  setupAvailabilitySave(player);
+  setupCustomVideo(player);
+  renderCompareTo(players, player);
+}
+
+// ---- Compare To: best-available / best-available-Latino / 2026 Capitanes /
+// Current Roster, each filtered to this player's own position, top 3 by rank.
+function compareGroupHtml(label, list) {
+  const cards = list.map(p => `
+    <a class="compare-player" href="player.html?id=${p.id}">
+      ${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<div class="noimg">?</div>`}
+      <div class="cname">${p.name.split(' ').pop()}</div>
+    </a>`).join('');
+  return `
+    <div class="compare-group">
+      <div class="compare-group-label">${label}</div>
+      ${list.length ? `<div class="compare-players">${cards}</div>` : `<div class="compare-empty">None yet.</div>`}
+    </div>`;
+}
+
+function renderCompareTo(players, player) {
+  const pos = player.position;
+  const samePos = players.filter(p => p.position === pos && p.id !== player.id);
+
+  const top3 = (arr, key) => arr.filter(p => p[key] != null).sort((a, b) => a[key] - b[key]).slice(0, 3);
+
+  const bestAvailable = top3(samePos.filter(p => p.availabilitySimple === 'yes'), 'positionalRank');
+  const bestAvailableLatino = top3(samePos.filter(p => p.availabilitySimple === 'yes' && p.latino === true), 'positionalRank');
+  const capitanes2026 = top3(samePos.filter(p => (p.biography?.currentStatus || '').includes('Mexico City Capitanes')), 'positionalRank');
+  const currentRoster = samePos.filter(p => p.onRoster).slice(0, 3);
+
+  document.getElementById('compareSection').innerHTML = `
+    <div class="compare-title">Compare To (${pos || '—'})</div>
+    ${compareGroupHtml('Best Available', bestAvailable)}
+    ${compareGroupHtml('Best Available Latino', bestAvailableLatino)}
+    ${compareGroupHtml('2026 Capitanes', capitanes2026)}
+    ${compareGroupHtml('Current Roster Capitanes', currentRoster)}
+  `;
+}
+
+function setupCustomVideo(player) {
+  document.querySelectorAll('.yt-custom-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const slot = parseInt(btn.dataset.slot, 10);
+      const input = document.querySelector(`.yt-custom-input[data-slot="${slot}"]`);
+      const status = document.querySelector(`.yt-custom-status[data-slot="${slot}"]`);
+      const videoId = extractYouTubeId(input.value);
+      if (!videoId) { status.textContent = "Couldn't read a video ID from that."; return; }
+      status.textContent = 'Saving...';
+      const result = await saveCustomVideo(player.id, slot, videoId);
+      status.textContent = result.message;
+    });
+  });
+}
+
+function setupAvailabilitySave(player) {
+  document.getElementById('saveAvailBtn').addEventListener('click', async () => {
+    const select = document.getElementById('availSelect');
+    const noteInput = document.getElementById('availNote');
+    const status = document.getElementById('availStatus');
+    const newSimple = select.value;
+    const newNote = noteInput.value.trim();
+    status.textContent = 'Saving...';
+    const result = await saveAvailabilityToGitHub(player.id, newSimple, newNote);
+    status.textContent = result.message;
+    if (result.ok) {
+      player.availabilitySimple = newSimple;
+      player.availabilityNote = newNote || null;
+    }
+  });
+}
+
+// ---- Community notes: real, shared comments via giscus (GitHub Discussions) ----
+// Requires one-time setup on github.com before this works:
+//   1. Repo Settings -> General -> Features -> check "Discussions"
+//   2. On the repo's Discussions tab, create a category (e.g. "Player Comments"),
+//      format = Announcement, so only giscus's bot can open new threads
+//   3. Install the giscus app for this repo: https://github.com/apps/giscus
+//   4. Go to https://giscus.app, enter nilehoops/capitanesverse, pick that category
+//      -> it generates real values for GISCUS_REPO_ID / GISCUS_CATEGORY_ID below
+const GISCUS_REPO_ID = 'R_kgDOTmW7rg';
+const GISCUS_CATEGORY = 'Player Comments';        // must match the category name from step 2
+const GISCUS_CATEGORY_ID = 'DIC_kwDOTmW7rs4DCXTk';
+
+function loadGiscus(player) {
+  const container = document.getElementById('giscusContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.setAttribute('data-repo', `${REPO_OWNER}/${REPO_NAME}`);
+  script.setAttribute('data-repo-id', GISCUS_REPO_ID);
+  script.setAttribute('data-category', GISCUS_CATEGORY);
+  script.setAttribute('data-category-id', GISCUS_CATEGORY_ID);
+  // "specific" + a per-player term (not the default "pathname") — every player
+  // shares the same physical file (player.html?id=X), so pathname mapping would
+  // incorrectly dump every player's comments into one shared thread.
+  script.setAttribute('data-mapping', 'specific');
+  script.setAttribute('data-term', `player-${player.id}`);
+  script.setAttribute('data-strict', '1'); // avoid fuzzy-matching similar player names to the wrong thread
+  script.setAttribute('data-reactions-enabled', '1');
+  script.setAttribute('data-emit-metadata', '0');
+  script.setAttribute('data-input-position', 'top');
+  script.setAttribute('data-theme', 'dark_dimmed');
+  script.setAttribute('data-lang', 'en');
+  script.crossOrigin = 'anonymous';
+  script.async = true;
+  container.appendChild(script);
+}
+
+function setupSearch(players) {
+  const input = document.getElementById('searchInput');
+  const results = document.getElementById('searchResults');
+  input.addEventListener('input', () => {
+    const q = input.value.trim().toLowerCase();
+    if (!q) { results.innerHTML = ''; return; }
+    const matches = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 6);
+    results.innerHTML = matches.map(p => `<a href="player.html?id=${p.id}">${p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name}</a>`).join('');
+  });
+}
+
+const playerId = new URLSearchParams(location.search).get('id');
+Promise.all([
+  fetch('data/players_index.json?v=' + Date.now()).then(r => r.json()),
+  fetch('data/players_detail.json?v=' + Date.now()).then(r => r.json()),
+])
+  .then(([indexData, detailData]) => {
+    const detailById = new Map(detailData.map(d => [d.id, d]));
+    const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
+    const player = players.find(p => p.id === playerId);
+    if (!player) {
+      document.getElementById('app').innerHTML = `<div class="notfound">Player not found: ${playerId || '(no id given)'}</div>`;
+      return;
+    }
+    render(player, players);
+  })
+  .catch(err => {
+    console.error('Could not load player data', err);
+    document.getElementById('app').innerHTML = '<div class="notfound">Could not load player data.</div>';
+  });
+</script>
+</body>
+</html>

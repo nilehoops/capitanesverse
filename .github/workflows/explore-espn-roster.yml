@@ -1,0 +1,23 @@
+name: Explore ESPN Roster Endpoint (diagnostic, one-time)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  explore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Explore ESPN roster endpoint
+        run: python scripts/explore_espn_roster.py

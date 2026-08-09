@@ -925,16 +925,22 @@ function renderTierRefine(pos) {
 }
 
 // ---- Boot ----
+function fetchJsonOrThrow(path) {
+  return fetch(path + '?v=' + Date.now()).then(r => {
+    if (!r.ok) throw new Error(`${path} returned HTTP ${r.status} — check it exists at that exact path in the repo`);
+    return r.json().catch(() => { throw new Error(`${path} responded but wasn't valid JSON`); });
+  });
+}
 Promise.all([
-  fetch(PLAYERS_INDEX_PATH + '?v=' + Date.now()).then(r => r.json()),
-  fetch(PLAYERS_DETAIL_PATH + '?v=' + Date.now()).then(r => r.json()),
-  fetch(USERS_PATH + '?v=' + Date.now()).then(r => r.json()),
+  fetchJsonOrThrow(PLAYERS_INDEX_PATH),
+  fetchJsonOrThrow(PLAYERS_DETAIL_PATH),
+  fetchJsonOrThrow(USERS_PATH),
 ]).then(([indexData, detailData, users]) => {
   const detailById = new Map(detailData.map(d => [d.id, d]));
   allPlayers = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
   renderLogin(users);
 }).catch(err => {
-  document.getElementById('app').innerHTML = `<div class="login-wrap">Could not load data. ${err.message}</div>`;
+  document.getElementById('app').innerHTML = `<div class="login-wrap">Could not load data: ${err.message}</div>`;
 });
 </script>
 </body>

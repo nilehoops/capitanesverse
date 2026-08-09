@@ -1265,9 +1265,15 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
 });
 
 renderRoster();
+function fetchJsonOrThrow(path) {
+  return fetch(path + '?v=' + Date.now()).then(r => {
+    if (!r.ok) throw new Error(`${path} returned HTTP ${r.status} — check it exists at that exact path in the repo`);
+    return r.json().catch(() => { throw new Error(`${path} responded but wasn't valid JSON`); });
+  });
+}
 Promise.all([
-  fetch('data/players_index.json?v=' + Date.now()).then(r => r.json()),
-  fetch('data/players_detail.json?v=' + Date.now()).then(r => r.json()),
+  fetchJsonOrThrow('data/players_index.json'),
+  fetchJsonOrThrow('data/players_detail.json'),
 ])
   .then(([indexData, detailData]) => {
     const detailById = new Map(detailData.map(d => [d.id, d]));
@@ -1277,7 +1283,7 @@ Promise.all([
   })
   .catch(err => {
     console.error('Could not load player data', err);
-    document.getElementById('boards').innerHTML = '<div class="board-empty">Could not load player data.</div>';
+    document.getElementById('boards').innerHTML = `<div class="board-empty">Could not load player data: ${err.message}</div>`;
   });
 </script>
 </body>

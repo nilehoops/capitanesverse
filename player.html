@@ -173,7 +173,8 @@
 // ---- Repo this page saves availability edits to ----
 const REPO_OWNER = 'nilehoops';
 const REPO_NAME = 'capitanesverse';
-const DATA_PATH_IN_REPO = 'data/players.json';
+const INDEX_PATH_IN_REPO = 'data/players_index.json';
+const DETAIL_PATH_IN_REPO = 'data/players_detail.json';
 
 // UTF-8-safe base64 helpers (plain btoa/atob mishandle non-ASCII names)
 function utf8ToBase64(str) {
@@ -190,9 +191,11 @@ function base64ToUtf8(b64) {
 
 let githubToken = null; // held in memory only for this page load — never stored
 
-// Generic: fetch the live file, let `mutate(target)` change one player's fields,
-// then commit. Used by both the Availability editor and the custom-video setter.
-async function commitPlayerUpdate(playerId, mutate, commitMessage) {
+// Generic: fetch a given file, let `mutate(target)` change one player's fields,
+// then commit. Data is split into players_index.json (identity/rank/
+// availability) and players_detail.json (stats/advanced/biography/proStints/
+// videos) — callers pass whichever file holds the field(s) they're changing.
+async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
   if (!githubToken) {
     githubToken = prompt(
       'GitHub personal access token (Contents: read/write on this repo).\n' +
@@ -201,7 +204,7 @@ async function commitPlayerUpdate(playerId, mutate, commitMessage) {
     if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
   }
 
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
   const headers = {
     'Authorization': `Bearer ${githubToken}`,
     'Accept': 'application/vnd.github+json',
@@ -218,7 +221,7 @@ async function commitPlayerUpdate(playerId, mutate, commitMessage) {
     if (!target) return { ok: false, message: 'Player not found in remote file.' };
     mutate(target);
 
-    const updatedContent = JSON.stringify(allPlayers, null, 2);
+    const updatedContent = JSON.stringify(allPlayers);
     const putResp = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
@@ -240,7 +243,7 @@ async function commitPlayerUpdate(playerId, mutate, commitMessage) {
 
 function saveAvailabilityToGitHub(playerId, newSimple, newNote) {
   return commitPlayerUpdate(
-    playerId,
+    INDEX_PATH_IN_REPO, playerId,
     (target) => { target.availabilitySimple = newSimple; target.availabilityNote = newNote || null; },
     (target) => `Update availability: ${target.name} -> ${newSimple}${newNote ? ' (' + newNote + ')' : ''}`
   );
@@ -264,7 +267,7 @@ function extractYouTubeId(input) {
 
 function saveCustomVideo(playerId, slotIndex, videoId) {
   return commitPlayerUpdate(
-    playerId,
+    DETAIL_PATH_IN_REPO, playerId,
     (target) => {
       target.videos = target.videos || [null, null];
       while (target.videos.length <= slotIndex) target.videos.push(null);
@@ -731,9 +734,13 @@ function setupSearch(players) {
 }
 
 const playerId = new URLSearchParams(location.search).get('id');
-fetch('data/players.json?v=' + Date.now())
-  .then(r => r.json())
-  .then(players => {
+Promise.all([
+  fetch('data/players_index.json?v=' + Date.now()).then(r => r.json()),
+  fetch('data/players_detail.json?v=' + Date.now()).then(r => r.json()),
+])
+  .then(([indexData, detailData]) => {
+    const detailById = new Map(detailData.map(d => [d.id, d]));
+    const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
     const player = players.find(p => p.id === playerId);
     if (!player) {
       document.getElementById('app').innerHTML = `<div class="notfound">Player not found: ${playerId || '(no id given)'}</div>`;
@@ -742,8 +749,8 @@ fetch('data/players.json?v=' + Date.now())
     render(player, players);
   })
   .catch(err => {
-    console.error('Could not load data/players.json', err);
-    document.getElementById('app').innerHTML = '<div class="notfound">Could not load data/players.json.</div>';
+    console.error('Could not load player data', err);
+    document.getElementById('app').innerHTML = '<div class="notfound">Could not load player data.</div>';
   });
 </script>
 </body>

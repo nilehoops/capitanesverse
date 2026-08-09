@@ -199,7 +199,8 @@
 <script>
 const REPO_OWNER = 'nilehoops';
 const REPO_NAME = 'capitanesverse';
-const PLAYERS_PATH = 'data/players.json';
+const PLAYERS_INDEX_PATH = 'data/players_index.json';
+const PLAYERS_DETAIL_PATH = 'data/players_detail.json';
 const USERS_PATH = 'data/blindrank_users.json';
 const userDataPath = (username) => `data/blind_rankings/${username}.json`;
 
@@ -925,10 +926,12 @@ function renderTierRefine(pos) {
 
 // ---- Boot ----
 Promise.all([
-  fetch(PLAYERS_PATH + '?v=' + Date.now()).then(r => r.json()),
+  fetch(PLAYERS_INDEX_PATH + '?v=' + Date.now()).then(r => r.json()),
+  fetch(PLAYERS_DETAIL_PATH + '?v=' + Date.now()).then(r => r.json()),
   fetch(USERS_PATH + '?v=' + Date.now()).then(r => r.json()),
-]).then(([players, users]) => {
-  allPlayers = players;
+]).then(([indexData, detailData, users]) => {
+  const detailById = new Map(detailData.map(d => [d.id, d]));
+  allPlayers = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
   renderLogin(users);
 }).catch(err => {
   document.getElementById('app').innerHTML = `<div class="login-wrap">Could not load data. ${err.message}</div>`;

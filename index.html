@@ -209,6 +209,7 @@
   }
 </style>
 </head>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <body>
 
 <div class="top">
@@ -385,7 +386,7 @@
       <button class="addplayer-toggle" id="availExportBtn" style="width:auto;display:inline-block;">Export CSV</button>
       <div style="margin-top:12px;">
         <label style="font-size:12px;font-weight:700;">Import edited CSV:</label><br>
-        <input type="file" id="availImportFile" accept=".csv" style="margin-top:4px;color:#ECECEC;font-family:'Lora',serif;font-size:12px;">
+        <input type="file" id="availImportFile" accept=".csv,.xlsx,.xls" style="margin-top:4px;color:#ECECEC;font-family:'Lora',serif;font-size:12px;">
       </div>
       <div id="availImportPreview" style="font-size:13px;margin-top:8px;"></div>
       <button class="addplayer-save" id="availImportBtn" style="display:none;margin-top:8px;">Import (1 commit)</button>
@@ -544,18 +545,34 @@ function renderIncompleteList(players) {
       }
 
       status.textContent = 'Saving...';
-      const result = await commitPlayerUpdate(
-        id,
-        (target) => {
-          if (ageInput && ageInput.value.trim()) { target.biography = target.biography || {}; target.biography.age = Number(ageInput.value); target.biography.found = true; }
-          if (weightInput && weightInput.value.trim()) { target.biography = target.biography || {}; target.biography.weight = weightInput.value.trim(); target.biography.found = true; }
-          if (photoInput && photoInput.value.trim()) target.photoUrl = photoInput.value.trim();
-          if (statsObj) { target.stats = { ...(target.stats || {}), ...statsObj }; target.advanced = { ...(target.advanced || {}), ...advObj }; }
-          target.dataGapNote = noteInput.value.trim() || null;
-        },
-        (target) => `Fill incomplete data: ${target.name}`
-      );
-      status.textContent = result.ok ? 'Saved' : result.message;
+      const messages = [];
+
+      if (photoInput && photoInput.value.trim()) {
+        const photoVal = photoInput.value.trim();
+        const r1 = await commitPlayerUpdate(
+          INDEX_PATH_IN_REPO, id,
+          (target) => { target.photoUrl = photoVal; },
+          (target) => `Fill incomplete data (photo): ${target.name}`
+        );
+        messages.push(r1.ok ? 'Photo saved' : `Photo failed: ${r1.message}`);
+      }
+
+      const hasDetailChange = (ageInput && ageInput.value.trim()) || (weightInput && weightInput.value.trim()) || statsObj || noteInput.value.trim();
+      if (hasDetailChange) {
+        const r2 = await commitPlayerUpdate(
+          DETAIL_PATH_IN_REPO, id,
+          (target) => {
+            if (ageInput && ageInput.value.trim()) { target.biography = target.biography || {}; target.biography.age = Number(ageInput.value); target.biography.found = true; }
+            if (weightInput && weightInput.value.trim()) { target.biography = target.biography || {}; target.biography.weight = weightInput.value.trim(); target.biography.found = true; }
+            if (statsObj) { target.stats = { ...(target.stats || {}), ...statsObj }; target.advanced = { ...(target.advanced || {}), ...advObj }; }
+            target.dataGapNote = noteInput.value.trim() || null;
+          },
+          (target) => `Fill incomplete data: ${target.name}`
+        );
+        messages.push(r2.ok ? 'Details saved' : `Details failed: ${r2.message}`);
+      }
+
+      status.textContent = messages.length ? messages.join(' — ') : 'Nothing to save.';
     });
   });
 }
@@ -610,7 +627,8 @@ function setupSearch(players) {
 // mechanism as the Availability/Video editors on player.html. ----
 const REPO_OWNER = 'nilehoops';
 const REPO_NAME = 'capitanesverse';
-const DATA_PATH_IN_REPO = 'data/players.json';
+const INDEX_PATH_IN_REPO = 'data/players_index.json';
+const DETAIL_PATH_IN_REPO = 'data/players_detail.json';
 
 function utf8ToBase64(str) {
   const bytes = new TextEncoder().encode(str);
@@ -814,14 +832,17 @@ function parseHeight(input) {
   return { heightIn: feet * 12 + inches, heightDisplay: `${feet}'${inches}"` };
 }
 
-// Generic: fetch the live file, mutate one player, commit — same pattern as
-// player.html's Availability/Video editors. Used by Add Pro Stint.
-async function commitPlayerUpdate(playerId, mutate, commitMessage) {
+// Generic: fetch a given file, mutate one player's entry in it, commit.
+// Takes an explicit path since data is now split into players_index.json
+// (identity/rank/availability) and players_detail.json (stats/advanced/
+// biography/proStints/videos) — callers pass whichever file actually holds
+// the field(s) they're changing.
+async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
   if (!githubToken) {
     githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
     if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
   }
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
   const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
   try {
     const getResp = await fetch(apiUrl, { headers });
@@ -834,7 +855,7 @@ async function commitPlayerUpdate(playerId, mutate, commitMessage) {
     const putResp = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: commitMessage(target), content: utf8ToBase64(JSON.stringify(allPlayers, null, 2)), sha: fileData.sha }),
+      body: JSON.stringify({ message: commitMessage(target), content: utf8ToBase64(JSON.stringify(allPlayers)), sha: fileData.sha }),
     });
     if (!putResp.ok) {
       const err = await putResp.json().catch(() => ({}));
@@ -846,7 +867,12 @@ async function commitPlayerUpdate(playerId, mutate, commitMessage) {
   }
 }
 
-async function addPlayerToGitHub(newPlayer) {
+const INDEX_KEYS_AP = ['id','name','position','team','conf','class','heightIn','heightDisplay',
+  'overallRank','positionalRank','tier','tierLabel','rankWithinTier','latino',
+  'availabilitySimple','availabilityNote','onRoster','photoUrl'];
+const DETAIL_KEYS_AP = ['id','stats','advanced','biography','proStints','videos','dataGapNote'];
+
+async function pushNewPlayerToFile(path, newPlayerSlice, playerName) {
   if (!githubToken) {
     githubToken = prompt(
       'GitHub personal access token (Contents: read/write on this repo).\n' +
@@ -854,38 +880,41 @@ async function addPlayerToGitHub(newPlayer) {
     );
     if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
   }
-
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
   const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
-
   try {
     const getResp = await fetch(apiUrl, { headers });
-    if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}). Check token permissions.` };
+    if (!getResp.ok) return { ok: false, message: `Could not read ${path} (${getResp.status}). Check token permissions.` };
     const fileData = await getResp.json();
-    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
-
-    if (allPlayers.some(p => p.id === newPlayer.id)) {
-      return { ok: false, message: `A player with id "${newPlayer.id}" already exists — pick a different name or edit that player instead.` };
+    const allEntries = JSON.parse(base64ToUtf8(fileData.content));
+    if (allEntries.some(p => p.id === newPlayerSlice.id)) {
+      return { ok: false, message: `A player with id "${newPlayerSlice.id}" already exists in ${path}.` };
     }
-    allPlayers.push(newPlayer);
-
+    allEntries.push(newPlayerSlice);
     const putResp = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `Add player: ${newPlayer.name}`,
-        content: utf8ToBase64(JSON.stringify(allPlayers, null, 2)),
-        sha: fileData.sha,
-      }),
+      body: JSON.stringify({ message: `Add player: ${playerName}`, content: utf8ToBase64(JSON.stringify(allEntries)), sha: fileData.sha }),
     });
     if (!putResp.ok) {
       const err = await putResp.json().catch(() => ({}));
-      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}` };
+      return { ok: false, message: `Save failed on ${path} (${putResp.status}): ${err.message || 'unknown error'}` };
     }
-    return { ok: true, message: 'Saved — live site updates in ~1 min.' };
+    return { ok: true, message: 'ok' };
   } catch (e) {
     return { ok: false, message: `Network error: ${e.message}` };
   }
+}
+
+async function addPlayerToGitHub(newPlayer) {
+  const indexSlice = Object.fromEntries(INDEX_KEYS_AP.map(k => [k, newPlayer[k] ?? null]));
+  const detailSlice = Object.fromEntries(DETAIL_KEYS_AP.map(k => [k, newPlayer[k] ?? null]));
+
+  const r1 = await pushNewPlayerToFile(INDEX_PATH_IN_REPO, indexSlice, newPlayer.name);
+  if (!r1.ok) return r1;
+  const r2 = await pushNewPlayerToFile(DETAIL_PATH_IN_REPO, detailSlice, newPlayer.name);
+  if (!r2.ok) return { ok: false, message: `Identity data saved, but detail data failed: ${r2.message}. The player will show with blank stats until this is retried.` };
+  return { ok: true, message: 'Saved — live site updates in ~1 min.' };
 }
 
 document.getElementById('addPlayerToggle').addEventListener('click', () => {
@@ -937,32 +966,47 @@ function parseCsvLine(line) {
 }
 
 let availImportRows = null;
+function processImportRows(rowsOfCells) {
+  const preview = document.getElementById('availImportPreview');
+  const importBtn = document.getElementById('availImportBtn');
+  const byId = new Map((cachedPlayers || []).map(p => [p.id, p]));
+  let matched = 0, unmatched = [];
+  availImportRows = [];
+  for (const cells of rowsOfCells) {
+    const id = String(cells[0] ?? '').trim();
+    if (id === 'id' || !id) continue; // skip header row and any blank rows
+    const simple = String(cells[3] ?? '').trim();
+    const note = String(cells[4] ?? '').trim();
+    if (byId.has(id)) { matched++; availImportRows.push({ id, availabilitySimple: simple || null, availabilityNote: note || null }); }
+    else unmatched.push(id);
+  }
+  preview.innerHTML = `${matched} row(s) matched.` + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched id(s): ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
+  importBtn.textContent = `Import (1 commit, ${matched} player${matched===1?'':'s'})`;
+  importBtn.style.display = matched ? 'inline-block' : 'none';
+}
+
 document.getElementById('availImportFile').addEventListener('change', (e) => {
   const preview = document.getElementById('availImportPreview');
   const importBtn = document.getElementById('availImportBtn');
   const file = e.target.files[0];
   if (!file) { preview.innerHTML = ''; importBtn.style.display = 'none'; availImportRows = null; return; }
 
+  const isExcel = /\.xlsx?$/i.test(file.name);
   const reader = new FileReader();
   reader.onload = () => {
-    const lines = String(reader.result).split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim());
-    const byId = new Map((cachedPlayers || []).map(p => [p.id, p]));
-    let matched = 0, unmatched = [];
-    availImportRows = [];
-    for (const line of lines) {
-      const cells = parseCsvLine(line);
-      const id = (cells[0] || '').trim();
-      if (id === 'id') continue; // skip the header row
-      const simple = (cells[3] || '').trim();
-      const note = (cells[4] || '').trim();
-      if (byId.has(id)) { matched++; availImportRows.push({ id, availabilitySimple: simple || null, availabilityNote: note || null }); }
-      else if (id) unmatched.push(id);
+    if (isExcel) {
+      // Real binary spreadsheet — parse with SheetJS, not as text.
+      const workbook = XLSX.read(reader.result, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+      processImportRows(rows);
+    } else {
+      const lines = String(reader.result).split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim());
+      processImportRows(lines.map(parseCsvLine));
     }
-    preview.innerHTML = `${matched} row(s) matched.` + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched id(s): ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
-    importBtn.textContent = `Import (1 commit, ${matched} player${matched===1?'':'s'})`;
-    importBtn.style.display = matched ? 'inline-block' : 'none';
   };
-  reader.readAsText(file);
+  if (isExcel) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
 });
 
 document.getElementById('availImportBtn').addEventListener('click', async () => {
@@ -976,7 +1020,7 @@ document.getElementById('availImportBtn').addEventListener('click', async () => 
     if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; return; }
   }
   try {
-    const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+    const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${INDEX_PATH_IN_REPO}`;
     const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) { status.textContent = `Could not read file (${getResp.status}).`; return; }
@@ -992,7 +1036,7 @@ document.getElementById('availImportBtn').addEventListener('click', async () => 
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: `Bulk availability import (${updated} players)`,
-        content: utf8ToBase64(JSON.stringify(allPlayers, null, 2)),
+        content: utf8ToBase64(JSON.stringify(allPlayers)),
         sha: fileData.sha,
       }),
     });
@@ -1116,6 +1160,7 @@ document.getElementById('ps_saveBtn').addEventListener('click', async () => {
   const status = document.getElementById('ps_status');
   status.textContent = 'Saving...';
   const result = await commitPlayerUpdate(
+    DETAIL_PATH_IN_REPO,
     psParsedRow.playerId,
     (target) => {
       target.proStints = target.proStints || [];
@@ -1220,12 +1265,19 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
 });
 
 renderRoster();
-fetch('data/players.json?v=' + Date.now())
-  .then(r => r.json())
-  .then(players => { cachedPlayers = players; renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players); })
+Promise.all([
+  fetch('data/players_index.json?v=' + Date.now()).then(r => r.json()),
+  fetch('data/players_detail.json?v=' + Date.now()).then(r => r.json()),
+])
+  .then(([indexData, detailData]) => {
+    const detailById = new Map(detailData.map(d => [d.id, d]));
+    const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
+    cachedPlayers = players;
+    renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players);
+  })
   .catch(err => {
-    console.error('Could not load data/players.json', err);
-    document.getElementById('boards').innerHTML = '<div class="board-empty">Could not load data/players.json.</div>';
+    console.error('Could not load player data', err);
+    document.getElementById('boards').innerHTML = '<div class="board-empty">Could not load player data.</div>';
   });
 </script>
 </body>

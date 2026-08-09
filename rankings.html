@@ -211,7 +211,10 @@ let filterMin = {}; // `${group}:${key}` -> 0-100, 0 = inactive
 // ---- GitHub commit (same mechanism as index.html/player.html editors) ----
 const REPO_OWNER = 'nilehoops';
 const REPO_NAME = 'capitanesverse';
-const DATA_PATH_IN_REPO = 'data/players.json';
+// overallRank/positionalRank both live in players_index.json — this tool
+// never touches stats/advanced/biography/proStints/videos, so it only ever
+// needs the index file.
+const INDEX_PATH_IN_REPO = 'data/players_index.json';
 let githubToken = null;
 
 function utf8ToBase64(str) {
@@ -234,7 +237,7 @@ async function saveNewOrderToGitHub(rankField, orderedIds) {
     );
     if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
   }
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DATA_PATH_IN_REPO}`;
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${INDEX_PATH_IN_REPO}`;
   const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
 
   try {
@@ -254,7 +257,7 @@ async function saveNewOrderToGitHub(rankField, orderedIds) {
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: `Reorder ${rankField} (${orderedIds.length} players)`,
-        content: utf8ToBase64(JSON.stringify(allPlayers, null, 2)),
+        content: utf8ToBase64(JSON.stringify(allPlayers)),
         sha: fileData.sha,
       }),
     });
@@ -654,12 +657,18 @@ document.querySelectorAll('.toggle-row button[data-avail]').forEach(btn => {
 });
 
 buildColumnPanel();
-fetch('data/players.json?v=' + Date.now())
-  .then(r => r.json())
-  .then(renderTable)
+Promise.all([
+  fetch('data/players_index.json?v=' + Date.now()).then(r => r.json()),
+  fetch('data/players_detail.json?v=' + Date.now()).then(r => r.json()),
+])
+  .then(([indexData, detailData]) => {
+    const detailById = new Map(detailData.map(d => [d.id, d]));
+    const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
+    renderTable(players);
+  })
   .catch(err => {
-    console.error('Could not load data/players.json', err);
-    document.querySelector('.wrap').innerHTML = '<div class="empty">Could not load data/players.json.</div>';
+    console.error('Could not load player data', err);
+    document.querySelector('.wrap').innerHTML = '<div class="empty">Could not load player data.</div>';
   });
 </script>
 </body>

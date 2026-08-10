@@ -377,6 +377,19 @@
       <div id="ps_preview" style="font-size:13px;margin-top:8px;"></div>
       <button class="addplayer-save" id="ps_saveBtn" style="display:none;margin-top:8px;">Save Stint</button>
       <div class="addplayer-status" id="ps_status"></div>
+
+      <div style="border-top:1px solid #333;margin-top:16px;padding-top:12px;">
+        <div style="font-weight:700;font-size:13px;margin-bottom:4px;">Bulk Add (multiple players at once)</div>
+        <p style="font-size:12px;color:#9A9A9A;margin:0 0 6px;">
+          For a multi-player table (a whole team's stats, not one player's own page). Paste the header row first (from whatever source you're using — column order and which stats are included can vary), then the data rows below it. Columns are matched by name (Name/Player, GP, MIN, PTS, FGM, FGA, FG%, 3PM, 3PA, 3P%, FTM, FTA, FT%, ORB, DRB, AST, STL, BLK, TOV, League, Team...), not by fixed position, so this adapts to different sources. No header row pasted falls back to one default layout.
+        </p>
+        <label style="font-size:12px;font-weight:700;">Season (applies to every row)</label>
+        <input id="ps_bulkSeason" type="text" placeholder="e.g. 2025-26" style="width:100%;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:5px;margin:2px 0 8px;">
+        <textarea id="ps_bulkPasteArea" placeholder="Paste multiple tab-separated rows here, one per line..." style="width:100%;min-height:90px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:12px;padding:6px;"></textarea>
+        <div id="ps_bulkPreview" style="font-size:12px;margin-top:8px;max-height:200px;overflow-y:auto;"></div>
+        <button class="addplayer-save" id="ps_bulkSaveBtn" style="display:none;margin-top:8px;">Save All Matched Rows</button>
+        <div class="addplayer-status" id="ps_bulkStatus"></div>
+      </div>
     </div>
   </div>
 
@@ -1121,6 +1134,63 @@ function normalizePct(v) {
   return v > 1 ? v / 100 : v;
 }
 
+function buildStintFromCells(cells, columnOrder, fallbackSeason, defaultLeague) {
+  const map = {};
+  const present = new Set(columnOrder.filter(Boolean)); // which stats this source actually provided
+  columnOrder.forEach((key, i) => { map[key] = (cells[i] ?? '').trim(); });
+  // A column absent from the source entirely must stay null (unknown), never
+  // fall through to numFrom('') which — a real JS quirk — returns 0, not null.
+  const numFromIfPresent = (key) => present.has(key) ? numFrom(map[key]) : null;
+  const pctIfPresent = (key) => present.has(key) ? normalizePct(numFrom(map[key])) : null;
+
+  // Some sources embed season per-row (e.g. a "Year" column with multiple
+  // seasons mixed in one file) — that takes priority over the one shared
+  // season field, since it's more specific. "-2024" style values (a leading
+  // dash some exports use) get cleaned to a plain "2024".
+  let season = fallbackSeason;
+  if (present.has('season') && map.season) {
+    season = map.season.replace(/^-/, '').trim();
+  }
+
+  const min = numFromIfPresent('min');
+  const per40From = (total) => (total != null && min) ? total / min * 40 : null;
+  // Some sources give raw totals (need /min*40); others already give the
+  // per-40 rate directly (e.g. "Points / 40 Mins") — prefer the direct
+  // value when present, only computing from totals as a fallback.
+  const pts40 = present.has('pts40') ? numFromIfPresent('pts40') : per40From(numFromIfPresent('pts'));
+  const orb40 = present.has('orb40') ? numFromIfPresent('orb40') : per40From(numFromIfPresent('orb'));
+  const drb40 = present.has('drb40') ? numFromIfPresent('drb40') : per40From(numFromIfPresent('drb'));
+  const ast40 = present.has('ast40') ? numFromIfPresent('ast40') : per40From(numFromIfPresent('ast'));
+  const tov40 = present.has('tov40') ? numFromIfPresent('tov40') : per40From(numFromIfPresent('tov'));
+  const stl40 = present.has('stl40') ? numFromIfPresent('stl40') : per40From(numFromIfPresent('stl'));
+  const blk40 = present.has('blk40') ? numFromIfPresent('blk40') : per40From(numFromIfPresent('blk'));
+
+  const fgm = numFromIfPresent('fgm'), fga = numFromIfPresent('fga');
+  const p3a = numFromIfPresent('threePA'), fta = numFromIfPresent('fta');
+  const p3pct = present.has('threePct') ? pctIfPresent('threePct') : null;
+  const ftpct = present.has('ftPct') ? pctIfPresent('ftPct') : null;
+  // 2P%/3PAr/FTr: prefer a direct column if the source has one, else derive
+  // from makes/attempts (only possible when the source gave raw totals).
+  const twoPct = present.has('twoPct') ? pctIfPresent('twoPct')
+    : safeDiv((fgm != null && numFromIfPresent('threePM') != null) ? fgm - numFromIfPresent('threePM') : null,
+              (fga != null && p3a != null) ? fga - p3a : null);
+  const threePar = present.has('threePar') ? pctIfPresent('threePar') : safeDiv(p3a, fga);
+  const ftaRate = present.has('ftaRate') ? pctIfPresent('ftaRate') : safeDiv(fta, fga);
+  const astTov = present.has('asttov') ? numFromIfPresent('asttov') : safeDiv(numFromIfPresent('ast'), numFromIfPresent('tov'));
+  const per = numFromIfPresent('per');
+
+  const league = map.league || defaultLeague || null;
+  const strength = leagueStrengthMap[league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[league]] ?? null;
+  return {
+    name: map.name || null, // only present in bulk rows; ignored by the single-row caller
+    league, season, leagueStrengthPctile: strength,
+    pts40, orb40, drb40, ast40, tov40, stl40, blk40,
+    '3p_pct': p3pct, ft_pct: ftpct, '2p_pct': twoPct,
+    asttov: astTov, '3par': threePar, fta_rate: ftaRate,
+    mins: min, per,
+  };
+}
+
 let psParsedRow = null;
 document.getElementById('proStintToggle').addEventListener('click', () => {
   document.getElementById('proStintForm').classList.toggle('open');
@@ -1138,8 +1208,6 @@ document.getElementById('ps_pasteArea').addEventListener('paste', () => {
     }
     const raw = document.getElementById('ps_pasteArea').value.split('\n')[0];
     const cells = raw.split('\t');
-    const map = {};
-    PS_COLUMN_ORDER.forEach((key, i) => { map[key] = (cells[i] ?? '').trim(); });
 
     const match = resolvePlayerByName(playerName, cachedPlayers || []);
     if (!match) {
@@ -1149,31 +1217,29 @@ document.getElementById('ps_pasteArea').addEventListener('paste', () => {
       return;
     }
 
-    const gp = numFrom(map.gp), min = numFrom(map.min), pts = numFrom(map.pts);
-    const fgm = numFrom(map.fgm), fga = numFrom(map.fga);
-    const p3m = numFrom(map.threePM), p3a = numFrom(map.threePA), p3pct = normalizePct(numFrom(map.threePct));
-    const ftm = numFrom(map.ftm), fta = numFrom(map.fta), ftpct = normalizePct(numFrom(map.ftPct));
-    const orb = numFrom(map.orb), drb = numFrom(map.drb), ast = numFrom(map.ast);
-    const stl = numFrom(map.stl), blk = numFrom(map.blk), tov = numFrom(map.tov);
-    const per40 = (total) => (total != null && min) ? total / min * 40 : null;
-
-    const league = map.league;
     const season = document.getElementById('ps_season').value.trim() || null;
-    const strength = leagueStrengthMap[league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[league]] ?? null;
-    psParsedRow = { playerId: match.id, playerName: match.name, stint: {
-      league, season, leagueStrengthPctile: strength,
-      pts40: per40(pts), orb40: per40(orb), drb40: per40(drb), ast40: per40(ast),
-      tov40: per40(tov), stl40: per40(stl), blk40: per40(blk),
-      '3p_pct': p3pct, ft_pct: ftpct,
-      '2p_pct': safeDiv((fgm != null && p3m != null) ? fgm - p3m : null, (fga != null && p3a != null) ? fga - p3a : null),
-      asttov: safeDiv(ast, tov), '3par': safeDiv(p3a, fga), fta_rate: safeDiv(fta, fga),
-      mins: min, per: null, // PER isn't in this table — no reliable way to derive it from a basic box score alone
-    }};
-    preview.innerHTML = `Matched: <b>${match.name}</b> — ${league}${season ? ` (${season})` : ''}${strength!=null ? ` (strength ${Math.round(strength*100)}th %ile)` : ' (league strength not found)'}. `
-      + `PTS/40 ${psParsedRow.stint.pts40?.toFixed(1) ?? '—'}, AST/40 ${psParsedRow.stint.ast40?.toFixed(1) ?? '—'}, 2P% ${psParsedRow.stint['2p_pct'] != null ? (psParsedRow.stint['2p_pct']*100).toFixed(1)+'%' : '—'}`;
+    const stint = buildStintFromCells(cells, PS_COLUMN_ORDER, season, null);
+    delete stint.name; // not used in the single-row path
+    psParsedRow = { playerId: match.id, playerName: match.name, stint };
+    preview.innerHTML = `Matched: <b>${match.name}</b> — ${stint.league}${season ? ` (${season})` : ''}${stint.leagueStrengthPctile!=null ? ` (strength ${Math.round(stint.leagueStrengthPctile*100)}th %ile)` : ' (league strength not found)'}. `
+      + `PTS/40 ${stint.pts40?.toFixed(1) ?? '—'}, AST/40 ${stint.ast40?.toFixed(1) ?? '—'}, 2P% ${stint['2p_pct'] != null ? (stint['2p_pct']*100).toFixed(1)+'%' : '—'}`;
     saveBtn.style.display = 'inline-block';
   }, 0);
 });
+function mergeStintIntoPlayer(target, newStint) {
+  target.proStints = target.proStints || [];
+  if (newStint.season) {
+    const idx = target.proStints.findIndex(s => s.league === newStint.league && s.season === newStint.season);
+    if (idx >= 0) target.proStints[idx] = newStint;
+    else target.proStints.push(newStint);
+  } else {
+    const isExactDup = target.proStints.some(s =>
+      s.league === newStint.league && s.mins === newStint.mins && s.pts40 === newStint.pts40
+    );
+    if (!isExactDup) target.proStints.push(newStint);
+  }
+}
+
 document.getElementById('ps_saveBtn').addEventListener('click', async () => {
   if (!psParsedRow) return;
   const status = document.getElementById('ps_status');
@@ -1181,25 +1247,7 @@ document.getElementById('ps_saveBtn').addEventListener('click', async () => {
   const result = await commitPlayerUpdate(
     DETAIL_PATH_IN_REPO,
     psParsedRow.playerId,
-    (target) => {
-      target.proStints = target.proStints || [];
-      const newStint = psParsedRow.stint;
-      if (newStint.season) {
-        // Season given — match on league+season specifically. Same league+season
-        // re-saved = update in place (correcting/refreshing that season's numbers).
-        // Same league, different season = always a separate stint, never merged.
-        const idx = target.proStints.findIndex(s => s.league === newStint.league && s.season === newStint.season);
-        if (idx >= 0) target.proStints[idx] = newStint;
-        else target.proStints.push(newStint);
-      } else {
-        // No season given — fall back to the old safety check so a genuine
-        // accidental double-save (same league, same mins, same pts40) doesn't duplicate.
-        const isExactDup = target.proStints.some(s =>
-          s.league === newStint.league && s.mins === newStint.mins && s.pts40 === newStint.pts40
-        );
-        if (!isExactDup) target.proStints.push(newStint);
-      }
-    },
+    (target) => mergeStintIntoPlayer(target, psParsedRow.stint),
     (target) => `Add pro stint: ${target.name} — ${psParsedRow.stint.league}${psParsedRow.stint.season ? ' (' + psParsedRow.stint.season + ')' : ''}`
   );
   status.textContent = result.message;
@@ -1210,6 +1258,121 @@ document.getElementById('ps_saveBtn').addEventListener('click', async () => {
     document.getElementById('ps_preview').innerHTML = '';
     document.getElementById('ps_saveBtn').style.display = 'none';
     psParsedRow = null;
+  }
+});
+
+// ---- Bulk Add Pro Stints ----
+const PS_COLUMN_ORDER_BULK = ['name', ...PS_COLUMN_ORDER];
+// Bulk paste can come from many different sources, each with its own column
+// set/order — instead of hardcoding one layout, detect columns from a header
+// row if one's present, so this adapts to whatever table was actually copied.
+const HEADER_ALIASES = {
+  name: ['name', 'player', 'fullname'], split: ['split'], team: ['team'], league: ['league'],
+  season: ['year', 'season'],
+  gp: ['gp', 'g', 'gamesplayed'], gs: ['gs', 'gamesstarted'], min: ['min', 'mp', 'minutes', 'minutesplayed'],
+  per: ['per', 'playerefficiencyrating'],
+  // Raw-totals style (e.g. CBB Analytics screenshots) — needs /min*40 conversion
+  pts: ['pts', 'points'], fgm: ['fgm', 'fg'], fga: ['fga'], fg_pct: ['fg%', 'fgpct'],
+  threePM: ['3pm', '3p'], threePA: ['3pa'],
+  ftm: ['ftm', 'ft'], fta: ['fta'],
+  orb: ['orb', 'oreb', 'or'], drb: ['drb', 'dreb', 'dr'], trb: ['trb', 'reb', 'tot', 'tr'],
+  ast: ['ast', 'a'], stl: ['stl', 's'], blk: ['blk', 'b'], tov: ['tov', 'to'], pf: ['pf'],
+  // Already-per-40 style (e.g. "Points / 40 Mins") — used directly, no conversion
+  pts40: ['points40mins', 'pts40', 'ptsper40'],
+  orb40: ['orebs40mins', 'oreb40', 'orb40'], drb40: ['drebs40mins', 'dreb40', 'drb40'],
+  ast40: ['assists40mins', 'ast40'], tov40: ['turnovers40mins', 'tov40', 'to40'],
+  stl40: ['steals40mins', 'stl40'], blk40: ['blocks40mins', 'blk40'],
+  // Rate/pct fields that some sources give directly rather than as makes/attempts
+  threePct: ['3p%', '3ppct', '3pointpct'], ftPct: ['ft%', 'ftpct', 'freethrowpct'], twoPct: ['2pointpct', '2p%'],
+  threePar: ['3pointattrate', '3par', '3ptattemptrate'], ftaRate: ['ftattemptrate', 'ftrate'],
+  asttov: ['asttovratio', 'astto', 'atr'],
+};
+function normalizeHeader(s) { return String(s).toLowerCase().replace(/[^a-z0-9%]/g, ''); }
+function detectColumnOrder(headerCells) {
+  return headerCells.map(cell => {
+    const norm = normalizeHeader(cell);
+    const found = Object.entries(HEADER_ALIASES).find(([, aliases]) => aliases.some(a => normalizeHeader(a) === norm));
+    return found ? found[0] : null; // unrecognized header cell -> that column gets ignored, not guessed at
+  });
+}
+function looksLikeHeaderRow(cells) {
+  const numericCount = cells.filter(c => c.trim() !== '' && !isNaN(Number(c.replace(/,/g, '')))).length;
+  return numericCount < cells.length / 2; // mostly non-numeric = likely a header, not a data row
+}
+
+let psBulkRows = null; // [{playerId, playerName, stint}] for matched rows only
+
+document.getElementById('ps_bulkPasteArea').addEventListener('paste', () => {
+  setTimeout(() => {
+    const preview = document.getElementById('ps_bulkPreview');
+    const saveBtn = document.getElementById('ps_bulkSaveBtn');
+    const season = document.getElementById('ps_bulkSeason').value.trim() || null;
+    const allLines = document.getElementById('ps_bulkPasteArea').value.split('\n').map(l => l.trim()).filter(Boolean);
+    if (!allLines.length) { preview.innerHTML = ''; saveBtn.style.display = 'none'; return; }
+
+    let columnOrder = PS_COLUMN_ORDER_BULK;
+    let dataLines = allLines;
+    let headerNote = 'No header row detected — assuming the default column order (Name, Split, Team, League, GP, GS, MIN, PTS, FGM, FGA, FG%, 3PM, 3PA, 3P%, FTM, FTA, FT%, ORB, DRB, TRB, AST, STL, BLK, TOV, PF).';
+    const firstCells = allLines[0].split('\t');
+    if (looksLikeHeaderRow(firstCells)) {
+      columnOrder = detectColumnOrder(firstCells);
+      dataLines = allLines.slice(1);
+      const unrecognized = firstCells.filter((c, i) => c.trim() && !columnOrder[i]);
+      headerNote = `Header detected: ${columnOrder.filter(Boolean).length} of ${firstCells.length} columns recognized.`
+        + (unrecognized.length ? ` Not recognized (ignored): ${unrecognized.join(', ')}.` : '');
+      if (!columnOrder.includes('name')) headerNote += ' Warning: no "Name"/"Player" column found — rows can\'t be matched to players.';
+    }
+
+    psBulkRows = [];
+    let matched = 0, unmatched = 0;
+    const defaultLeague = columnOrder.includes('league') ? null : 'NCAA';
+    if (defaultLeague) headerNote += ' No League column found — defaulting every row to NCAA.';
+    const rowsHtml = dataLines.map(line => {
+      const cells = line.split('\t');
+      const nameIdx = columnOrder.indexOf('name');
+      const name = nameIdx >= 0 ? (cells[nameIdx] || '').trim() : '';
+      if (!name) return '';
+      const match = resolvePlayerByName(name, cachedPlayers || []);
+      if (!match) {
+        unmatched++;
+        return `<div style="color:#D81F2A;">✗ "${name}" — not found</div>`;
+      }
+      const stint = buildStintFromCells(cells, columnOrder, season, defaultLeague);
+      delete stint.name;
+      psBulkRows.push({ playerId: match.id, playerName: match.name, stint });
+      matched++;
+      return `<div>✓ <b>${match.name}</b> — ${stint.league}${stint.season ? ` (${stint.season})` : ''}, PTS/40 ${stint.pts40?.toFixed(1) ?? '—'}</div>`;
+    }).join('');
+
+    preview.innerHTML = `<div style="color:#9A9A9A;font-size:11px;margin-bottom:6px;">${headerNote}</div>` + (rowsHtml || '<span style="color:#9A9A9A;">No data rows detected.</span>');
+    saveBtn.textContent = `Save All Matched Rows (${matched} matched${unmatched ? `, ${unmatched} not found` : ''})`;
+    saveBtn.style.display = matched ? 'inline-block' : 'none';
+  }, 0);
+});
+
+document.getElementById('ps_bulkSaveBtn').addEventListener('click', async () => {
+  if (!psBulkRows || !psBulkRows.length) return;
+  const status = document.getElementById('ps_bulkStatus');
+  let done = 0, failed = 0;
+  // Sequential, not parallel — every save reads-modifies-writes the SAME shared
+  // file, so concurrent commits would race on a stale sha and clobber each other.
+  for (const row of psBulkRows) {
+    status.textContent = `Saving ${done + failed + 1}/${psBulkRows.length}: ${row.playerName}...`;
+    const result = await commitPlayerUpdate(
+      DETAIL_PATH_IN_REPO,
+      row.playerId,
+      (target) => mergeStintIntoPlayer(target, row.stint),
+      (target) => `Add pro stint (bulk): ${target.name} — ${row.stint.league}${row.stint.season ? ' (' + row.stint.season + ')' : ''}`
+    );
+    if (result.ok) done++; else failed++;
+  }
+  status.textContent = `Done — ${done} saved${failed ? `, ${failed} failed` : ''}.`;
+  if (failed === 0) {
+    document.getElementById('ps_bulkPasteArea').value = '';
+    document.getElementById('ps_bulkSeason').value = '';
+    document.getElementById('ps_bulkPreview').innerHTML = '';
+    document.getElementById('ps_bulkSaveBtn').style.display = 'none';
+    psBulkRows = null;
   }
 });
 

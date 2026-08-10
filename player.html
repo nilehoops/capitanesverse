@@ -35,7 +35,7 @@
   .ranktop { grid-area: ranktop; background: #000; padding: 14px 18px; }
   .video1  { grid-area: video1;  background: #000; padding: 14px; border-top: 1px solid #222; }
   .video2  { grid-area: video2;  background: #000; padding: 14px; border-top: 1px solid #222; border-left: 1px solid #222; }
-  .ranks   { grid-area: ranks;   background: #000; padding: 10px 14px; border-top: 1px solid #222; overflow-y: auto; min-height: 0; }
+  .ranks   { grid-area: ranks;   background: #000; padding: 10px 14px; border-top: 1px solid #222; overflow-y: auto; max-height: 240px; }
   .ranks .box-title { font-size: 14px; margin: 6px 0 2px; }
   .main    { grid-area: main;    overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
   .stats   { background: #000; padding: 14px 18px; border-top: 1px solid #222; }
@@ -44,8 +44,7 @@
   .strong  { flex: 1; background: #128A3E; padding: 14px 18px; }
   .weak    { flex: 1; background: #D81F2A; padding: 14px 18px; border-left: 1px solid #000; }
   .crowd   { margin-top: 8px; }
-  .crowd #giscusContainer { transform: scale(0.85); transform-origin: top left; width: 118%; }
-  .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; }
+  .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
 
   .name h1 { font-size: clamp(30px, 4.4vw, 64px); margin: 0; color: #ECECEC; line-height: 1; }
   .x-logo-link { color: #ECECEC; margin-left: 14px; display: inline-flex; vertical-align: middle; opacity: 0.85; }

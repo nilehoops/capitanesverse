@@ -18,30 +18,32 @@
   }
   a { color: inherit; }
 
+  html, body { height: 100%; margin: 0; overflow: hidden; }
+
   .grid {
     display: grid;
     grid-template-columns: repeat(11, 1fr) 1.4fr;
-    grid-template-rows: auto auto auto auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr);
     grid-template-areas:
       "name  name  name  name  name  name  name  ranktop ranktop ranktop ranktop sidebar"
-      "video1 video1 video1 video2 video2 video2 video2 ranksmid ranksmid ranksmid ranksmid sidebar"
-      "stats stats stats stats stats stats stats crowd crowd crowd crowd sidebar"
-      "prostints prostints prostints prostints prostints prostints prostints crowd crowd crowd crowd sidebar"
-      "strong strong strong strong weak weak weak crowd crowd crowd crowd sidebar";
-    min-height: 100vh;
+      "video1 video1 video1 video2 video2 video2 video2 ranks ranks ranks ranks sidebar"
+      "main main main main main main main crowd crowd crowd crowd sidebar";
+    height: 100vh;
   }
 
   .name    { grid-area: name;    background: #1631FF; display:flex; align-items:center; padding: 14px 24px; }
   .ranktop { grid-area: ranktop; background: #000; padding: 14px 18px; }
   .video1  { grid-area: video1;  background: #000; padding: 14px; border-top: 1px solid #222; }
   .video2  { grid-area: video2;  background: #000; padding: 14px; border-top: 1px solid #222; border-left: 1px solid #222; }
-  .ranksmid{ grid-area: ranksmid;background: #000; padding: 14px 18px; border-top: 1px solid #222; }
-  .stats   { grid-area: stats;   background: #000; padding: 14px 18px; border-top: 1px solid #222; }
-  .prostints { grid-area: prostints; background: #000; padding: 14px 18px; border-top: 1px solid #222; }
-  .strong  { grid-area: strong;  background: #128A3E; padding: 14px 18px; }
-  .weak    { grid-area: weak;    background: #D81F2A; padding: 14px 18px; border-left: 1px solid #000; }
-  .crowd   { grid-area: crowd;   background: #C9C9C9; color: #101010; padding: 14px 18px; border-top: 1px solid #222; }
-  .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; }
+  .ranks   { grid-area: ranks;   background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .main    { grid-area: main;    overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
+  .stats   { background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .prostints { background: #000; padding: 14px 18px; border-top: 1px solid #222; }
+  .swrow   { display: flex; }
+  .strong  { flex: 1; background: #128A3E; padding: 14px 18px; }
+  .weak    { flex: 1; background: #D81F2A; padding: 14px 18px; border-left: 1px solid #000; }
+  .crowd   { grid-area: crowd;   background: #C9C9C9; color: #101010; padding: 14px 18px; border-top: 1px solid #222; overflow-y: auto; min-height: 0; }
+  .sidebar { grid-area: sidebar; background: #000; display: flex; flex-direction: column; overflow-y: auto; min-height: 0; }
 
   .name h1 { font-size: clamp(30px, 4.4vw, 64px); margin: 0; color: #ECECEC; line-height: 1; }
   .x-logo-link { color: #ECECEC; margin-left: 14px; display: inline-flex; vertical-align: middle; opacity: 0.85; }
@@ -76,8 +78,6 @@
   }
   .yt-custom-status { font-size: 10px; color: #8A8A8A; margin-top: 2px; }
 
-  .staff-head { font-size: 19px; margin-top: 10px; }
-  .staff-body { font-size: 15px; font-weight: 400; color: #C9C9C9; margin-top: 4px; }
 
   .stats-head { font-size: 24px; margin-bottom: 8px; }
   .stat-table { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap: 4px 14px; font-size: 13px; font-weight: 400; }
@@ -599,65 +599,53 @@ function render(player, players) {
       <div class="video1">${videoSlot(videos[0], player.name, 0)}</div>
       <div class="video2">${videoSlot(videos[1], player.name, 1)}</div>
 
-      <div class="ranksmid">
+      <div class="ranks">
         <div class="line"><a href="rankings.html?pos=overall&availability=available">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
         <div class="line"><a href="rankings.html?pos=overall&latino=yes">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</a></div>
-        <div class="staff-head">Staff Notes/Overview:</div>
-        <div class="staff-body">${player.staffNotes || 'No staff notes yet.'}</div>
       </div>
 
-      <div class="stats">
-        <div class="stats-head">NCAA Career Stats/Metrics</div>
-        ${shotDietHtml(players, player)}
-        <div class="stat-table">
-          ${Object.entries(STAT_LABELS).map(([key, label]) => {
-            const v = player.stats[key];
-            return v == null ? '' : `<div><span class="k">${label}:</span> <span class="v">${v}</span></div>`;
-          }).join('')}
+      <div class="main">
+        <div class="stats">
+          <div class="stats-head">NCAA Career Stats/Metrics</div>
+          ${shotDietHtml(players, player)}
+          <div class="stat-table">
+            ${Object.entries(STAT_LABELS).map(([key, label]) => {
+              const v = player.stats[key];
+              return v == null ? '' : `<div><span class="k">${label}:</span> <span class="v">${v}</span></div>`;
+            }).join('')}
+          </div>
         </div>
-      </div>
 
-      <div class="prostints">
-        <div class="stats-head" style="font-size:18px;">Pro/Other League Stints (Per-40)</div>
-        ${proStintsHtml(players, player)}
-      </div>
+        <div class="prostints">
+          <div class="stats-head" style="font-size:18px;">Pro/Other League Stints (Per-40)</div>
+          ${proStintsHtml(players, player)}
+        </div>
 
-      <div class="strong">
-        <div class="box-title">Stat Strengths</div>
-        <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
-        ${strengths.map(pbarRow).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
-      </div>
+        <div class="swrow">
+          <div class="strong">
+            <div class="box-title">Stat Strengths</div>
+            <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
+            ${strengths.map(pbarRow).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
+          </div>
 
-      <div class="weak">
-        <div class="box-title">Stat Weaknesses</div>
-        <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
-        ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
+          <div class="weak">
+            <div class="box-title">Stat Weaknesses</div>
+            <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
+            ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
+          </div>
+        </div>
       </div>
 
       <div class="crowd">
-        <div class="box-title">Team Notes</div>
-        <div class="box-sub">No GitHub account needed — PIN login, same as blind rankings.</div>
-        <div id="notesDisplay"></div>
-        <div id="notesLoginArea">
-          <button class="addplayer-toggle" id="notesLoginToggle" style="width:auto;display:inline-block;">+ Leave a Note</button>
-          <div id="notesLoginForm" style="display:none;margin-top:8px;">
-            <input id="notesUsername" placeholder="Username" style="background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:5px;margin-right:6px;">
-            <input id="notesPin" placeholder="PIN" type="password" maxlength="4" style="width:60px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:5px;margin-right:6px;">
-            <button id="notesLoginBtn" class="addplayer-toggle" style="width:auto;display:inline-block;">Log In</button>
-            <span id="notesLoginStatus" style="font-size:11px;color:#9A9A9A;margin-left:6px;"></span>
-          </div>
-          <div id="notesWriteForm" style="display:none;margin-top:8px;">
-            <textarea id="notesTextarea" placeholder="Your note on this player..." style="width:100%;min-height:60px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:6px;"></textarea>
-            <button id="notesAddBtn" class="addplayer-toggle" style="width:auto;display:inline-block;margin-top:6px;">Save Note</button>
-            <span id="notesWriteStatus" style="font-size:11px;color:#9A9A9A;margin-left:6px;"></span>
-          </div>
-        </div>
+        <div class="box-title">Community Notes</div>
+        <div class="box-sub">Real, shared comments via GitHub Discussions — visible to everyone.</div>
+        <div id="giscusContainer"></div>
       </div>
     </div>
   `;
 
   setupSearch(players);
-  loadTeamNotes(player);
+  loadGiscus(player);
   setupAvailabilitySave(player);
   setupCustomVideo(player);
   renderCompareTo(players, player);
@@ -730,94 +718,42 @@ function setupAvailabilitySave(player) {
   });
 }
 
-// ---- Team Notes: per-player notes, PIN login only (no GitHub account
-// needed), matching the blind-ranking auth pattern exactly. Storage mirrors
-// blind_rankings/{username}.json — one file per user, avoiding merge
-// conflicts if multiple people add notes around the same time.
-async function fetchPublicJson(path) {
-  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${path}?v=${Date.now()}`;
-  const resp = await fetch(url);
-  if (resp.status === 404) return { ok: true, notFound: true, data: null };
-  if (!resp.ok) return { ok: false, notFound: false, data: null };
-  return { ok: true, notFound: false, data: await resp.json() };
-}
-function downloadJson(filename, obj) {
-  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-}
-// Same real limitation as the blind-ranking email flow: a browser can't attach
-// a file or send mail on its own. This downloads the file, then opens a
-// pre-filled draft — the person still has to attach the file and hit send.
-const NILE_EMAIL = 'nilehoops@gmail.com';
-function emailNote(username, playerName, allUserNotes) {
-  const filename = `player_notes_${username}.json`;
-  downloadJson(filename, allUserNotes);
-  const subject = `Player Note — ${username} on ${playerName}`;
-  const body = `Hi Nile,\n\nAttached: ${filename} (just downloaded to your Downloads folder — please attach it before sending).\n\n`
-    + `New note added on ${playerName}.\n\n— ${username}`;
-  window.location.href = `mailto:${NILE_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-}
+// ---- Community notes: real, shared comments via giscus (GitHub Discussions) ----
+// Requires one-time setup on github.com before this works:
+//   1. Repo Settings -> General -> Features -> check "Discussions"
+//   2. On the repo's Discussions tab, create a category (e.g. "Player Comments"),
+//      format = Announcement, so only giscus's bot can open new threads
+//   3. Install the giscus app for this repo: https://github.com/apps/giscus
+//   4. Go to https://giscus.app, enter nilehoops/capitanesverse, pick that category
+//      -> it generates real values for GISCUS_REPO_ID / GISCUS_CATEGORY_ID below
+const GISCUS_REPO_ID = 'R_kgDOTmW7rg';
+const GISCUS_CATEGORY = 'Player Comments';        // must match the category name from step 2
+const GISCUS_CATEGORY_ID = 'DIC_kwDOTmW7rs4DCXTk';
 
-let notesLoggedInUser = null;
-async function loadTeamNotes(player) {
-  const display = document.getElementById('notesDisplay');
-  display.innerHTML = '<div class="box-sub">Loading notes...</div>';
-
-  const usersResult = await fetchPublicJson('data/blindrank_users.json');
-  const usernames = usersResult.ok && usersResult.data ? Object.keys(usersResult.data) : [];
-
-  const allNotes = [];
-  for (const username of usernames) {
-    const result = await fetchPublicJson(`data/player_notes/${username}.json`);
-    if (result.ok && !result.notFound && Array.isArray(result.data)) {
-      result.data.filter(n => n.playerId === player.id).forEach(n => allNotes.push({ ...n, username }));
-    }
-  }
-  allNotes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
-  display.innerHTML = allNotes.length
-    ? allNotes.map(n => `
-        <div style="border-bottom:1px solid #1A1A1A;padding:8px 0;font-size:13px;">
-          <div style="font-weight:700;">${n.username} <span style="font-weight:400;color:#8A8A8A;font-size:11px;">${new Date(n.timestamp).toLocaleDateString()}</span></div>
-          <div style="margin-top:2px;">${n.note}</div>
-        </div>`).join('')
-    : '<div class="box-sub">No notes yet on this player.</div>';
-
-  document.getElementById('notesLoginToggle').addEventListener('click', () => {
-    document.getElementById('notesLoginForm').style.display = 'block';
-  });
-  document.getElementById('notesLoginBtn').addEventListener('click', async () => {
-    const username = document.getElementById('notesUsername').value.trim();
-    const pin = document.getElementById('notesPin').value.trim();
-    const status = document.getElementById('notesLoginStatus');
-    if (!username || !pin) { status.textContent = 'Enter both username and PIN.'; return; }
-    status.textContent = 'Checking...';
-    const result = await fetchPublicJson('data/blindrank_users.json');
-    if (!result.ok || !result.data || result.data[username] !== pin) {
-      status.textContent = 'Username/PIN not recognized.';
-      return;
-    }
-    notesLoggedInUser = username;
-    status.textContent = `Logged in as ${username}.`;
-    document.getElementById('notesLoginForm').style.display = 'none';
-    document.getElementById('notesWriteForm').style.display = 'block';
-  });
-  document.getElementById('notesAddBtn').addEventListener('click', async () => {
-    const text = document.getElementById('notesTextarea').value.trim();
-    const status = document.getElementById('notesWriteStatus');
-    if (!text) { status.textContent = 'Write something first.'; return; }
-    if (!notesLoggedInUser) { status.textContent = 'Not logged in.'; return; }
-    status.textContent = 'Preparing...';
-    const existing = await fetchPublicJson(`data/player_notes/${notesLoggedInUser}.json`);
-    const userNotes = (existing.ok && !existing.notFound && Array.isArray(existing.data)) ? existing.data : [];
-    userNotes.push({ playerId: player.id, note: text, timestamp: new Date().toISOString() });
-    emailNote(notesLoggedInUser, player.name, userNotes);
-    status.textContent = 'Note saved to a file and an email draft opened — attach the downloaded file and hit send to submit it.';
-    document.getElementById('notesTextarea').value = '';
-  });
+function loadGiscus(player) {
+  const container = document.getElementById('giscusContainer');
+  if (!container) return;
+  container.innerHTML = '';
+  const script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.setAttribute('data-repo', `${REPO_OWNER}/${REPO_NAME}`);
+  script.setAttribute('data-repo-id', GISCUS_REPO_ID);
+  script.setAttribute('data-category', GISCUS_CATEGORY);
+  script.setAttribute('data-category-id', GISCUS_CATEGORY_ID);
+  // "specific" + a per-player term (not the default "pathname") — every player
+  // shares the same physical file (player.html?id=X), so pathname mapping would
+  // incorrectly dump every player's comments into one shared thread.
+  script.setAttribute('data-mapping', 'specific');
+  script.setAttribute('data-term', `player-${player.id}`);
+  script.setAttribute('data-strict', '1'); // avoid fuzzy-matching similar player names to the wrong thread
+  script.setAttribute('data-reactions-enabled', '1');
+  script.setAttribute('data-emit-metadata', '0');
+  script.setAttribute('data-input-position', 'top');
+  script.setAttribute('data-theme', 'dark_dimmed');
+  script.setAttribute('data-lang', 'en');
+  script.crossOrigin = 'anonymous';
+  script.async = true;
+  container.appendChild(script);
 }
 
 function setupSearch(players) {

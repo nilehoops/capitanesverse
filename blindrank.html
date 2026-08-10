@@ -375,7 +375,39 @@ function shotDietHtml(players, player) {
     </div>`;
 }
 
+// For players with no usable NCAA stats at all (non-D1 players like Agapy
+// Santos, tracked only via pro-league per-40 stints) — S/W falls back to
+// comparing their per-40 pro numbers against other players' per-40 pro
+// numbers, using the same stintPercentile pool as the Pro Stints cards.
+const STINT_SW_STATS = [
+  { key: 'pts40', label: 'PTS/40' }, { key: 'orb40', label: 'ORB/40' }, { key: 'drb40', label: 'DRB/40' },
+  { key: 'ast40', label: 'AST/40' }, { key: 'tov40', label: 'TOV/40' },
+  { key: 'stl40', label: 'STL/40' }, { key: 'blk40', label: 'BLK/40' },
+  { key: '2p_pct', label: '2P%', pct: true }, { key: '3p_pct', label: '3P%', pct: true }, { key: 'ft_pct', label: 'FT%', pct: true },
+];
+function computeStrengthsWeaknessesFromStint(players, player) {
+  const stints = player.proStints || [];
+  if (!stints.length) return { strengths: [], weaknesses: [], source: null };
+  const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
+  const strengths = [], weaknesses = [];
+  for (const d of STINT_SW_STATS) {
+    const value = primary[d.key];
+    if (value == null) continue;
+    const pct = stintPercentile(players, player.position, d.key, value);
+    if (pct == null) continue;
+    const valueDisplay = d.pct ? (value * 100).toFixed(1) + '%' : value.toFixed(1);
+    const row = { label: d.label, pct, valueDisplay };
+    if (pct >= 50) strengths.push(row); else weaknesses.push(row);
+  }
+  strengths.sort((a, b) => b.pct - a.pct);
+  weaknesses.sort((a, b) => a.pct - b.pct);
+  const source = primary.league + (primary.season ? ` (${primary.season})` : '');
+  return { strengths, weaknesses, source };
+}
+
 function topStrengthsWeaknesses(players, player) {
+  const hasUsableStats = player.stats && Object.values(player.stats).some(v => v != null);
+  if (!hasUsableStats) return computeStrengthsWeaknessesFromStint(players, player);
   const strengths = [], weaknesses = [];
   for (const d of SW_STATS) {
     const value = getSwValue(player, d.key);
@@ -386,7 +418,7 @@ function topStrengthsWeaknesses(players, player) {
   }
   strengths.sort((a, b) => b.pct - a.pct);
   weaknesses.sort((a, b) => a.pct - b.pct);
-  return { strengths, weaknesses };
+  return { strengths, weaknesses, source: null };
 }
 function pbarRow(row) {
   return `
@@ -484,7 +516,7 @@ function downloadJson(filename, obj) {
 // a hard security restriction, not something codeable around. This downloads
 // the file, then opens a pre-filled draft in the user's own mail app; they
 // still have to attach the just-downloaded file and hit send themselves.
-const NILE_EMAIL = 'PASTE_EMAIL_HERE';
+const NILE_EMAIL = 'nilehoops@gmail.com';
 function emailRankings(username, userData) {
   const filename = `blindrank_${username}.json`;
   downloadJson(filename, userData);
@@ -770,7 +802,7 @@ function renderRankingScreen() {
   const playerId = pos.order[pos.cursor];
   const player = allPlayers.find(p => p.id === playerId);
   const tally = TIER_INFO.map(t => Object.values(pos.tiers).filter(v => v === t.value).length);
-  const { strengths, weaknesses } = topStrengthsWeaknesses(allPlayers, player);
+  const { strengths, weaknesses, source: swSource } = topStrengthsWeaknesses(allPlayers, player);
   const age = computeDecimalAge(player.biography);
 
   app.innerHTML = `
@@ -808,10 +840,12 @@ function renderRankingScreen() {
         <div class="sw-row">
           <div class="sw-box strengths">
             <div class="sw-title">Stat Strengths</div>
+            ${swSource ? `<div style="font-size:11px;font-weight:400;color:#DDD;margin-bottom:4px;">Per-40, vs. other players\u2019 pro stints (${swSource})</div>` : ''}
             ${strengths.length ? strengths.map(pbarRow).join('') : `<div class="sw-empty">No standout strengths yet.</div>`}
           </div>
           <div class="sw-box weaknesses">
             <div class="sw-title">Stat Weaknesses</div>
+            ${swSource ? `<div style="font-size:11px;font-weight:400;color:#DDD;margin-bottom:4px;">Per-40, vs. other players\u2019 pro stints (${swSource})</div>` : ''}
             ${weaknesses.length ? weaknesses.map(pbarRow).join('') : `<div class="sw-empty">No notable weaknesses yet.</div>`}
           </div>
         </div>

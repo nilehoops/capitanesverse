@@ -463,7 +463,39 @@ function shotDietHtml(players, player) {
 // qualifying stat, not just outliers, bar length = percentile, color-graded.
 // Split at the 50th percentile into the existing Strengths/Weaknesses boxes
 // rather than one combined list, to keep the established two-box layout.
+// For players with no usable NCAA stats at all (non-D1 players like Agapy
+// Santos, tracked only via pro-league per-40 stints) — S/W falls back to
+// comparing their per-40 pro numbers against other players' per-40 pro
+// numbers, using the same stintPercentile pool as the Pro Stints cards.
+const STINT_SW_STATS = [
+  { key: 'pts40', label: 'PTS/40' }, { key: 'orb40', label: 'ORB/40' }, { key: 'drb40', label: 'DRB/40' },
+  { key: 'ast40', label: 'AST/40' }, { key: 'tov40', label: 'TOV/40' },
+  { key: 'stl40', label: 'STL/40' }, { key: 'blk40', label: 'BLK/40' },
+  { key: '2p_pct', label: '2P%', pct: true }, { key: '3p_pct', label: '3P%', pct: true }, { key: 'ft_pct', label: 'FT%', pct: true },
+];
+function computeStrengthsWeaknessesFromStint(players, player) {
+  const stints = player.proStints || [];
+  if (!stints.length) return { strengths: [], weaknesses: [], source: null };
+  const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
+  const strengths = [], weaknesses = [];
+  for (const d of STINT_SW_STATS) {
+    const value = primary[d.key];
+    if (value == null) continue;
+    const pct = stintPercentile(players, player.position, d.key, value);
+    if (pct == null) continue;
+    const valueDisplay = d.pct ? (value * 100).toFixed(1) + '%' : value.toFixed(1);
+    const row = { key: d.key, label: d.label, pct, valueDisplay };
+    if (pct >= 50) strengths.push(row); else weaknesses.push(row);
+  }
+  strengths.sort((a, b) => b.pct - a.pct);
+  weaknesses.sort((a, b) => a.pct - b.pct);
+  const source = primary.league + (primary.season ? ` (${primary.season})` : '');
+  return { strengths, weaknesses, source };
+}
+
 function computeStrengthsWeaknesses(players, player) {
+  const hasUsableStats = player.stats && Object.values(player.stats).some(v => v != null);
+  if (!hasUsableStats) return computeStrengthsWeaknessesFromStint(players, player);
   const strengths = [], weaknesses = [];
   for (const d of SW_STATS) {
     const value = getSwValue(player, d.key);
@@ -474,7 +506,7 @@ function computeStrengthsWeaknesses(players, player) {
   }
   strengths.sort((a, b) => b.pct - a.pct);
   weaknesses.sort((a, b) => a.pct - b.pct);
-  return { strengths, weaknesses };
+  return { strengths, weaknesses, source: null };
 }
 function pbarRow(row) {
   return `
@@ -515,7 +547,7 @@ function videoSlot(video, label, slotIndex) {
 }
 
 function render(player, players) {
-  const { strengths, weaknesses } = computeStrengthsWeaknesses(players, player);
+  const { strengths, weaknesses, source: swSource } = computeStrengthsWeaknesses(players, player);
   const { availableRank, latinoRank } = computeDerivedRanks(players, player);
   const videos = player.videos || [];
 
@@ -592,26 +624,40 @@ function render(player, players) {
 
       <div class="strong">
         <div class="box-title">Stat Strengths</div>
-        <div class="box-sub">Relative to the position group</div>
+        <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
         ${strengths.map(pbarRow).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
       </div>
 
       <div class="weak">
         <div class="box-title">Stat Weaknesses</div>
-        <div class="box-sub">Relative to the position group</div>
+        <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
         ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
       </div>
 
       <div class="crowd">
-        <div class="box-title">Community Notes</div>
-        <div class="box-sub">Real, shared comments via GitHub Discussions — visible to everyone.</div>
-        <div id="giscusContainer"></div>
+        <div class="box-title">Team Notes</div>
+        <div class="box-sub">No GitHub account needed — PIN login, same as blind rankings.</div>
+        <div id="notesDisplay"></div>
+        <div id="notesLoginArea">
+          <button class="addplayer-toggle" id="notesLoginToggle" style="width:auto;display:inline-block;">+ Leave a Note</button>
+          <div id="notesLoginForm" style="display:none;margin-top:8px;">
+            <input id="notesUsername" placeholder="Username" style="background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:5px;margin-right:6px;">
+            <input id="notesPin" placeholder="PIN" type="password" maxlength="4" style="width:60px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:5px;margin-right:6px;">
+            <button id="notesLoginBtn" class="addplayer-toggle" style="width:auto;display:inline-block;">Log In</button>
+            <span id="notesLoginStatus" style="font-size:11px;color:#9A9A9A;margin-left:6px;"></span>
+          </div>
+          <div id="notesWriteForm" style="display:none;margin-top:8px;">
+            <textarea id="notesTextarea" placeholder="Your note on this player..." style="width:100%;min-height:60px;background:#000;color:#ECECEC;border:1px solid #444;font-family:'Lora',serif;font-size:13px;padding:6px;"></textarea>
+            <button id="notesAddBtn" class="addplayer-toggle" style="width:auto;display:inline-block;margin-top:6px;">Save Note</button>
+            <span id="notesWriteStatus" style="font-size:11px;color:#9A9A9A;margin-left:6px;"></span>
+          </div>
+        </div>
       </div>
     </div>
   `;
 
   setupSearch(players);
-  loadGiscus(player);
+  loadTeamNotes(player);
   setupAvailabilitySave(player);
   setupCustomVideo(player);
   renderCompareTo(players, player);
@@ -684,42 +730,94 @@ function setupAvailabilitySave(player) {
   });
 }
 
-// ---- Community notes: real, shared comments via giscus (GitHub Discussions) ----
-// Requires one-time setup on github.com before this works:
-//   1. Repo Settings -> General -> Features -> check "Discussions"
-//   2. On the repo's Discussions tab, create a category (e.g. "Player Comments"),
-//      format = Announcement, so only giscus's bot can open new threads
-//   3. Install the giscus app for this repo: https://github.com/apps/giscus
-//   4. Go to https://giscus.app, enter nilehoops/capitanesverse, pick that category
-//      -> it generates real values for GISCUS_REPO_ID / GISCUS_CATEGORY_ID below
-const GISCUS_REPO_ID = 'R_kgDOTmW7rg';
-const GISCUS_CATEGORY = 'Player Comments';        // must match the category name from step 2
-const GISCUS_CATEGORY_ID = 'DIC_kwDOTmW7rs4DCXTk';
+// ---- Team Notes: per-player notes, PIN login only (no GitHub account
+// needed), matching the blind-ranking auth pattern exactly. Storage mirrors
+// blind_rankings/{username}.json — one file per user, avoiding merge
+// conflicts if multiple people add notes around the same time.
+async function fetchPublicJson(path) {
+  const url = `https://raw.githubusercontent.com/${REPO_OWNER}/${REPO_NAME}/main/${path}?v=${Date.now()}`;
+  const resp = await fetch(url);
+  if (resp.status === 404) return { ok: true, notFound: true, data: null };
+  if (!resp.ok) return { ok: false, notFound: false, data: null };
+  return { ok: true, notFound: false, data: await resp.json() };
+}
+function downloadJson(filename, obj) {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+// Same real limitation as the blind-ranking email flow: a browser can't attach
+// a file or send mail on its own. This downloads the file, then opens a
+// pre-filled draft — the person still has to attach the file and hit send.
+const NILE_EMAIL = 'nilehoops@gmail.com';
+function emailNote(username, playerName, allUserNotes) {
+  const filename = `player_notes_${username}.json`;
+  downloadJson(filename, allUserNotes);
+  const subject = `Player Note — ${username} on ${playerName}`;
+  const body = `Hi Nile,\n\nAttached: ${filename} (just downloaded to your Downloads folder — please attach it before sending).\n\n`
+    + `New note added on ${playerName}.\n\n— ${username}`;
+  window.location.href = `mailto:${NILE_EMAIL}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
 
-function loadGiscus(player) {
-  const container = document.getElementById('giscusContainer');
-  if (!container) return;
-  container.innerHTML = '';
-  const script = document.createElement('script');
-  script.src = 'https://giscus.app/client.js';
-  script.setAttribute('data-repo', `${REPO_OWNER}/${REPO_NAME}`);
-  script.setAttribute('data-repo-id', GISCUS_REPO_ID);
-  script.setAttribute('data-category', GISCUS_CATEGORY);
-  script.setAttribute('data-category-id', GISCUS_CATEGORY_ID);
-  // "specific" + a per-player term (not the default "pathname") — every player
-  // shares the same physical file (player.html?id=X), so pathname mapping would
-  // incorrectly dump every player's comments into one shared thread.
-  script.setAttribute('data-mapping', 'specific');
-  script.setAttribute('data-term', `player-${player.id}`);
-  script.setAttribute('data-strict', '1'); // avoid fuzzy-matching similar player names to the wrong thread
-  script.setAttribute('data-reactions-enabled', '1');
-  script.setAttribute('data-emit-metadata', '0');
-  script.setAttribute('data-input-position', 'top');
-  script.setAttribute('data-theme', 'dark_dimmed');
-  script.setAttribute('data-lang', 'en');
-  script.crossOrigin = 'anonymous';
-  script.async = true;
-  container.appendChild(script);
+let notesLoggedInUser = null;
+async function loadTeamNotes(player) {
+  const display = document.getElementById('notesDisplay');
+  display.innerHTML = '<div class="box-sub">Loading notes...</div>';
+
+  const usersResult = await fetchPublicJson('data/blindrank_users.json');
+  const usernames = usersResult.ok && usersResult.data ? Object.keys(usersResult.data) : [];
+
+  const allNotes = [];
+  for (const username of usernames) {
+    const result = await fetchPublicJson(`data/player_notes/${username}.json`);
+    if (result.ok && !result.notFound && Array.isArray(result.data)) {
+      result.data.filter(n => n.playerId === player.id).forEach(n => allNotes.push({ ...n, username }));
+    }
+  }
+  allNotes.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+  display.innerHTML = allNotes.length
+    ? allNotes.map(n => `
+        <div style="border-bottom:1px solid #1A1A1A;padding:8px 0;font-size:13px;">
+          <div style="font-weight:700;">${n.username} <span style="font-weight:400;color:#8A8A8A;font-size:11px;">${new Date(n.timestamp).toLocaleDateString()}</span></div>
+          <div style="margin-top:2px;">${n.note}</div>
+        </div>`).join('')
+    : '<div class="box-sub">No notes yet on this player.</div>';
+
+  document.getElementById('notesLoginToggle').addEventListener('click', () => {
+    document.getElementById('notesLoginForm').style.display = 'block';
+  });
+  document.getElementById('notesLoginBtn').addEventListener('click', async () => {
+    const username = document.getElementById('notesUsername').value.trim();
+    const pin = document.getElementById('notesPin').value.trim();
+    const status = document.getElementById('notesLoginStatus');
+    if (!username || !pin) { status.textContent = 'Enter both username and PIN.'; return; }
+    status.textContent = 'Checking...';
+    const result = await fetchPublicJson('data/blindrank_users.json');
+    if (!result.ok || !result.data || result.data[username] !== pin) {
+      status.textContent = 'Username/PIN not recognized.';
+      return;
+    }
+    notesLoggedInUser = username;
+    status.textContent = `Logged in as ${username}.`;
+    document.getElementById('notesLoginForm').style.display = 'none';
+    document.getElementById('notesWriteForm').style.display = 'block';
+  });
+  document.getElementById('notesAddBtn').addEventListener('click', async () => {
+    const text = document.getElementById('notesTextarea').value.trim();
+    const status = document.getElementById('notesWriteStatus');
+    if (!text) { status.textContent = 'Write something first.'; return; }
+    if (!notesLoggedInUser) { status.textContent = 'Not logged in.'; return; }
+    status.textContent = 'Preparing...';
+    const existing = await fetchPublicJson(`data/player_notes/${notesLoggedInUser}.json`);
+    const userNotes = (existing.ok && !existing.notFound && Array.isArray(existing.data)) ? existing.data : [];
+    userNotes.push({ playerId: player.id, note: text, timestamp: new Date().toISOString() });
+    emailNote(notesLoggedInUser, player.name, userNotes);
+    status.textContent = 'Note saved to a file and an email draft opened — attach the downloaded file and hit send to submit it.';
+    document.getElementById('notesTextarea').value = '';
+  });
 }
 
 function setupSearch(players) {

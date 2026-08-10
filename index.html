@@ -1350,24 +1350,60 @@ document.getElementById('ps_bulkPasteArea').addEventListener('paste', () => {
   }, 0);
 });
 
+async function commitBulkStints(rows, path, commitMessage) {
+  if (!githubToken) {
+    githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
+    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.', appliedCount: 0, notFoundIds: [] };
+  }
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
+  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  try {
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).`, appliedCount: 0, notFoundIds: [] };
+    const fileData = await getResp.json();
+    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const byId = new Map(allPlayers.map(p => [p.id, p]));
+
+    let appliedCount = 0;
+    const notFoundIds = [];
+    for (const row of rows) {
+      const target = byId.get(row.playerId);
+      if (!target) { notFoundIds.push(row.playerId); continue; }
+      mergeStintIntoPlayer(target, row.stint);
+      appliedCount++;
+    }
+
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: commitMessage(appliedCount), content: utf8ToBase64(JSON.stringify(allPlayers)), sha: fileData.sha }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}`, appliedCount: 0, notFoundIds: [] };
+    }
+    return { ok: true, message: 'Saved — live site updates in ~1 min.', appliedCount, notFoundIds };
+  } catch (e) {
+    return { ok: false, message: `Network error: ${e.message}`, appliedCount: 0, notFoundIds: [] };
+  }
+}
+
 document.getElementById('ps_bulkSaveBtn').addEventListener('click', async () => {
   if (!psBulkRows || !psBulkRows.length) return;
   const status = document.getElementById('ps_bulkStatus');
-  let done = 0, failed = 0;
-  // Sequential, not parallel — every save reads-modifies-writes the SAME shared
-  // file, so concurrent commits would race on a stale sha and clobber each other.
-  for (const row of psBulkRows) {
-    status.textContent = `Saving ${done + failed + 1}/${psBulkRows.length}: ${row.playerName}...`;
-    const result = await commitPlayerUpdate(
-      DETAIL_PATH_IN_REPO,
-      row.playerId,
-      (target) => mergeStintIntoPlayer(target, row.stint),
-      (target) => `Add pro stint (bulk): ${target.name} — ${row.stint.league}${row.stint.season ? ' (' + row.stint.season + ')' : ''}`
-    );
-    if (result.ok) done++; else failed++;
+  status.textContent = `Saving all ${psBulkRows.length} rows in one commit...`;
+  const result = await commitBulkStints(
+    psBulkRows,
+    DETAIL_PATH_IN_REPO,
+    (count) => `Add pro stints (bulk): ${count} players`
+  );
+  if (!result.ok) {
+    status.textContent = result.message; // real error shown directly, not a generic failure count
+    return;
   }
-  status.textContent = `Done — ${done} saved${failed ? `, ${failed} failed` : ''}.`;
-  if (failed === 0) {
+  status.textContent = `Done — ${result.appliedCount} saved in one commit`
+    + (result.notFoundIds.length ? `, ${result.notFoundIds.length} player id(s) no longer matched: ${result.notFoundIds.join(', ')}.` : '.');
+  if (result.notFoundIds.length === 0) {
     document.getElementById('ps_bulkPasteArea').value = '';
     document.getElementById('ps_bulkSeason').value = '';
     document.getElementById('ps_bulkPreview').innerHTML = '';

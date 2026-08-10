@@ -233,7 +233,7 @@
 <div class="avail-toggle" id="availToggle">
   <span>Available:</span>
   <button data-avail="yes">Yes</button>
-  <button data-avail="no">No</button>
+  <button data-avail="no" class="excluded">No</button>
   <button data-avail="unknown">Unknown</button>
 </div>
 
@@ -437,7 +437,7 @@ function renderBoard(title, list, href) {
 
 // availabilitySimple ('yes'/'no'/'unknown') and availabilityNote are now real
 // persisted fields (see player.html's editor), not derived here anymore.
-let excludedAvail = new Set(); // statuses currently struck through / hidden
+let excludedAvail = new Set(['no']); // statuses currently struck through / hidden — "no" hidden by default
 let cachedPlayers = null;
 
 function withAvail(href) {

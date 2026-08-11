@@ -333,6 +333,25 @@
     .boards { grid-template-columns: repeat(2, 1fr); }
     .notes-rows { columns: 1; }
   }
+
+  /* Below this width, roster-block/team-sw-block's fixed-pixel absolute
+     positioning genuinely doesn't fit — their combined reserved space alone
+     can exceed the viewport, causing real overlap (confirmed happening on
+     mobile and narrow split-screen windows). Switch to normal stacked flow
+     instead of trying to force the desktop side-by-side layout to fit. */
+  @media (max-width: 1024px) {
+    .top { padding: 16px 16px 8px; flex-direction: column; }
+    .wordmark-wrap { width: 100%; min-width: 0; }
+    .roster-block {
+      position: static; width: 100%; margin-top: 14px;
+    }
+    .roster-photos, .roster-names { width: 100%; max-width: 420px; }
+    .mock-builder-trigger { margin-left: 0; }
+    .team-sw-block {
+      position: static; width: 100%; margin-top: 14px; max-width: 420px;
+    }
+    .team-sw-title, .team-sw-line, .team-sw-more { text-align: left; }
+  }
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>

@@ -37,7 +37,9 @@ import re
 import time
 import requests
 
-DATA_PATH = "data/players.json"
+DATA_PATH = "data/players_index.json"  # photoUrl lives here — was still pointing at the
+                                        # old pre-split single file, same bug just found
+                                        # and fixed in fetch_videos.py
 MAX_PLAYERS_PER_RUN = 40
 SLEEP_BETWEEN_REQUESTS = 1.2  # a bit under wehoop's documented ~1/sec safe pace
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; CapitanesverseBot/1.0; +https://github.com/)"}
@@ -155,7 +157,7 @@ def main():
             p["photoUrl"] = new_photos[p["id"]]
 
     with open(DATA_PATH, "w") as f:
-        json.dump(fresh_players, f, indent=2)
+        json.dump(fresh_players, f, separators=(",", ":"))
 
     print(f"Done. Processed {processed}, matched {len(new_photos)}.")
 

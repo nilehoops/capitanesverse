@@ -17,7 +17,9 @@ import json
 import time
 import yt_dlp
 
-DATA_PATH = "data/players.json"
+DATA_PATH = "data/players_detail.json"  # videos lives here — was still pointing at the
+                                          # old pre-split single file, completely disconnected
+                                          # from the real data every other part of the site uses
 MAX_PLAYERS_PER_RUN = 24  # each player can now make up to 3 queries (fallback tiers),
                            # so this is recalibrated from the old single-query cap —
                            # verified worst case (every tier of every player timing out)
@@ -86,21 +88,33 @@ def search_videos(query):
     return videos
 
 
+INDEX_PATH = "data/players_index.json"  # name/team live here — needed to build search
+                                         # queries, but videos itself is never written back here
+
+
 def main():
+    with open(INDEX_PATH) as f:
+        index_players = json.load(f)
     with open(DATA_PATH) as f:
-        players = json.load(f)
+        detail_players = json.load(f)
+    detail_by_id = {p["id"]: p for p in detail_players}
 
     players_processed = 0
     updated = 0
     new_videos_by_id = {}  # collected in memory; only written to disk at the very end
 
-    for player in players:
-        if player.get("videos"):  # already enriched — skip
+    for idx_player in index_players:
+        detail = detail_by_id.get(idx_player["id"])
+        if detail is None:
+            continue  # in index but missing from detail entirely — a different bug, not this script's job
+        if detail.get("videos"):  # already enriched — skip
             continue
         if players_processed >= MAX_PLAYERS_PER_RUN:
             print(f"Reached MAX_PLAYERS_PER_RUN ({MAX_PLAYERS_PER_RUN}); stopping for this run.")
             break
 
+        # name/team come from the index entry; videos gets written against this same id in detail.
+        player = {"id": idx_player["id"], "name": idx_player["name"], "team": idx_player.get("team")}
         queries = build_queries(player)
         try:
             videos, used_query, tier = search_videos_with_fallback(queries)
@@ -131,7 +145,7 @@ def main():
             p["videos"] = new_videos_by_id[p["id"]]
 
     with open(DATA_PATH, "w") as f:
-        json.dump(fresh_players, f, indent=2)
+        json.dump(fresh_players, f, separators=(",", ":"))
 
     print(f"Done. Processed {players_processed} players, updated {updated}.")
 

@@ -27,14 +27,19 @@
     gap: 24px;
     flex-wrap: wrap;
   }
-  .top > :first-child { flex: 1 1 480px; min-width: 320px; }
-  .wordmark {
-    font-size: clamp(40px, 4.3vw, 85px);
-    line-height: 0.95;
-    margin: 0;
-    white-space: nowrap;
+  .wordmark-wrap {
+    /* roster-block sits at right:238px (fixed) from .top's edge — reserve
+       exactly that plus a 1-inch gap. Verified numerically: .top's own
+       220px right-padding is already baked into this 100%, so the
+       subtraction must account for that, not just roster's own width. */
+    width: calc(100% - 594px);
+    min-width: 280px;
   }
-  .tagline { font-size: 17px; font-weight: 400; color: #C9C9C9; font-style: italic; margin-top: 4px; }
+  .wordmark-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
   .search-line {
     margin-top: 14px;
   }
@@ -235,8 +240,8 @@
   .addplayer-onroster input { width: auto; }
 
   .mock-builder-trigger {
-    margin-top: 10px; font-family: 'Lora', serif; font-weight: 700; font-size: 14px;
-    background: none; border: 1px solid #4FD1FF; color: #4FD1FF; padding: 6px 12px; cursor: pointer;
+    display: block; margin: 8px 0 0 auto; font-family: 'Lora', serif; font-weight: 700; font-size: 13px;
+    background: none; border: 1px solid #4FD1FF; color: #4FD1FF; padding: 5px 10px; cursor: pointer;
   }
   .mock-builder-trigger:hover { background: #4FD1FF; color: #000; }
 
@@ -246,36 +251,37 @@
   }
   .mock-modal-overlay.open { display: flex; }
   .mock-modal {
-    background: #000; border: 2px solid #333; width: min(1400px, 100%); position: relative; padding: 20px;
+    background: #000; border: 2px solid #333; width: min(1400px, 100%); max-height: 94vh;
+    overflow-y: auto; position: relative; padding: 16px 20px;
   }
   .mock-modal-close {
     position: absolute; top: 12px; right: 12px; background: #D81F2A; color: #fff; border: none;
     font-family: 'Lora', serif; font-weight: 900; font-size: 18px; width: 34px; height: 34px; cursor: pointer;
   }
 
-  .mock-header { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 16px; }
-  .mock-roster-block { display: flex; align-items: flex-start; gap: 12px; }
+  .mock-header { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 10px; }
+  .mock-roster-block { display: flex; align-items: flex-start; gap: 10px; }
   .mock-roster-label {
-    font-size: 20px; font-weight: 700; white-space: nowrap;
+    font-size: 17px; font-weight: 700; white-space: nowrap;
     writing-mode: vertical-rl; transform: rotate(180deg);
   }
-  .mock-roster-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; width: 280px; }
+  .mock-roster-photos { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px; width: 220px; }
   .mock-roster-photos img, .mock-roster-photos .noimg, .mock-roster-photos .placeholder {
     width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #1A1A1A; position: relative;
   }
-  .mock-roster-photos .noimg { display: flex; align-items: center; justify-content: center; font-size: 20px; color: #6A6A6A; }
+  .mock-roster-photos .noimg { display: flex; align-items: center; justify-content: center; font-size: 16px; color: #6A6A6A; }
   .mock-roster-photos .placeholder { display: flex; align-items: flex-end; justify-content: center; padding-bottom: 8%; }
   .mock-roster-photos .placeholder svg { width: 44%; height: 44%; fill: #4A4A4A; }
   .mock-roster-photos .remove-x {
-    position: absolute; top: 2px; right: 2px; background: #D81F2A; color: #fff; font-size: 10px;
-    width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    position: absolute; top: 2px; right: 2px; background: #D81F2A; color: #fff; font-size: 9px;
+    width: 14px; height: 14px; display: flex; align-items: center; justify-content: center; cursor: pointer;
   }
   .mock-roster-names {
-    font-size: 11px; font-weight: 600; margin-top: 4px; display: grid;
-    grid-template-columns: repeat(4, 1fr); gap: 4px; width: 280px; text-align: center;
+    font-size: 10px; font-weight: 600; margin-top: 3px; display: grid;
+    grid-template-columns: repeat(4, 1fr); gap: 3px; width: 220px; text-align: center;
   }
-  .mock-title h1 { font-family: 'Lora', serif; font-size: clamp(36px, 5vw, 70px); margin: 0; line-height: 0.95; }
-  .mock-title h2 { font-family: 'Lora', serif; font-size: clamp(24px, 3.4vw, 46px); margin: 0; line-height: 1; color: #ECECEC; }
+  .mock-title h1 { font-family: 'Lora', serif; font-size: clamp(30px, 3.8vw, 52px); margin: 0; line-height: 0.95; }
+  .mock-title h2 { font-family: 'Lora', serif; font-size: clamp(20px, 2.6vw, 34px); margin: 0; line-height: 1; color: #ECECEC; }
 
   .mock-body { display: flex; gap: 24px; flex-wrap: wrap; }
   .mock-left { flex: 2 1 560px; }
@@ -297,7 +303,7 @@
     gap: 6px; align-items: center; font-size: 12px;
   }
   .mock-list-head { font-weight: 700; color: #9A9A9A; padding-bottom: 4px; border-bottom: 1px solid #333; }
-  .mock-list { max-height: 46vh; overflow-y: auto; }
+  .mock-list { max-height: 38vh; overflow-y: auto; }
   .mock-list-row { padding: 5px 0; border-bottom: 1px solid #1A1A1A; position: relative; }
   .mock-list-row .mock-add-btn {
     background: #128A3E; color: #fff; border: none; font-family: 'Lora', serif; font-weight: 700;
@@ -334,14 +340,15 @@
 <body>
 
 <div class="top">
-  <div>
-    <h1 class="wordmark">Capitanesverse</h1>
-    <div class="tagline">2027 MEX Offseason Dashboard, created by Nile G.</div>
+  <div class="wordmark-wrap">
+    <svg class="wordmark-svg" viewBox="0 0 900 128" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet">
+      <text x="0" y="92" font-family="Lora, serif" font-weight="700" font-size="106" fill="#ECECEC">Capitanesverse</text>
+      <text x="2" y="120" font-family="Lora, serif" font-weight="400" font-style="italic" font-size="17" fill="#C9C9C9">2027 MEX Offseason Dashboard, created by Nile G.</text>
+    </svg>
     <div class="search-line">
       <input id="searchInput" type="text" placeholder="Search:" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
     </div>
-    <button id="openMockBuilder" class="mock-builder-trigger">+ Mock Roster Builder</button>
   </div>
 
   <div class="roster-block">
@@ -349,6 +356,7 @@
     <div>
       <div class="roster-photos" id="rosterPhotos"></div>
       <div class="roster-names" id="rosterNames"></div>
+      <button id="openMockBuilder" class="mock-builder-trigger">+ Mock Roster Builder</button>
     </div>
   </div>
 
@@ -397,9 +405,7 @@
 
       <div class="mock-right">
         <div class="team-sw-title" style="text-align:left;">Relative Team<br>Strengths/Weaknesses</div>
-        <div id="mockTeamSwLines"></div>
-        <a class="team-sw-more" id="mockTeamSwMoreLink" style="text-align:left;">see more -&gt;</a>
-        <div class="team-sw-full" id="mockTeamSwFull" style="display:none;margin:10px 0 0;max-width:100%;"></div>
+        <div id="mockTeamSwFullAlways"></div>
       </div>
     </div>
 
@@ -1826,50 +1832,6 @@ function renderTeamStrengthsWeaknesses(players) {
   renderTeamStrengthsWeaknessesInto(aggregates, 'teamSwLines', 'teamSwMoreLink', 'teamSwFull');
 }
 
-// Precisely sizes the wordmark so there's a real 1-inch gap before the
-// roster block (which is pinned at a fixed offset from the right edge) —
-// measured against actual rendered positions rather than approximated via
-// vw/clamp, since that approach kept being close-but-not-exact on this header.
-function adjustHeaderSizing() {
-  const wordmark = document.querySelector('.wordmark');
-  const tagline = document.querySelector('.tagline');
-  const rosterBlock = document.querySelector('.roster-block');
-  if (!wordmark || !rosterBlock) return;
-
-  const ONE_INCH_PX = 96; // CSS defines 1in = 96px regardless of actual screen DPI
-  const rosterLeft = rosterBlock.getBoundingClientRect().left;
-  const wordmarkLeft = wordmark.getBoundingClientRect().left;
-  const targetWidth = rosterLeft - wordmarkLeft - ONE_INCH_PX;
-  if (targetWidth < 100) return; // viewport too narrow for this to make sense — leave CSS defaults
-
-  const currentWidth = wordmark.getBoundingClientRect().width;
-  const currentFontSize = parseFloat(getComputedStyle(wordmark).fontSize);
-  const newFontSize = currentFontSize * (targetWidth / currentWidth);
-  wordmark.style.fontSize = newFontSize + 'px';
-
-  // One refinement pass — text width doesn't scale perfectly linearly with
-  // font-size at the sub-pixel level, so a single ratio can be slightly off.
-  const refinedWidth = wordmark.getBoundingClientRect().width;
-  if (Math.abs(refinedWidth - targetWidth) > 3) {
-    wordmark.style.fontSize = (newFontSize * (targetWidth / refinedWidth)) + 'px';
-  }
-
-  // Right-align the tagline to the wordmark's actual right edge.
-  const finalWordmarkWidth = wordmark.getBoundingClientRect().width;
-  tagline.style.width = finalWordmarkWidth + 'px';
-  tagline.style.textAlign = 'right';
-}
-if (document.fonts && document.fonts.ready) {
-  document.fonts.ready.then(adjustHeaderSizing);
-} else {
-  window.addEventListener('load', adjustHeaderSizing);
-}
-let headerResizeTimer;
-window.addEventListener('resize', () => {
-  clearTimeout(headerResizeTimer);
-  headerResizeTimer = setTimeout(adjustHeaderSizing, 150);
-});
-
 // ---- Mock Roster Builder ----
 const MOCK_SLOTS = 12;
 let mockRosterIds = ROSTER.map(r => r.id); // seeded with the real current roster as a starting point
@@ -1920,7 +1882,14 @@ function renderMockRoster() {
 function renderMockTeamSW() {
   if (!cachedPlayers) return;
   const aggregates = computeTeamStrengthsWeaknesses(cachedPlayers, mockRosterIds);
-  renderTeamStrengthsWeaknessesInto(aggregates, 'mockTeamSwLines', 'mockTeamSwMoreLink', 'mockTeamSwFull');
+  const container = document.getElementById('mockTeamSwFullAlways');
+  container.innerHTML = aggregates.length
+    ? aggregates.map(a => `
+        <div class="team-sw-full-row" style="border-bottom-color:#1A1A1A;">
+          <span>${a.label}</span>
+          <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}<sup>th</sup> %ile <span style="color:#6A6A6A;font-weight:400;">(n=${a.sampleSize})</span></span>
+        </div>`).join('')
+    : '<div style="color:#8A8A8A;font-size:13px;">Not enough roster stat data yet.</div>';
 }
 
 function mostRecentStintText(p) {

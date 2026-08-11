@@ -360,7 +360,7 @@
 
 <div class="top">
   <div class="wordmark-wrap">
-    <svg class="wordmark-svg" viewBox="0 0 900 108" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet">
+    <svg class="wordmark-svg" viewBox="0 0 900 122" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet">
       <text x="0" y="92" font-family="Lora, serif" font-weight="700" font-size="106" fill="#ECECEC">Capitanesverse</text>
     </svg>
     <div class="search-line">
@@ -455,7 +455,7 @@
     <button class="addplayer-toggle" id="requestPlayerToggle">+ Request Player</button>
     <div class="addplayer-form" id="requestPlayerForm">
       <p style="font-size:12px;color:#9A9A9A;margin:0 0 8px;">
-        Think someone should be added to the database? Post it here — same GitHub-account commenting as player pages, one shared thread for all requests.
+        Leave the name of any missing player in the comments and their profile will be added by EOD.
       </p>
       <div id="requestPlayerGiscus"></div>
     </div>
@@ -465,6 +465,13 @@
     <div class="addplayer-form" id="incompleteForm">
       <div class="incomplete-bars" id="incompleteBars"></div>
       <button class="addplayer-toggle" id="incompleteExtractBtn" style="width:auto;display:inline-block;margin-bottom:10px;">Extract</button>
+      <div style="margin-bottom:10px;">
+        <label style="font-size:12px;font-weight:700;">Import edited file:</label><br>
+        <input type="file" id="incompleteImportFile" accept=".csv,.xlsx,.xls" style="margin-top:4px;color:#ECECEC;font-family:'Lora',serif;font-size:12px;">
+        <div id="incompleteImportPreview" style="font-size:12px;margin-top:6px;"></div>
+        <button class="addplayer-save" id="incompleteImportBtn" style="display:none;margin-top:6px;">Import</button>
+        <span class="addplayer-status" id="incompleteImportStatus"></span>
+      </div>
       <input class="pane-search" id="incompleteSearch" type="text" placeholder="Search name or team...">
       <div class="incomplete-list" id="incompleteList"></div>
     </div>
@@ -609,10 +616,10 @@
   </div>
 
   <div class="addplayer-section">
-    <button class="addplayer-toggle" id="availIOToggle">+ Availability Import/Export</button>
+    <button class="addplayer-toggle" id="availIOToggle">+ Availability</button>
     <div class="addplayer-form" id="availIOForm">
       <p style="font-size:12px;color:#9A9A9A;margin:0 0 8px;">
-        Export current availability to edit in a spreadsheet, then import the edited file back — this only ever touches the two availability fields, everything else on each player is left alone.
+        Export current availability to edit in a spreadsheet, then import the edited file back.
       </p>
       <button class="addplayer-toggle" id="availExportBtn" style="width:auto;display:inline-block;">Export CSV</button>
       <div style="margin-top:12px;">
@@ -828,15 +835,106 @@ document.getElementById('incompleteExtractBtn').addEventListener('click', () => 
       const missingStats = Object.entries(STAT_LABELS).filter(([k]) => p.stats?.[k] == null).map(([, label]) => label);
       return `Stats: ${missingStats.join(', ')}`;
     }).join(' | ');
-    return [p.id, p.name, p.team || '', p.overallRank ?? '', fieldList, p.dataGapNote || ''].map(csvEscape).join(',');
+    return [p.id, p.name, p.team || '', p.overallRank ?? '', fieldList, p.biography?.age ?? '', p.biography?.weight ?? '', p.dataGapNote || ''].map(csvEscape).join(',');
   });
-  const csv = 'id,name,team,overallRank,missingFields,note\n' + rows.join('\n');
+  const csv = 'id,name,team,overallRank,missingFields,age,weight,note\n' + rows.join('\n');
   const blob = new Blob([csv], { type: 'text/csv' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = 'incomplete_data.csv';
   a.click();
 });
+
+let incompleteImportRows = null;
+function processIncompleteImportRows(rowsOfCells) {
+  const preview = document.getElementById('incompleteImportPreview');
+  const importBtn = document.getElementById('incompleteImportBtn');
+  const byId = new Map((cachedPlayers || []).map(p => [p.id, p]));
+  let matched = 0, unmatched = [];
+  incompleteImportRows = [];
+  for (const cells of rowsOfCells) {
+    const id = String(cells[0] ?? '').trim();
+    if (id === 'id' || !id) continue; // skip header/blank rows
+    if (!byId.has(id)) { unmatched.push(id); continue; }
+    matched++;
+    incompleteImportRows.push({
+      id,
+      age: String(cells[5] ?? '').trim(),
+      weight: String(cells[6] ?? '').trim(),
+      note: String(cells[7] ?? '').trim(),
+    });
+  }
+  preview.innerHTML = `${matched} row(s) matched.` + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched: ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
+  importBtn.textContent = `Import (1 commit, ${matched} player${matched===1?'':'s'})`;
+  importBtn.style.display = matched ? 'inline-block' : 'none';
+}
+document.getElementById('incompleteImportFile').addEventListener('change', (e) => {
+  const preview = document.getElementById('incompleteImportPreview');
+  const importBtn = document.getElementById('incompleteImportBtn');
+  const file = e.target.files[0];
+  if (!file) { preview.innerHTML = ''; importBtn.style.display = 'none'; incompleteImportRows = null; return; }
+
+  const isExcel = /\.xlsx?$/i.test(file.name);
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (isExcel) {
+      const workbook = XLSX.read(reader.result, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+      processIncompleteImportRows(rows);
+    } else {
+      const lines = String(reader.result).split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim());
+      processIncompleteImportRows(lines.map(parseCsvLine));
+    }
+  };
+  if (isExcel) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+});
+document.getElementById('incompleteImportBtn').addEventListener('click', async () => {
+  if (!incompleteImportRows || !incompleteImportRows.length) return;
+  const status = document.getElementById('incompleteImportStatus');
+  if (!githubToken) {
+    githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
+    if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; return; }
+  }
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DETAIL_PATH_IN_REPO}`;
+  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  status.textContent = 'Saving...';
+  try {
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) { status.textContent = `Could not read file (${getResp.status}).`; return; }
+    const fileData = await getResp.json();
+    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const byId = new Map(allPlayers.map(p => [p.id, p]));
+    let updated = 0;
+    for (const row of incompleteImportRows) {
+      const target = byId.get(row.id);
+      if (!target) continue;
+      if (row.age) { target.biography = target.biography || {}; target.biography.age = Number(row.age); target.biography.found = true; }
+      if (row.weight) { target.biography = target.biography || {}; target.biography.weight = row.weight; target.biography.found = true; }
+      target.dataGapNote = row.note || null;
+      updated++;
+    }
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: `Bulk incomplete-data import (${updated} players)`, content: utf8ToBase64(JSON.stringify(allPlayers)), sha: fileData.sha }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      status.textContent = `Save failed (${putResp.status}): ${err.message || 'unknown error'}`;
+      return;
+    }
+    status.textContent = `Saved — ${updated} players updated.`;
+    document.getElementById('incompleteImportFile').value = '';
+    document.getElementById('incompleteImportPreview').innerHTML = '';
+    document.getElementById('incompleteImportBtn').style.display = 'none';
+    incompleteImportRows = null;
+  } catch (e) {
+    status.textContent = `Network error: ${e.message}`;
+  }
+});
+
 document.getElementById('incompleteSearch').addEventListener('input', (e) => {
   incompleteSearchTerm = e.target.value;
   renderIncompleteList(cachedPlayers);
@@ -1433,7 +1531,7 @@ function buildStintFromCells(cells, columnOrder, fallbackSeason, defaultLeague) 
   const astTov = present.has('asttov') ? numFromIfPresent('asttov') : safeDiv(numFromIfPresent('ast'), numFromIfPresent('tov'));
   const per = numFromIfPresent('per');
 
-  const league = map.league || defaultLeague || null;
+  const league = (map.league || defaultLeague || null)?.replace(/-/g, ' ').replace(/\s+/g, ' ').trim() || null;
   const strength = leagueStrengthMap[league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[league]] ?? null;
   return {
     name: map.name || null, // only present in bulk rows; ignored by the single-row caller
@@ -1933,7 +2031,8 @@ document.getElementById('mockSearchInput').addEventListener('input', (e) => {
 
 function renderMockPlayerList() {
   if (!cachedPlayers) return;
-  let pool = cachedPlayers.filter(p => mockPosFilter === 'All' || p.position === mockPosFilter);
+  let pool = cachedPlayers.filter(p => p.availabilitySimple !== 'no');
+  pool = pool.filter(p => mockPosFilter === 'All' || p.position === mockPosFilter);
   if (mockSearchTerm) pool = pool.filter(p => p.name.toLowerCase().includes(mockSearchTerm) || (p.team || '').toLowerCase().includes(mockSearchTerm));
   pool = pool.slice().sort((a, b) => (a.overallRank ?? 999) - (b.overallRank ?? 999));
 

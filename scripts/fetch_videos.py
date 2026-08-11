@@ -6,10 +6,10 @@ built-in search instead of the YouTube Data API, so no API key is needed.
 RATE-LIMIT NOTE: there's no official quota like the Data API had, but
 hammering YouTube with hundreds of rapid-fire requests from the same IP
 (GitHub's shared runners) can still get you temporarily rate-limited. This
-script self-limits to MAX_QUERIES_PER_RUN per run, waits between requests,
+script self-limits to MAX_PLAYERS_PER_RUN per run, waits between requests,
 and only queries players that don't already have videos cached — so the
 weekly schedule backfills everyone over a few runs, then just tops up new
-players after that. Raise MAX_QUERIES_PER_RUN if it proves reliable for you,
+players after that. Raise MAX_PLAYERS_PER_RUN if it proves reliable for you,
 lower it if you start seeing failures.
 """
 
@@ -18,11 +18,10 @@ import time
 import yt_dlp
 
 DATA_PATH = "data/players.json"
-MAX_QUERIES_PER_RUN = 65  # bounded so even a worst-case run (every query timing out
-                           # at socket_timeout below) finishes under the job's 30-min
-                           # ceiling — the script only writes to disk once, at the end,
-                           # so getting killed mid-run by the job timeout loses everything
-                           # found that run, not just delays it
+MAX_PLAYERS_PER_RUN = 24  # each player can now make up to 3 queries (fallback tiers),
+                           # so this is recalibrated from the old single-query cap —
+                           # verified worst case (every tier of every player timing out)
+                           # finishes at ~25 min, safely under the job's 30-min ceiling
 RESULTS_PER_PLAYER = 2
 SLEEP_BETWEEN_QUERIES = 1.5  # seconds — politeness delay, not an API requirement
 
@@ -39,10 +38,32 @@ YDL_OPTS = {
 }
 
 
-def build_query(player):
-    # Team included to disambiguate common names.
+def build_queries(player):
+    # Most specific first (best disambiguation for common names), falling back
+    # to broader queries only if that returns nothing. Adding words to a search
+    # only narrows results — a team name that happens to be a common/generic
+    # word (e.g. "Pacific") can make the specific query return zero results
+    # even when a simpler one would find plenty. Confirmed real: this happened
+    # for Alexis Marmolejos, team="Pacific" — a generic word polluting/over-
+    # narrowing the query, not an absence of videos.
+    name = player["name"]
     team = player.get("team") or ""
-    return f'{player["name"]} {team} basketball highlights'.strip()
+    queries = []
+    if team:
+        queries.append(f"{name} {team} basketball highlights")
+    queries.append(f"{name} highlights")
+    queries.append(name)
+    return queries
+
+
+def search_videos_with_fallback(queries):
+    for i, query in enumerate(queries):
+        if i > 0:
+            time.sleep(0.5)  # small gap between fallback attempts for the same player
+        videos = search_videos(query)
+        if videos:
+            return videos, query, i
+    return [], queries[-1], len(queries) - 1
 
 
 def search_videos(query):
@@ -69,33 +90,34 @@ def main():
     with open(DATA_PATH) as f:
         players = json.load(f)
 
-    queries_made = 0
+    players_processed = 0
     updated = 0
     new_videos_by_id = {}  # collected in memory; only written to disk at the very end
 
     for player in players:
         if player.get("videos"):  # already enriched — skip
             continue
-        if queries_made >= MAX_QUERIES_PER_RUN:
-            print(f"Reached MAX_QUERIES_PER_RUN ({MAX_QUERIES_PER_RUN}); stopping for this run.")
+        if players_processed >= MAX_PLAYERS_PER_RUN:
+            print(f"Reached MAX_PLAYERS_PER_RUN ({MAX_PLAYERS_PER_RUN}); stopping for this run.")
             break
 
-        query = build_query(player)
+        queries = build_queries(player)
         try:
-            videos = search_videos(query)
+            videos, used_query, tier = search_videos_with_fallback(queries)
         except Exception as e:
             print(f"  {player['name']}: search failed ({e}); will retry next run.")
-            queries_made += 1
+            players_processed += 1
             time.sleep(SLEEP_BETWEEN_QUERIES)
             continue
 
-        queries_made += 1
+        players_processed += 1
         new_videos_by_id[player["id"]] = videos  # [] counts as "checked, nothing found"
         if videos:
             updated += 1
-            print(f"  {player['name']}: {len(videos)} video(s) found.")
+            tier_note = f" (tier {tier + 1}/{len(queries)}: {used_query!r})" if tier > 0 else ""
+            print(f"  {player['name']}: {len(videos)} video(s) found{tier_note}.")
         else:
-            print(f"  {player['name']}: no results.")
+            print(f"  {player['name']}: no results across all {len(queries)} query tiers.")
 
         time.sleep(SLEEP_BETWEEN_QUERIES)
 
@@ -111,7 +133,7 @@ def main():
     with open(DATA_PATH, "w") as f:
         json.dump(fresh_players, f, indent=2)
 
-    print(f"Done. Made {queries_made} searches, updated {updated} players.")
+    print(f"Done. Processed {players_processed} players, updated {updated}.")
 
 
 if __name__ == "__main__":

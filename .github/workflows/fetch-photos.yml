@@ -9,6 +9,7 @@ permissions:
 jobs:
   fetch-photos:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -34,4 +35,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'Auto-update player photos'
-          file_pattern: data/players.json
+          file_pattern: data/players_index.json

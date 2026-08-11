@@ -35,7 +35,7 @@
   .ranktop { grid-area: ranktop; background: #000; padding: 14px 18px; }
   .video1  { grid-area: video1;  background: #000; padding: 14px; border-top: 1px solid #222; }
   .video2  { grid-area: video2;  background: #000; padding: 14px; border-top: 1px solid #222; border-left: 1px solid #222; }
-  .ranks   { grid-area: ranks;   background: #000; padding: 10px 14px; border-top: 1px solid #222; overflow-y: auto; max-height: 240px; }
+  .ranks   { grid-area: ranks;   background: #000; padding: 10px 14px; border-top: 1px solid #222; overflow-y: auto; max-height: 240px; min-height: 0; }
   .ranks .box-title { font-size: 14px; margin: 6px 0 2px; }
   .main    { grid-area: main;    overflow-y: auto; min-height: 0; display: flex; flex-direction: column; }
   .stats   { background: #000; padding: 14px 18px; border-top: 1px solid #222; }
@@ -113,9 +113,6 @@
   .prostint-stats .k { color: #9A9A9A; }
   .no-prostints { font-size: 12px; color: #6A6A6A; padding: 8px 0; }
 
-  .crowd .box-sub { font-size: 13px; font-weight: 400; color: #303030; }
-  .crowd textarea { width: 100%; font-family: 'Lora', serif; font-size: 13px; padding: 6px; margin-top: 8px; border: 1px solid #999; }
-  .crowd button { margin-top: 6px; font-family: 'Lora', serif; font-weight: 700; font-size: 13px; padding: 6px 12px; background: #101010; color: #ECECEC; border: none; cursor: pointer; }
 
   /* ---- sidebar internals ---- */
   .sb-search { padding: 10px; }
@@ -409,7 +406,7 @@ function proStintsHtml(players, player) {
     const fmt = (key, isPct) => {
       const v = s[key];
       if (v == null) return '—';
-      const display = isPct ? (v * 100).toFixed(1) + '%' : v;
+      const display = isPct ? (v * 100).toFixed(1) + '%' : v.toFixed(1);
       const pct = stintPercentile(players, player.position, key, v);
       return `${display}${pct != null ? `<sub style="color:#8A8A8A;">${pct}</sub>` : ''}`;
     };
@@ -610,6 +607,20 @@ function render(player, players) {
       </div>
 
       <div class="main">
+        <div class="swrow">
+          <div class="strong">
+            <div class="box-title">Stat Strengths</div>
+            <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
+            ${strengths.map(pbarRow).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
+          </div>
+
+          <div class="weak">
+            <div class="box-title">Stat Weaknesses</div>
+            <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
+            ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
+          </div>
+        </div>
+
         <div class="stats">
           <div class="stats-head">NCAA Career Stats/Metrics</div>
           ${shotDietHtml(players, player)}
@@ -624,20 +635,6 @@ function render(player, players) {
         <div class="prostints">
           <div class="stats-head" style="font-size:18px;">Pro/Other League Stints (Per-40)</div>
           ${proStintsHtml(players, player)}
-        </div>
-
-        <div class="swrow">
-          <div class="strong">
-            <div class="box-title">Stat Strengths</div>
-            <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
-            ${strengths.map(pbarRow).join('') || '<div class="box-sub">No standout strengths yet.</div>'}
-          </div>
-
-          <div class="weak">
-            <div class="box-title">Stat Weaknesses</div>
-            <div class="box-sub">${swSource ? `Per-40, vs. other players\u2019 pro stints (${swSource})` : 'Relative to the position group'}</div>
-            ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
-          </div>
         </div>
       </div>
     </div>
@@ -665,6 +662,16 @@ function compareGroupHtml(label, list) {
     </div>`;
 }
 
+// Explicit, deliberate list — not derived from any stat or bio-text match,
+// since that previously matched anyone whose bio happened to mention
+// "Mexico City Capitanes" (including unrelated context like a verbal-agreement
+// note), not the actual intended group.
+const CAPITANES_2026_IDS = new Set([
+  'boo-buie', 'wade-taylor-iv', 'ahmad-caver', 'geronimo-rubio-de-la-rosa', // Guards
+  'james-bouknight', 'lj-figueroa', 'rj-melendez', // Wings
+  'andersson-garcia', 'drew-cisse', 'isaih-moore', // Bigs
+]);
+
 function renderCompareTo(players, player) {
   const pos = player.position;
   const samePos = players.filter(p => p.position === pos && p.id !== player.id);
@@ -673,7 +680,7 @@ function renderCompareTo(players, player) {
 
   const bestAvailable = top3(samePos.filter(p => p.availabilitySimple === 'yes'), 'positionalRank');
   const bestAvailableLatino = top3(samePos.filter(p => p.availabilitySimple === 'yes' && p.latino === true), 'positionalRank');
-  const capitanes2026 = top3(samePos.filter(p => (p.biography?.currentStatus || '').includes('Mexico City Capitanes')), 'positionalRank');
+  const capitanes2026 = top3(samePos.filter(p => CAPITANES_2026_IDS.has(p.id)), 'positionalRank');
   const currentRoster = samePos.filter(p => p.onRoster).slice(0, 3);
 
   document.getElementById('compareSection').innerHTML = `

@@ -324,7 +324,7 @@ function proStintsHtml(players, player) {
     const fmt = (key, isPct) => {
       const v = s[key];
       if (v == null) return '—';
-      const display = isPct ? (v * 100).toFixed(1) + '%' : v;
+      const display = isPct ? (v * 100).toFixed(1) + '%' : v.toFixed(1);
       const pct = stintPercentile(players, player.position, key, v);
       return `${display}${pct != null ? `<sub class="pctile-sub">${pct}</sub>` : ''}`;
     };

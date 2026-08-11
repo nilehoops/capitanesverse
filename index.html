@@ -32,6 +32,7 @@
     line-height: 0.95;
     margin: 0;
   }
+  .tagline { font-size: 15px; font-weight: 400; color: #C9C9C9; font-style: italic; margin-top: 2px; }
   .search-line {
     margin-top: 10px;
   }
@@ -57,18 +58,21 @@
   .roster-block {
     display: flex;
     align-items: flex-start;
-    gap: 14px;
+    gap: 10px;
   }
-  .roster-label { font-size: 26px; line-height: 1.05; text-align: right; }
+  .roster-label {
+    font-size: 18px; font-weight: 700; white-space: nowrap;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+  }
   .roster-photos {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(6, 1fr);
     gap: 3px;
-    width: 130px;
+    width: 300px;
   }
-  .roster-photos img, .roster-photos .noimg {
-    width: 63px;
-    height: 63px;
+  .roster-photos img, .roster-photos .noimg, .roster-photos .placeholder {
+    width: 46px;
+    height: 46px;
     object-fit: cover;
     display: block;
     background: #1A1A1A;
@@ -77,19 +81,36 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 20px;
+    font-size: 16px;
     color: #6A6A6A;
   }
+  .roster-photos .placeholder {
+    display: flex; align-items: flex-end; justify-content: center;
+    background: #1A1A1A; padding-bottom: 4px;
+  }
+  .roster-photos .placeholder svg { width: 26px; height: 26px; fill: #4A4A4A; }
   .roster-names {
-    font-size: 12px;
+    font-size: 10px;
     font-weight: 600;
     margin-top: 4px;
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(6, 1fr);
     gap: 3px;
-    width: 130px;
+    width: 300px;
     text-align: center;
   }
+
+  .team-sw-block { min-width: 200px; max-width: 260px; }
+  .team-sw-title { font-size: 13px; font-weight: 700; text-align: right; line-height: 1.2; margin-bottom: 4px; }
+  .team-sw-line { font-size: 13px; font-weight: 700; text-align: right; }
+  .team-sw-line.strength { color: #3FCF5C; }
+  .team-sw-line.weakness { color: #D81F2A; }
+  .team-sw-line .stat-name { color: #ECECEC; font-weight: 400; }
+  .team-sw-more { display: block; text-align: right; font-size: 12px; color: #4FD1FF; text-decoration: underline; cursor: pointer; margin-top: 4px; }
+  .team-sw-full {
+    margin: 0 24px 20px; padding: 16px; border: 1px solid #333; max-width: 700px;
+  }
+  .team-sw-full-row { display: flex; justify-content: space-between; font-size: 14px; padding: 3px 0; border-bottom: 1px solid #1A1A1A; }
 
   .boards {
     display: grid;
@@ -215,6 +236,7 @@
 <div class="top">
   <div>
     <h1 class="wordmark">Capitanesverse</h1>
+    <div class="tagline">2027 MEX Offseason Dashboard, created by Nile G.</div>
     <div class="search-line">
       <input id="searchInput" type="text" placeholder="Search:" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
@@ -222,13 +244,21 @@
   </div>
 
   <div class="roster-block">
-    <div class="roster-label">Current<br>Roster</div>
+    <div class="roster-label">Current Roster</div>
     <div>
       <div class="roster-photos" id="rosterPhotos"></div>
       <div class="roster-names" id="rosterNames"></div>
     </div>
   </div>
+
+  <div class="team-sw-block">
+    <div class="team-sw-title">Relative Team<br>Strengths/Weaknesses</div>
+    <div id="teamSwLines"></div>
+    <a class="team-sw-more" id="teamSwMoreLink">see more -&gt;</a>
+  </div>
 </div>
+
+<div class="team-sw-full" id="teamSwFull" style="display:none;"></div>
 
 <div class="avail-toggle" id="availToggle">
   <span>Available:</span>
@@ -245,6 +275,15 @@
 </div>
 
 <div class="util-tabs-row">
+  <div class="addplayer-section">
+    <button class="addplayer-toggle" id="requestPlayerToggle">+ Request Player</button>
+    <div class="addplayer-form" id="requestPlayerForm">
+      <p style="font-size:12px;color:#9A9A9A;margin:0 0 8px;">
+        Think someone should be added to the database? Post it here — same GitHub-account commenting as player pages, one shared thread for all requests.
+      </p>
+      <div id="requestPlayerGiscus"></div>
+    </div>
+  </div>
   <div class="addplayer-section">
     <button class="addplayer-toggle" id="incompleteToggle">+ Incomplete Data</button>
     <div class="addplayer-form" id="incompleteForm">
@@ -423,14 +462,24 @@ const ROSTER = [
   { name: "Agapy Santos",      id: "agapy-santos",      photo: "https://www.proballers.com/media/cache/headshot_600/player/headshot/264126.png" },
 ];
 
+const ROSTER_SLOTS = 12; // 6x2 grid matching the header layout
 function renderRoster() {
-  document.getElementById('rosterPhotos').innerHTML = ROSTER.map(r =>
-    r.photo ? `<img src="${r.photo}" alt="${r.name}">` : `<div class="noimg">?</div>`
-  ).join('');
-  document.getElementById('rosterNames').innerHTML = ROSTER.map(r => {
-    const inner = `<span class="roster-tag">${r.name.split(' ')[0]}</span>`;
-    return r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`;
-  }).join('');
+  const placeholderSvg = `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
+  const photoSlots = [];
+  const nameSlots = [];
+  for (let i = 0; i < ROSTER_SLOTS; i++) {
+    const r = ROSTER[i];
+    if (r) {
+      photoSlots.push(r.photo ? `<img src="${r.photo}" alt="${r.name}">` : `<div class="noimg">?</div>`);
+      const inner = `<span class="roster-tag">${r.name.split(' ')[0]}</span>`;
+      nameSlots.push(r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`);
+    } else {
+      photoSlots.push(`<div class="placeholder">${placeholderSvg}</div>`);
+      nameSlots.push('');
+    }
+  }
+  document.getElementById('rosterPhotos').innerHTML = photoSlots.join('');
+  document.getElementById('rosterNames').innerHTML = nameSlots.join('');
 }
 
 function nameHtml(p) {
@@ -950,6 +999,35 @@ async function addPlayerToGitHub(newPlayer) {
 
 document.getElementById('addPlayerToggle').addEventListener('click', () => {
   document.getElementById('addPlayerForm').classList.toggle('open');
+});
+
+// ---- Request Player: same giscus mechanism as player pages, but one fixed
+// shared thread (not per-player), for general "add this player" requests.
+const GISCUS_REPO_ID = 'R_kgDOTmW7rg';
+const GISCUS_CATEGORY = 'Player Comments';
+const GISCUS_CATEGORY_ID = 'DIC_kwDOTmW7rs4DCXTk';
+let requestPlayerGiscusLoaded = false;
+document.getElementById('requestPlayerToggle').addEventListener('click', () => {
+  document.getElementById('requestPlayerForm').classList.toggle('open');
+  if (requestPlayerGiscusLoaded) return;
+  requestPlayerGiscusLoaded = true;
+  const script = document.createElement('script');
+  script.src = 'https://giscus.app/client.js';
+  script.setAttribute('data-repo', 'nilehoops/capitanesverse');
+  script.setAttribute('data-repo-id', GISCUS_REPO_ID);
+  script.setAttribute('data-category', GISCUS_CATEGORY);
+  script.setAttribute('data-category-id', GISCUS_CATEGORY_ID);
+  script.setAttribute('data-mapping', 'specific');
+  script.setAttribute('data-term', 'request-a-player'); // one fixed shared thread, not per-player
+  script.setAttribute('data-strict', '1');
+  script.setAttribute('data-reactions-enabled', '1');
+  script.setAttribute('data-emit-metadata', '0');
+  script.setAttribute('data-input-position', 'top');
+  script.setAttribute('data-theme', 'dark_dimmed');
+  script.setAttribute('data-lang', 'en');
+  script.crossOrigin = 'anonymous';
+  script.async = true;
+  document.getElementById('requestPlayerGiscus').appendChild(script);
 });
 
 document.getElementById('incompleteToggle').addEventListener('click', () => {
@@ -1495,6 +1573,85 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
   }
 });
 
+// ---- Relative Team Strengths/Weaknesses: aggregates each roster player's
+// individual position-relative percentile (same stat set/logic as the S/W
+// bars on player.html/blindrank.html) across every stat, plus height as an
+// explicit size dimension, then averages per-stat across the whole roster
+// to surface team-wide patterns rather than any one player's profile.
+const TEAM_SW_STATS = [
+  { key: 'prpg', label: 'PRPG!' }, { key: 'dPrpg', label: 'D-PRPG' },
+  { key: 'bpm', label: 'BPM' }, { key: 'obpm', label: 'OBPM' }, { key: 'dbpm', label: 'DBPM' },
+  { key: 'ortg', label: 'ORtg' }, { key: 'drtg', label: 'D-Rtg' },
+  { key: 'usg', label: 'Usg', pct: true, scale100: true },
+  { key: 'efg', label: 'eFG', pct: true, scale100: true },
+  { key: 'ts', label: 'TS', pct: true, scale100: true },
+  { key: 'orb', label: 'OR', pct: true, scale100: true },
+  { key: 'drb', label: 'DR', pct: true, scale100: true },
+  { key: 'ast', label: 'Ast', pct: true, scale100: true },
+  { key: 'tov', label: 'TO', pct: true, scale100: true },
+  { key: 'blk', label: 'Blk', pct: true, scale100: true },
+  { key: 'stl', label: 'Stl', pct: true, scale100: true },
+  { key: 'ftr', label: 'FTR', pct: true, scale100: true },
+  { key: 'rimPct', label: 'Rim%', pct: true },
+  { key: 'threePct', label: '3P%', pct: true },
+  { key: 'height', label: 'Height' }, // explicit size dimension
+];
+const TEAM_SW_LOWER_IS_BETTER = new Set(['tov', 'drtg']);
+function teamSwGetValue(player, key) {
+  if (key === 'height') return player.heightIn;
+  return player.stats ? player.stats[key] : null;
+}
+function teamSwPercentile(allPlayers, position, key, value) {
+  if (value == null) return null;
+  const peers = allPlayers.map(p => teamSwGetValue(p, key)).filter((v, i) => v != null && allPlayers[i].position === position);
+  if (peers.length < 5) return null;
+  const better = TEAM_SW_LOWER_IS_BETTER.has(key) ? peers.filter(v => v >= value).length : peers.filter(v => v <= value).length;
+  return better / peers.length;
+}
+function computeTeamStrengthsWeaknesses(allPlayers) {
+  const rosterPlayers = ROSTER.map(r => allPlayers.find(p => p.id === r.id)).filter(Boolean);
+  const aggregates = [];
+  for (const stat of TEAM_SW_STATS) {
+    const pcts = [];
+    for (const p of rosterPlayers) {
+      const value = teamSwGetValue(p, stat.key);
+      const pct = teamSwPercentile(allPlayers, p.position, stat.key, value);
+      if (pct != null) pcts.push(pct);
+    }
+    if (pcts.length === 0) continue;
+    const avg = pcts.reduce((a, b) => a + b, 0) / pcts.length;
+    aggregates.push({ label: stat.label, avgPct: Math.round(avg * 100), sampleSize: pcts.length });
+  }
+  aggregates.sort((a, b) => b.avgPct - a.avgPct);
+  return aggregates;
+}
+
+function renderTeamStrengthsWeaknesses(players) {
+  const aggregates = computeTeamStrengthsWeaknesses(players);
+  const strengths = aggregates.slice(0, 2);
+  const weaknesses = aggregates.slice(-2).reverse();
+
+  const lineHtml = (a, cls) => `<div class="team-sw-line ${cls}">${a.avgPct}<sup>th</sup> %ile <span class="stat-name">${a.label}</span></div>`;
+  document.getElementById('teamSwLines').innerHTML = aggregates.length
+    ? strengths.map(a => lineHtml(a, 'strength')).join('') + weaknesses.map(a => lineHtml(a, 'weakness')).join('')
+    : '<div class="team-sw-line" style="color:#8A8A8A;font-weight:400;">Not enough roster stat data yet.</div>';
+
+  document.getElementById('teamSwMoreLink').addEventListener('click', () => {
+    const full = document.getElementById('teamSwFull');
+    if (full.style.display === 'none') {
+      full.innerHTML = `<div style="font-weight:700;margin-bottom:8px;">Full Relative Team Strengths/Weaknesses (roster average percentile per stat, position-relative, includes height as a size dimension)</div>`
+        + aggregates.map(a => `
+          <div class="team-sw-full-row">
+            <span>${a.label}</span>
+            <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}th %ile <span style="color:#6A6A6A;font-weight:400;">(n=${a.sampleSize})</span></span>
+          </div>`).join('');
+      full.style.display = 'block';
+    } else {
+      full.style.display = 'none';
+    }
+  });
+}
+
 renderRoster();
 function fetchJsonOrThrow(path) {
   return fetch(path + '?v=' + Date.now()).then(r => {
@@ -1510,7 +1667,7 @@ Promise.all([
     const detailById = new Map(detailData.map(d => [d.id, d]));
     const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
     cachedPlayers = players;
-    renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players);
+    renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players); renderTeamStrengthsWeaknesses(players);
   })
   .catch(err => {
     console.error('Could not load player data', err);

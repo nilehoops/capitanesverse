@@ -1,9 +1,7 @@
 name: Fetch Player Videos
 
 on:
-  schedule:
-    - cron: '0 6 * * 1'   # weekly, Monday 6am UTC — adjust as you like
-  workflow_dispatch: {}    # adds a manual "Run workflow" button
+  workflow_dispatch: {}    # adds a manual "Run workflow" button — no automatic schedule
 
 permissions:
   contents: write
@@ -11,6 +9,7 @@ permissions:
 jobs:
   fetch-videos:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -23,11 +22,17 @@ jobs:
       - name: Install dependencies
         run: pip install yt-dlp
 
+      - name: Pull latest before running (in case anything changed since checkout)
+        run: git pull origin main
+
       - name: Fetch videos for each player
         run: python scripts/fetch_videos.py
+
+      - name: Pull latest changes before committing
+        run: git pull --rebase origin main
 
       - name: Commit and push if data changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: 'Auto-update player video links'
-          file_pattern: data/players.json
+          file_pattern: data/players_detail.json

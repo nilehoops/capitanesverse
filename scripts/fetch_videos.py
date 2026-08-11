@@ -18,7 +18,11 @@ import time
 import yt_dlp
 
 DATA_PATH = "data/players.json"
-MAX_QUERIES_PER_RUN = 100
+MAX_QUERIES_PER_RUN = 65  # bounded so even a worst-case run (every query timing out
+                           # at socket_timeout below) finishes under the job's 30-min
+                           # ceiling — the script only writes to disk once, at the end,
+                           # so getting killed mid-run by the job timeout loses everything
+                           # found that run, not just delays it
 RESULTS_PER_PLAYER = 2
 SLEEP_BETWEEN_QUERIES = 1.5  # seconds — politeness delay, not an API requirement
 
@@ -28,6 +32,10 @@ YDL_OPTS = {
     "extract_flat": "in_playlist",  # don't visit each video's page, just parse the search results list
     "skip_download": True,
     "noplaylist": True,
+    "socket_timeout": 20,  # hard cap per network call — without this, a single stalled
+                            # connection blocks the whole run indefinitely (confirmed:
+                            # this happened for real, stuck on one player, every re-run
+                            # since, since nothing forced that call to give up and move on)
 }
 
 
@@ -63,6 +71,7 @@ def main():
 
     queries_made = 0
     updated = 0
+    new_videos_by_id = {}  # collected in memory; only written to disk at the very end
 
     for player in players:
         if player.get("videos"):  # already enriched — skip
@@ -81,18 +90,26 @@ def main():
             continue
 
         queries_made += 1
+        new_videos_by_id[player["id"]] = videos  # [] counts as "checked, nothing found"
         if videos:
-            player["videos"] = videos
             updated += 1
             print(f"  {player['name']}: {len(videos)} video(s) found.")
         else:
-            player["videos"] = []  # checked, nothing found — don't retry every run
             print(f"  {player['name']}: no results.")
 
         time.sleep(SLEEP_BETWEEN_QUERIES)
 
+    # Re-read the file fresh right before writing, in case it changed on disk while
+    # this run was in progress (manual edits, another workflow, etc.) — this run only
+    # ever touches the `videos` field, so nothing else can be clobbered by this merge.
+    with open(DATA_PATH) as f:
+        fresh_players = json.load(f)
+    for p in fresh_players:
+        if p["id"] in new_videos_by_id:
+            p["videos"] = new_videos_by_id[p["id"]]
+
     with open(DATA_PATH, "w") as f:
-        json.dump(players, f, indent=2)
+        json.dump(fresh_players, f, indent=2)
 
     print(f"Done. Made {queries_made} searches, updated {updated} players.")
 

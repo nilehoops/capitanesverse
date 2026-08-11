@@ -29,9 +29,10 @@
   }
   .top > :first-child { flex: 1 1 480px; min-width: 320px; }
   .wordmark {
-    font-size: clamp(44px, 7vw, 110px);
+    font-size: clamp(40px, 4.3vw, 85px);
     line-height: 0.95;
     margin: 0;
+    white-space: nowrap;
   }
   .tagline { font-size: 17px; font-weight: 400; color: #C9C9C9; font-style: italic; margin-top: 4px; }
   .search-line {
@@ -106,7 +107,7 @@
   /* Pinned top-right at every viewport width — this is what actually
      guarantees it matches both the full-width and split-screen images,
      rather than relying on flex-wrap order to happen to land there. */
-  .team-sw-block { position: absolute; top: 14px; right: 24px; width: 190px; }
+  .team-sw-block { position: absolute; top: 14px; right: 24px; width: 190px; z-index: 5; }
   .team-sw-title { font-size: 15px; font-weight: 700; text-align: right; line-height: 1.25; margin-bottom: 8px; }
   .team-sw-line { font-size: 14px; font-weight: 700; text-align: right; margin-bottom: 3px; }
   .team-sw-line.strength { color: #3FCF5C; }

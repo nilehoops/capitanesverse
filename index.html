@@ -850,23 +850,38 @@ function processIncompleteImportRows(rowsOfCells) {
   const preview = document.getElementById('incompleteImportPreview');
   const importBtn = document.getElementById('incompleteImportBtn');
   const byId = new Map((cachedPlayers || []).map(p => [p.id, p]));
-  let matched = 0, unmatched = [];
   incompleteImportRows = [];
-  for (const cells of rowsOfCells) {
-    const id = String(cells[0] ?? '').trim();
-    if (id === 'id' || !id) continue; // skip header/blank rows
+
+  if (!rowsOfCells.length) { preview.innerHTML = 'Empty file.'; importBtn.style.display = 'none'; return; }
+
+  // Detect columns by header name, not fixed position — a file with a
+  // different column count/order (like a simplified id,name,team,age,weight
+  // export) must still be read correctly, not silently misaligned.
+  const header = rowsOfCells[0].map(c => String(c ?? '').trim().toLowerCase());
+  const idIdx = header.indexOf('id');
+  const ageIdx = header.indexOf('age');
+  const weightIdx = header.indexOf('weight');
+  const noteIdx = header.indexOf('note');
+  if (idIdx === -1) { preview.innerHTML = '<span style="color:#D81F2A;">No "id" column found in the header row — cannot match rows to players.</span>'; importBtn.style.display = 'none'; return; }
+
+  let matched = 0, unmatched = [];
+  for (const cells of rowsOfCells.slice(1)) {
+    const id = String(cells[idIdx] ?? '').trim();
+    if (!id) continue;
     if (!byId.has(id)) { unmatched.push(id); continue; }
     matched++;
     incompleteImportRows.push({
       id,
-      age: String(cells[5] ?? '').trim(),
-      weight: String(cells[6] ?? '').trim(),
-      note: String(cells[7] ?? '').trim(),
+      age: ageIdx >= 0 ? String(cells[ageIdx] ?? '').trim() : '',
+      weight: weightIdx >= 0 ? String(cells[weightIdx] ?? '').trim() : '',
+      note: noteIdx >= 0 ? String(cells[noteIdx] ?? '').trim() : '',
     });
   }
-  preview.innerHTML = `${matched} row(s) matched.` + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched: ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
+  const colsFound = [ageIdx >= 0 && 'age', weightIdx >= 0 && 'weight', noteIdx >= 0 && 'note'].filter(Boolean);
+  preview.innerHTML = `Columns detected: ${colsFound.join(', ') || 'none (only id matched — nothing to import)'}. ${matched} row(s) matched.`
+    + (unmatched.length ? ` <span style="color:#D81F2A;">${unmatched.length} unmatched: ${unmatched.slice(0,5).join(', ')}${unmatched.length>5?'...':''}</span>` : '');
   importBtn.textContent = `Import (1 commit, ${matched} player${matched===1?'':'s'})`;
-  importBtn.style.display = matched ? 'inline-block' : 'none';
+  importBtn.style.display = (matched && colsFound.length) ? 'inline-block' : 'none';
 }
 document.getElementById('incompleteImportFile').addEventListener('change', (e) => {
   const preview = document.getElementById('incompleteImportPreview');
@@ -912,7 +927,7 @@ document.getElementById('incompleteImportBtn').addEventListener('click', async (
       if (!target) continue;
       if (row.age) { target.biography = target.biography || {}; target.biography.age = Number(row.age); target.biography.found = true; }
       if (row.weight) { target.biography = target.biography || {}; target.biography.weight = row.weight; target.biography.found = true; }
-      target.dataGapNote = row.note || null;
+      if (row.note) { target.dataGapNote = row.note; }
       updated++;
     }
     const putResp = await fetch(apiUrl, {

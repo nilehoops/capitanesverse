@@ -760,7 +760,7 @@ function renderIncompleteList(players) {
             </div>
             ${missKeys.has('stats') ? `
               <div style="font-size:11px;color:#9A9A9A;margin-bottom:4px;">Missing: ${missingStatLabels.join(', ')}</div>
-              <textarea class="incomplete-stats-paste" data-id="${p.id}" placeholder="Paste a stat row (42 core + 12 advanced, matching the source sheet order)..."></textarea>` : ''}
+              <textarea class="incomplete-stats-paste" data-id="${p.id}" placeholder="Paste a full row copied directly from the stats table (same format as Add Player: RK, Yr, Ht, Player, Team, Conf, G, Min%, PRPG!, D-PRPG, BPM, OBPM, DBPM, ORTG, D-RTG, USG, EFG, TS, OR, DR, AST, TO, A/TO, BLK, STL, FTR, FC/40, Dunks, Close 2, Far 2, FT, 2P, 3PR, 3P/100, 3P)..."></textarea>` : ''}
             <div class="incomplete-note-row">
               <input type="text" class="incomplete-note-input" data-id="${p.id}" placeholder="Note (optional)" value="${p.dataGapNote || ''}">
               <button class="incomplete-save-all" data-id="${p.id}">Save</button>
@@ -786,13 +786,13 @@ function renderIncompleteList(players) {
       const statsArea = document.querySelector(`.incomplete-stats-paste[data-id="${id}"]`);
       const noteInput = document.querySelector(`.incomplete-note-input[data-id="${id}"]`);
 
-      const statKeys = Object.keys(STAT_LABELS), advKeys = Object.keys(ADV_LABELS);
       let statsObj = null, advObj = null;
       if (statsArea && statsArea.value.trim()) {
         const cells = statsArea.value.split('\n')[0].split('\t');
-        statsObj = {}; advObj = {};
-        statKeys.forEach((k, i) => { const v = cells[i]; statsObj[k] = v !== undefined && v.trim() !== '' ? Number(v) : null; });
-        advKeys.forEach((k, i) => { const v = cells[statKeys.length + i]; advObj[k] = v !== undefined && v.trim() !== '' ? Number(v) : null; });
+        const targetPlayer = (cachedPlayers || []).find(p => p.id === id);
+        const result = computeStatsAndAdvancedFromRawRow(cells, targetPlayer ? targetPlayer.position : null);
+        statsObj = result.stats;
+        advObj = result.advanced;
       }
 
       status.textContent = 'Saving...';
@@ -1114,66 +1114,71 @@ function parsePastedHeight(raw) {
   return '';
 }
 
+// Shared by both Add Player and Incomplete Data's stats paste — both must
+// accept the exact same raw source-table structure, or a paste meant for one
+// silently misaligns into the other (confirmed: this is what corrupted several
+// players' stats before — the two boxes expected different column structures).
+function computeStatsAndAdvancedFromRawRow(cells, position) {
+  const map = parseSheetRow(cells);
+  const fga = (map.twoPA != null && map.threePA != null) ? map.twoPA + map.threePA : null;
+  const dunkRate = (map.dunks != null && fga) ? map.dunks / fga : null;
+  const dunksPerRimAtt = (map.dunks != null && map.rimAttempts) ? map.dunks / map.rimAttempts : null;
+  const rimRate = (map.rimAttempts != null && fga) ? map.rimAttempts / fga : null;
+  const rimToNonRim2Ratio = (map.rimAttempts != null && map.nonRim2Attempts) ? map.rimAttempts / map.nonRim2Attempts : null;
+  const moreyballPct = (map.rimAttempts != null && map.threePA != null && fga) ? (map.rimAttempts + map.threePA) / fga : null;
+  const griftRate = (map.ftr != null && rimRate) ? 100 * (map.ftr / rimRate) : null;
+  const jumperRate = (map.nonRim2Attempts != null && map.threePA != null && fga) ? (map.nonRim2Attempts + map.threePA) / fga : null;
+
+  function pctileAmong(getter, value) {
+    if (value == null) return null;
+    const peers = (cachedPlayers || []).filter(p => p.position === position && p.advanced && getter(p) != null).map(p => getter(p));
+    if (peers.length < 5) return null;
+    return peers.filter(v => v <= value).length / peers.length;
+  }
+
+  const stats = {};
+  Object.keys(STAT_LABELS).forEach(key => { stats[key] = key === 'fga' ? fga : (map[key] !== undefined ? map[key] : null); });
+
+  const advanced = {
+    ftrPctile: pctileAmong(p => p.stats?.ftr, map.ftr),
+    threePARPctile: pctileAmong(p => p.stats?.threePRate, map.threePRate),
+    dunkRate, dunksPerRimAtt, rimRate,
+    rimRatePctile: pctileAmong(p => p.advanced?.rimRate, rimRate),
+    rimToNonRim2Ratio, moreyballPct,
+    moreyballPctile: pctileAmong(p => p.advanced?.moreyballPct, moreyballPct),
+    griftRate,
+    griftRatePctile: pctileAmong(p => p.advanced?.griftRate, griftRate),
+    jumperRate,
+  };
+
+  return { stats, advanced, identity: { name: map.name, team: map.team, class: map['class'], height: map.height, conf: map.conf } };
+}
+
 document.getElementById('ap_pasteArea').addEventListener('paste', (e) => {
   setTimeout(() => {
     const status = document.getElementById('ap_pasteStatus');
     const raw = document.getElementById('ap_pasteArea').value;
     const firstRow = raw.split('\n')[0];
     const cells = firstRow.split('\t');
-    const map = parseSheetRow(cells);
+    const pos = document.getElementById('ap_position').value;
+    const { stats, advanced, identity } = computeStatsAndAdvancedFromRawRow(cells, pos);
 
-    if (map.name) document.getElementById('ap_name').value = map.name;
-    if (map.team) document.getElementById('ap_team').value = map.team;
-    if (map['class']) document.getElementById('ap_class').value = map['class'];
-    if (map.height) document.getElementById('ap_height').value = parsePastedHeight(map.height);
-    pastedExtra = { conf: map.conf || null };
+    if (identity.name) document.getElementById('ap_name').value = identity.name;
+    if (identity.team) document.getElementById('ap_team').value = identity.team;
+    if (identity.class) document.getElementById('ap_class').value = identity.class;
+    if (identity.height) document.getElementById('ap_height').value = parsePastedHeight(identity.height);
+    pastedExtra = { conf: identity.conf || null };
 
     let statsFilled = 0;
-    Object.keys(STAT_LABELS).forEach(key => {
-      if (map[key] !== undefined && map[key] !== null) {
+    Object.entries(stats).forEach(([key, val]) => {
+      if (val != null) {
         const el = document.querySelector(`[data-stat="${key}"]`);
-        if (el) { el.value = map[key]; statsFilled++; }
+        if (el) { el.value = val; statsFilled++; }
       }
     });
 
-    // Advanced Metrics are derivative of the stats above, not separate data —
-    // same formulas as the original source sheet (verified against its actual
-    // Excel formulas). FGA is derived too, since this table doesn't list it directly.
-    const fga = (map.twoPA != null && map.threePA != null) ? map.twoPA + map.threePA : null;
-    if (fga != null) {
-      const el = document.querySelector(`[data-stat="fga"]`);
-      if (el) { el.value = fga; statsFilled++; }
-    }
-    const dunkRate = (map.dunks != null && fga) ? map.dunks / fga : null;
-    const dunksPerRimAtt = (map.dunks != null && map.rimAttempts) ? map.dunks / map.rimAttempts : null;
-    const rimRate = (map.rimAttempts != null && fga) ? map.rimAttempts / fga : null;
-    const rimToNonRim2Ratio = (map.rimAttempts != null && map.nonRim2Attempts) ? map.rimAttempts / map.nonRim2Attempts : null;
-    const moreyballPct = (map.rimAttempts != null && map.threePA != null && fga) ? (map.rimAttempts + map.threePA) / fga : null;
-    const griftRate = (map.ftr != null && rimRate) ? 100 * (map.ftr / rimRate) : null;
-    const jumperRate = (map.nonRim2Attempts != null && map.threePA != null && fga) ? (map.nonRim2Attempts + map.threePA) / fga : null;
-
-    // The five "%ile" advanced fields need a peer pool — position-relative,
-    // same convention as everywhere else on the site.
-    const pos = document.getElementById('ap_position').value;
-    function pctileAmong(getter, value) {
-      if (value == null) return null;
-      const peers = (cachedPlayers || []).filter(p => p.position === pos && p.advanced && getter(p) != null).map(p => getter(p));
-      if (peers.length < 5) return null;
-      return peers.filter(v => v <= value).length / peers.length;
-    }
-    const advValues = {
-      ftrPctile: pctileAmong(p => p.stats?.ftr, map.ftr),
-      threePARPctile: pctileAmong(p => p.stats?.threePRate, map.threePRate),
-      dunkRate, dunksPerRimAtt, rimRate,
-      rimRatePctile: pctileAmong(p => p.advanced?.rimRate, rimRate),
-      rimToNonRim2Ratio, moreyballPct,
-      moreyballPctile: pctileAmong(p => p.advanced?.moreyballPct, moreyballPct),
-      griftRate,
-      griftRatePctile: pctileAmong(p => p.advanced?.griftRate, griftRate),
-      jumperRate,
-    };
     let advFilled = 0;
-    Object.entries(advValues).forEach(([key, val]) => {
+    Object.entries(advanced).forEach(([key, val]) => {
       if (val != null) {
         const el = document.querySelector(`[data-adv="${key}"]`);
         if (el) { el.value = val.toFixed(4); advFilled++; }

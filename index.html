@@ -2227,38 +2227,46 @@ async function exportMockRosterPng() {
   });
   ctx.textAlign = 'left';
 
-  // Lineup name
+  // Lineup name — full-size, centered within the left half (0 to 780,
+  // matching the same left/right split used for the strengths/weaknesses side).
   const nameInput = document.getElementById('mockLineupName');
   const lineupName = nameInput.value.trim() || defaultLineupName();
   ctx.fillStyle = '#ECECEC';
-  ctx.font = "700 44px 'Lora', serif";
-  ctx.fillText(lineupName, gridX, namesY + 3 * 24 + 44);
+  ctx.font = "700 64px 'Lora', serif";
+  ctx.textAlign = 'center';
+  ctx.fillText(lineupName, 390, namesY + 3 * 24 + 60);
+  ctx.textAlign = 'left';
 
-  // Team Strengths / Team Weaknesses, split into two real columns
+  // Team Strengths / Team Weaknesses — sized and spaced to fill the entire
+  // right half of the canvas (x: 780-1560), not just a small corner of it.
   const aggregates = computeTeamStrengthsWeaknesses(cachedPlayers, mockRosterIds);
   const strengths = aggregates.filter(a => a.avgPct >= 50);
   const weaknesses = aggregates.filter(a => a.avgPct < 50).sort((a, b) => a.avgPct - b.avgPct);
 
-  // Narrower column spacing than before — at the old offsets, "Team Weaknesses"
-  // (15 characters, bold 36px) ran past the canvas's right edge. Verified this
-  // fits: rightX=980, weakness col at +290=1270, canvas width 1560 leaves 290px
-  // for a header that measures well under that at 28px.
-  const rightX = 980;
+  const rightX = 810;
   ctx.fillStyle = '#ECECEC';
-  ctx.font = "700 28px 'Lora', serif";
-  ctx.fillText('Team Strengths', rightX, 55);
-  ctx.fillText('Team Weaknesses', rightX + 290, 55);
+  ctx.font = "700 50px 'Lora', serif";
+  ctx.fillText('Team Strengths', rightX, 75);
+  ctx.fillText('Team Weaknesses', rightX + 400, 75);
 
-  ctx.font = "700 15px 'Lora', serif";
-  const rowLabelX = rightX, rowValueX = rightX + 130;
+  // Row spacing computed from the actual row count, not fixed — a short list
+  // gets generous spacing to fill the space; a long one (every stat can land
+  // in a single column, confirmed happening for real) compresses automatically
+  // so it still fits rather than running off the bottom of the canvas.
+  const maxRows = Math.max(strengths.length, weaknesses.length, 1);
+  const listTop = 130, listBottom = 680;
+  const rowSpacing = Math.min(40, (listBottom - listTop) / maxRows);
+  const rowFontSize = Math.max(14, Math.min(24, rowSpacing - 8));
+  ctx.font = `700 ${rowFontSize}px 'Lora', serif`;
+  const rowLabelX = rightX, rowValueX = rightX + 170;
   strengths.forEach((a, i) => {
-    const y = 95 + i * 24;
+    const y = listTop + i * rowSpacing;
     ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, rowLabelX, y);
     ctx.fillStyle = '#3FCF5C'; ctx.fillText(`${a.avgPct}th %ile`, rowValueX, y);
   });
-  const weakLabelX = rightX + 290, weakValueX = rightX + 290 + 130;
+  const weakLabelX = rightX + 400, weakValueX = rightX + 400 + 170;
   weaknesses.forEach((a, i) => {
-    const y = 95 + i * 24;
+    const y = listTop + i * rowSpacing;
     ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, weakLabelX, y);
     ctx.fillStyle = '#D81F2A'; ctx.fillText(`${a.avgPct}th %ile`, weakValueX, y);
   });
@@ -2267,8 +2275,7 @@ async function exportMockRosterPng() {
   // guess — a roster with many more strengths than weaknesses (or vice versa)
   // can produce a much longer list than expected, and a fixed position
   // collided with it (confirmed: this happened for real).
-  const maxRows = Math.max(strengths.length, weaknesses.length);
-  const footnoteY = Math.min(95 + maxRows * 24 + 30, H - 40);
+  const footnoteY = Math.min(listTop + maxRows * rowSpacing + 20, H - 40);
   ctx.fillStyle = '#ECECEC';
   ctx.font = "700 14px 'Lora', serif";
   ctx.textAlign = 'right';

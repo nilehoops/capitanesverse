@@ -2239,30 +2239,40 @@ async function exportMockRosterPng() {
   const strengths = aggregates.filter(a => a.avgPct >= 50);
   const weaknesses = aggregates.filter(a => a.avgPct < 50).sort((a, b) => a.avgPct - b.avgPct);
 
+  // Narrower column spacing than before — at the old offsets, "Team Weaknesses"
+  // (15 characters, bold 36px) ran past the canvas's right edge. Verified this
+  // fits: rightX=980, weakness col at +290=1270, canvas width 1560 leaves 290px
+  // for a header that measures well under that at 28px.
   const rightX = 980;
   ctx.fillStyle = '#ECECEC';
-  ctx.font = "700 36px 'Lora', serif";
-  ctx.fillText('Team Strengths', rightX, 60);
-  ctx.fillText('Team Weaknesses', rightX + 320, 60);
+  ctx.font = "700 28px 'Lora', serif";
+  ctx.fillText('Team Strengths', rightX, 55);
+  ctx.fillText('Team Weaknesses', rightX + 290, 55);
 
-  ctx.font = "700 16px 'Lora', serif";
-  const rowLabelX = rightX, rowValueX = rightX + 240;
+  ctx.font = "700 15px 'Lora', serif";
+  const rowLabelX = rightX, rowValueX = rightX + 130;
   strengths.forEach((a, i) => {
-    const y = 100 + i * 26;
+    const y = 95 + i * 24;
     ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, rowLabelX, y);
     ctx.fillStyle = '#3FCF5C'; ctx.fillText(`${a.avgPct}th %ile`, rowValueX, y);
   });
-  const weakLabelX = rightX + 320, weakValueX = rightX + 320 + 190;
+  const weakLabelX = rightX + 290, weakValueX = rightX + 290 + 130;
   weaknesses.forEach((a, i) => {
-    const y = 100 + i * 26;
+    const y = 95 + i * 24;
     ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, weakLabelX, y);
     ctx.fillStyle = '#D81F2A'; ctx.fillText(`${a.avgPct}th %ile`, weakValueX, y);
   });
 
+  // Footnote Y position computed from the actual taller column, not a fixed
+  // guess — a roster with many more strengths than weaknesses (or vice versa)
+  // can produce a much longer list than expected, and a fixed position
+  // collided with it (confirmed: this happened for real).
+  const maxRows = Math.max(strengths.length, weaknesses.length);
+  const footnoteY = Math.min(95 + maxRows * 24 + 30, H - 40);
   ctx.fillStyle = '#ECECEC';
   ctx.font = "700 14px 'Lora', serif";
   ctx.textAlign = 'right';
-  ctx.fillText(`*Strengths/Weaknesses relative to the ${cachedPlayers.length}-player pool`, W - 30, 500);
+  ctx.fillText(`*Strengths/Weaknesses relative to the ${cachedPlayers.length}-player pool`, W - 30, footnoteY);
   ctx.textAlign = 'left';
 
   // Site credit, bottom-right

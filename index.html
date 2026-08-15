@@ -683,6 +683,15 @@ function renderBoard(title, list, href) {
 // availabilitySimple ('yes'/'no'/'unknown') and availabilityNote are now real
 // persisted fields (see player.html's editor), not derived here anymore.
 let excludedAvail = new Set(['no']); // statuses currently struck through / hidden — "no" hidden by default
+function ordinalSuffix(n) {
+  const rounded = Math.round(n);
+  const j = rounded % 10, k = rounded % 100;
+  if (j === 1 && k !== 11) return 'st';
+  if (j === 2 && k !== 12) return 'nd';
+  if (j === 3 && k !== 13) return 'rd';
+  return 'th';
+}
+
 function getInitials(name) {
   const SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
   const parts = name.trim().split(/\s+/).filter(w => !SUFFIXES.has(w.toLowerCase()));
@@ -1601,7 +1610,7 @@ document.getElementById('ps_pasteArea').addEventListener('paste', () => {
     const stint = buildStintFromCells(cells, PS_COLUMN_ORDER, season, null);
     delete stint.name; // not used in the single-row path
     psParsedRow = { playerId: match.id, playerName: match.name, stint };
-    preview.innerHTML = `Matched: <b>${match.name}</b> — ${stint.league}${season ? ` (${season})` : ''}${stint.leagueStrengthPctile!=null ? ` (strength ${Math.round(stint.leagueStrengthPctile*100)}th %ile)` : ' (league strength not found)'}. `
+    preview.innerHTML = `Matched: <b>${match.name}</b> — ${stint.league}${season ? ` (${season})` : ''}${stint.leagueStrengthPctile!=null ? ` (strength ${Math.round(stint.leagueStrengthPctile*100)}${ordinalSuffix(stint.leagueStrengthPctile*100)} %ile)` : ' (league strength not found)'}. `
       + `PTS/40 ${stint.pts40?.toFixed(1) ?? '—'}, AST/40 ${stint.ast40?.toFixed(1) ?? '—'}, 2P% ${stint['2p_pct'] != null ? (stint['2p_pct']*100).toFixed(1)+'%' : '—'}`;
     saveBtn.style.display = 'inline-block';
   }, 0);
@@ -1961,7 +1970,7 @@ function renderTeamStrengthsWeaknessesInto(aggregates, linesElId, moreLinkElId, 
         + aggregates.map(a => `
           <div class="team-sw-full-row" style="break-inside:avoid;">
             <span>${a.label}</span>
-            <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}th %ile <span style="color:#6A6A6A;font-weight:400;">(n=${a.sampleSize})</span></span>
+            <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}${ordinalSuffix(a.avgPct)} %ile <span style="color:#6A6A6A;font-weight:400;">(n=${a.sampleSize})</span></span>
           </div>`).join('')
         + `</div>`;
       full.style.display = 'block';
@@ -2244,9 +2253,29 @@ async function exportMockRosterPng() {
   const weaknesses = aggregates.filter(a => a.avgPct < 50).sort((a, b) => a.avgPct - b.avgPct);
 
   const rightX = 810;
+  const availStrengthsWidth = 400 - 20; // space before the weaknesses column starts
+  const availWeaknessesWidth = W - (rightX + 400) - 20; // space to the canvas edge
+
+  function fitHeaderFont(text, maxWidth, startSize) {
+    let size = startSize;
+    while (size > 20) {
+      ctx.font = `700 ${size}px 'Lora', serif`;
+      if (ctx.measureText(text).width <= maxWidth) break;
+      size -= 2;
+    }
+    return size;
+  }
+
   ctx.fillStyle = '#ECECEC';
-  ctx.font = "700 50px 'Lora', serif";
+  const strengthsHeaderSize = fitHeaderFont('Team Strengths', availStrengthsWidth, 50);
+  ctx.font = `700 ${strengthsHeaderSize}px 'Lora', serif`;
   ctx.fillText('Team Strengths', rightX, 75);
+  // Measured against the real available width to the canvas edge, not
+  // estimated — a static size estimate for this exact header was wrong twice
+  // in a row, so this checks the actual rendered width via measureText()
+  // and shrinks until it genuinely fits, rather than guessing again.
+  const weaknessesHeaderSize = fitHeaderFont('Team Weaknesses', availWeaknessesWidth, 50);
+  ctx.font = `700 ${weaknessesHeaderSize}px 'Lora', serif`;
   ctx.fillText('Team Weaknesses', rightX + 400, 75);
 
   // Row spacing computed from the actual row count, not fixed — a short list
@@ -2262,13 +2291,13 @@ async function exportMockRosterPng() {
   strengths.forEach((a, i) => {
     const y = listTop + i * rowSpacing;
     ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, rowLabelX, y);
-    ctx.fillStyle = '#3FCF5C'; ctx.fillText(`${a.avgPct}th %ile`, rowValueX, y);
+    ctx.fillStyle = '#3FCF5C'; ctx.fillText(`${a.avgPct}${ordinalSuffix(a.avgPct)} %ile`, rowValueX, y);
   });
   const weakLabelX = rightX + 400, weakValueX = rightX + 400 + 170;
   weaknesses.forEach((a, i) => {
     const y = listTop + i * rowSpacing;
     ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, weakLabelX, y);
-    ctx.fillStyle = '#D81F2A'; ctx.fillText(`${a.avgPct}th %ile`, weakValueX, y);
+    ctx.fillStyle = '#D81F2A'; ctx.fillText(`${a.avgPct}${ordinalSuffix(a.avgPct)} %ile`, weakValueX, y);
   });
 
   // Footnote Y position computed from the actual taller column, not a fixed

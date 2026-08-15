@@ -735,7 +735,7 @@ function renderRoster() {
   for (let i = 0; i < ROSTER_SLOTS; i++) {
     const r = ROSTER[i];
     if (r) {
-      photoSlots.push(r.photo ? `<img src="${r.photo}" alt="${r.name}">` : `<div class="noimg">?</div>`);
+      photoSlots.push(r.photo ? `<img src="${r.photo}" alt="${r.name}">` : `<div class="noimg">${getInitials(r.name)}</div>`);
       const inner = `<span class="roster-tag">${r.name.split(' ')[0]}</span>`;
       nameSlots.push(r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`);
     } else {
@@ -765,6 +765,14 @@ function renderBoard(title, list, href) {
 // availabilitySimple ('yes'/'no'/'unknown') and availabilityNote are now real
 // persisted fields (see player.html's editor), not derived here anymore.
 let excludedAvail = new Set(['no']); // statuses currently struck through / hidden — "no" hidden by default
+function getInitials(name) {
+  const SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
+  const parts = name.trim().split(/\s+/).filter(w => !SUFFIXES.has(w.toLowerCase()));
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 let cachedPlayers = null;
 
 function withAvail(href) {
@@ -2077,7 +2085,7 @@ function renderMockRoster() {
     const id = mockRosterIds[i];
     const p = id ? (cachedPlayers || []).find(pl => pl.id === id) : null;
     if (p) {
-      photoSlots.push(`<div>${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<div class="noimg">?</div>`}<span class="remove-x" data-id="${p.id}">X</span></div>`);
+      photoSlots.push(`<div>${p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<div class="noimg">${getInitials(p.name)}</div>`}<span class="remove-x" data-id="${p.id}">X</span></div>`);
       nameSlots.push(`<span>${p.name.split(' ')[0]}</span>`);
     } else {
       photoSlots.push(`<div class="placeholder">${placeholderSvg}</div>`);
@@ -2215,7 +2223,7 @@ document.getElementById('mockSaveBtn').addEventListener('click', () => {
     const p = id ? cachedPlayers.find(pl => pl.id === id) : null;
     const col = i % 4;
     if (p) {
-      photoSlots.push(p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<div class="png-noimg">?</div>`);
+      photoSlots.push(p.photoUrl ? `<img src="${p.photoUrl}" alt="${p.name}">` : `<div class="png-noimg">${getInitials(p.name)}</div>`);
       namesByCol[col].push(p.name.split(' ')[0]);
     } else {
       photoSlots.push(`<div class="png-placeholder">${placeholderSvg}</div>`);

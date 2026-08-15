@@ -1,0 +1,23 @@
+name: Explore ESPN Rosters (comprehensive diagnostic, one-time)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  explore-rosters:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Run comprehensive team/roster/player/headshot diagnostic
+        run: python scripts/explore_espn_rosters.py

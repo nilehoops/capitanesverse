@@ -2161,6 +2161,28 @@ async function exportMockRosterPng() {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext('2d');
 
+  // Explicit grid: every section below is positioned against these named
+  // boundaries, not independent pixel guesses — this is what actually fixes
+  // the repeated overflow issues, since each element's available width is
+  // now a real, known region rather than something estimated by eye.
+  const GRID_COLS = 12, GRID_ROWS = 8;
+  const colW = W / GRID_COLS, rowH = H / GRID_ROWS;
+  const col = (n) => n * colW, row = (n) => n * rowH;
+  const LEFT_START = col(0), LEFT_END = col(6);           // 0 - 780: roster/titles/lineup name
+  const STR_START = col(6), STR_END = col(9);              // 780 - 1170: Team Strengths
+  const WEAK_START = col(9), WEAK_END = col(12);            // 1170 - 1560: Team Weaknesses
+  const PAD = 20;
+
+  function fitFont(text, maxWidth, startSize, minSize = 14) {
+    let size = startSize;
+    while (size > minSize) {
+      ctx.font = `700 ${size}px 'Lora', serif`;
+      if (ctx.measureText(text).width <= maxWidth) break;
+      size -= 2;
+    }
+    return size;
+  }
+
   // Background
   ctx.fillStyle = '#000000';
   ctx.fillRect(0, 0, W, H);
@@ -2184,25 +2206,24 @@ async function exportMockRosterPng() {
   }
   ctx.restore();
 
-  // Vertical rotated titles on the left ("Capitanesverse" / "Mock Roster Builder"),
-  // drawn as plain rotated text rather than CSS writing-mode, which html2canvas
-  // (and the layout technique generally) didn't reproduce reliably.
-  drawRotatedText(ctx, 'Capitanesverse', 60, 480, -90 * Math.PI / 180, "700 56px 'Lora', serif", '#ECECEC');
-  drawRotatedText(ctx, 'Mock Roster Builder', 100, 480, -90 * Math.PI / 180, "700 22px 'Lora', serif", '#ECECEC');
+  // Vertical rotated titles, within the left region.
+  drawRotatedText(ctx, 'Capitanesverse', LEFT_START + 60, row(5), -90 * Math.PI / 180, "700 56px 'Lora', serif", '#ECECEC');
+  drawRotatedText(ctx, 'Mock Roster Builder', LEFT_START + 100, row(5), -90 * Math.PI / 180, "700 22px 'Lora', serif", '#ECECEC');
 
-  // 4x3 roster photo grid
-  const gridX = 150, gridY = 20, cellSize = 168, gap = 8;
+  // 4x3 roster photo grid, positioned within the left region (after the
+  // vertical title strip), sized to fit within LEFT_START..LEFT_END.
+  const gridX = LEFT_START + 150, gridY = 20, gap = 8;
+  const cellSize = (LEFT_END - gridX - 3 * gap) / 4; // 4 columns, computed to fit the region exactly
   const photoImgs = await Promise.all(mockRosterIds.slice(0, MOCK_SLOTS).map(id => {
     const p = id ? cachedPlayers.find(pl => pl.id === id) : null;
     return p && p.photoUrl ? loadImageSafe(p.photoUrl) : Promise.resolve(null);
   }));
-  // Pad out to 12 slots even if fewer than 12 players are in the roster.
   while (photoImgs.length < MOCK_SLOTS) photoImgs.push(null);
 
   const namesByCol = [[], [], [], []];
   for (let i = 0; i < MOCK_SLOTS; i++) {
-    const row = Math.floor(i / 4), col = i % 4;
-    const x = gridX + col * (cellSize + gap), y = gridY + row * (cellSize + gap);
+    const r = Math.floor(i / 4), c = i % 4;
+    const x = gridX + c * (cellSize + gap), y = gridY + r * (cellSize + gap);
     const id = mockRosterIds[i];
     const p = id ? cachedPlayers.find(pl => pl.id === id) : null;
     const img = photoImgs[i];
@@ -2220,7 +2241,7 @@ async function exportMockRosterPng() {
         ctx.textAlign = 'left';
       }
     }
-    namesByCol[col].push(p ? p.name.split(' ')[0] : '');
+    namesByCol[c].push(p ? p.name.split(' ')[0] : '');
   }
 
   // Names, stacked under each matching column
@@ -2228,76 +2249,62 @@ async function exportMockRosterPng() {
   ctx.fillStyle = '#4FD1FF';
   ctx.textAlign = 'center';
   const namesY = gridY + 3 * (cellSize + gap) + 24;
-  namesByCol.forEach((names, col) => {
-    const colCenterX = gridX + col * (cellSize + gap) + cellSize / 2;
-    names.forEach((name, row) => {
-      if (name) ctx.fillText(name, colCenterX, namesY + row * 24);
+  namesByCol.forEach((names, c) => {
+    const colCenterX = gridX + c * (cellSize + gap) + cellSize / 2;
+    names.forEach((name, r) => {
+      if (name) ctx.fillText(name, colCenterX, namesY + r * 24);
     });
   });
   ctx.textAlign = 'left';
 
-  // Lineup name — full-size, centered within the left half (0 to 780,
-  // matching the same left/right split used for the strengths/weaknesses side).
+  // Lineup name — full-size, centered within the left region.
   const nameInput = document.getElementById('mockLineupName');
   const lineupName = nameInput.value.trim() || defaultLineupName();
   ctx.fillStyle = '#ECECEC';
-  ctx.font = "700 64px 'Lora', serif";
+  const lineupNameSize = fitFont(lineupName, LEFT_END - LEFT_START - 2 * PAD, 64, 24);
+  ctx.font = `700 ${lineupNameSize}px 'Lora', serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(lineupName, 390, namesY + 3 * 24 + 60);
+  ctx.fillText(lineupName, (LEFT_START + LEFT_END) / 2, namesY + 3 * 24 + 60);
   ctx.textAlign = 'left';
 
-  // Team Strengths / Team Weaknesses — sized and spaced to fill the entire
-  // right half of the canvas (x: 780-1560), not just a small corner of it.
+  // Team Strengths / Team Weaknesses — each header and each row's label/value
+  // is fit against its actual grid region's width, not a shared estimate.
   const aggregates = computeTeamStrengthsWeaknesses(cachedPlayers, mockRosterIds);
   const strengths = aggregates.filter(a => a.avgPct >= 50);
   const weaknesses = aggregates.filter(a => a.avgPct < 50).sort((a, b) => a.avgPct - b.avgPct);
 
-  const rightX = 810;
-  const availStrengthsWidth = 400 - 20; // space before the weaknesses column starts
-  const availWeaknessesWidth = W - (rightX + 400) - 20; // space to the canvas edge
-
-  function fitHeaderFont(text, maxWidth, startSize) {
-    let size = startSize;
-    while (size > 20) {
-      ctx.font = `700 ${size}px 'Lora', serif`;
-      if (ctx.measureText(text).width <= maxWidth) break;
-      size -= 2;
-    }
-    return size;
-  }
-
   ctx.fillStyle = '#ECECEC';
-  const strengthsHeaderSize = fitHeaderFont('Team Strengths', availStrengthsWidth, 50);
+  const strengthsHeaderSize = fitFont('Team Strengths', STR_END - STR_START - PAD, 44, 20);
   ctx.font = `700 ${strengthsHeaderSize}px 'Lora', serif`;
-  ctx.fillText('Team Strengths', rightX, 75);
-  // Measured against the real available width to the canvas edge, not
-  // estimated — a static size estimate for this exact header was wrong twice
-  // in a row, so this checks the actual rendered width via measureText()
-  // and shrinks until it genuinely fits, rather than guessing again.
-  const weaknessesHeaderSize = fitHeaderFont('Team Weaknesses', availWeaknessesWidth, 50);
+  ctx.fillText('Team Strengths', STR_START + PAD, 75);
+  const weaknessesHeaderSize = fitFont('Team Weaknesses', WEAK_END - WEAK_START - PAD, 44, 20);
   ctx.font = `700 ${weaknessesHeaderSize}px 'Lora', serif`;
-  ctx.fillText('Team Weaknesses', rightX + 400, 75);
+  ctx.fillText('Team Weaknesses', WEAK_START + PAD, 75);
 
   // Row spacing computed from the actual row count, not fixed — a short list
   // gets generous spacing to fill the space; a long one (every stat can land
   // in a single column, confirmed happening for real) compresses automatically
   // so it still fits rather than running off the bottom of the canvas.
   const maxRows = Math.max(strengths.length, weaknesses.length, 1);
-  const listTop = 130, listBottom = 680;
+  const listTop = 130, listBottom = row(8) - 60;
   const rowSpacing = Math.min(40, (listBottom - listTop) / maxRows);
-  const rowFontSize = Math.max(14, Math.min(24, rowSpacing - 8));
-  ctx.font = `700 ${rowFontSize}px 'Lora', serif`;
-  const rowLabelX = rightX, rowValueX = rightX + 170;
+  const rowFontSize = Math.max(14, Math.min(22, rowSpacing - 8));
+  const labelW = (STR_END - STR_START - PAD) * 0.58, valueW = (STR_END - STR_START - PAD) * 0.42;
   strengths.forEach((a, i) => {
     const y = listTop + i * rowSpacing;
-    ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, rowLabelX, y);
-    ctx.fillStyle = '#3FCF5C'; ctx.fillText(`${a.avgPct}${ordinalSuffix(a.avgPct)} %ile`, rowValueX, y);
+    const fs = fitFont(a.label, labelW - 10, rowFontSize, 12);
+    ctx.font = `700 ${fs}px 'Lora', serif`;
+    ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, STR_START + PAD, y);
+    ctx.font = `700 ${rowFontSize}px 'Lora', serif`;
+    ctx.fillStyle = '#3FCF5C'; ctx.fillText(`${a.avgPct}${ordinalSuffix(a.avgPct)} %ile`, STR_START + PAD + labelW, y);
   });
-  const weakLabelX = rightX + 400, weakValueX = rightX + 400 + 170;
   weaknesses.forEach((a, i) => {
     const y = listTop + i * rowSpacing;
-    ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, weakLabelX, y);
-    ctx.fillStyle = '#D81F2A'; ctx.fillText(`${a.avgPct}${ordinalSuffix(a.avgPct)} %ile`, weakValueX, y);
+    const fs = fitFont(a.label, labelW - 10, rowFontSize, 12);
+    ctx.font = `700 ${fs}px 'Lora', serif`;
+    ctx.fillStyle = '#ECECEC'; ctx.fillText(a.label, WEAK_START + PAD, y);
+    ctx.font = `700 ${rowFontSize}px 'Lora', serif`;
+    ctx.fillStyle = '#D81F2A'; ctx.fillText(`${a.avgPct}${ordinalSuffix(a.avgPct)} %ile`, WEAK_START + PAD + labelW, y);
   });
 
   // Footnote Y position computed from the actual taller column, not a fixed

@@ -1,0 +1,29 @@
+name: Find ESPN Team IDs (diagnostic, one-time)
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  find-team-ids:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch and match ESPN team IDs
+        run: python scripts/find_espn_team_ids.py
+
+      - name: Upload mapping report as an artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: team-id-mapping-report
+          path: team_id_mapping_report.json

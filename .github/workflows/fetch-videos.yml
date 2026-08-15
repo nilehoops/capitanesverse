@@ -28,9 +28,6 @@ jobs:
       - name: Fetch videos for each player
         run: python scripts/fetch_videos.py
 
-      - name: Pull latest changes before committing
-        run: git pull --rebase origin main
-
       - name: Commit and push if data changed
         uses: stefanzweifel/git-auto-commit-action@v5
         with:

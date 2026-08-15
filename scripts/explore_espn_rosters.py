@@ -106,23 +106,27 @@ def fetch_team_roster(team_id, debug=False):
             athletes_val = data.get("athletes")
             print(f"    [debug] type of 'athletes': {type(athletes_val).__name__}, "
                   f"length: {len(athletes_val) if hasattr(athletes_val, '__len__') else 'n/a'}")
-            print(f"    [debug] raw 'athletes' excerpt:\n{json.dumps(athletes_val, indent=2)[:1500]}")
+            if athletes_val:
+                first = athletes_val[0]
+                print(f"    [debug] first athlete's top-level keys: {list(first.keys()) if isinstance(first, dict) else 'not a dict'}")
+                print(f"    [debug] first athlete has 'headshot' key: {'headshot' in first if isinstance(first, dict) else 'n/a'}")
+                if isinstance(first, dict) and "headshot" in first:
+                    print(f"    [debug] headshot value: {first['headshot']}")
 
         players = []
-        # Roster response shape can vary — try the common "athletes" grouping
-        # used by ESPN's site API (often grouped by position group).
-        groups = data.get("athletes", [])
-        for group in groups:
-            items = group.get("items", group) if isinstance(group, dict) else [group]
-            for p in items if isinstance(items, list) else []:
-                if not isinstance(p, dict) or not p.get("id"):
-                    continue
-                headshot = (p.get("headshot") or {}).get("href")
-                players.append({
-                    "name": p.get("fullName") or p.get("displayName", ""),
-                    "espn_id": p["id"],
-                    "headshot_url": headshot,
-                })
+        # Confirmed via the debug output above: athletes is a flat list of
+        # player objects directly — no position-group wrapper with an
+        # "items" array, which was the wrong assumption causing every
+        # player to silently produce nothing.
+        for p in data.get("athletes", []):
+            if not isinstance(p, dict) or not p.get("id"):
+                continue
+            headshot = (p.get("headshot") or {}).get("href")
+            players.append({
+                "name": p.get("fullName") or p.get("displayName", ""),
+                "espn_id": p["id"],
+                "headshot_url": headshot,
+            })
 
         if players or season == 2026:  # success, or out of seasons to try — stop here either way
             return players, None

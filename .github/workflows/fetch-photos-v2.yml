@@ -1,0 +1,48 @@
+name: Fetch Player Photos (roster-based)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Mode: ncaa (bulk, writes to file) or nba (single-team lookup, prints only)'
+        required: true
+        default: 'ncaa'
+        type: choice
+        options:
+          - ncaa
+          - nba
+      nba_team:
+        description: 'NBA team name (only used when mode=nba, e.g. "Lakers" or "Boston Celtics")'
+        required: false
+        default: ''
+
+jobs:
+  fetch-photos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Fetch photos via team rosters
+        env:
+          FETCH_MODE: ${{ github.event.inputs.mode }}
+          NBA_TARGET_TEAM: ${{ github.event.inputs.nba_team }}
+        run: python scripts/fetch_photos_v2.py
+
+      - name: Commit and push if data changed
+        if: ${{ github.event.inputs.mode == 'ncaa' }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto-update player photos (roster-based fetch)"
+          file_pattern: data/players_index.json

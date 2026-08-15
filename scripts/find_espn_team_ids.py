@@ -28,10 +28,37 @@ def normalize(name):
     'Vanderbilt' have a fighting chance of matching, without pretending to
     solve every naming difference — deliberately conservative."""
     name = name.lower()
-    name = re.sub(r"[.,']", "", name)
+    name = re.sub(r"[.,'\-]", " ", name)  # hyphens too now — "Bethune-Cookman" vs "Bethune Cookman"
     name = re.sub(r"\s+(st|state)\b", " state", name)  # "Ball St." vs "Ball State"
-    name = name.strip()
+    name = re.sub(r"\s+", " ", name).strip()
     return name
+
+
+# Common-nickname cases that no generic normalization rule can solve — ESPN
+# uses these names/abbreviations rather than the school's plain name, and
+# there's no punctuation pattern that bridges "Mississippi" to "Ole Miss".
+# Explicit and small on purpose — only added once confirmed as a real gap,
+# not guessed preemptively.
+KNOWN_ALIASES = {
+    "connecticut": "uconn",
+    "mississippi": "ole miss",
+    "pittsburgh": "pitt",
+}
+
+
+def closest_match(target_norm, espn_names_norm, max_results=3):
+    """Simple, dependency-free closest-match: ranks by shared word overlap.
+    Not a real fuzzy-match library — just enough to show *why* something
+    didn't match, rather than leaving a bare 'unmatched' with no clue."""
+    target_words = set(target_norm.split())
+    scored = []
+    for espn_norm in espn_names_norm:
+        espn_words = set(espn_norm.split())
+        overlap = len(target_words & espn_words)
+        if overlap > 0:
+            scored.append((overlap, espn_norm))
+    scored.sort(key=lambda x: -x[0])
+    return [name for _, name in scored[:max_results]]
 
 
 def fetch_espn_teams():
@@ -91,32 +118,44 @@ def main():
     print(f"Team names in our own dataset: {len(our_teams)}")
 
     matched = {}
+    alias_matched = {}
     unmatched = []
     for team in our_teams:
         norm = normalize(team)
         if norm in espn_by_norm:
             matched[team] = espn_by_norm[norm]["id"]
+        elif norm in KNOWN_ALIASES and KNOWN_ALIASES[norm] in espn_by_norm:
+            alias_matched[team] = espn_by_norm[KNOWN_ALIASES[norm]]["id"]
         else:
             unmatched.append(team)
 
-    print(f"\nMatched: {len(matched)}/{len(our_teams)}")
-    print(f"Unmatched (need manual resolution): {len(unmatched)}")
+    total_matched = len(matched) + len(alias_matched)
+    print(f"\nMatched directly: {len(matched)}/{len(our_teams)}")
+    print(f"Matched via known alias (UConn/Ole Miss/Pitt-style nicknames): {len(alias_matched)}")
+    print(f"Total matched: {total_matched}/{len(our_teams)}")
+    print(f"Still unmatched: {len(unmatched)}")
 
-    print("\nFirst 10 matches:")
+    print("\nFirst 10 direct matches:")
     for team, espn_id in list(matched.items())[:10]:
         print(f"  {team!r} -> ESPN team id {espn_id}")
+    if alias_matched:
+        print("\nAlias matches:")
+        for team, espn_id in alias_matched.items():
+            print(f"  {team!r} -> ESPN team id {espn_id} (via known alias)")
 
     if unmatched:
-        print("\nUnmatched team names (check spelling/format against ESPN's naming):")
-        for team in unmatched[:30]:
-            print(f"  {team!r}")
-        if len(unmatched) > 30:
-            print(f"  ...and {len(unmatched) - 30} more")
+        espn_names_norm = list(espn_by_norm.keys())
+        print("\nStill unmatched — closest ESPN name(s) shown for each, to diagnose why:")
+        for team in unmatched:
+            norm = normalize(team)
+            close = closest_match(norm, espn_names_norm)
+            print(f"  {team!r} -> closest ESPN names: {close if close else '(no word overlap at all)'}")
 
     # Write the mapping out as a plain JSON file for inspection — this is a
     # diagnostic artifact for review, not something committed to the repo.
+    all_matched = {**matched, **alias_matched}
     with open("team_id_mapping_report.json", "w") as f:
-        json.dump({"matched": matched, "unmatched": unmatched}, f, indent=2)
+        json.dump({"matched": all_matched, "unmatched": unmatched}, f, indent=2)
     print("\nFull mapping written to team_id_mapping_report.json (workflow artifact, not committed).")
 
 

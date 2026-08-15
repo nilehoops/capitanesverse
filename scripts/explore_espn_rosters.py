@@ -73,43 +73,60 @@ def fetch_espn_teams():
 
 def fetch_team_roster(team_id, debug=False):
     """Returns [{name, espn_id, headshot_url}] for a team, or [] on failure —
-    a failed single team shouldn't stop the whole run."""
-    try:
-        url = ROSTER_URL_TMPL.format(team_id=team_id)
-        resp = requests.get(url, headers=HEADERS, timeout=20)
-        if resp.status_code != 200:
-            return None, f"HTTP {resp.status_code}"
-        data = resp.json()
-    except requests.RequestException as e:
-        return None, f"{type(e).__name__}: {e}"
+    a failed single team shouldn't stop the whole run.
 
-    if debug:
-        # Every team returned 0 players with no request error last run — that
-        # means the request succeeded but the assumed response shape was
-        # wrong. Printing the real structure here instead of guessing a third
-        # time, same fix already applied to the team-list script's fetch.
-        print(f"    [debug] top-level keys: {list(data.keys())}")
-        athletes_val = data.get("athletes")
-        print(f"    [debug] type of 'athletes': {type(athletes_val).__name__}, "
-              f"length: {len(athletes_val) if hasattr(athletes_val, '__len__') else 'n/a'}")
-        print(f"    [debug] raw 'athletes' excerpt:\n{json.dumps(athletes_val, indent=2)[:1500]}")
-
-    players = []
-    # Roster response shape can vary — try the common "athletes" grouping used
-    # by ESPN's site API (often grouped by position group).
-    groups = data.get("athletes", [])
-    for group in groups:
-        items = group.get("items", group) if isinstance(group, dict) else [group]
-        for p in items if isinstance(items, list) else []:
-            if not isinstance(p, dict) or not p.get("id"):
+    Tries an explicit season parameter now, not just the bare endpoint — a
+    real possibility raised directly: with the 2026-27 season still ~3 months
+    out, ESPN may simply not have next season's roster populated yet, the
+    same "needs an explicit season or defaults to empty" pattern already
+    confirmed on a different ESPN endpoint earlier in this investigation.
+    Tries the upcoming season (2027, ESPN's typical ending-year convention)
+    first, falls back to the just-completed season (2026) if that's empty.
+    """
+    for season in (2027, 2026):
+        try:
+            url = ROSTER_URL_TMPL.format(team_id=team_id)
+            resp = requests.get(url, params={"season": season}, headers=HEADERS, timeout=20)
+            if resp.status_code != 200:
+                if season == 2026:  # only report failure after both attempts
+                    return None, f"HTTP {resp.status_code} (tried season 2027 and 2026)"
                 continue
-            headshot = (p.get("headshot") or {}).get("href")
-            players.append({
-                "name": p.get("fullName") or p.get("displayName", ""),
-                "espn_id": p["id"],
-                "headshot_url": headshot,
-            })
-    return players, None
+            data = resp.json()
+        except requests.RequestException as e:
+            if season == 2026:
+                return None, f"{type(e).__name__}: {e} (tried season 2027 and 2026)"
+            continue
+
+        if debug:
+            # Every team returned 0 players with no request error last run —
+            # that means the request succeeded but the assumed response shape
+            # was wrong. Printing the real structure here instead of guessing
+            # a third time, same fix already applied to the team-list fetch.
+            print(f"    [debug] season={season}, top-level keys: {list(data.keys())}")
+            athletes_val = data.get("athletes")
+            print(f"    [debug] type of 'athletes': {type(athletes_val).__name__}, "
+                  f"length: {len(athletes_val) if hasattr(athletes_val, '__len__') else 'n/a'}")
+            print(f"    [debug] raw 'athletes' excerpt:\n{json.dumps(athletes_val, indent=2)[:1500]}")
+
+        players = []
+        # Roster response shape can vary — try the common "athletes" grouping
+        # used by ESPN's site API (often grouped by position group).
+        groups = data.get("athletes", [])
+        for group in groups:
+            items = group.get("items", group) if isinstance(group, dict) else [group]
+            for p in items if isinstance(items, list) else []:
+                if not isinstance(p, dict) or not p.get("id"):
+                    continue
+                headshot = (p.get("headshot") or {}).get("href")
+                players.append({
+                    "name": p.get("fullName") or p.get("displayName", ""),
+                    "espn_id": p["id"],
+                    "headshot_url": headshot,
+                })
+
+        if players or season == 2026:  # success, or out of seasons to try — stop here either way
+            return players, None
+    return [], None
 
 
 def main():

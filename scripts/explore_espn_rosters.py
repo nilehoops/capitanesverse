@@ -71,7 +71,7 @@ def fetch_espn_teams():
     return teams
 
 
-def fetch_team_roster(team_id):
+def fetch_team_roster(team_id, debug=False):
     """Returns [{name, espn_id, headshot_url}] for a team, or [] on failure —
     a failed single team shouldn't stop the whole run."""
     try:
@@ -82,6 +82,17 @@ def fetch_team_roster(team_id):
         data = resp.json()
     except requests.RequestException as e:
         return None, f"{type(e).__name__}: {e}"
+
+    if debug:
+        # Every team returned 0 players with no request error last run — that
+        # means the request succeeded but the assumed response shape was
+        # wrong. Printing the real structure here instead of guessing a third
+        # time, same fix already applied to the team-list script's fetch.
+        print(f"    [debug] top-level keys: {list(data.keys())}")
+        athletes_val = data.get("athletes")
+        print(f"    [debug] type of 'athletes': {type(athletes_val).__name__}, "
+              f"length: {len(athletes_val) if hasattr(athletes_val, '__len__') else 'n/a'}")
+        print(f"    [debug] raw 'athletes' excerpt:\n{json.dumps(athletes_val, indent=2)[:1500]}")
 
     players = []
     # Roster response shape can vary — try the common "athletes" grouping used
@@ -141,8 +152,8 @@ def main():
     total_photos_found = 0
     team_failures = []
 
-    for team_name, espn_team in subset:
-        roster, error = fetch_team_roster(espn_team["id"])
+    for i, (team_name, espn_team) in enumerate(subset):
+        roster, error = fetch_team_roster(espn_team["id"], debug=(i == 0))
         if error:
             team_failures.append((team_name, error))
             print(f"  [{team_name}] roster fetch FAILED: {error}")

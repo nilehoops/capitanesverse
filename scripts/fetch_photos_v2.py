@@ -4,29 +4,6 @@ pointed at ESPN's search/athlete-list endpoints that never worked (confirmed
 broken across four separate attempts earlier in this project's history).
 
 This uses the approach actually validated end-to-end in diagnostics:
-  our team name -> matched ESPN team ID (location-field matching, ~96% hit
-  rate on real data) -> that team's roster (confirmed structure: athletes is
-  a flat list of player objects, not grouped) -> our player matched by name
-  within it -> real ESPN player ID + inline headshot URL, if ESPN has one.
-
-Confirmed working on a 15-team validation subset: 11/46 players (~24%)
-got a real photo. That's expected to be "spotty but solid" — not every
-player has an ESPN headshot on file, and not every team name resolves
-cleanly — not a sign of a bug.
-
-Only writes to data/players_index.json (photoUrl lives there). Skips any
-player who already has a photoUrl, same "don't redo finished work" pattern
-as fetch_videos.py. Capped per run and written compactly, same reasoning
-as that script too: the job has a real time ceiling, and pretty-printed
-JSON nearly re-caused the 1MB size crisis once already.
-"""
-
-"""
-Production photo-fetch script — replaces the old fetch_photos.py, which was
-pointed at ESPN's search/athlete-list endpoints that never worked (confirmed
-broken across four separate attempts earlier in this project's history).
-
-This uses the approach actually validated end-to-end in diagnostics:
   team name -> matched ESPN team ID (location-field matching, ~96% hit rate
   on real data) -> that team's roster (confirmed structure: athletes is a
   flat list of player objects, not grouped) -> player matched by name within
@@ -46,14 +23,21 @@ Two modes, since NCAA and NBA genuinely need different triggers:
   with headshots printed out; useful whenever a tracked player eventually
   lands on an NBA roster. Does not write to any file in this mode.
 
-Only writes to data/players_index.json, and only in NCAA mode. Skips any
-player who already has a photoUrl, same "don't redo finished work" pattern
-as fetch_videos.py. Capped per run and written compactly, same reasoning
-as that script too: the job has a real time ceiling, and pretty-printed
-JSON nearly re-caused the 1MB size crisis once already.
+Only writes to data/players_index.json, and only in NCAA mode. Two fields
+per player: photoUrl (set only when a real headshot was found) and
+photoAttempted (set to true for every player whose team got processed this
+run, whether a photo was found or not). photoAttempted is the actual fix
+for a real bug: without it, a team that fails to match ESPN, or whose
+roster has no name matches, would sit at the front of the "needs a photo"
+list forever and get re-attempted every run, permanently blocking any team
+further down the list from ever being reached (confirmed happening for
+real — the same handful of schools kept coming up on every run). If team
+matching improves later (a new alias added, etc.), manually clearing
+photoAttempted for the affected players is how to force a retry.
 """
 
 import json
+import os
 import re
 import time
 import requests
@@ -61,8 +45,11 @@ import requests
 HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; CapitanesverseBot/1.0; +https://github.com/)"}
 INDEX_PATH = "data/players_index.json"
 
-MODE = "ncaa"  # "ncaa" (bulk, writes to file) or "nba" (on-demand lookup, prints only)
-NBA_TARGET_TEAM = None  # only used in "nba" mode, e.g. "Lakers" or "Boston Celtics"
+# Environment variables (set by the workflow's Actions-UI inputs) take
+# priority when present; these constants are the fallback for running the
+# script locally without setting any env vars, e.g. `python scripts/fetch_photos_v2.py`.
+MODE = os.environ.get("FETCH_MODE") or "ncaa"  # "ncaa" (bulk, writes to file) or "nba" (on-demand lookup, prints only)
+NBA_TARGET_TEAM = os.environ.get("NBA_TARGET_TEAM") or None  # only used in "nba" mode, e.g. "Lakers" or "Boston Celtics"
 
 LEAGUE_CONFIG = {
     "ncaa": {
@@ -178,33 +165,42 @@ def run_ncaa_mode():
     espn_by_norm = build_lookup(espn_teams)
 
     from collections import defaultdict
+    # photoAttempted (not just "no photoUrl yet") is the real fix here — a
+    # team that fails to match, or whose roster has no name matches, was
+    # never marked as done before, so it sat at the front of this list and
+    # got re-attempted every single run, permanently blocking any team
+    # further down from ever being reached (confirmed happening for real).
     needing_photo_by_team = defaultdict(list)
     for p in our_players:
-        if p.get("team") and not p.get("photoUrl"):
+        if p.get("team") and not p.get("photoUrl") and not p.get("photoAttempted"):
             needing_photo_by_team[p["team"]].append(p)
 
     total_needing = sum(len(v) for v in needing_photo_by_team.values())
-    print(f"Players needing a photo: {total_needing}, across {len(needing_photo_by_team)} teams")
+    print(f"Players needing a photo (never attempted before): {total_needing}, across {len(needing_photo_by_team)} teams")
 
     teams_to_process = list(needing_photo_by_team.items())[:MAX_TEAMS_PER_RUN]
     print(f"Processing {len(teams_to_process)} teams this run (capped at {MAX_TEAMS_PER_RUN})\n")
 
     found_urls = {}
+    attempted_player_ids = set()  # marked done regardless of outcome, once their team is processed
     teams_matched = teams_skipped = teams_failed = 0
     players_found = 0
 
     for team_name, players_on_team in teams_to_process:
+        for p in players_on_team:
+            attempted_player_ids.add(p["id"])
+
         norm = normalize(team_name)
         espn_team = espn_by_norm.get(norm) or espn_by_norm.get(KNOWN_ALIASES.get(norm, ""))
         if not espn_team:
             teams_skipped += 1
-            print(f"  [{team_name}] no ESPN team match — skipped")
+            print(f"  [{team_name}] no ESPN team match — skipped, marked as attempted")
             continue
 
         roster, error = fetch_team_roster(cfg["sport"], cfg["league"], espn_team["id"], cfg["season_pair"])
         if error:
             teams_failed += 1
-            print(f"  [{team_name}] roster fetch failed: {error}")
+            print(f"  [{team_name}] roster fetch failed: {error} — marked as attempted")
             time.sleep(SLEEP_BETWEEN_REQUESTS)
             continue
 
@@ -222,19 +218,22 @@ def run_ncaa_mode():
         time.sleep(SLEEP_BETWEEN_REQUESTS)
 
     # Re-read fresh right before writing, in case anything changed on disk
-    # while this run was in progress — only ever touches photoUrl, so
-    # nothing else can be clobbered by this merge.
+    # while this run was in progress — only ever touches photoUrl and
+    # photoAttempted, so nothing else can be clobbered by this merge.
     with open(INDEX_PATH) as f:
         fresh_players = json.load(f)
     for p in fresh_players:
         if p["id"] in found_urls:
             p["photoUrl"] = found_urls[p["id"]]
+        if p["id"] in attempted_player_ids:
+            p["photoAttempted"] = True
 
     with open(INDEX_PATH, "w") as f:
         json.dump(fresh_players, f, separators=(",", ":"))
 
     print(f"\nDone. Teams matched: {teams_matched}, skipped (no ESPN match): {teams_skipped}, failed: {teams_failed}")
     print(f"Photos found and saved: {players_found}/{total_needing if len(teams_to_process) == len(needing_photo_by_team) else 'partial run'}")
+    print(f"Players marked as attempted (won't be retried automatically): {len(attempted_player_ids)}")
 
 
 def run_nba_mode():

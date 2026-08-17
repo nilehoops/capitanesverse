@@ -17,22 +17,27 @@ Two modes, since NCAA and NBA genuinely need different triggers:
   Confirmed working on a 15-team validation subset: 11/46 players (~24%)
   got a real photo — "spotty but solid" is the expected outcome, not a bug.
 
-  NBA (MODE = "nba"): on-demand mode. Nothing in our data currently
-  corresponds to an NBA team — there's no bulk list to iterate. Set
-  NBA_TARGET_TEAM to a team name and run it to pull that one team's roster
-  with headshots printed out; useful whenever a tracked player eventually
-  lands on an NBA roster. Does not write to any file in this mode.
+  NBA (MODE = "nba"): also bulk mode now. Nothing in our own dataset
+  currently corresponds to an NBA team, so instead of matching against our
+  players, this scans all 30 NBA teams unconditionally and writes a
+  standalone reference file (data/nba_players.json) — name, ESPN id, and
+  headshot URL for every NBA player found. The point: if a tracked player
+  eventually lands on an NBA roster, their photo is already on file instead
+  of needing a live lookup at that point. No team name needed, no per-team
+  cap — only 30 teams total, comfortably fits in one run.
 
-Only writes to data/players_index.json, and only in NCAA mode. Two fields
-per player: photoUrl (set only when a real headshot was found) and
-photoAttempted (set to true for every player whose team got processed this
-run, whether a photo was found or not). photoAttempted is the actual fix
-for a real bug: without it, a team that fails to match ESPN, or whose
-roster has no name matches, would sit at the front of the "needs a photo"
-list forever and get re-attempted every run, permanently blocking any team
-further down the list from ever being reached (confirmed happening for
-real — the same handful of schools kept coming up on every run). If team
-matching improves later (a new alias added, etc.), manually clearing
+Only writes to data/players_index.json in NCAA mode, and data/nba_players.json
+in NBA mode. Two fields per player in NCAA mode: photoUrl (set only when a
+real headshot was found) and photoAttempted (set to true for every player
+whose team got processed this run, whether a photo was found or not).
+photoAttempted is the actual fix for a real bug: without it, a team that
+fails to match ESPN, or whose roster has no name matches, would sit at the
+front of the "needs a photo" list forever and get re-attempted every run,
+permanently blocking any team further down the list from ever being reached
+(confirmed happening for real — the same handful of schools kept coming up
+on every run). If team matching improves later (a new alias added, etc.),
+manually clearing photoAttempted for the affected players is how to force a
+retry.
 photoAttempted for the affected players is how to force a retry.
 """
 
@@ -48,8 +53,7 @@ INDEX_PATH = "data/players_index.json"
 # Environment variables (set by the workflow's Actions-UI inputs) take
 # priority when present; these constants are the fallback for running the
 # script locally without setting any env vars, e.g. `python scripts/fetch_photos_v2.py`.
-MODE = os.environ.get("FETCH_MODE") or "ncaa"  # "ncaa" (bulk, writes to file) or "nba" (on-demand lookup, prints only)
-NBA_TARGET_TEAM = os.environ.get("NBA_TARGET_TEAM") or None  # only used in "nba" mode, e.g. "Lakers" or "Boston Celtics"
+MODE = os.environ.get("FETCH_MODE") or "ncaa"  # "ncaa" (bulk, writes to file) or "nba" (bulk, writes to a separate reference file)
 
 LEAGUE_CONFIG = {
     "ncaa": {
@@ -236,35 +240,49 @@ def run_ncaa_mode():
     print(f"Players marked as attempted (won't be retried automatically): {len(attempted_player_ids)}")
 
 
+NBA_OUTPUT_PATH = "data/nba_players.json"
+
+
 def run_nba_mode():
     cfg = LEAGUE_CONFIG["nba"]
     print("Fetching ESPN team list (NBA)...")
     espn_teams = fetch_espn_teams(cfg["sport"], cfg["league"])
     print(f"NBA teams: {len(espn_teams)}\n")
 
-    if not NBA_TARGET_TEAM:
-        print("NBA_TARGET_TEAM not set — listing all teams (set it and re-run to fetch a roster):")
-        for t in espn_teams:
-            print(f"  {t['name']!r} (id={t['id']})")
-        return
+    # Bulk scan, not a single-team lookup — only 30 teams total, comfortably
+    # fits in one run (worst case ~30 teams x 2 season attempts x 20s
+    # timeout = ~20 min, safely under the job's ceiling). Writes a standalone
+    # reference file rather than matching against our own dataset, since
+    # nothing in our data currently corresponds to an NBA team — this just
+    # means a tracked player's photo is already on file the moment they
+    # land on an NBA roster, instead of needing a lookup at that point.
+    all_players = []
+    teams_matched = teams_failed = 0
+    for t in espn_teams:
+        roster, error = fetch_team_roster(cfg["sport"], cfg["league"], t["id"], cfg["season_pair"])
+        if error:
+            teams_failed += 1
+            print(f"  [{t['name']}] roster fetch failed: {error}")
+            time.sleep(SLEEP_BETWEEN_REQUESTS)
+            continue
+        teams_matched += 1
+        with_photo = sum(1 for p in roster if p["headshot_url"])
+        print(f"  [{t['name']}] roster: {len(roster)} players, with headshot: {with_photo}")
+        for p in roster:
+            all_players.append({
+                "name": p["name"],
+                "espn_id": p["espn_id"],
+                "headshot_url": p["headshot_url"],
+                "team": t["name"],
+            })
+        time.sleep(SLEEP_BETWEEN_REQUESTS)
 
-    espn_by_norm = build_lookup(espn_teams)
-    norm_target = normalize(NBA_TARGET_TEAM)
-    match = next((t for k, t in espn_by_norm.items() if norm_target in k or k == norm_target), None)
-    if not match:
-        print(f"No team matched {NBA_TARGET_TEAM!r}.")
-        return
+    with open(NBA_OUTPUT_PATH, "w") as f:
+        json.dump(all_players, f, separators=(",", ":"))
 
-    print(f"Matched: {match['name']!r} (id={match['id']})\n")
-    roster, error = fetch_team_roster(cfg["sport"], cfg["league"], match["id"], cfg["season_pair"])
-    if error:
-        print(f"Roster fetch failed: {error}")
-        return
-
-    print(f"Roster: {len(roster)} players")
-    for p in roster:
-        print(f"  {p['name']} (id={p['espn_id']}): {p['headshot_url'] or '(no headshot on file)'}")
-    print("\n(NBA mode does not write to any file — this is a lookup only.)")
+    total_with_photo = sum(1 for p in all_players if p["headshot_url"])
+    print(f"\nDone. Teams: {teams_matched} fetched, {teams_failed} failed.")
+    print(f"Players written to {NBA_OUTPUT_PATH}: {len(all_players)} ({total_with_photo} with a headshot)")
 
 
 def main():

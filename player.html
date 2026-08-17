@@ -562,6 +562,8 @@ function render(player, players) {
       <div class="ranktop">
         <div class="line"><a href="rankings.html?pos=overall">Overall Rank: ${player.overallRank ? '#' + player.overallRank : 'N/A'}</a></div>
         <div class="line"><a href="rankings.html?pos=${player.position ? player.position.toLowerCase() : 'overall'}">Positional Rank: ${player.positionalRank ? '#' + player.positionalRank : 'N/A'}</a></div>
+        <div class="line"><a href="rankings.html?pos=overall&availability=available">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
+        <div class="line"><a href="rankings.html?pos=overall&latino=yes">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</a></div>
       </div>
 
       <div class="sidebar">
@@ -598,8 +600,6 @@ function render(player, players) {
       <div class="video2">${videoSlot(videos[1], player.name, 1)}</div>
 
       <div class="ranks">
-        <div class="line"><a href="rankings.html?pos=overall&availability=available">Available Rank: ${availableRank ? '#' + availableRank : 'N/A'}</a></div>
-        <div class="line"><a href="rankings.html?pos=overall&latino=yes">Latino Rank: ${latinoRank ? '#' + latinoRank : 'N/A'}</a></div>
         <div class="crowd">
           <div class="box-title">Staff Notes</div>
           <div id="giscusContainer"></div>

@@ -4,17 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Mode: ncaa (bulk, writes to file) or nba (single-team lookup, prints only)'
+        description: 'Mode: ncaa (our players, writes to players_index.json) or nba (all 30 teams, writes to nba_players.json)'
         required: true
         default: 'ncaa'
         type: choice
         options:
           - ncaa
           - nba
-      nba_team:
-        description: 'NBA team name (only used when mode=nba, e.g. "Lakers" or "Boston Celtics")'
-        required: false
-        default: ''
 
 jobs:
   fetch-photos:
@@ -37,12 +33,10 @@ jobs:
       - name: Fetch photos via team rosters
         env:
           FETCH_MODE: ${{ github.event.inputs.mode }}
-          NBA_TARGET_TEAM: ${{ github.event.inputs.nba_team }}
         run: python scripts/fetch_photos_v2.py
 
       - name: Commit and push if data changed
-        if: ${{ github.event.inputs.mode == 'ncaa' }}
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Auto-update player photos (roster-based fetch)"
-          file_pattern: data/players_index.json
+          commit_message: "Auto-update player photos (roster-based fetch, ${{ github.event.inputs.mode }} mode)"
+          file_pattern: data/players_index.json data/nba_players.json

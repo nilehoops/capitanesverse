@@ -729,6 +729,7 @@ function renderBoards(players) {
 const GAP_FIELDS = [
   { key: 'age', label: 'Age', check: p => !!p.biography?.age },
   { key: 'weight', label: 'Weight', check: p => !!p.biography?.weight },
+  { key: 'photo', label: 'Photo', check: p => !!p.photoUrl },
   { key: 'video', label: 'Video', check: p => !!(p.videos && p.videos.length) },
   { key: 'stats', label: 'Stats', check: p => !!(p.stats && Object.values(p.stats).every(v => v != null)) },
 ];

@@ -427,8 +427,20 @@
       </div>
     </div>
 
+    <div id="teamTraitResults" style="display:none; padding:14px; background:#0A0A0A; border-top:1px solid #1A1A1A;"></div>
+
+    <div style="padding:10px 14px; background:#0A0A0A; border-top:1px solid #1A1A1A; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+      <span style="font-size:12px; color:#6A6A6A; font-weight:700;">Team Trait Data:</span>
+      <button class="mock-btn" id="teamTraitExportBtn" style="padding:4px 10px; font-size:12px;">Export</button>
+      <label class="mock-btn" style="padding:4px 10px; font-size:12px; cursor:pointer;">
+        Import
+        <input type="file" id="teamTraitImportFile" accept=".json" style="display:none;">
+      </label>
+      <span id="teamTraitImportStatus" style="font-size:12px; color:#6A6A6A;"></span>
+    </div>
+
     <div class="mock-footer">
-      <button class="mock-btn" disabled title="Not built yet">Team Trait Comparison<br>(Work In Progress)</button>
+      <button class="mock-btn" id="teamTraitBtn">Team Trait Comparison</button>
       <button class="mock-btn" id="mockClearBtn">Clear Lineup</button>
       <input class="mock-btn mock-name-input" id="mockLineupName" placeholder="Name Lineup (Optional)">
       <button class="mock-btn mock-save-btn" id="mockSaveBtn">Save PNG</button>
@@ -701,6 +713,110 @@ function getInitials(name) {
 }
 
 let cachedPlayers = null;
+let teamTraitData = null; // lazy-loaded on first "Team Trait Comparison" click
+
+async function loadTeamTraitData() {
+  if (teamTraitData) return teamTraitData;
+  const resp = await fetch('data/team_trait_profiles.json');
+  if (!resp.ok) throw new Error(`Could not load team trait data (${resp.status})`);
+  teamTraitData = await resp.json();
+  return teamTraitData;
+}
+
+// Same stat set as the Python pipeline (team_trait_pipeline.py) — must match
+// exactly, since these percentiles are compared directly against the
+// pre-computed historical pools.
+const TEAM_TRAIT_SW_STATS = ["prpg", "dPrpg", "bpm", "obpm", "dbpm", "ortg", "drtg", "usg", "efg", "ts",
+  "orb", "drb", "ast", "tov", "astToRatio", "blk", "stl", "ftr",
+  "rimPct", "nonRim2Pct", "ftPct", "twoPct", "threePRate", "threePct"];
+const TEAM_TRAIT_LOWER_IS_BETTER = new Set(["tov", "drtg"]);
+
+function teamTraitPercentile(pools, position, statKey, value) {
+  if (value == null || !pools[position]) return null;
+  const peers = pools[position][statKey] || [];
+  if (peers.length < 5) return null;
+  const better = TEAM_TRAIT_LOWER_IS_BETTER.has(statKey)
+    ? peers.filter(v => v >= value).length
+    : peers.filter(v => v <= value).length;
+  return better / peers.length;
+}
+
+// Mock roster has no real minutes (it's hypothetical) — equal-weighted
+// average across whichever slots are actually filled is the natural analog
+// to "weighted by minutes" when there's no real playing-time data to weight by.
+function computeMockRosterTraitProfile(players, mockIds, pools) {
+  const filled = mockIds.map(id => players.find(p => p.id === id)).filter(Boolean);
+  if (!filled.length) return null;
+
+  const sums = {}, counts = {};
+  let heightSum = 0, heightCount = 0, weightSum = 0, weightCount = 0;
+  const positionCounts = {};
+
+  for (const p of filled) {
+    if (p.position) positionCounts[p.position] = (positionCounts[p.position] || 0) + 1;
+    if (p.heightIn) { heightSum += p.heightIn; heightCount++; }
+    const w = parseFloat(p.biography?.weight);
+    if (!isNaN(w)) { weightSum += w; weightCount++; }
+
+    for (const statKey of TEAM_TRAIT_SW_STATS) {
+      const rawValue = p.stats ? p.stats[statKey] : null;
+      const pct = teamTraitPercentile(pools, p.position, statKey, rawValue);
+      if (pct != null) {
+        sums[statKey] = (sums[statKey] || 0) + pct;
+        counts[statKey] = (counts[statKey] || 0) + 1;
+      }
+    }
+  }
+
+  const swProfile = {};
+  for (const statKey of TEAM_TRAIT_SW_STATS) {
+    if (counts[statKey]) swProfile[statKey] = sums[statKey] / counts[statKey];
+  }
+  const positionMixPct = {};
+  for (const pos in positionCounts) positionMixPct[pos] = positionCounts[pos] / filled.length;
+
+  return {
+    swProfile,
+    avgHeightIn: heightCount ? heightSum / heightCount : null,
+    avgWeight: weightCount ? weightSum / weightCount : null,
+    positionMixPct,
+  };
+}
+
+// Similarity = negative Euclidean distance across S/W dims (only dims present
+// in both sides) plus normalized height/weight/position distance, combined
+// into one score. Lower distance = more similar; returned as a 0-100 score
+// for display, not a statistically calibrated metric.
+function computeTraitSimilarity(mockProfile, historicalProfile) {
+  let sqSum = 0, dimCount = 0;
+  for (const statKey of TEAM_TRAIT_SW_STATS) {
+    const a = mockProfile.swProfile[statKey], b = historicalProfile.swProfile[statKey];
+    if (a != null && b != null) { sqSum += (a - b) ** 2; dimCount++; }
+  }
+  if (dimCount === 0) return null;
+  const swDistance = Math.sqrt(sqSum / dimCount); // 0 (identical) to ~1 (max)
+
+  let physicalDistance = 0, physicalDims = 0;
+  if (mockProfile.avgHeightIn != null && historicalProfile.avgHeightIn != null) {
+    physicalDistance += Math.abs(mockProfile.avgHeightIn - historicalProfile.avgHeightIn) / 12; // normalize by ~1ft
+    physicalDims++;
+  }
+  if (mockProfile.avgWeight != null && historicalProfile.avgWeight != null) {
+    physicalDistance += Math.abs(mockProfile.avgWeight - historicalProfile.avgWeight) / 50; // normalize by ~50lbs
+    physicalDims++;
+  }
+  const allPositions = new Set([...Object.keys(mockProfile.positionMixPct), ...Object.keys(historicalProfile.positionMixPct)]);
+  let posDistance = 0;
+  for (const pos of allPositions) {
+    const a = mockProfile.positionMixPct[pos] || 0, b = historicalProfile.positionMixPct[pos] || 0;
+    posDistance += (a - b) ** 2;
+  }
+  posDistance = Math.sqrt(posDistance);
+
+  const combinedDistance = swDistance * 0.6 + (physicalDims ? physicalDistance / physicalDims : 0) * 0.2 + posDistance * 0.2;
+  return Math.max(0, Math.round((1 - Math.min(combinedDistance, 1)) * 100));
+}
+
 
 function withAvail(href) {
   if (!excludedAvail.size) return href;
@@ -2106,6 +2222,147 @@ function renderMockPlayerList() {
     });
   });
 }
+
+document.getElementById('teamTraitExportBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('teamTraitExportBtn');
+  const original = btn.textContent;
+  btn.textContent = 'Loading...';
+  try {
+    const data = await loadTeamTraitData();
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'team_trait_profiles.json';
+    a.click();
+  } catch (e) {
+    alert(`Export failed: ${e.message}`);
+  }
+  btn.textContent = original;
+});
+
+document.getElementById('teamTraitImportFile').addEventListener('change', async (e) => {
+  const status = document.getElementById('teamTraitImportStatus');
+  const file = e.target.files[0];
+  if (!file) return;
+
+  let parsed;
+  try {
+    const text = await file.text();
+    parsed = JSON.parse(text);
+  } catch (err) {
+    status.textContent = 'Invalid JSON file.';
+    status.style.color = '#D81F2A';
+    e.target.value = '';
+    return;
+  }
+
+  // Basic shape validation before committing anything — same principle as
+  // every other import tool on this site: never write a file whose
+  // structure doesn't match what the rest of the code expects to read.
+  if (!parsed.profiles || !Array.isArray(parsed.profiles) || !parsed.percentilePools) {
+    status.textContent = 'File is missing "profiles" array or "percentilePools" — not a valid team trait data file.';
+    status.style.color = '#D81F2A';
+    e.target.value = '';
+    return;
+  }
+
+  if (!confirm(`Import ${parsed.profiles.length} team-season profiles? This replaces the current team trait data for everyone on the site.`)) {
+    e.target.value = '';
+    return;
+  }
+
+  if (!githubToken) {
+    githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
+    if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; e.target.value = ''; return; }
+  }
+
+  const path = 'data/team_trait_profiles.json';
+  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
+  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  status.textContent = 'Saving...';
+  status.style.color = '#6A6A6A';
+  try {
+    const getResp = await fetch(apiUrl, { headers });
+    if (!getResp.ok) { status.textContent = `Could not read current file (${getResp.status}).`; status.style.color = '#D81F2A'; return; }
+    const fileData = await getResp.json();
+
+    const putResp = await fetch(apiUrl, {
+      method: 'PUT',
+      headers: { ...headers, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Import team trait data (${parsed.profiles.length} profiles)`,
+        content: utf8ToBase64(JSON.stringify(parsed)),
+        sha: fileData.sha,
+      }),
+    });
+    if (!putResp.ok) {
+      const err = await putResp.json().catch(() => ({}));
+      status.textContent = `Save failed (${putResp.status}): ${err.message || 'unknown error'}`;
+      status.style.color = '#D81F2A';
+      return;
+    }
+    status.textContent = `Saved — ${parsed.profiles.length} profiles imported.`;
+    status.style.color = '#3FCF5C';
+    teamTraitData = parsed; // update in-memory cache so it's immediately usable this session too
+  } catch (err) {
+    status.textContent = `Network error: ${err.message}`;
+    status.style.color = '#D81F2A';
+  }
+  e.target.value = '';
+});
+
+document.getElementById('teamTraitBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('teamTraitBtn');
+  const resultsDiv = document.getElementById('teamTraitResults');
+  const filledCount = mockRosterIds.filter(Boolean).length;
+  if (filledCount === 0) {
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = '<div style="color:#8A8A8A;">Add at least one player to the lineup first.</div>';
+    return;
+  }
+
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Loading...';
+  btn.disabled = true;
+
+  try {
+    const data = await loadTeamTraitData();
+    const mockProfile = computeMockRosterTraitProfile(cachedPlayers, mockRosterIds, data.percentilePools);
+    if (!mockProfile) throw new Error('Could not compute a profile for this lineup.');
+
+    const scored = data.profiles
+      .map(hp => ({ ...hp, similarity: computeTraitSimilarity(mockProfile, hp) }))
+      .filter(hp => hp.similarity != null)
+      .sort((a, b) => b.similarity - a.similarity)
+      .slice(0, 8);
+
+    resultsDiv.style.display = 'block';
+    if (!scored.length) {
+      resultsDiv.innerHTML = '<div style="color:#8A8A8A;">No comparable historical teams found for this lineup.</div>';
+    } else {
+      resultsDiv.innerHTML = `
+        <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Most Similar Historical G League Teams</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
+          ${scored.map(hp => {
+            const ref = hp.teamStatsReference || {};
+            const record = (ref.W != null && ref.L != null) ? `${ref.W}-${ref.L}` : '';
+            return `<div style="background:#141414;border:1px solid #262626;padding:10px;border-radius:4px;">
+              <div style="font-weight:700;">${hp.team} (${hp.year})</div>
+              <div style="color:#4FD1FF;font-size:13px;">${hp.similarity}% similar</div>
+              <div style="color:#8A8A8A;font-size:12px;margin-top:4px;">${record ? record + ' record · ' : ''}${hp.avgHeightIn ? Math.floor(hp.avgHeightIn/12) + "'" + Math.round(hp.avgHeightIn%12) + '"' : ''} avg height</div>
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+    }
+  } catch (e) {
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = `<div style="color:#D81F2A;">Could not load comparison data: ${e.message}</div>`;
+  }
+
+  btn.textContent = originalLabel;
+  btn.disabled = false;
+});
 
 document.getElementById('mockClearBtn').addEventListener('click', () => {
   mockRosterIds = [];

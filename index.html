@@ -429,14 +429,17 @@
 
     <div id="teamTraitResults" style="display:none; padding:14px; background:#0A0A0A; border-top:1px solid #1A1A1A;"></div>
 
-    <div style="padding:10px 14px; background:#0A0A0A; border-top:1px solid #1A1A1A; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-      <span style="font-size:12px; color:#6A6A6A; font-weight:700;">Team Trait Data:</span>
-      <button class="mock-btn" id="teamTraitExportBtn" style="padding:4px 10px; font-size:12px;">Export</button>
-      <label class="mock-btn" style="padding:4px 10px; font-size:12px; cursor:pointer;">
-        Import
-        <input type="file" id="teamTraitImportFile" accept=".json" style="display:none;">
-      </label>
-      <span id="teamTraitImportStatus" style="font-size:12px; color:#6A6A6A;"></span>
+    <div style="padding:10px 14px; background:#0A0A0A; border-top:1px solid #1A1A1A;">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+        <span style="font-size:12px; color:#6A6A6A; font-weight:700;">Team Trait Data:</span>
+        <button class="mock-btn" id="teamTraitExportBtn" style="padding:4px 10px; font-size:12px;">Export</button>
+        <label class="mock-btn" style="padding:4px 10px; font-size:12px; cursor:pointer;">
+          Add Players (CSV/XLSX)
+          <input type="file" id="teamTraitImportFile" accept=".csv,.tsv,.xlsx,.xls" style="display:none;">
+        </label>
+        <span id="teamTraitImportStatus" style="font-size:12px; color:#6A6A6A;"></span>
+      </div>
+      <div id="teamTraitImportPreview" style="display:none; margin-top:10px;"></div>
     </div>
 
     <div class="mock-footer">
@@ -2240,58 +2243,145 @@ document.getElementById('teamTraitExportBtn').addEventListener('click', async ()
   btn.textContent = original;
 });
 
-document.getElementById('teamTraitImportFile').addEventListener('change', async (e) => {
+let teamTraitImportRows = []; // [{name, team, stats, position}] pending commit
+
+function parseTeamTraitImportRows(rowsOfCells) {
+  const preview = document.getElementById('teamTraitImportPreview');
   const status = document.getElementById('teamTraitImportStatus');
+  teamTraitImportRows = [];
+
+  for (const cells of rowsOfCells) {
+    if (!cells.length || !cells.some(c => c !== '' && c != null)) continue; // skip blank rows
+    const map = parseSheetRow(cells);
+    if (!map.name) continue; // not a real player row (e.g. a stray header)
+    const stats = {};
+    for (const statKey of TEAM_TRAIT_SW_STATS) {
+      if (map[statKey] != null) stats[statKey] = map[statKey];
+    }
+    teamTraitImportRows.push({ name: map.name, team: map.team || '', stats, position: 'Guard' });
+  }
+
+  if (!teamTraitImportRows.length) {
+    status.textContent = 'No player rows found in this file.';
+    status.style.color = '#D81F2A';
+    preview.style.display = 'none';
+    return;
+  }
+
+  preview.style.display = 'block';
+  preview.innerHTML = `
+    <div style="font-size:12px; color:#8A8A8A; margin-bottom:6px;">
+      ${teamTraitImportRows.length} player(s) found. Set each player's position (needed for percentile comparisons — not in the raw stats file):
+    </div>
+    <div style="max-height:220px; overflow-y:auto; border:1px solid #262626;">
+      ${teamTraitImportRows.map((row, i) => `
+        <div style="display:flex; align-items:center; gap:8px; padding:4px 8px; border-bottom:1px solid #1A1A1A; font-size:12px;">
+          <span style="flex:1;">${row.name}</span>
+          <span style="flex:1; color:#6A6A6A;">${row.team}</span>
+          <select data-import-row="${i}" style="background:#1A1A1A; color:#ECECEC; border:1px solid #333; font-size:12px;">
+            <option value="Guard">Guard</option>
+            <option value="Wing">Wing</option>
+            <option value="Big">Big</option>
+          </select>
+        </div>
+      `).join('')}
+    </div>
+    <button class="mock-btn" id="teamTraitCommitImportBtn" style="margin-top:8px; padding:4px 10px; font-size:12px;">
+      Add ${teamTraitImportRows.length} Player(s) to Pools
+    </button>
+  `;
+  preview.querySelectorAll('[data-import-row]').forEach(sel => {
+    sel.addEventListener('change', () => {
+      teamTraitImportRows[Number(sel.dataset.importRow)].position = sel.value;
+    });
+  });
+  document.getElementById('teamTraitCommitImportBtn').addEventListener('click', commitTeamTraitImport);
+  status.textContent = '';
+}
+
+document.getElementById('teamTraitImportFile').addEventListener('change', (e) => {
+  const status = document.getElementById('teamTraitImportStatus');
+  const preview = document.getElementById('teamTraitImportPreview');
   const file = e.target.files[0];
-  if (!file) return;
+  if (!file) { preview.style.display = 'none'; return; }
 
-  let parsed;
+  const isExcel = /\.xlsx?$/i.test(file.name);
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (isExcel) {
+      const workbook = XLSX.read(reader.result, { type: 'array' });
+      const sheet = workbook.Sheets[workbook.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
+      parseTeamTraitImportRows(rows);
+    } else {
+      const delimiter = /\.tsv$/i.test(file.name) ? '\t' : ',';
+      const lines = String(reader.result).split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim());
+      const rows = lines.map(line => delimiter === '\t' ? line.split('\t') : parseCsvLine(line));
+      parseTeamTraitImportRows(rows);
+    }
+  };
+  reader.onerror = () => { status.textContent = 'Could not read file.'; status.style.color = '#D81F2A'; };
+  if (isExcel) reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+});
+
+async function commitTeamTraitImport() {
+  const status = document.getElementById('teamTraitImportStatus');
+  const btn = document.getElementById('teamTraitCommitImportBtn');
+  if (!teamTraitImportRows.length) return;
+
+  btn.disabled = true;
+  btn.textContent = 'Loading current data...';
+  let data;
   try {
-    const text = await file.text();
-    parsed = JSON.parse(text);
-  } catch (err) {
-    status.textContent = 'Invalid JSON file.';
+    data = await loadTeamTraitData();
+  } catch (e) {
+    status.textContent = `Could not load current data: ${e.message}`;
     status.style.color = '#D81F2A';
-    e.target.value = '';
+    btn.disabled = false;
     return;
   }
 
-  // Basic shape validation before committing anything — same principle as
-  // every other import tool on this site: never write a file whose
-  // structure doesn't match what the rest of the code expects to read.
-  if (!parsed.profiles || !Array.isArray(parsed.profiles) || !parsed.percentilePools) {
-    status.textContent = 'File is missing "profiles" array or "percentilePools" — not a valid team trait data file.';
-    status.style.color = '#D81F2A';
-    e.target.value = '';
-    return;
+  // Light-scope import: adds new players into the percentile pools only.
+  // Does NOT recompute the 89 existing team-season profiles — those stay as
+  // they are until the next full Python pipeline run picks up this data.
+  let valuesAdded = 0;
+  for (const row of teamTraitImportRows) {
+    if (!data.percentilePools[row.position]) data.percentilePools[row.position] = {};
+    for (const statKey of TEAM_TRAIT_SW_STATS) {
+      if (row.stats[statKey] == null) continue;
+      if (!data.percentilePools[row.position][statKey]) data.percentilePools[row.position][statKey] = [];
+      data.percentilePools[row.position][statKey].push(row.stats[statKey]);
+      valuesAdded++;
+    }
   }
 
-  if (!confirm(`Import ${parsed.profiles.length} team-season profiles? This replaces the current team trait data for everyone on the site.`)) {
-    e.target.value = '';
+  if (!confirm(`Add ${teamTraitImportRows.length} player(s) to the percentile pools (${valuesAdded} stat values total)? This does not update the 89 team-season comparison profiles — those need a full pipeline re-run to reflect new players.`)) {
+    btn.disabled = false;
+    btn.textContent = `Add ${teamTraitImportRows.length} Player(s) to Pools`;
     return;
   }
 
   if (!githubToken) {
     githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
-    if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; e.target.value = ''; return; }
+    if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; btn.disabled = false; return; }
   }
 
   const path = 'data/team_trait_profiles.json';
   const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
   const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
-  status.textContent = 'Saving...';
-  status.style.color = '#6A6A6A';
+  btn.textContent = 'Saving...';
   try {
     const getResp = await fetch(apiUrl, { headers });
-    if (!getResp.ok) { status.textContent = `Could not read current file (${getResp.status}).`; status.style.color = '#D81F2A'; return; }
+    if (!getResp.ok) { status.textContent = `Could not read current file (${getResp.status}).`; status.style.color = '#D81F2A'; btn.disabled = false; return; }
     const fileData = await getResp.json();
 
     const putResp = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: `Import team trait data (${parsed.profiles.length} profiles)`,
-        content: utf8ToBase64(JSON.stringify(parsed)),
+        message: `Add ${teamTraitImportRows.length} players to team trait percentile pools`,
+        content: utf8ToBase64(JSON.stringify(data)),
         sha: fileData.sha,
       }),
     });
@@ -2299,17 +2389,23 @@ document.getElementById('teamTraitImportFile').addEventListener('change', async 
       const err = await putResp.json().catch(() => ({}));
       status.textContent = `Save failed (${putResp.status}): ${err.message || 'unknown error'}`;
       status.style.color = '#D81F2A';
+      btn.disabled = false;
+      btn.textContent = `Add ${teamTraitImportRows.length} Player(s) to Pools`;
       return;
     }
-    status.textContent = `Saved — ${parsed.profiles.length} profiles imported.`;
+    status.textContent = `Saved — ${teamTraitImportRows.length} players added to the pools.`;
     status.style.color = '#3FCF5C';
-    teamTraitData = parsed; // update in-memory cache so it's immediately usable this session too
+    teamTraitData = data;
+    document.getElementById('teamTraitImportPreview').style.display = 'none';
+    document.getElementById('teamTraitImportFile').value = '';
+    teamTraitImportRows = [];
   } catch (err) {
     status.textContent = `Network error: ${err.message}`;
     status.style.color = '#D81F2A';
+    btn.disabled = false;
+    btn.textContent = `Add ${teamTraitImportRows.length} Player(s) to Pools`;
   }
-  e.target.value = '';
-});
+}
 
 document.getElementById('teamTraitBtn').addEventListener('click', async () => {
   const btn = document.getElementById('teamTraitBtn');

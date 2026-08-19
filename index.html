@@ -2355,6 +2355,17 @@ function parseTeamTraitImportRows(rowsOfCells) {
   status.textContent = '';
 }
 
+// Same suffix-tolerant convention already proven correct elsewhere (the
+// Python pipeline, the CSV import fix for Knox/McCullar-style cases) — the
+// Check Missing Stats handler was calling a plain normalize() that was
+// never actually defined in this scope, confirmed causing a real crash.
+function normalizePlayerName(name) {
+  const SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
+  const cleaned = name.toLowerCase().replace(/[.,]/g, '');
+  const words = cleaned.split(/\s+/).filter(w => !SUFFIXES.has(w));
+  return words.join(' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
 let gleagueReferenceData = null;
 async function loadGleagueReference() {
   if (gleagueReferenceData) return gleagueReferenceData;
@@ -2380,7 +2391,7 @@ document.getElementById('teamTraitMissingBtn').addEventListener('click', async (
     if (cachedPlayers) {
       for (const p of cachedPlayers) {
         if (p.stats && Object.values(p.stats).some(v => v != null)) {
-          ourStatsNorm.add(normalize(p.name));
+          ourStatsNorm.add(normalizePlayerName(p.name));
         }
       }
     }

@@ -1,0 +1,38 @@
+name: Update Team Trait Data
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  update-team-trait-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install openpyxl
+
+      - name: Confirm the database file is present
+        run: |
+          if [ ! -f "Team_Trait_Comp_Database.xlsx" ]; then
+            echo "Team_Trait_Comp_Database.xlsx not found in repo root — commit it there first."
+            exit 1
+          fi
+
+      - name: Run the pipeline
+        run: python scripts/team_trait_pipeline.py
+
+      - name: Commit and push if data changed
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update team trait profiles from database"
+          file_pattern: data/team_trait_profiles.json

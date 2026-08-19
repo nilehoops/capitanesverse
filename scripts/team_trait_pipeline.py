@@ -21,7 +21,7 @@ checks (all 34 codes verified against the real Team Stats names, zero gaps).
 import openpyxl, json, re, datetime
 from collections import defaultdict
 
-XLSX_PATH = "/mnt/user-data/uploads/Team_Trait_Comp_Database.xlsx"
+XLSX_PATH = "Team_Trait_Comp_Database.xlsx"  # place this file in the repo root before running
 
 # ---- Verified code -> team name mapping (Minutes/Team Stats scheme) ----
 CODE_TO_TEAM = {

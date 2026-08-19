@@ -429,18 +429,19 @@
 
     <div id="teamTraitResults" style="display:none; padding:14px; background:#0A0A0A; border-top:1px solid #1A1A1A;"></div>
 
-    <div style="padding:10px 14px; background:#0A0A0A; border-top:1px solid #1A1A1A;">
-      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-        <span style="font-size:12px; color:#6A6A6A; font-weight:700;">Team Trait Data:</span>
-        <button class="mock-btn" id="teamTraitExportBtn" style="padding:4px 10px; font-size:12px;">Export</button>
-        <label class="mock-btn" style="padding:4px 10px; font-size:12px; cursor:pointer;">
-          Add Players (CSV/XLSX)
-          <input type="file" id="teamTraitImportFile" accept=".csv,.tsv,.xlsx,.xls" style="display:none;">
-        </label>
-        <button class="mock-btn" id="teamTraitMissingBtn" style="padding:4px 10px; font-size:12px;">Check Missing Stats</button>
-        <span id="teamTraitImportStatus" style="font-size:12px; color:#6A6A6A;"></span>
-      </div>
-      <div id="teamTraitMissingResults" style="display:none; margin-top:10px;"></div>
+    <div style="border-top:1px solid #1A1A1A;">
+      <button class="mock-btn" id="teamTraitDataToggle" style="width:100%; text-align:left; padding:8px 14px; font-size:12px; background:#0A0A0A; border:none; color:#6A6A6A; font-weight:700;">+ Team Trait Data (Export / Add Players / Check Missing Stats)</button>
+      <div id="teamTraitDataPanel" style="display:none; padding:10px 14px; background:#0A0A0A;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <button class="mock-btn" id="teamTraitExportBtn" style="padding:4px 10px; font-size:12px;">Export</button>
+          <label class="mock-btn" style="padding:4px 10px; font-size:12px; cursor:pointer;">
+            Add Players (CSV/XLSX)
+            <input type="file" id="teamTraitImportFile" accept=".csv,.tsv,.xlsx,.xls" style="display:none;">
+          </label>
+          <button class="mock-btn" id="teamTraitMissingBtn" style="padding:4px 10px; font-size:12px;">Check Missing Stats</button>
+          <span id="teamTraitImportStatus" style="font-size:12px; color:#6A6A6A;"></span>
+        </div>
+        <div id="teamTraitMissingResults" style="display:none; margin-top:10px;"></div>
       <div id="teamTraitImportPreview" style="display:none; margin-top:10px;"></div>
     </div>
 
@@ -2227,6 +2228,12 @@ function renderMockPlayerList() {
     });
   });
 }
+
+document.getElementById('teamTraitDataToggle').addEventListener('click', () => {
+  const panel = document.getElementById('teamTraitDataPanel');
+  const isOpen = panel.style.display !== 'none';
+  panel.style.display = isOpen ? 'none' : 'block';
+});
 
 document.getElementById('teamTraitExportBtn').addEventListener('click', async () => {
   const btn = document.getElementById('teamTraitExportBtn');

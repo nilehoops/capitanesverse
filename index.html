@@ -1187,8 +1187,7 @@ function renderAvailabilityChart(topN) {
   if (!events.length) {
     note.textContent = `No dated availability events found among the top ${topN} players yet.`;
   } else {
-    note.textContent = `Based on ${events.length} dated signing${events.length === 1 ? '' : 's'} among the top ${topN}. Only players with both a top-${topN} rank and a note ending in a real date (m/dd) are reflected — undated "No" statuses aren't counted here.`;
-  }
+   
 
   const ctx = document.getElementById('availChartCanvas').getContext('2d');
   if (availChart) availChart.destroy();

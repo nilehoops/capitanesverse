@@ -164,8 +164,7 @@
     width: 55px; background: #1A1A1A; color: #ECECEC; border: 1px solid #333;
     font-family: 'Lora', serif; font-size: 13px; padding: 2px 4px;
   }
-  .avail-chart-canvas-wrap { max-height: 300px; }
-  .avail-chart-note { font-size: 11px; color: #6A6A6A; margin-top: 6px; }
+  .avail-chart-canvas-wrap { height: 265px; }
 
   .addplayer-section { padding: 0 24px 60px; }
   .addplayer-toggle {
@@ -492,7 +491,6 @@
     <div class="avail-chart-canvas-wrap">
       <canvas id="availChartCanvas"></canvas>
     </div>
-    <div class="avail-chart-note" id="availChartNote"></div>
   </div>
 </div>
 
@@ -1181,14 +1179,7 @@ function computeTopNAvailabilityOverTime(players, topN) {
 }
 
 function renderAvailabilityChart(topN) {
-  const { labels, data, events } = computeTopNAvailabilityOverTime(cachedPlayers || [], topN);
-  const note = document.getElementById('availChartNote');
-
-  if (!events.length) {
-    note.textContent = `No dated availability events found among the top ${topN} players yet.`;
-  } else {
-    note.textContent = `Based on ${events.length} dated signing${events.length === 1 ? '' : 's'} among the top ${topN}. Only players with both a top-${topN} rank and a note ending in a real date (m/dd) are reflected — undated "No" statuses aren't counted here.`;
-  }
+  const { labels, data } = computeTopNAvailabilityOverTime(cachedPlayers || [], topN);
 
   const ctx = document.getElementById('availChartCanvas').getContext('2d');
   if (availChart) availChart.destroy();

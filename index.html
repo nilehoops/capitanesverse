@@ -437,8 +437,10 @@
           Add Players (CSV/XLSX)
           <input type="file" id="teamTraitImportFile" accept=".csv,.tsv,.xlsx,.xls" style="display:none;">
         </label>
+        <button class="mock-btn" id="teamTraitMissingBtn" style="padding:4px 10px; font-size:12px;">Check Missing Stats</button>
         <span id="teamTraitImportStatus" style="font-size:12px; color:#6A6A6A;"></span>
       </div>
+      <div id="teamTraitMissingResults" style="display:none; margin-top:10px;"></div>
       <div id="teamTraitImportPreview" style="display:none; margin-top:10px;"></div>
     </div>
 
@@ -2232,11 +2234,48 @@ document.getElementById('teamTraitExportBtn').addEventListener('click', async ()
   btn.textContent = 'Loading...';
   try {
     const data = await loadTeamTraitData();
-    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'team_trait_profiles.json';
-    a.click();
+
+    // Sheet 1: one row per team-season, every nested field flattened into
+    // its own column — this is what actually needs to open cleanly in
+    // Excel, not the raw nested JSON structure.
+    const profileRows = data.profiles.map(p => {
+      const row = {
+        Year: p.year,
+        Team: p.team,
+        'Players Included': p.playersIncluded,
+        'Total Minutes': p.totalMinutes,
+        'Avg Height (in)': p.avgHeightIn,
+        'Avg Weight (lbs)': p.avgWeight,
+        'Guard %': p.positionMixPct?.Guard != null ? Math.round(p.positionMixPct.Guard * 1000) / 10 : null,
+        'Wing %': p.positionMixPct?.Wing != null ? Math.round(p.positionMixPct.Wing * 1000) / 10 : null,
+        'Big %': p.positionMixPct?.Big != null ? Math.round(p.positionMixPct.Big * 1000) / 10 : null,
+      };
+      for (const statKey of TEAM_TRAIT_SW_STATS) {
+        row[`SW: ${statKey}`] = p.swProfile?.[statKey] != null ? Math.round(p.swProfile[statKey] * 1000) / 10 : null;
+      }
+      const ref = p.teamStatsReference || {};
+      row['Ref: W'] = ref.W ?? null;
+      row['Ref: L'] = ref.L ?? null;
+      row['Ref: GP'] = ref.GP ?? null;
+      return row;
+    });
+
+    // Sheet 2: percentile pools flattened to position/stat/value rows —
+    // still readable as a real table, since a raw nested object of arrays
+    // has no sensible flat-row shape otherwise.
+    const poolRows = [];
+    for (const position in data.percentilePools) {
+      for (const statKey in data.percentilePools[position]) {
+        for (const value of data.percentilePools[position][statKey]) {
+          poolRows.push({ Position: position, Stat: statKey, Value: value });
+        }
+      }
+    }
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(profileRows), 'Team Season Profiles');
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(poolRows), 'Percentile Pools');
+    XLSX.writeFile(wb, 'team_trait_profiles.xlsx');
   } catch (e) {
     alert(`Export failed: ${e.message}`);
   }
@@ -2315,6 +2354,70 @@ function parseTeamTraitImportRows(rowsOfCells) {
   document.getElementById('teamTraitCommitImportBtn').addEventListener('click', commitTeamTraitImport);
   status.textContent = '';
 }
+
+let gleagueReferenceData = null;
+async function loadGleagueReference() {
+  if (gleagueReferenceData) return gleagueReferenceData;
+  const resp = await fetch('data/gleague_players_reference.json');
+  if (!resp.ok) throw new Error(`Could not load reference data (${resp.status})`);
+  gleagueReferenceData = await resp.json();
+  return gleagueReferenceData;
+}
+
+document.getElementById('teamTraitMissingBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('teamTraitMissingBtn');
+  const resultsDiv = document.getElementById('teamTraitMissingResults');
+  const original = btn.textContent;
+  btn.textContent = 'Checking...';
+  btn.disabled = true;
+
+  try {
+    const reference = await loadGleagueReference();
+
+    // Live check against our own current data — not frozen at reference-file
+    // generation time, since our own site's stats can be added to at any point.
+    const ourStatsNorm = new Set();
+    if (cachedPlayers) {
+      for (const p of cachedPlayers) {
+        if (p.stats && Object.values(p.stats).some(v => v != null)) {
+          ourStatsNorm.add(normalize(p.name));
+        }
+      }
+    }
+
+    const missing = reference.filter(r => !r.hasBartStats && !ourStatsNorm.has(r.norm));
+
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = `
+      <div style="font-size:13px; margin-bottom:8px;">
+        <strong>${missing.length}</strong> of ${reference.length} G League players still have no usable stats
+        (checked against D1 Bart Stats and this site's own current data).
+      </div>
+      <div style="max-height:200px; overflow-y:auto; border:1px solid #262626; font-size:12px;">
+        ${missing.slice(0, 100).map(p => `
+          <div style="display:flex; padding:3px 8px; border-bottom:1px solid #1A1A1A;">
+            <span style="flex:1;">${p.name}</span>
+            <span style="color:#6A6A6A;">${p.mostRecentYear} · ${p.mostRecentTeam}</span>
+          </div>
+        `).join('')}
+        ${missing.length > 100 ? `<div style="padding:6px 8px; color:#6A6A6A;">...and ${missing.length - 100} more (export for the full list)</div>` : ''}
+      </div>
+      <button class="mock-btn" id="teamTraitExportMissingBtn" style="margin-top:8px; padding:4px 10px; font-size:12px;">Export Full List (xlsx)</button>
+    `;
+    document.getElementById('teamTraitExportMissingBtn').addEventListener('click', () => {
+      const rows = missing.map(p => ({ 'Player Name': p.name, 'Most Recent Season': p.mostRecentYear, 'Most Recent Team(s)': p.mostRecentTeam }));
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Missing Stats');
+      XLSX.writeFile(wb, 'gleague_players_missing_stats.xlsx');
+    });
+  } catch (e) {
+    resultsDiv.style.display = 'block';
+    resultsDiv.innerHTML = `<div style="color:#D81F2A;">Could not check: ${e.message}</div>`;
+  }
+
+  btn.textContent = original;
+  btn.disabled = false;
+});
 
 document.getElementById('teamTraitImportFile').addEventListener('change', (e) => {
   const status = document.getElementById('teamTraitImportStatus');

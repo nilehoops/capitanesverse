@@ -149,11 +149,23 @@
   }
   .avail-toggle button.excluded { text-decoration: line-through; color: #5A5A5A; }
 
-  .notes-section { padding: 0 24px 60px; }
+  .notes-section { padding: 0 24px 60px; display: flex; gap: 24px; align-items: flex-start; }
+  .notes-left { flex: 2 1 0; min-width: 0; }
   .notes-title { font-size: 22px; border-bottom: 2px solid #ECECEC; padding-bottom: 4px; margin-bottom: 8px; }
-  .notes-rows { max-height: 300px; overflow-y: auto; columns: 3; column-gap: 24px; }
+  .notes-rows { max-height: 300px; overflow-y: auto; columns: 2; column-gap: 24px; }
   .notes-row { font-size: 16px; line-height: 1.6; break-inside: avoid; }
   .notes-row .note { font-size: 13px; font-weight: 400; color: #9A9A9A; margin-left: 6px; }
+
+  .avail-chart { flex: 1 1 0; min-width: 0; }
+  .avail-chart-title { font-size: 22px; border-bottom: 2px solid #ECECEC; padding-bottom: 4px; margin-bottom: 8px; }
+  .avail-chart-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
+  .avail-chart-controls input[type="range"] { flex: 1; }
+  .avail-chart-controls input[type="number"] {
+    width: 55px; background: #1A1A1A; color: #ECECEC; border: 1px solid #333;
+    font-family: 'Lora', serif; font-size: 13px; padding: 2px 4px;
+  }
+  .avail-chart-canvas-wrap { max-height: 300px; }
+  .avail-chart-note { font-size: 11px; color: #6A6A6A; margin-top: 6px; }
 
   .addplayer-section { padding: 0 24px 60px; }
   .addplayer-toggle {
@@ -253,14 +265,14 @@
   .mock-modal-overlay.open { display: flex; }
   .mock-modal {
     background: #000; border: 2px solid #333; width: min(1400px, 100%); max-height: 94vh;
-    overflow-y: auto; position: relative; padding: 16px 20px;
+    overflow-y: auto; position: relative; padding: 12px 20px;
   }
   .mock-modal-close {
     position: absolute; top: 12px; right: 12px; background: #D81F2A; color: #fff; border: none;
     font-family: 'Lora', serif; font-weight: 900; font-size: 18px; width: 34px; height: 34px; cursor: pointer;
   }
 
-  .mock-header { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 10px; }
+  .mock-header { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-bottom: 6px; }
   .mock-roster-block { display: flex; align-items: flex-start; gap: 10px; }
   .mock-roster-label {
     font-size: 17px; font-weight: 700; white-space: nowrap;
@@ -304,7 +316,7 @@
     gap: 6px; align-items: center; font-size: 12px;
   }
   .mock-list-head { font-weight: 700; color: #9A9A9A; padding-bottom: 4px; border-bottom: 1px solid #333; }
-  .mock-list { max-height: 38vh; overflow-y: auto; }
+  .mock-list { max-height: 26vh; overflow-y: auto; }
   .mock-list-row { padding: 5px 0; border-bottom: 1px solid #1A1A1A; position: relative; }
   .mock-list-row .mock-add-btn {
     background: #128A3E; color: #fff; border: none; font-family: 'Lora', serif; font-weight: 700;
@@ -319,7 +331,7 @@
   .mock-list-row:hover .mock-stint-tooltip { display: block; }
   .mock-scroll-hint { font-size: 11px; color: #6A6A6A; margin-top: 6px; text-align: center; }
 
-  .mock-footer { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+  .mock-footer { display: flex; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
   .mock-btn {
     font-family: 'Lora', serif; font-weight: 700; font-size: 13px; background: #ECECEC; color: #000;
     border: none; padding: 10px 16px; cursor: pointer; text-align: center;
@@ -356,6 +368,7 @@
 </style>
 </head>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <body>
 
 <div class="top">
@@ -465,8 +478,22 @@
 <div class="boards" id="boards"></div>
 
 <div class="notes-section">
-  <div class="notes-title">Availability Notes</div>
-  <div class="notes-rows" id="notesRows"></div>
+  <div class="notes-left">
+    <div class="notes-title">Availability Notes</div>
+    <div class="notes-rows" id="notesRows"></div>
+  </div>
+  <div class="avail-chart">
+    <div class="avail-chart-title">Player Availability by Date</div>
+    <div class="avail-chart-controls">
+      <span>Top</span>
+      <input type="range" id="availChartSlider" min="5" max="350" value="120" step="1">
+      <input type="number" id="availChartNumber" min="5" max="350" value="120">
+    </div>
+    <div class="avail-chart-canvas-wrap">
+      <canvas id="availChartCanvas"></canvas>
+    </div>
+    <div class="avail-chart-note" id="availChartNote"></div>
+  </div>
 </div>
 
 <div class="util-tabs-row">
@@ -1107,6 +1134,100 @@ function renderNotes(players) {
       ).join('')
     : '<div class="board-empty">No notes yet.</div>';
 }
+
+// Notes don't include a year — "8/6" style dates are assumed to be the
+// current year, since these are always recent/current-offseason signings,
+// not historical ones.
+function parseTrailingDate(note) {
+  const m = String(note).trim().match(/(\d{1,2})\/(\d{1,2})\s*$/);
+  if (!m) return null;
+  const month = Number(m[1]), day = Number(m[2]);
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  return new Date(new Date().getFullYear(), month - 1, day);
+}
+
+let availChart = null;
+
+function computeTopNAvailabilityOverTime(players, topN) {
+  // Only players who are BOTH ranked in the top N AND have a note with a
+  // real, parseable date are usable data points — an availabilityNote alone
+  // isn't enough, since plenty of notes ("Summer League, no PT") don't
+  // reflect an actual dated unavailability event.
+  const events = [];
+  for (const p of players) {
+    if (p.overallRank == null || p.overallRank > topN) continue;
+    if (p.availabilitySimple !== 'no') continue;
+    const date = parseTrailingDate(p.availabilityNote);
+    if (date) events.push({ date, name: p.name, rank: p.overallRank });
+  }
+  events.sort((a, b) => a.date - b.date);
+
+  if (!events.length) return { labels: [], data: [], events: [] };
+
+  const labels = [], data = [];
+  let remaining = topN;
+  // Starting point: full topN available, one day before the first dated event
+  const firstDate = new Date(events[0].date);
+  firstDate.setDate(firstDate.getDate() - 1);
+  labels.push(firstDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }));
+  data.push(remaining);
+
+  for (const ev of events) {
+    remaining -= 1;
+    labels.push(ev.date.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }));
+    data.push(remaining);
+  }
+  return { labels, data, events };
+}
+
+function renderAvailabilityChart(topN) {
+  const { labels, data, events } = computeTopNAvailabilityOverTime(cachedPlayers || [], topN);
+  const note = document.getElementById('availChartNote');
+
+  if (!events.length) {
+    note.textContent = `No dated availability events found among the top ${topN} players yet.`;
+  } else {
+    note.textContent = `Based on ${events.length} dated signing${events.length === 1 ? '' : 's'} among the top ${topN}. Only players with both a top-${topN} rank and a note ending in a real date (m/dd) are reflected — undated "No" statuses aren't counted here.`;
+  }
+
+  const ctx = document.getElementById('availChartCanvas').getContext('2d');
+  if (availChart) availChart.destroy();
+  availChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: `Top ${topN} still available`,
+        data,
+        stepped: 'before',
+        borderColor: '#4FD1FF',
+        backgroundColor: 'rgba(79,209,255,0.1)',
+        fill: true,
+        pointRadius: 3,
+        pointBackgroundColor: '#4FD1FF',
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8A8A8A', font: { family: 'Lora' } }, grid: { color: '#1A1A1A' } },
+        y: { ticks: { color: '#8A8A8A', font: { family: 'Lora' } }, grid: { color: '#1A1A1A' }, beginAtZero: false },
+      },
+    },
+  });
+}
+
+document.getElementById('availChartSlider').addEventListener('input', (e) => {
+  document.getElementById('availChartNumber').value = e.target.value;
+  renderAvailabilityChart(Number(e.target.value));
+});
+document.getElementById('availChartNumber').addEventListener('input', (e) => {
+  const val = Math.max(5, Math.min(350, Number(e.target.value) || 120));
+  document.getElementById('availChartSlider').value = val;
+  renderAvailabilityChart(val);
+});
 
 // Each button independently toggles strikethrough — struck-through statuses
 // are excluded from the boards, everything else shows together (e.g. striking
@@ -2854,6 +2975,7 @@ Promise.all([
     const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
     cachedPlayers = players;
     renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players); renderTeamStrengthsWeaknesses(players);
+    renderAvailabilityChart(Number(document.getElementById('availChartNumber').value) || 120);
   })
   .catch(err => {
     console.error('Could not load player data', err);

@@ -276,7 +276,7 @@ def build_team_season_profiles(bart_by_name, roster_info, minutes_by_key, team_s
     return profiles
 
 
-def build_gleague_reference(roster_info, bart_by_name):
+def build_gleague_reference(roster_info, bart_by_name, minutes_by_key):
     """Regenerates the full G League player coverage reference (used by the
     site's own "Check Missing Stats" feature) from the CURRENT state of the
     workbook — this used to be a separate, one-off script whose output never
@@ -290,6 +290,14 @@ def build_gleague_reference(roster_info, bart_by_name):
                 'team': CODE_TO_TEAM.get(ROSTERS_TO_MINUTES_CODE.get(info['rosters_code'], ''), info['rosters_code']),
             }
 
+    # Total minutes summed across every season on record — the best simple
+    # proxy for "how much this player's stats would actually matter to the
+    # team-season aggregates," since that's literally what minutes weight
+    # in that computation.
+    total_minutes_by_norm = {}
+    for (year, norm_name), (code, mins) in minutes_by_key.items():
+        total_minutes_by_norm[norm_name] = total_minutes_by_norm.get(norm_name, 0) + mins
+
     output = []
     for norm, info in all_gleague.items():
         bart_row = bart_by_name.get(norm)
@@ -297,8 +305,9 @@ def build_gleague_reference(roster_info, bart_by_name):
             'name': info['name'], 'norm': norm,
             'mostRecentYear': info['year'], 'mostRecentTeam': info['team'],
             'hasBartStats': bool(bart_row and bart_row['gp'] is not None),
+            'totalMinutes': round(total_minutes_by_norm.get(norm, 0)),
         })
-    output.sort(key=lambda x: (-x['mostRecentYear'], x['name']))
+    output.sort(key=lambda x: -x['totalMinutes'])
     return output
 
 
@@ -325,7 +334,7 @@ if __name__ == "__main__":
     print(f"Teams covered: {len(teams_covered)}")
 
     print("\nRegenerating G League player coverage reference...")
-    reference = build_gleague_reference(roster_info, bart_by_name)
+    reference = build_gleague_reference(roster_info, bart_by_name, minutes_by_key)
     with open("data/gleague_players_reference.json", "w") as f:
         json.dump(reference, f, separators=(",", ":"))
     covered = sum(1 for r in reference if r['hasBartStats'])

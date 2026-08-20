@@ -332,11 +332,40 @@ if __name__ == "__main__":
     print(f"Reference written: {len(reference)} players, {covered} with Bart Stats coverage")
 
     output_path = "data/team_trait_profiles.json"
+    fresh_pools = {pos: {k: v for k, v in stats.items()} for pos, stats in pools.items()}
+
+    # The in-site "Add Players" import writes directly to this same file,
+    # appending raw stat values and player names — but this pipeline used to
+    # overwrite the whole file from scratch every run, silently destroying
+    # anything added that way. Confirmed happening for real: a real user's
+    # 171 imported players vanished the moment the Action ran afterward.
+    # Both paths only ever grow their pools, never shrink them, so any pool
+    # values beyond what this fresh computation produces are preserved as
+    # import-contributed and merged back in, rather than discarded.
+    imported_names = []
+    try:
+        with open(output_path) as f:
+            existing = json.load(f)
+        imported_names = existing.get('importedPlayerNames', [])
+        existing_pools = existing.get('percentilePools', {})
+        for pos, stats in existing_pools.items():
+            fresh_pools.setdefault(pos, {})
+            for stat_key, values in stats.items():
+                fresh_count = len(fresh_pools[pos].get(stat_key, []))
+                if len(values) > fresh_count:
+                    fresh_pools[pos].setdefault(stat_key, [])
+                    fresh_pools[pos][stat_key].extend(values[fresh_count:])
+        if imported_names:
+            print(f"Preserved {len(imported_names)} previously-imported player name(s) from the existing file.")
+    except (FileNotFoundError, json.JSONDecodeError):
+        pass  # no existing file yet, or it's malformed — nothing to preserve, proceed with fresh data only
+
     output_data = {
         'profiles': profiles,
-        'percentilePools': {pos: {k: v for k, v in stats.items()} for pos, stats in pools.items()},
+        'percentilePools': fresh_pools,
+        'importedPlayerNames': imported_names,
     }
     with open(output_path, "w") as f:
         json.dump(output_data, f, separators=(",", ":"))
     print(f"\nWritten to {output_path}")
-    print(f"Pool sizes exported: { {pos: len(stats.get(SW_STATS[0], [])) for pos, stats in pools.items()} }")
+    print(f"Pool sizes exported: { {pos: len(stats.get(SW_STATS[0], [])) for pos, stats in fresh_pools.items()} }")

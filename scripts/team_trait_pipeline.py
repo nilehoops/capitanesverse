@@ -276,6 +276,32 @@ def build_team_season_profiles(bart_by_name, roster_info, minutes_by_key, team_s
     return profiles
 
 
+def build_gleague_reference(roster_info, bart_by_name):
+    """Regenerates the full G League player coverage reference (used by the
+    site's own "Check Missing Stats" feature) from the CURRENT state of the
+    workbook — this used to be a separate, one-off script whose output never
+    updated after the database changed. Folding it into the same pipeline
+    run means it can never drift out of sync with the actual data again."""
+    all_gleague = {}
+    for (year, norm_name), info in roster_info.items():
+        if norm_name not in all_gleague or year > all_gleague[norm_name]['year']:
+            all_gleague[norm_name] = {
+                'name': info['name'], 'norm': norm_name, 'year': year,
+                'team': CODE_TO_TEAM.get(ROSTERS_TO_MINUTES_CODE.get(info['rosters_code'], ''), info['rosters_code']),
+            }
+
+    output = []
+    for norm, info in all_gleague.items():
+        bart_row = bart_by_name.get(norm)
+        output.append({
+            'name': info['name'], 'norm': norm,
+            'mostRecentYear': info['year'], 'mostRecentTeam': info['team'],
+            'hasBartStats': bool(bart_row and bart_row['gp'] is not None),
+        })
+    output.sort(key=lambda x: (-x['mostRecentYear'], x['name']))
+    return output
+
+
 if __name__ == "__main__":
     print("Loading workbook...")
     bart_by_name, roster_info, minutes_by_key, team_stats_by_key = load_workbook_data()
@@ -297,6 +323,13 @@ if __name__ == "__main__":
     teams_covered = sorted(set(p['team'] for p in profiles))
     print(f"Years covered: {years_covered}")
     print(f"Teams covered: {len(teams_covered)}")
+
+    print("\nRegenerating G League player coverage reference...")
+    reference = build_gleague_reference(roster_info, bart_by_name)
+    with open("data/gleague_players_reference.json", "w") as f:
+        json.dump(reference, f, separators=(",", ":"))
+    covered = sum(1 for r in reference if r['hasBartStats'])
+    print(f"Reference written: {len(reference)} players, {covered} with Bart Stats coverage")
 
     output_path = "data/team_trait_profiles.json"
     output_data = {

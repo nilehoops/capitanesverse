@@ -491,6 +491,10 @@
     <div class="avail-chart-canvas-wrap">
       <canvas id="availChartCanvas"></canvas>
     </div>
+    <div class="avail-chart-controls" style="margin-top:8px;">
+      <span id="availChartDaysLabel" style="white-space:nowrap;">All dates</span>
+      <input type="range" id="availChartDaysSlider" min="1" max="180" value="180" step="1">
+    </div>
   </div>
 </div>
 
@@ -1146,12 +1150,12 @@ function parseTrailingDate(note) {
 
 let availChart = null;
 
-function computeTopNAvailabilityOverTime(players, topN) {
+function computeTopNAvailabilityOverTime(players, topN, windowDays) {
   // Only players who are BOTH ranked in the top N AND have a note with a
   // real, parseable date are usable data points — an availabilityNote alone
   // isn't enough, since plenty of notes ("Summer League, no PT") don't
   // reflect an actual dated unavailability event.
-  const events = [];
+  let events = [];
   for (const p of players) {
     if (p.overallRank == null || p.overallRank > topN) continue;
     if (p.availabilitySimple !== 'no') continue;
@@ -1162,9 +1166,27 @@ function computeTopNAvailabilityOverTime(players, topN) {
 
   if (!events.length) return { labels: [], data: [], events: [] };
 
+  // Restrict to the most recent windowDays, when specified — lets a rapid
+  // cluster of same-week signings actually show as a steep drop, instead of
+  // being visually flattened across the entire offseason's date range.
+  if (windowDays != null) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - windowDays);
+    events = events.filter(ev => ev.date >= cutoff);
+    if (!events.length) return { labels: [], data: [], events: [] };
+  }
+
   const labels = [], data = [];
-  let remaining = topN;
-  // Starting point: full topN available, one day before the first dated event
+  // Starting count reflects everyone still available BEFORE this window's
+  // first event, not always the full topN — otherwise a narrow window would
+  // misleadingly start back at topN even when most players already signed
+  // earlier, outside the visible range.
+  const alreadyGoneBeforeWindow = players.filter(p =>
+    p.overallRank != null && p.overallRank <= topN && p.availabilitySimple === 'no' &&
+    parseTrailingDate(p.availabilityNote) && parseTrailingDate(p.availabilityNote) < events[0].date
+  ).length;
+  let remaining = topN - alreadyGoneBeforeWindow;
+
   const firstDate = new Date(events[0].date);
   firstDate.setDate(firstDate.getDate() - 1);
   labels.push(firstDate.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' }));
@@ -1179,7 +1201,11 @@ function computeTopNAvailabilityOverTime(players, topN) {
 }
 
 function renderAvailabilityChart(topN) {
-  const { labels, data } = computeTopNAvailabilityOverTime(cachedPlayers || [], topN);
+  const windowSlider = document.getElementById('availChartDaysSlider');
+  const windowDays = Number(windowSlider.value);
+  const isAll = windowDays >= Number(windowSlider.max);
+
+  const { labels, data } = computeTopNAvailabilityOverTime(cachedPlayers || [], topN, isAll ? null : windowDays);
 
   const ctx = document.getElementById('availChartCanvas').getContext('2d');
   if (availChart) availChart.destroy();
@@ -1210,6 +1236,10 @@ function renderAvailabilityChart(topN) {
   });
 }
 
+function currentTopN() {
+  return Number(document.getElementById('availChartNumber').value) || 120;
+}
+
 document.getElementById('availChartSlider').addEventListener('input', (e) => {
   document.getElementById('availChartNumber').value = e.target.value;
   renderAvailabilityChart(Number(e.target.value));
@@ -1218,6 +1248,13 @@ document.getElementById('availChartNumber').addEventListener('input', (e) => {
   const val = Math.max(5, Math.min(350, Number(e.target.value) || 120));
   document.getElementById('availChartSlider').value = val;
   renderAvailabilityChart(val);
+});
+document.getElementById('availChartDaysSlider').addEventListener('input', (e) => {
+  const max = Number(e.target.max);
+  const val = Number(e.target.value);
+  const label = document.getElementById('availChartDaysLabel');
+  label.textContent = val >= max ? 'All dates' : (val === 1 ? 'Today only' : `Last ${val} days`);
+  renderAvailabilityChart(currentTopN());
 });
 
 // Each button independently toggles strikethrough — struck-through statuses
@@ -2522,19 +2559,22 @@ document.getElementById('teamTraitMissingBtn').addEventListener('click', async (
     // attached, so this count never reflected them until now.
     const importedNorm = new Set(teamTraitData.importedPlayerNames || []);
 
-    const missing = reference.filter(r => !r.hasBartStats && !ourStatsNorm.has(r.norm) && !importedNorm.has(r.norm));
+    const missing = reference
+      .filter(r => !r.hasBartStats && !ourStatsNorm.has(r.norm) && !importedNorm.has(r.norm))
+      .sort((a, b) => (b.totalMinutes || 0) - (a.totalMinutes || 0));
 
     resultsDiv.style.display = 'block';
     resultsDiv.innerHTML = `
       <div style="font-size:13px; margin-bottom:8px;">
         <strong>${missing.length}</strong> of ${reference.length} G League players still have no usable stats
-        (checked against D1 Bart Stats and this site's own current data).
+        (checked against D1 Bart Stats and this site's own current data). Sorted by total minutes played —
+        higher up means more impact on the team-season averages if added.
       </div>
       <div style="max-height:200px; overflow-y:auto; border:1px solid #262626; font-size:12px;">
         ${missing.slice(0, 100).map(p => `
           <div style="display:flex; padding:3px 8px; border-bottom:1px solid #1A1A1A;">
             <span style="flex:1;">${p.name}</span>
-            <span style="color:#6A6A6A;">${p.mostRecentYear} · ${p.mostRecentTeam}</span>
+            <span style="color:#6A6A6A;">${(p.totalMinutes || 0).toLocaleString()} min · ${p.mostRecentYear} · ${p.mostRecentTeam}</span>
           </div>
         `).join('')}
         ${missing.length > 100 ? `<div style="padding:6px 8px; color:#6A6A6A;">...and ${missing.length - 100} more (export for the full list)</div>` : ''}
@@ -2542,7 +2582,12 @@ document.getElementById('teamTraitMissingBtn').addEventListener('click', async (
       <button class="mock-btn" id="teamTraitExportMissingBtn" style="margin-top:8px; padding:4px 10px; font-size:12px;">Export Full List (xlsx)</button>
     `;
     document.getElementById('teamTraitExportMissingBtn').addEventListener('click', () => {
-      const rows = missing.map(p => ({ 'Player Name': p.name, 'Most Recent Season': p.mostRecentYear, 'Most Recent Team(s)': p.mostRecentTeam }));
+      const rows = missing.map(p => ({
+        'Player Name': p.name,
+        'Total Minutes Played': p.totalMinutes || 0,
+        'Most Recent Season': p.mostRecentYear,
+        'Most Recent Team(s)': p.mostRecentTeam,
+      }));
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Missing Stats');
       XLSX.writeFile(wb, 'gleague_players_missing_stats.xlsx');

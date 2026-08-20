@@ -1230,7 +1230,10 @@ function renderAvailabilityChart(topN) {
       plugins: { legend: { display: false } },
       scales: {
         x: { ticks: { color: '#8A8A8A', font: { family: 'Lora' } }, grid: { color: '#1A1A1A' } },
-        y: { ticks: { color: '#8A8A8A', font: { family: 'Lora' } }, grid: { color: '#1A1A1A' }, beginAtZero: false },
+        y: {
+          ticks: { color: '#8A8A8A', font: { family: 'Lora' } }, grid: { color: '#1A1A1A' },
+          beginAtZero: false, max: topN,
+        },
       },
     },
   });

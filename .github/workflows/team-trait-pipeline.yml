@@ -35,4 +35,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update team trait profiles from database"
-          file_pattern: data/team_trait_profiles.json
+          file_pattern: data/team_trait_profiles.json data/gleague_players_reference.json

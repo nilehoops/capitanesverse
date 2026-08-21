@@ -315,7 +315,7 @@
     gap: 6px; align-items: center; font-size: 12px;
   }
   .mock-list-head { font-weight: 700; color: #9A9A9A; padding-bottom: 4px; border-bottom: 1px solid #333; }
-  .mock-list { max-height: 26vh; overflow-y: auto; }
+  .mock-list { max-height: 40vh; overflow-y: auto; }
   .mock-list-row { padding: 5px 0; border-bottom: 1px solid #1A1A1A; position: relative; }
   .mock-list-row .mock-add-btn {
     background: #128A3E; color: #fff; border: none; font-family: 'Lora', serif; font-weight: 700;
@@ -435,28 +435,12 @@
 
       <div class="mock-right">
         <div class="team-sw-title" style="text-align:left;">Relative Team<br>Strengths/Weaknesses</div>
+        <div id="mockStatlessIndicator" style="font-size:12px; margin-bottom:8px;"></div>
         <div id="mockTeamSwFullAlways"></div>
       </div>
     </div>
 
     <div id="teamTraitResults" style="display:none; padding:14px; background:#0A0A0A; border-top:1px solid #1A1A1A;"></div>
-
-    <div style="border-top:1px solid #1A1A1A;">
-      <button class="mock-btn" id="teamTraitDataToggle" style="width:100%; text-align:left; padding:8px 14px; font-size:12px; background:#0A0A0A; border:none; color:#6A6A6A; font-weight:700;">+ Team Trait Data (Export / Add Players / Check Missing Stats)</button>
-      <div id="teamTraitDataPanel" style="display:none; padding:10px 14px; background:#0A0A0A;">
-        <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-          <button class="mock-btn" id="teamTraitExportBtn" style="padding:4px 10px; font-size:12px;">Export</button>
-          <label class="mock-btn" style="padding:4px 10px; font-size:12px; cursor:pointer;">
-            Add Players (CSV/XLSX)
-            <input type="file" id="teamTraitImportFile" accept=".csv,.tsv,.xlsx,.xls" style="display:none;">
-          </label>
-          <button class="mock-btn" id="teamTraitMissingBtn" style="padding:4px 10px; font-size:12px;">Check Missing Stats</button>
-          <span id="teamTraitImportStatus" style="font-size:12px; color:#6A6A6A;"></span>
-        </div>
-        <div id="teamTraitMissingResults" style="display:none; margin-top:10px;"></div>
-        <div id="teamTraitImportPreview" style="display:none; margin-top:10px;"></div>
-      </div>
-    </div>
 
     <div class="mock-footer">
       <button class="mock-btn" id="teamTraitBtn">Team Trait Comparison</button>
@@ -2184,9 +2168,51 @@ const TEAM_SW_STATS = [
   { key: 'height', label: 'Height' }, // explicit size dimension
 ];
 const TEAM_SW_LOWER_IS_BETTER = new Set(['tov', 'drtg', 'tov40']);
+// Fields where pro-stint per-40 data is confirmed compatible with the
+// Bart-format stat of the same displayed dimension — verified scale match
+// (fta_rate is 0-1, Bart's ftr is 0-100, so it needs the *100 conversion
+// applied here) rather than assumed. Only covers what's actually shown in
+// TEAM_SW_STATS; several other pro-stint fields (orb40, ast40, etc.) don't
+// have a confirmed-compatible equivalent in that list and are deliberately
+// left out rather than guessed at.
+function proStintFallbackValue(player, key) {
+  const stints = player.proStints || [];
+  if (!stints.length) return null;
+  const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
+  if (key === 'threePct' && primary['3p_pct'] != null) return primary['3p_pct'];
+  if (key === 'ftr' && primary['fta_rate'] != null) return primary['fta_rate'] * 100;
+  return null;
+}
 function teamSwGetValue(player, key) {
   if (key === 'height') return player.heightIn;
-  return player.stats ? player.stats[key] : null;
+  const own = player.stats ? player.stats[key] : null;
+  if (own != null) return own;
+  return proStintFallbackValue(player, key);
+}
+// Where two players' underlying stat is measured in genuinely different
+// units (Bart's OR/DR/AST/TOV/BLK/STL are % of team plays; pro-stint only
+// has per-40 counting rates), the raw values can't be pooled together —
+// but each can still be percentile-ranked within its OWN appropriate peer
+// group, and those resulting percentiles (both 0-1, both "relative
+// standing among peers") combine meaningfully even though the numbers
+// they're derived from don't share a scale.
+const PRO_STINT_PER40_EQUIVALENT = {
+  orb: 'orb40', drb: 'drb40', ast: 'ast40', tov: 'tov40', blk: 'blk40', stl: 'stl40',
+};
+function getProStintPer40(player, per40Key) {
+  const stints = player.proStints || [];
+  if (!stints.length) return null;
+  const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
+  return primary[per40Key] != null ? primary[per40Key] : null;
+}
+function proStintPercentile(allPlayers, position, per40Key, value) {
+  if (value == null) return null;
+  const peers = allPlayers
+    .map(p => getProStintPer40(p, per40Key))
+    .filter((v, i) => v != null && allPlayers[i].position === position);
+  if (peers.length < 5) return null;
+  const better = TEAM_SW_LOWER_IS_BETTER.has(per40Key) ? peers.filter(v => v >= value).length : peers.filter(v => v <= value).length;
+  return better / peers.length;
 }
 function teamSwPercentile(allPlayers, position, key, value) {
   if (value == null) return null;
@@ -2211,7 +2237,12 @@ function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
     for (const stat of TEAM_SW_STATS) {
       if (stat.key === 'height') continue; // handled above, for every player
       const value = teamSwGetValue(p, stat.key);
-      const pct = teamSwPercentile(allPlayers, p.position, stat.key, value);
+      let pct = teamSwPercentile(allPlayers, p.position, stat.key, value);
+      if (pct == null && PRO_STINT_PER40_EQUIVALENT[stat.key]) {
+        const per40Key = PRO_STINT_PER40_EQUIVALENT[stat.key];
+        const per40Value = getProStintPer40(p, per40Key);
+        pct = proStintPercentile(allPlayers, p.position, per40Key, per40Value);
+      }
       if (pct == null) continue;
       if (!buckets.has(stat.label)) buckets.set(stat.label, []);
       buckets.get(stat.label).push(pct);
@@ -2319,6 +2350,26 @@ function renderMockTeamSW() {
           <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}<sup>th</sup> %ile <span style="color:#6A6A6A;font-weight:400;">(n=${a.sampleSize})</span></span>
         </div>`).join('')
     : '<div style="color:#8A8A8A;font-size:13px;">Not enough roster stat data yet.</div>';
+
+  // Players with genuinely no usable data (neither real stats nor a usable
+  // pro-stint fallback for any dimension) are still excluded from every
+  // line except Height — this makes that remaining gap explicit.
+  const rosterPlayers = mockRosterIds.map(id => cachedPlayers.find(p => p.id === id)).filter(Boolean);
+  const statless = rosterPlayers.filter(p =>
+    !TEAM_SW_STATS.some(stat =>
+      stat.key !== 'height' && (
+        teamSwGetValue(p, stat.key) != null ||
+        (PRO_STINT_PER40_EQUIVALENT[stat.key] && getProStintPer40(p, PRO_STINT_PER40_EQUIVALENT[stat.key]) != null)
+      )
+    )
+  );
+  const indicator = document.getElementById('mockStatlessIndicator');
+  if (rosterPlayers.length === 0 || statless.length === 0) {
+    indicator.innerHTML = '';
+  } else {
+    indicator.innerHTML = `<span style="color:#D81F2A;">${statless.length} of ${rosterPlayers.length} roster player(s) have no usable stats</span>
+      <span style="color:#6A6A6A;"> — not reflected in the averages below (except Height): ${statless.map(p => p.name).join(', ')}</span>`;
+  }
 }
 
 function mostRecentStintText(p) {
@@ -2380,342 +2431,6 @@ function renderMockPlayerList() {
       renderMockPlayerList();
     });
   });
-}
-
-document.getElementById('teamTraitDataToggle').addEventListener('click', () => {
-  const panel = document.getElementById('teamTraitDataPanel');
-  const isOpen = panel.style.display !== 'none';
-  panel.style.display = isOpen ? 'none' : 'block';
-});
-
-document.getElementById('teamTraitExportBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('teamTraitExportBtn');
-  const original = btn.textContent;
-  btn.textContent = 'Loading...';
-  try {
-    const data = await loadTeamTraitData();
-
-    // Sheet 1: one row per team-season, every nested field flattened into
-    // its own column — this is what actually needs to open cleanly in
-    // Excel, not the raw nested JSON structure.
-    const profileRows = data.profiles.map(p => {
-      const row = {
-        Year: p.year,
-        Team: p.team,
-        'Players Included': p.playersIncluded,
-        'Total Minutes': p.totalMinutes,
-        'Avg Height (in)': p.avgHeightIn,
-        'Avg Weight (lbs)': p.avgWeight,
-        'Guard %': p.positionMixPct?.Guard != null ? Math.round(p.positionMixPct.Guard * 1000) / 10 : null,
-        'Wing %': p.positionMixPct?.Wing != null ? Math.round(p.positionMixPct.Wing * 1000) / 10 : null,
-        'Big %': p.positionMixPct?.Big != null ? Math.round(p.positionMixPct.Big * 1000) / 10 : null,
-      };
-      for (const statKey of TEAM_TRAIT_SW_STATS) {
-        row[`SW: ${statKey}`] = p.swProfile?.[statKey] != null ? Math.round(p.swProfile[statKey] * 1000) / 10 : null;
-      }
-      const ref = p.teamStatsReference || {};
-      row['Ref: W'] = ref.W ?? null;
-      row['Ref: L'] = ref.L ?? null;
-      row['Ref: GP'] = ref.GP ?? null;
-      return row;
-    });
-
-    // Sheet 2: percentile pools flattened to position/stat/value rows —
-    // still readable as a real table, since a raw nested object of arrays
-    // has no sensible flat-row shape otherwise.
-    const poolRows = [];
-    for (const position in data.percentilePools) {
-      for (const statKey in data.percentilePools[position]) {
-        for (const value of data.percentilePools[position][statKey]) {
-          poolRows.push({ Position: position, Stat: statKey, Value: value });
-        }
-      }
-    }
-
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(profileRows), 'Team Season Profiles');
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(poolRows), 'Percentile Pools');
-    XLSX.writeFile(wb, 'team_trait_profiles.xlsx');
-  } catch (e) {
-    alert(`Export failed: ${e.message}`);
-  }
-  btn.textContent = original;
-});
-
-let teamTraitImportRows = []; // [{name, team, stats, position}] pending commit
-
-// Height-based position default — thresholds derived from our own roster's
-// real height/position distribution (Guard median 75in, Wing median 78in,
-// Big median 82in), backtested at 81.3% accuracy against our 347 already-
-// labeled players. Still overridable per row — this just saves re-selecting
-// "Guard" for every single imported player by hand on a large batch.
-function estimatePositionFromHeight(heightRaw) {
-  const parsed = parsePastedHeight(heightRaw); // "6-5" style, or null if unparseable
-  if (!parsed) return 'Guard';
-  const m = parsed.match(/^(\d+)-(\d+)$/);
-  if (!m) return 'Guard';
-  const totalIn = Number(m[1]) * 12 + Number(m[2]);
-  if (totalIn < 76) return 'Guard';
-  if (totalIn < 80) return 'Wing';
-  return 'Big';
-}
-
-function parseTeamTraitImportRows(rowsOfCells) {
-  const preview = document.getElementById('teamTraitImportPreview');
-  const status = document.getElementById('teamTraitImportStatus');
-  teamTraitImportRows = [];
-
-  for (const cells of rowsOfCells) {
-    if (!cells.length || !cells.some(c => c !== '' && c != null)) continue; // skip blank rows
-    const map = parseSheetRow(cells);
-    if (!map.name) continue; // not a real player row (e.g. a stray header)
-    const stats = {};
-    for (const statKey of TEAM_TRAIT_SW_STATS) {
-      if (map[statKey] != null) stats[statKey] = map[statKey];
-    }
-    const estimatedPosition = map.height ? estimatePositionFromHeight(map.height) : 'Guard';
-    teamTraitImportRows.push({ name: map.name, team: map.team || '', stats, position: estimatedPosition });
-  }
-
-  if (!teamTraitImportRows.length) {
-    status.textContent = 'No player rows found in this file.';
-    status.style.color = '#D81F2A';
-    preview.style.display = 'none';
-    return;
-  }
-
-  preview.style.display = 'block';
-  preview.innerHTML = `
-    <div style="font-size:12px; color:#8A8A8A; margin-bottom:6px;">
-      ${teamTraitImportRows.length} player(s) found. Position estimated from height (override any that look wrong):
-    </div>
-    <div style="max-height:220px; overflow-y:auto; border:1px solid #262626;">
-      ${teamTraitImportRows.map((row, i) => `
-        <div style="display:flex; align-items:center; gap:8px; padding:4px 8px; border-bottom:1px solid #1A1A1A; font-size:12px;">
-          <span style="flex:1;">${row.name}</span>
-          <span style="flex:1; color:#6A6A6A;">${row.team}</span>
-          <select data-import-row="${i}" style="background:#1A1A1A; color:#ECECEC; border:1px solid #333; font-size:12px;">
-            <option value="Guard" ${row.position === 'Guard' ? 'selected' : ''}>Guard</option>
-            <option value="Wing" ${row.position === 'Wing' ? 'selected' : ''}>Wing</option>
-            <option value="Big" ${row.position === 'Big' ? 'selected' : ''}>Big</option>
-          </select>
-        </div>
-      `).join('')}
-    </div>
-    <button class="mock-btn" id="teamTraitCommitImportBtn" style="margin-top:8px; padding:4px 10px; font-size:12px;">
-      Add ${teamTraitImportRows.length} Player(s) to Pools
-    </button>
-  `;
-  preview.querySelectorAll('[data-import-row]').forEach(sel => {
-    sel.addEventListener('change', () => {
-      teamTraitImportRows[Number(sel.dataset.importRow)].position = sel.value;
-    });
-  });
-  document.getElementById('teamTraitCommitImportBtn').addEventListener('click', commitTeamTraitImport);
-  status.textContent = '';
-}
-
-// Same suffix-tolerant convention already proven correct elsewhere (the
-// Python pipeline, the CSV import fix for Knox/McCullar-style cases) — the
-// Check Missing Stats handler was calling a plain normalize() that was
-// never actually defined in this scope, confirmed causing a real crash.
-function normalizePlayerName(name) {
-  const SUFFIXES = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
-  const cleaned = name.toLowerCase().replace(/[.,]/g, '');
-  const words = cleaned.split(/\s+/).filter(w => !SUFFIXES.has(w));
-  return words.join(' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-let gleagueReferenceData = null;
-async function loadGleagueReference() {
-  if (gleagueReferenceData) return gleagueReferenceData;
-  const resp = await fetch('data/gleague_players_reference.json');
-  if (!resp.ok) throw new Error(`Could not load reference data (${resp.status})`);
-  gleagueReferenceData = await resp.json();
-  return gleagueReferenceData;
-}
-
-document.getElementById('teamTraitMissingBtn').addEventListener('click', async () => {
-  const btn = document.getElementById('teamTraitMissingBtn');
-  const resultsDiv = document.getElementById('teamTraitMissingResults');
-  const original = btn.textContent;
-  btn.textContent = 'Checking...';
-  btn.disabled = true;
-
-  try {
-    const reference = await loadGleagueReference();
-    const teamTraitData = await loadTeamTraitData();
-
-    // Live check against our own current data — not frozen at reference-file
-    // generation time, since our own site's stats can be added to at any point.
-    const ourStatsNorm = new Set();
-    if (cachedPlayers) {
-      for (const p of cachedPlayers) {
-        if (p.stats && Object.values(p.stats).some(v => v != null)) {
-          ourStatsNorm.add(normalizePlayerName(p.name));
-        }
-      }
-    }
-
-    // Players added via the CSV/XLSX import — this was the actual gap:
-    // imports only ever updated raw pool values with no player identity
-    // attached, so this count never reflected them until now.
-    const importedNorm = new Set(teamTraitData.importedPlayerNames || []);
-
-    const missing = reference
-      .filter(r => !r.hasBartStats && !ourStatsNorm.has(r.norm) && !importedNorm.has(r.norm))
-      .sort((a, b) => (b.totalMinutes || 0) - (a.totalMinutes || 0));
-
-    resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = `
-      <div style="font-size:13px; margin-bottom:8px;">
-        <strong>${missing.length}</strong> of ${reference.length} G League players still have no usable stats
-        (checked against D1 Bart Stats and this site's own current data). Sorted by total minutes played —
-        higher up means more impact on the team-season averages if added.
-      </div>
-      <div style="max-height:200px; overflow-y:auto; border:1px solid #262626; font-size:12px;">
-        ${missing.slice(0, 100).map(p => `
-          <div style="display:flex; padding:3px 8px; border-bottom:1px solid #1A1A1A;">
-            <span style="flex:1;">${p.name}</span>
-            <span style="color:#6A6A6A;">${(p.totalMinutes || 0).toLocaleString()} min · ${p.mostRecentYear} · ${p.mostRecentTeam}</span>
-          </div>
-        `).join('')}
-        ${missing.length > 100 ? `<div style="padding:6px 8px; color:#6A6A6A;">...and ${missing.length - 100} more (export for the full list)</div>` : ''}
-      </div>
-      <button class="mock-btn" id="teamTraitExportMissingBtn" style="margin-top:8px; padding:4px 10px; font-size:12px;">Export Full List (xlsx)</button>
-    `;
-    document.getElementById('teamTraitExportMissingBtn').addEventListener('click', () => {
-      const rows = missing.map(p => ({
-        'Player Name': p.name,
-        'Total Minutes Played': p.totalMinutes || 0,
-        'Most Recent Season': p.mostRecentYear,
-        'Most Recent Team(s)': p.mostRecentTeam,
-      }));
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Missing Stats');
-      XLSX.writeFile(wb, 'gleague_players_missing_stats.xlsx');
-    });
-  } catch (e) {
-    resultsDiv.style.display = 'block';
-    resultsDiv.innerHTML = `<div style="color:#D81F2A;">Could not check: ${e.message}</div>`;
-  }
-
-  btn.textContent = original;
-  btn.disabled = false;
-});
-
-document.getElementById('teamTraitImportFile').addEventListener('change', (e) => {
-  const status = document.getElementById('teamTraitImportStatus');
-  const preview = document.getElementById('teamTraitImportPreview');
-  const file = e.target.files[0];
-  if (!file) { preview.style.display = 'none'; return; }
-
-  const isExcel = /\.xlsx?$/i.test(file.name);
-  const reader = new FileReader();
-  reader.onload = () => {
-    if (isExcel) {
-      const workbook = XLSX.read(reader.result, { type: 'array' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, raw: false, defval: '' });
-      parseTeamTraitImportRows(rows);
-    } else {
-      const delimiter = /\.tsv$/i.test(file.name) ? '\t' : ',';
-      const lines = String(reader.result).split('\n').map(l => l.replace(/\r$/, '')).filter(l => l.trim());
-      const rows = lines.map(line => delimiter === '\t' ? line.split('\t') : parseCsvLine(line));
-      parseTeamTraitImportRows(rows);
-    }
-  };
-  reader.onerror = () => { status.textContent = 'Could not read file.'; status.style.color = '#D81F2A'; };
-  if (isExcel) reader.readAsArrayBuffer(file);
-  else reader.readAsText(file);
-});
-
-async function commitTeamTraitImport() {
-  const status = document.getElementById('teamTraitImportStatus');
-  const btn = document.getElementById('teamTraitCommitImportBtn');
-  if (!teamTraitImportRows.length) return;
-
-  btn.disabled = true;
-  btn.textContent = 'Loading current data...';
-  let data;
-  try {
-    data = await loadTeamTraitData();
-  } catch (e) {
-    status.textContent = `Could not load current data: ${e.message}`;
-    status.style.color = '#D81F2A';
-    btn.disabled = false;
-    return;
-  }
-
-  // Light-scope import: adds new players into the percentile pools, AND
-  // tracks their normalized names separately — percentilePools only ever
-  // stored raw numeric values with no player identity attached, so without
-  // this list there was no way for Check Missing Stats to know an imported
-  // player existed at all. Confirmed this was the actual cause of imports
-  // not reducing the missing count.
-  if (!Array.isArray(data.importedPlayerNames)) data.importedPlayerNames = [];
-  let valuesAdded = 0;
-  for (const row of teamTraitImportRows) {
-    if (!data.percentilePools[row.position]) data.percentilePools[row.position] = {};
-    for (const statKey of TEAM_TRAIT_SW_STATS) {
-      if (row.stats[statKey] == null) continue;
-      if (!data.percentilePools[row.position][statKey]) data.percentilePools[row.position][statKey] = [];
-      data.percentilePools[row.position][statKey].push(row.stats[statKey]);
-      valuesAdded++;
-    }
-    const norm = normalizePlayerName(row.name);
-    if (!data.importedPlayerNames.includes(norm)) data.importedPlayerNames.push(norm);
-  }
-
-  if (!confirm(`Add ${teamTraitImportRows.length} player(s) to the percentile pools (${valuesAdded} stat values total)? This does not update the 89 team-season comparison profiles — those need a full pipeline re-run to reflect new players.`)) {
-    btn.disabled = false;
-    btn.textContent = `Add ${teamTraitImportRows.length} Player(s) to Pools`;
-    return;
-  }
-
-  if (!githubToken) {
-    githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
-    if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; btn.disabled = false; return; }
-  }
-
-  const path = 'data/team_trait_profiles.json';
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
-  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
-  btn.textContent = 'Saving...';
-  try {
-    const getResp = await fetch(apiUrl, { headers });
-    if (!getResp.ok) { status.textContent = `Could not read current file (${getResp.status}).`; status.style.color = '#D81F2A'; btn.disabled = false; return; }
-    const fileData = await getResp.json();
-
-    const putResp = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `Add ${teamTraitImportRows.length} players to team trait percentile pools`,
-        content: utf8ToBase64(JSON.stringify(data)),
-        sha: fileData.sha,
-      }),
-    });
-    if (!putResp.ok) {
-      const err = await putResp.json().catch(() => ({}));
-      status.textContent = `Save failed (${putResp.status}): ${err.message || 'unknown error'}`;
-      status.style.color = '#D81F2A';
-      btn.disabled = false;
-      btn.textContent = `Add ${teamTraitImportRows.length} Player(s) to Pools`;
-      return;
-    }
-    status.textContent = `Saved — ${teamTraitImportRows.length} players added to the pools.`;
-    status.style.color = '#3FCF5C';
-    teamTraitData = data;
-    document.getElementById('teamTraitImportPreview').style.display = 'none';
-    document.getElementById('teamTraitImportFile').value = '';
-    teamTraitImportRows = [];
-  } catch (err) {
-    status.textContent = `Network error: ${err.message}`;
-    status.style.color = '#D81F2A';
-    btn.disabled = false;
-    btn.textContent = `Add ${teamTraitImportRows.length} Player(s) to Pools`;
-  }
 }
 
 document.getElementById('teamTraitBtn').addEventListener('click', async () => {

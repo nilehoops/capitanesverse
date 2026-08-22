@@ -366,6 +366,7 @@ if __name__ == "__main__":
     # values beyond what this fresh computation produces are preserved as
     # import-contributed and merged back in, rather than discarded.
     imported_names = []
+    existing_playtypes_by_key = {}
     try:
         with open(output_path) as f:
             existing = json.load(f)
@@ -378,10 +379,35 @@ if __name__ == "__main__":
                 if len(values) > fresh_count:
                     fresh_pools[pos].setdefault(stat_key, [])
                     fresh_pools[pos][stat_key].extend(values[fresh_count:])
+        # This pipeline has no source for playtype data at all — it's merged
+        # in separately from a different database (playtype leaderboard
+        # files), not derivable from Team_Trait_Comp_Database.xlsx. Without
+        # explicitly carrying it forward here, every pipeline run would
+        # silently wipe it out, the same class of loss already caught once
+        # for importedPlayerNames.
+        for p in existing.get('profiles', []):
+            if p.get('playtypes'):
+                existing_playtypes_by_key[(p['year'], p['team'])] = p['playtypes']
         if imported_names:
             print(f"Preserved {len(imported_names)} previously-imported player name(s) from the existing file.")
+        if existing_playtypes_by_key:
+            print(f"Preserved playtype data for {len(existing_playtypes_by_key)} team-season(s) from the existing file.")
     except (FileNotFoundError, json.JSONDecodeError):
         pass  # no existing file yet, or it's malformed — nothing to preserve, proceed with fresh data only
+
+    fresh_keys = set()
+    for p in profiles:
+        key = (p['year'], p['team'])
+        fresh_keys.add(key)
+        if key in existing_playtypes_by_key:
+            p['playtypes'] = existing_playtypes_by_key[key]
+
+    # Playtype-only team-seasons (no roster/stats data exists for them, so
+    # this pipeline's own computation never produces a profile at all) need
+    # to be re-added directly, not just merged into an existing entry.
+    for key, playtypes in existing_playtypes_by_key.items():
+        if key not in fresh_keys:
+            profiles.append({'year': key[0], 'team': key[1], 'playtypes': playtypes})
 
     output_data = {
         'profiles': profiles,

@@ -1193,23 +1193,21 @@ async function renderStaffNotes() {
   try {
     const resp = await fetch('data/staff_notes.json');
     if (!resp.ok) throw new Error(`status ${resp.status}`);
-    const data = await resp.json();
-    const notes = data.comments || [];
+    const notes = await resp.json();
 
     container.innerHTML = notes.length
       ? notes.map(n => {
           const bodyTruncated = n.body.length > 140 ? n.body.slice(0, 140) + '…' : n.body;
           const date = new Date(n.createdAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+          const player = cachedPlayers ? cachedPlayers.find(p => p.id === n.playerId) : null;
+          const label = player ? player.name : n.playerId;
           return `<div class="staff-notes-row">
+            <a href="${escapeHtml(n.playerUrl)}">${escapeHtml(label)}</a>
             <span class="snr-body">${escapeHtml(bodyTruncated)}</span>
             <span class="snr-meta">${escapeHtml(n.author)} · ${date}</span>
           </div>`;
         }).join('')
       : '<div class="board-empty">No comments yet.</div>';
-
-    if (data.discussionUrl) {
-      container.innerHTML += `<a href="${escapeHtml(data.discussionUrl)}" target="_blank" rel="noopener" style="display:block;margin-top:8px;font-size:11px;color:#6A6A6A;">View full discussion →</a>`;
-    }
   } catch (e) {
     container.innerHTML = '<div class="board-empty">Could not load staff notes.</div>';
   }

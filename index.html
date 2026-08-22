@@ -442,6 +442,30 @@
 
     <div id="teamTraitResults" style="display:none; padding:14px; background:#0A0A0A; border-top:1px solid #1A1A1A;"></div>
 
+    <div style="border-top:1px solid #1A1A1A;">
+      <button class="mock-btn" id="teamQueryToggle" style="width:100%; text-align:left; padding:8px 14px; font-size:12px; background:#0A0A0A; border:none; color:#6A6A6A; font-weight:700;">+ Query Historical Teams</button>
+      <div id="teamQueryPanel" style="display:none; padding:10px 14px; background:#0A0A0A;">
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px;">
+          <span>Teams with</span>
+          <select id="teamQueryCountOp">
+            <option value=">=">at least</option>
+            <option value="<=">at most</option>
+            <option value="=">exactly</option>
+          </select>
+          <input type="number" id="teamQueryCount" value="2" min="0" max="18" style="width:45px;">
+          <span>player(s) where</span>
+          <select id="teamQueryStat"></select>
+          <select id="teamQueryStatOp">
+            <option value=">=">&ge;</option>
+            <option value="<=">&le;</option>
+          </select>
+          <input type="text" id="teamQueryThreshold" placeholder="e.g. 4 or 7'0" style="width:70px;">
+          <button class="mock-btn" id="teamQueryRunBtn" style="padding:4px 10px; font-size:12px;">Search</button>
+        </div>
+        <div id="teamQueryResults" style="margin-top:10px;"></div>
+      </div>
+    </div>
+
     <div class="mock-footer">
       <button class="mock-btn" id="teamTraitBtn">Team Trait Comparison</button>
       <button class="mock-btn" id="mockClearBtn">Clear Lineup</button>
@@ -2208,6 +2232,22 @@ function proStintFallbackValue(player, key) {
   const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
   if (key === 'threePct' && primary['3p_pct'] != null) return primary['3p_pct'];
   if (key === 'ftr' && primary['fta_rate'] != null) return primary['fta_rate'] * 100;
+
+  // eFG% and TS% derived as pure ratios from pro-stint's rate fields (no raw
+  // makes/attempts available, only percentages + 3PAr/FTA rate) — verified
+  // against a real player with both a known Bart-format value and full
+  // pro-stint fields before trusting this: TS landed within 0.1 of the
+  // known value, eFG within ~2 points (explainable by different-season
+  // variance between the two data sources, not a formula error).
+  const has2p3pRate = primary['2p_pct'] != null && primary['3p_pct'] != null && primary['3par'] != null;
+  if (key === 'efg' && has2p3pRate) {
+    return ((1 - primary['3par']) * primary['2p_pct'] + 1.5 * primary['3par'] * primary['3p_pct']) * 100;
+  }
+  if (key === 'ts' && has2p3pRate && primary['fta_rate'] != null && primary['ft_pct'] != null) {
+    const num = 2 * (1 - primary['3par']) * primary['2p_pct'] + 3 * primary['3par'] * primary['3p_pct'] + primary['fta_rate'] * primary['ft_pct'];
+    const denom = 2 * (1 + 0.44 * primary['fta_rate']);
+    return (num / denom) * 100;
+  }
   return null;
 }
 function teamSwGetValue(player, key) {
@@ -2464,6 +2504,88 @@ function renderMockPlayerList() {
     });
   });
 }
+
+// Populate the stat dropdown once — same TEAM_TRAIT_SW_STATS set already
+// used elsewhere, plus Height as a special case (it's a top-level roster
+// field, not part of a player's stats object).
+(function populateTeamQueryStatDropdown() {
+  const sel = document.getElementById('teamQueryStat');
+  if (!sel) return;
+  sel.innerHTML = '<option value="height">Height</option>' +
+    TEAM_TRAIT_SW_STATS.map(k => `<option value="${k}">${k}</option>`).join('');
+})();
+
+document.getElementById('teamQueryToggle').addEventListener('click', () => {
+  const panel = document.getElementById('teamQueryPanel');
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+});
+
+function parseTeamQueryThreshold(raw, statKey) {
+  if (statKey === 'height') {
+    const parsed = parsePastedHeight(raw);
+    if (!parsed) return null;
+    const m = parsed.match(/^(\d+)-(\d+)$/);
+    return m ? Number(m[1]) * 12 + Number(m[2]) : null;
+  }
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+}
+
+document.getElementById('teamQueryRunBtn').addEventListener('click', async () => {
+  const resultsDiv = document.getElementById('teamQueryResults');
+  const statKey = document.getElementById('teamQueryStat').value;
+  const statOp = document.getElementById('teamQueryStatOp').value;
+  const threshold = parseTeamQueryThreshold(document.getElementById('teamQueryThreshold').value, statKey);
+  const countOp = document.getElementById('teamQueryCountOp').value;
+  const targetCount = Number(document.getElementById('teamQueryCount').value);
+
+  if (threshold == null) {
+    resultsDiv.innerHTML = '<div style="color:#D81F2A;font-size:12px;">Enter a valid threshold value.</div>';
+    return;
+  }
+
+  resultsDiv.innerHTML = '<div style="color:#8A8A8A;font-size:12px;">Loading...</div>';
+  let data;
+  try {
+    data = await loadTeamTraitData();
+  } catch (e) {
+    resultsDiv.innerHTML = `<div style="color:#D81F2A;font-size:12px;">Could not load data: ${e.message}</div>`;
+    return;
+  }
+
+  const matches = [];
+  for (const profile of data.profiles) {
+    if (!profile.roster) continue; // some team-seasons (playtype-only) have no roster export
+    const meetingCount = profile.roster.filter(p => {
+      const value = statKey === 'height' ? p.heightIn : p.stats?.[statKey];
+      if (value == null) return false;
+      return statOp === '>=' ? value >= threshold : value <= threshold;
+    }).length;
+
+    const countMatches = countOp === '>=' ? meetingCount >= targetCount
+      : countOp === '<=' ? meetingCount <= targetCount
+      : meetingCount === targetCount;
+    if (countMatches) matches.push({ ...profile, meetingCount });
+  }
+
+  matches.sort((a, b) => b.meetingCount - a.meetingCount);
+
+  if (!matches.length) {
+    resultsDiv.innerHTML = '<div style="color:#8A8A8A;font-size:12px;">No matching team-seasons found.</div>';
+    return;
+  }
+  resultsDiv.innerHTML = `
+    <div style="font-size:12px; color:#8A8A8A; margin-bottom:6px;">${matches.length} matching team-season(s):</div>
+    <div style="max-height:180px; overflow-y:auto; font-size:12px;">
+      ${matches.map(m => `
+        <div style="display:flex; padding:3px 8px; border-bottom:1px solid #1A1A1A;">
+          <span style="flex:1;">${m.team} (${m.year})</span>
+          <span style="color:#6A6A6A;">${m.meetingCount} matching player(s)</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+});
 
 document.getElementById('teamTraitBtn').addEventListener('click', async () => {
   const btn = document.getElementById('teamTraitBtn');

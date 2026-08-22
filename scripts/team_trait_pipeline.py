@@ -228,6 +228,7 @@ def build_team_season_profiles(bart_by_name, roster_info, minutes_by_key, team_s
             height_weighted_sum, weight_weighted_sum, min_for_physicals = 0.0, 0.0, 0.0
             position_minutes = defaultdict(float)
             players_included = []
+            roster_players = []  # per-player detail, for team-wide queries (e.g. "teams with 2+ players above a stat threshold")
 
             for norm_name, info in roster_entries:
                 min_key = (year, norm_name)
@@ -246,12 +247,24 @@ def build_team_season_profiles(bart_by_name, roster_info, minutes_by_key, team_s
                     weight_weighted_sum += info['weight'] * mins
 
                 bart_row = bart_by_name.get(norm_name)
+                player_stats = {}
                 if bart_row and bart_row['gp'] is not None and info['position']:
                     for stat_key in SW_STATS:
-                        pct = percentile_rank(pools, info['position'], stat_key, get_sw_value(bart_row, stat_key))
+                        raw_value = get_sw_value(bart_row, stat_key)
+                        if raw_value is not None:
+                            player_stats[stat_key] = raw_value
+                        pct = percentile_rank(pools, info['position'], stat_key, raw_value)
                         if pct is not None:
                             weighted_sw[stat_key] += pct * mins
                             weighted_sw_weight[stat_key] += mins
+
+                roster_players.append({
+                    'name': info['name'],
+                    'position': info['position'],
+                    'heightIn': info['heightIn'],
+                    'minutes': round(mins),
+                    'stats': player_stats,
+                })
 
             if total_min == 0 or not players_included:
                 continue
@@ -271,6 +284,7 @@ def build_team_season_profiles(bart_by_name, roster_info, minutes_by_key, team_s
                 'avgWeight': round(weight_weighted_sum / total_min, 1) if weight_weighted_sum else None,
                 'positionMixPct': {pos: round(mins / total_min, 3) for pos, mins in position_minutes.items()},
                 'teamStatsReference': team_stats_by_key[stats_key],
+                'roster': roster_players,
             })
 
     return profiles

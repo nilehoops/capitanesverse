@@ -764,41 +764,67 @@ function teamTraitPercentile(pools, position, statKey, value) {
 // Mock roster has no real minutes (it's hypothetical) — equal-weighted
 // average across whichever slots are actually filled is the natural analog
 // to "weighted by minutes" when there's no real playing-time data to weight by.
+// Empirical minute-share-by-rotation-rank curve, derived from 93 real
+// G League team-seasons (Team Minutes sheet): the average share of total
+// team minutes each rotation rank actually represents, rank 1 (most-used
+// player) through rank 12. Used to give the mock roster's own S/W
+// calculation a minute-weighted estimate comparable to how the historical
+// team-season profiles are computed, instead of treating every filled
+// slot equally regardless of expected role.
+const EMPIRICAL_MINUTE_SHARE_BY_RANK = [
+  0.125, 0.113, 0.102, 0.093, 0.087, 0.080, 0.073, 0.064, 0.057, 0.049, 0.041, 0.033,
+];
+function estimateRosterMinuteWeights(filled) {
+  // Order by real overallRank (best first) as the rotation-position proxy —
+  // an objective, already-established signal, rather than roster-slot
+  // fill order, which just reflects whenever a player happened to be added.
+  const ranked = filled.slice().sort((a, b) => (a.overallRank ?? 9999) - (b.overallRank ?? 9999));
+  const rawShares = ranked.map((_, i) => EMPIRICAL_MINUTE_SHARE_BY_RANK[i] ?? EMPIRICAL_MINUTE_SHARE_BY_RANK[EMPIRICAL_MINUTE_SHARE_BY_RANK.length - 1]);
+  const total = rawShares.reduce((a, b) => a + b, 0);
+  const weightById = new Map();
+  ranked.forEach((p, i) => weightById.set(p.id, rawShares[i] / total)); // re-normalized to sum to 1 for however many slots are actually filled
+  return weightById;
+}
+
 function computeMockRosterTraitProfile(players, mockIds, pools) {
   const filled = mockIds.map(id => players.find(p => p.id === id)).filter(Boolean);
   if (!filled.length) return null;
+  const minuteWeights = estimateRosterMinuteWeights(filled);
 
-  const sums = {}, counts = {};
-  let heightSum = 0, heightCount = 0, weightSum = 0, weightCount = 0;
-  const positionCounts = {};
+  const sums = {}, weightTotals = {};
+  let heightSum = 0, heightWeight = 0, weightSum = 0, weightWeightTotal = 0;
+  const positionWeights = {};
+  let totalWeight = 0;
 
   for (const p of filled) {
-    if (p.position) positionCounts[p.position] = (positionCounts[p.position] || 0) + 1;
-    if (p.heightIn) { heightSum += p.heightIn; heightCount++; }
-    const w = parseFloat(p.biography?.weight);
-    if (!isNaN(w)) { weightSum += w; weightCount++; }
+    const w = minuteWeights.get(p.id);
+    totalWeight += w;
+    if (p.position) positionWeights[p.position] = (positionWeights[p.position] || 0) + w;
+    if (p.heightIn) { heightSum += p.heightIn * w; heightWeight += w; }
+    const wt = parseFloat(p.biography?.weight);
+    if (!isNaN(wt)) { weightSum += wt * w; weightWeightTotal += w; }
 
     for (const statKey of TEAM_TRAIT_SW_STATS) {
       const rawValue = p.stats ? p.stats[statKey] : null;
       const pct = teamTraitPercentile(pools, p.position, statKey, rawValue);
       if (pct != null) {
-        sums[statKey] = (sums[statKey] || 0) + pct;
-        counts[statKey] = (counts[statKey] || 0) + 1;
+        sums[statKey] = (sums[statKey] || 0) + pct * w;
+        weightTotals[statKey] = (weightTotals[statKey] || 0) + w;
       }
     }
   }
 
   const swProfile = {};
   for (const statKey of TEAM_TRAIT_SW_STATS) {
-    if (counts[statKey]) swProfile[statKey] = sums[statKey] / counts[statKey];
+    if (weightTotals[statKey]) swProfile[statKey] = sums[statKey] / weightTotals[statKey];
   }
   const positionMixPct = {};
-  for (const pos in positionCounts) positionMixPct[pos] = positionCounts[pos] / filled.length;
+  for (const pos in positionWeights) positionMixPct[pos] = positionWeights[pos] / totalWeight;
 
   return {
     swProfile,
-    avgHeightIn: heightCount ? heightSum / heightCount : null,
-    avgWeight: weightCount ? weightSum / weightCount : null,
+    avgHeightIn: heightWeight ? heightSum / heightWeight : null,
+    avgWeight: weightWeightTotal ? weightSum / weightWeightTotal : null,
     positionMixPct,
   };
 }
@@ -808,6 +834,7 @@ function computeMockRosterTraitProfile(players, mockIds, pools) {
 // into one score. Lower distance = more similar; returned as a 0-100 score
 // for display, not a statistically calibrated metric.
 function computeTraitSimilarity(mockProfile, historicalProfile) {
+  if (!historicalProfile.swProfile) return null; // playtype-only records (no S/W data) can't be compared here
   let sqSum = 0, dimCount = 0;
   for (const statKey of TEAM_TRAIT_SW_STATS) {
     const a = mockProfile.swProfile[statKey], b = historicalProfile.swProfile[statKey];
@@ -2224,14 +2251,18 @@ function teamSwPercentile(allPlayers, position, key, value) {
 
 function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
   const rosterPlayers = playerIds.map(id => allPlayers.find(p => p.id === id)).filter(Boolean);
-  const buckets = new Map(); // label -> array of percentiles
+  if (!rosterPlayers.length) return [];
+  const minuteWeights = estimateRosterMinuteWeights(rosterPlayers);
+  const buckets = new Map(); // label -> { weightedSum, weightTotal, count }
 
   for (const p of rosterPlayers) {
+    const w = minuteWeights.get(p.id);
     // Height applies to everyone regardless of NCAA stats availability.
     const heightPct = teamSwPercentile(allPlayers, p.position, 'height', teamSwGetValue(p, 'height'));
     if (heightPct != null) {
-      if (!buckets.has('Height')) buckets.set('Height', []);
-      buckets.get('Height').push(heightPct);
+      if (!buckets.has('Height')) buckets.set('Height', { weightedSum: 0, weightTotal: 0, count: 0 });
+      const b = buckets.get('Height');
+      b.weightedSum += heightPct * w; b.weightTotal += w; b.count++;
     }
 
     for (const stat of TEAM_SW_STATS) {
@@ -2244,15 +2275,16 @@ function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
         pct = proStintPercentile(allPlayers, p.position, per40Key, per40Value);
       }
       if (pct == null) continue;
-      if (!buckets.has(stat.label)) buckets.set(stat.label, []);
-      buckets.get(stat.label).push(pct);
+      if (!buckets.has(stat.label)) buckets.set(stat.label, { weightedSum: 0, weightTotal: 0, count: 0 });
+      const b = buckets.get(stat.label);
+      b.weightedSum += pct * w; b.weightTotal += w; b.count++;
     }
   }
 
   const aggregates = [];
-  for (const [label, pcts] of buckets) {
-    const avg = pcts.reduce((a, b) => a + b, 0) / pcts.length;
-    aggregates.push({ label, avgPct: Math.round(avg * 100), sampleSize: pcts.length });
+  for (const [label, b] of buckets) {
+    const avg = b.weightedSum / b.weightTotal;
+    aggregates.push({ label, avgPct: Math.round(avg * 100), sampleSize: b.count });
   }
   aggregates.sort((a, b) => b.avgPct - a.avgPct);
   return aggregates;

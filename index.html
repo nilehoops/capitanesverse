@@ -2587,6 +2587,75 @@ document.getElementById('teamQueryRunBtn').addEventListener('click', async () =>
   `;
 });
 
+// Top playtype strengths (by PPP rank, descending) — the "why" behind a
+// similarity match, not just an abstract percentage.
+function getTopPlaytypes(playtypes, n) {
+  if (!playtypes) return [];
+  return Object.entries(playtypes)
+    .filter(([, v]) => v.pppRank != null)
+    .sort((a, b) => b[1].pppRank - a[1].pppRank)
+    .slice(0, n)
+    .map(([name, v]) => ({ name, pppRank: v.pppRank, pctTimeRank: v.pctTimeRank }));
+}
+// One reference player per position, by minutes — a concrete "who played
+// this role" anchor rather than an abstract position-mix percentage.
+function getTopRosterByPosition(roster) {
+  if (!roster) return {};
+  const byPos = {};
+  for (const p of roster) {
+    if (!p.position) continue;
+    if (!byPos[p.position] || p.minutes > byPos[p.position].minutes) byPos[p.position] = p;
+  }
+  return byPos;
+}
+function fmtHeight(inches) {
+  return inches ? `${Math.floor(inches/12)}'${Math.round(inches%12)}"` : '';
+}
+
+function renderTraitMatchCard(hp, idx) {
+  const ref = hp.teamStatsReference || {};
+  const record = (ref.W != null && ref.L != null) ? `${ref.W}-${ref.L}` : '';
+  const netRtg = ref.NetRtg;
+  const netColor = netRtg == null ? '#8A8A8A' : netRtg >= 0 ? '#3FCF5C' : '#D81F2A';
+  const topPlaytypes = getTopPlaytypes(hp.playtypes, 2);
+  const topRoster = getTopRosterByPosition(hp.roster);
+  const rosterNames = ['Guard', 'Wing', 'Big'].map(pos => topRoster[pos]?.name).filter(Boolean);
+
+  return `<div id="traitCard${idx}" style="background:#141414;border:1px solid #262626;padding:10px;border-radius:4px;cursor:pointer;">
+    <div style="font-weight:700;">${hp.team} (${hp.year})</div>
+    <div style="color:#4FD1FF;font-size:13px;">${hp.similarity}% similar</div>
+    <div style="color:${netColor};font-size:12px;margin-top:4px;">
+      ${netRtg != null ? `Net Rtg ${netRtg >= 0 ? '+' : ''}${netRtg.toFixed(1)}` : 'Net Rtg N/A'}${record ? ` (${record})` : ''}
+    </div>
+    ${topPlaytypes.length ? `<div style="color:#8A8A8A;font-size:11px;margin-top:4px;">Strong in: ${topPlaytypes.map(pt => pt.name).join(', ')}</div>` : ''}
+    ${rosterNames.length ? `<div style="color:#8A8A8A;font-size:11px;margin-top:2px;">Key players: ${rosterNames.join(', ')}</div>` : ''}
+    <div id="traitDetail${idx}" style="display:none; margin-top:8px; padding-top:8px; border-top:1px solid #262626; font-size:11px;"></div>
+  </div>`;
+}
+
+function toggleTraitCardDetail(idx, hp) {
+  const detail = document.getElementById(`traitDetail${idx}`);
+  if (!detail) return;
+  if (detail.style.display === 'block') { detail.style.display = 'none'; return; }
+
+  const ref = hp.teamStatsReference || {};
+  const allPlaytypes = hp.playtypes
+    ? Object.entries(hp.playtypes).sort((a, b) => (b[1].pppRank ?? -1) - (a[1].pppRank ?? -1))
+    : [];
+  const fullRoster = (hp.roster || []).slice().sort((a, b) => b.minutes - a.minutes);
+
+  detail.innerHTML = `
+    <div style="margin-bottom:6px;"><strong>ORtg</strong> ${ref.OffRtg ?? 'N/A'} · <strong>DRtg</strong> ${ref.DefRtg ?? 'N/A'} · <strong>Pace</strong> ${ref.PACE ?? 'N/A'}</div>
+    ${allPlaytypes.length ? `<div style="margin-bottom:6px;"><strong>All playtypes (PPP rank):</strong><br>
+      ${allPlaytypes.map(([name, v]) => `${name}: ${v.pppRank != null ? Math.round(v.pppRank*100)+'%ile' : 'N/A'}`).join(' · ')}
+    </div>` : ''}
+    ${fullRoster.length ? `<div><strong>Full roster (by minutes):</strong><br>
+      ${fullRoster.map(p => `${p.name}${p.position ? ' ('+p.position+')' : ''}${p.heightIn ? ' '+fmtHeight(p.heightIn) : ''} — ${p.minutes}min`).join('<br>')}
+    </div>` : ''}
+  `;
+  detail.style.display = 'block';
+}
+
 document.getElementById('teamTraitBtn').addEventListener('click', async () => {
   const btn = document.getElementById('teamTraitBtn');
   const resultsDiv = document.getElementById('teamTraitResults');
@@ -2618,18 +2687,14 @@ document.getElementById('teamTraitBtn').addEventListener('click', async () => {
     } else {
       resultsDiv.innerHTML = `
         <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Most Similar Historical G League Teams</div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;">
-          ${scored.map(hp => {
-            const ref = hp.teamStatsReference || {};
-            const record = (ref.W != null && ref.L != null) ? `${ref.W}-${ref.L}` : '';
-            return `<div style="background:#141414;border:1px solid #262626;padding:10px;border-radius:4px;">
-              <div style="font-weight:700;">${hp.team} (${hp.year})</div>
-              <div style="color:#4FD1FF;font-size:13px;">${hp.similarity}% similar</div>
-              <div style="color:#8A8A8A;font-size:12px;margin-top:4px;">${record ? record + ' record · ' : ''}${hp.avgHeightIn ? Math.floor(hp.avgHeightIn/12) + "'" + Math.round(hp.avgHeightIn%12) + '"' : ''} avg height</div>
-            </div>`;
-          }).join('')}
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px;">
+          ${scored.map((hp, i) => renderTraitMatchCard(hp, i)).join('')}
         </div>
       `;
+      scored.forEach((hp, i) => {
+        const card = document.getElementById(`traitCard${i}`);
+        if (card) card.addEventListener('click', () => toggleTraitCardDetail(i, hp));
+      });
     }
   } catch (e) {
     resultsDiv.style.display = 'block';

@@ -704,22 +704,16 @@
 // the original draft-guide site used (no image is re-hosted, just referenced).
 // Agapy Santos plays in Brazil's NBB, not ESPN's NCAA system, so there's no
 // ESPN headshot to hotlink — his cell falls back to a blank tile.
-const ROSTER = [
-  { name: "Aly Khalifa",       id: "aly-khalifa",       photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4702739.png" },
-  { name: "Chad Baker-Mazara", id: "chad-baker-mazara", photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4700877.png" },
-  { name: "Terri Miller Jr.",  id: "terri-miller-jr",   photo: "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5175976.png" },
-  { name: "Agapy Santos",      id: "agapy-santos",      photo: "https://www.proballers.com/media/cache/headshot_600/player/headshot/264126.png" },
-];
-
 const ROSTER_SLOTS = 12; // 6x2 grid matching the header layout
-function renderRoster() {
+function renderRoster(players) {
+  const roster = players.filter(p => p.onRoster);
   const placeholderSvg = `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
   const photoSlots = [];
   const nameSlots = [];
   for (let i = 0; i < ROSTER_SLOTS; i++) {
-    const r = ROSTER[i];
+    const r = roster[i];
     if (r) {
-      photoSlots.push(r.photo ? `<img src="${r.photo}" alt="${r.name}">` : `<div class="noimg">${getInitials(r.name)}</div>`);
+      photoSlots.push(r.photoUrl ? `<img src="${r.photoUrl}" alt="${r.name}">` : `<div class="noimg">${getInitials(r.name)}</div>`);
       const inner = `<span class="roster-tag">${r.name.split(' ')[0]}</span>`;
       nameSlots.push(r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`);
     } else {
@@ -729,6 +723,7 @@ function renderRoster() {
   }
   document.getElementById('rosterPhotos').innerHTML = photoSlots.join('');
   document.getElementById('rosterNames').innerHTML = nameSlots.join('');
+  return roster;
 }
 
 function nameHtml(p) {
@@ -2401,13 +2396,14 @@ function renderTeamStrengthsWeaknessesInto(aggregates, linesElId, moreLinkElId, 
 }
 
 function renderTeamStrengthsWeaknesses(players) {
-  const aggregates = computeTeamStrengthsWeaknesses(players, ROSTER.map(r => r.id));
+  const rosterIds = players.filter(p => p.onRoster).map(p => p.id);
+  const aggregates = computeTeamStrengthsWeaknesses(players, rosterIds);
   renderTeamStrengthsWeaknessesInto(aggregates, 'teamSwLines', 'teamSwMoreLink', 'teamSwFull');
 }
 
 // ---- Mock Roster Builder ----
 const MOCK_SLOTS = 12;
-let mockRosterIds = ROSTER.map(r => r.id); // seeded with the real current roster as a starting point
+let mockRosterIds = []; // populated once real player data loads, from whichever players have onRoster set
 let mockPosFilter = 'All';
 let mockSearchTerm = '';
 
@@ -2985,7 +2981,6 @@ async function exportMockRosterPng() {
 
 document.getElementById('mockSaveBtn').addEventListener('click', exportMockRosterPng);
 
-renderRoster();
 function fetchJsonOrThrow(path) {
   return fetch(path + '?v=' + Date.now()).then(r => {
     if (!r.ok) throw new Error(`${path} returned HTTP ${r.status} — check it exists at that exact path in the repo`);
@@ -3000,6 +2995,8 @@ Promise.all([
     const detailById = new Map(detailData.map(d => [d.id, d]));
     const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
     cachedPlayers = players;
+    const roster = renderRoster(players);
+    mockRosterIds = roster.map(r => r.id);
     renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players); renderTeamStrengthsWeaknesses(players);
     renderStaffNotes();
     renderAvailabilityChart(Number(document.getElementById('availChartNumber').value) || 120);

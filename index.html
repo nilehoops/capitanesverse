@@ -156,6 +156,12 @@
   .notes-row { font-size: 16px; line-height: 1.6; break-inside: avoid; }
   .notes-row .note { font-size: 13px; font-weight: 400; color: #9A9A9A; margin-left: 6px; }
 
+  .staff-notes { flex: 1 1 0; min-width: 0; }
+  .staff-notes-rows { max-height: 300px; overflow-y: auto; }
+  .staff-notes-row { font-size: 13px; line-height: 1.5; padding-bottom: 10px; margin-bottom: 10px; border-bottom: 1px solid #1A1A1A; }
+  .staff-notes-row .snr-body { color: #9A9A9A; font-size: 12px; display: block; margin-top: 2px; }
+  .staff-notes-row .snr-meta { color: #5A5A5A; font-size: 11px; }
+
   .avail-chart { flex: 1 1 0; min-width: 0; }
   .avail-chart-title { font-size: 22px; border-bottom: 2px solid #ECECEC; padding-bottom: 4px; margin-bottom: 8px; }
   .avail-chart-controls { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 13px; }
@@ -488,6 +494,10 @@
   <div class="notes-left">
     <div class="notes-title">Availability Notes</div>
     <div class="notes-rows" id="notesRows"></div>
+  </div>
+  <div class="staff-notes">
+    <div class="notes-title">Staff Notes</div>
+    <div class="staff-notes-rows" id="staffNotesRows"></div>
   </div>
   <div class="avail-chart">
     <div class="avail-chart-title">Player Availability by Date</div>
@@ -1170,6 +1180,39 @@ function renderNotes(players) {
         `<a class="board-row notes-row" href="player.html?id=${p.id}">${nameHtml(p)}<span class="note">${p.availabilityNote}</span></a>`
       ).join('')
     : '<div class="board-empty">No notes yet.</div>';
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str ?? '';
+  return div.innerHTML;
+}
+
+async function renderStaffNotes() {
+  const container = document.getElementById('staffNotesRows');
+  try {
+    const resp = await fetch('data/staff_notes.json');
+    if (!resp.ok) throw new Error(`status ${resp.status}`);
+    const data = await resp.json();
+    const notes = data.comments || [];
+
+    container.innerHTML = notes.length
+      ? notes.map(n => {
+          const bodyTruncated = n.body.length > 140 ? n.body.slice(0, 140) + '…' : n.body;
+          const date = new Date(n.createdAt).toLocaleDateString('en-US', { month: 'numeric', day: 'numeric' });
+          return `<div class="staff-notes-row">
+            <span class="snr-body">${escapeHtml(bodyTruncated)}</span>
+            <span class="snr-meta">${escapeHtml(n.author)} · ${date}</span>
+          </div>`;
+        }).join('')
+      : '<div class="board-empty">No comments yet.</div>';
+
+    if (data.discussionUrl) {
+      container.innerHTML += `<a href="${escapeHtml(data.discussionUrl)}" target="_blank" rel="noopener" style="display:block;margin-top:8px;font-size:11px;color:#6A6A6A;">View full discussion →</a>`;
+    }
+  } catch (e) {
+    container.innerHTML = '<div class="board-empty">Could not load staff notes.</div>';
+  }
 }
 
 // Notes don't include a year — "8/6" style dates are assumed to be the
@@ -2960,6 +3003,7 @@ Promise.all([
     const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
     cachedPlayers = players;
     renderBoards(players); renderNotes(players); renderIncompleteData(players); setupSearch(players); renderTeamStrengthsWeaknesses(players);
+    renderStaffNotes();
     renderAvailabilityChart(Number(document.getElementById('availChartNumber').value) || 120);
   })
   .catch(err => {

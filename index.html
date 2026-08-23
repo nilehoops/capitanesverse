@@ -451,23 +451,9 @@
     <div style="border-top:1px solid #1A1A1A;">
       <button class="mock-btn" id="teamQueryToggle" style="width:100%; text-align:left; padding:8px 14px; font-size:12px; background:#0A0A0A; border:none; color:#6A6A6A; font-weight:700;">+ Query Historical Teams</button>
       <div id="teamQueryPanel" style="display:none; padding:10px 14px; background:#0A0A0A;">
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px;">
-          <span>Teams with</span>
-          <select id="teamQueryCountOp">
-            <option value=">=">at least</option>
-            <option value="<=">at most</option>
-            <option value="=">exactly</option>
-          </select>
-          <input type="number" id="teamQueryCount" value="2" min="0" max="18" style="width:45px;">
-          <span>player(s) where</span>
-          <select id="teamQueryStat"></select>
-          <select id="teamQueryStatOp">
-            <option value=">=">&ge;</option>
-            <option value="<=">&le;</option>
-          </select>
-          <input type="text" id="teamQueryThreshold" placeholder="e.g. 4 or 7'0" style="width:70px;">
-          <button class="mock-btn" id="teamQueryRunBtn" style="padding:4px 10px; font-size:12px;">Search</button>
-        </div>
+        <div id="teamQueryConditions"></div>
+        <button class="mock-btn" id="teamQueryAddConditionBtn" style="padding:4px 10px; font-size:12px; margin-top:6px;">+ Add Condition (AND)</button>
+        <button class="mock-btn" id="teamQueryRunBtn" style="padding:4px 10px; font-size:12px; margin-top:6px; margin-left:6px;">Search</button>
         <div id="teamQueryResults" style="margin-top:10px;"></div>
       </div>
     </div>
@@ -2250,8 +2236,10 @@ const TEAM_SW_STATS = [
   { key: 'blk', label: 'Blk', pct: true, scale100: true },
   { key: 'stl', label: 'Stl', pct: true, scale100: true },
   { key: 'ftr', label: 'FTR', pct: true, scale100: true },
+  { key: 'astToRatio', label: 'A:TO' },
   { key: 'rimPct', label: 'Rim%', pct: true },
   { key: 'threePct', label: '3P%', pct: true },
+  { key: 'ftPct', label: 'FT%', pct: true },
   { key: 'height', label: 'Height' }, // explicit size dimension
 ];
 const TEAM_SW_LOWER_IS_BETTER = new Set(['tov', 'drtg', 'tov40']);
@@ -2545,17 +2533,49 @@ function renderMockPlayerList() {
 // Populate the stat dropdown once — same TEAM_TRAIT_SW_STATS set already
 // used elsewhere, plus Height as a special case (it's a top-level roster
 // field, not part of a player's stats object).
-(function populateTeamQueryStatDropdown() {
-  const sel = document.getElementById('teamQueryStat');
-  if (!sel) return;
-  sel.innerHTML = '<option value="height">Height</option>' +
+let teamQueryConditionCount = 0;
+
+function renderTeamQueryCondition(idx) {
+  const statOptions = '<option value="height">Height</option>' +
     TEAM_TRAIT_SW_STATS.map(k => `<option value="${k}">${k}</option>`).join('');
-})();
+  return `<div class="team-query-row" data-idx="${idx}" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:12px; margin-bottom:6px;">
+    <span>Teams with</span>
+    <select class="tq-countop">
+      <option value=">=">at least</option>
+      <option value="<=">at most</option>
+      <option value="=">exactly</option>
+    </select>
+    <input type="number" class="tq-count" value="2" min="0" max="18" style="width:45px;">
+    <span>player(s) where</span>
+    <select class="tq-stat">${statOptions}</select>
+    <select class="tq-statop">
+      <option value=">=">&ge;</option>
+      <option value="<=">&le;</option>
+    </select>
+    <input type="text" class="tq-threshold" placeholder="e.g. 4 or 7'0" style="width:70px;">
+    ${idx > 0 ? '<button class="mock-btn tq-remove" style="padding:2px 8px; font-size:11px;">Remove</button>' : ''}
+  </div>`;
+}
+
+function addTeamQueryCondition() {
+  const container = document.getElementById('teamQueryConditions');
+  const div = document.createElement('div');
+  div.innerHTML = renderTeamQueryCondition(teamQueryConditionCount);
+  const row = div.firstElementChild;
+  container.appendChild(row);
+  const removeBtn = row.querySelector('.tq-remove');
+  if (removeBtn) removeBtn.addEventListener('click', () => row.remove());
+  teamQueryConditionCount++;
+}
 
 document.getElementById('teamQueryToggle').addEventListener('click', () => {
   const panel = document.getElementById('teamQueryPanel');
-  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  const opening = panel.style.display === 'none';
+  panel.style.display = opening ? 'block' : 'none';
+  if (opening && teamQueryConditionCount === 0) addTeamQueryCondition(); // start with one row
 });
+
+document.getElementById('teamQueryAddConditionBtn').addEventListener('click', addTeamQueryCondition);
 
 function parseTeamQueryThreshold(raw, statKey) {
   if (statKey === 'height') {
@@ -2570,16 +2590,22 @@ function parseTeamQueryThreshold(raw, statKey) {
 
 document.getElementById('teamQueryRunBtn').addEventListener('click', async () => {
   const resultsDiv = document.getElementById('teamQueryResults');
-  const statKey = document.getElementById('teamQueryStat').value;
-  const statOp = document.getElementById('teamQueryStatOp').value;
-  const threshold = parseTeamQueryThreshold(document.getElementById('teamQueryThreshold').value, statKey);
-  const countOp = document.getElementById('teamQueryCountOp').value;
-  const targetCount = Number(document.getElementById('teamQueryCount').value);
+  const rows = document.querySelectorAll('#teamQueryConditions .team-query-row');
 
-  if (threshold == null) {
-    resultsDiv.innerHTML = '<div style="color:#D81F2A;font-size:12px;">Enter a valid threshold value.</div>';
-    return;
+  const conditions = [];
+  for (const row of rows) {
+    const statKey = row.querySelector('.tq-stat').value;
+    const statOp = row.querySelector('.tq-statop').value;
+    const threshold = parseTeamQueryThreshold(row.querySelector('.tq-threshold').value, statKey);
+    const countOp = row.querySelector('.tq-countop').value;
+    const targetCount = Number(row.querySelector('.tq-count').value);
+    if (threshold == null) {
+      resultsDiv.innerHTML = '<div style="color:#D81F2A;font-size:12px;">Enter a valid threshold value for every condition.</div>';
+      return;
+    }
+    conditions.push({ statKey, statOp, threshold, countOp, targetCount });
   }
+  if (!conditions.length) return;
 
   resultsDiv.innerHTML = '<div style="color:#8A8A8A;font-size:12px;">Loading...</div>';
   let data;
@@ -2593,19 +2619,28 @@ document.getElementById('teamQueryRunBtn').addEventListener('click', async () =>
   const matches = [];
   for (const profile of data.profiles) {
     if (!profile.roster) continue; // some team-seasons (playtype-only) have no roster export
-    const meetingCount = profile.roster.filter(p => {
-      const value = statKey === 'height' ? p.heightIn : p.stats?.[statKey];
-      if (value == null) return false;
-      return statOp === '>=' ? value >= threshold : value <= threshold;
-    }).length;
 
-    const countMatches = countOp === '>=' ? meetingCount >= targetCount
-      : countOp === '<=' ? meetingCount <= targetCount
-      : meetingCount === targetCount;
-    if (countMatches) matches.push({ ...profile, meetingCount });
+    // AND logic: every condition must independently pass for this team to
+    // match — each is evaluated against the full roster on its own, not
+    // requiring the same player to satisfy multiple conditions at once.
+    const perConditionCounts = [];
+    let allPass = true;
+    for (const cond of conditions) {
+      const meetingCount = profile.roster.filter(p => {
+        const value = cond.statKey === 'height' ? p.heightIn : p.stats?.[cond.statKey];
+        if (value == null) return false;
+        return cond.statOp === '>=' ? value >= cond.threshold : value <= cond.threshold;
+      }).length;
+      const countMatches = cond.countOp === '>=' ? meetingCount >= cond.targetCount
+        : cond.countOp === '<=' ? meetingCount <= cond.targetCount
+        : meetingCount === cond.targetCount;
+      if (!countMatches) { allPass = false; break; }
+      perConditionCounts.push(meetingCount);
+    }
+    if (allPass) matches.push({ ...profile, perConditionCounts });
   }
 
-  matches.sort((a, b) => b.meetingCount - a.meetingCount);
+  matches.sort((a, b) => (b.perConditionCounts[0] ?? 0) - (a.perConditionCounts[0] ?? 0));
 
   if (!matches.length) {
     resultsDiv.innerHTML = '<div style="color:#8A8A8A;font-size:12px;">No matching team-seasons found.</div>';
@@ -2617,7 +2652,7 @@ document.getElementById('teamQueryRunBtn').addEventListener('click', async () =>
       ${matches.map(m => `
         <div style="display:flex; padding:3px 8px; border-bottom:1px solid #1A1A1A;">
           <span style="flex:1;">${m.team} (${m.year})</span>
-          <span style="color:#6A6A6A;">${m.meetingCount} matching player(s)</span>
+          <span style="color:#6A6A6A;">${m.perConditionCounts.join(' / ')} matching player(s)</span>
         </div>
       `).join('')}
     </div>

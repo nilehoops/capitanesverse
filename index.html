@@ -2256,6 +2256,8 @@ function proStintFallbackValue(player, key) {
   const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
   if (key === 'threePct' && primary['3p_pct'] != null) return primary['3p_pct'];
   if (key === 'ftr' && primary['fta_rate'] != null) return primary['fta_rate'] * 100;
+  if (key === 'astToRatio' && primary['asttov'] != null) return primary['asttov'];
+  if (key === 'ftPct' && primary['ft_pct'] != null) return primary['ft_pct'];
 
   // eFG% and TS% derived as pure ratios from pro-stint's rate fields (no raw
   // makes/attempts available, only percentages + 3PAr/FTA rate) — verified

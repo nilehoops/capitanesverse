@@ -32,10 +32,10 @@ CODE_TO_TEAM = {
     'MCC': 'Motor City Cruise', 'MHU': 'Memphis Hustle', 'MNE': 'Maine Celtics',
     'MXC': 'Ciudad de Mexico Capitanes', 'NOB': 'Noblesville Boom', 'OKL': 'Oklahoma City Blue',
     'ONT': 'Ontario Clippers', 'OSC': 'Osceola Magic', 'RAP': 'Raptors 905',
-    'RCR': 'Rip City Remix', 'RGV': 'Rio Grande Valley Vipers', 'SBL': 'Salt Lake City Stars',
-    'SCW': 'San Diego Clippers', 'SDC': 'Santa Cruz Warriors', 'SLC': 'Sioux Falls Skyforce',
-    'STO': 'South Bay Lakers', 'SXF': 'Stockton Kings', 'TEX': 'Texas Legends',
-    'VAL': 'Valley Suns', 'WCB': 'Westchester Knicks', 'WES': 'Windy City Bulls',
+    'RCR': 'Rip City Remix', 'RGV': 'Rio Grande Valley Vipers', 'SBL': 'South Bay Lakers',
+    'SCW': 'Santa Cruz Warriors', 'SDC': 'San Diego Clippers', 'SLC': 'Salt Lake City Stars',
+    'STO': 'Stockton Kings', 'SXF': 'Sioux Falls Skyforce', 'TEX': 'Texas Legends',
+    'VAL': 'Valley Suns', 'WCB': 'Windy City Bulls', 'WES': 'Westchester Knicks',
     'WIS': 'Wisconsin Herd',
 }
 # Rosters-code -> Minutes-code (verified via shared-player cross-reference, 30/31 at 100%)

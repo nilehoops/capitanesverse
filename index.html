@@ -2240,9 +2240,18 @@ const TEAM_SW_STATS = [
   { key: 'rimPct', label: 'Rim%', pct: true },
   { key: 'threePct', label: '3P%', pct: true },
   { key: 'ftPct', label: 'FT%', pct: true },
+  { key: 'leagueStrength', label: 'Lg Strength', directPctile: true }, // already a 0-1 percentile, not a raw stat to rank against peers
   { key: 'height', label: 'Height' }, // explicit size dimension
 ];
 const TEAM_SW_LOWER_IS_BETTER = new Set(['tov', 'drtg', 'tov40']);
+// Player's own competition-level percentile, from their highest-minutes
+// pro-stint. Only meaningful when we actually have it recorded.
+function getLeagueStrength(player) {
+  const stints = player.proStints || [];
+  if (!stints.length) return null;
+  const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
+  return primary.leagueStrengthPctile != null ? primary.leagueStrengthPctile : null;
+}
 // Fields where pro-stint per-40 data is confirmed compatible with the
 // Bart-format stat of the same displayed dimension — verified scale match
 // (fta_rate is 0-1, Bart's ftr is 0-100, so it needs the *100 conversion
@@ -2333,12 +2342,17 @@ function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
 
     for (const stat of TEAM_SW_STATS) {
       if (stat.key === 'height') continue; // handled above, for every player
-      const value = teamSwGetValue(p, stat.key);
-      let pct = teamSwPercentile(allPlayers, p.position, stat.key, value);
-      if (pct == null && PRO_STINT_PER40_EQUIVALENT[stat.key]) {
-        const per40Key = PRO_STINT_PER40_EQUIVALENT[stat.key];
-        const per40Value = getProStintPer40(p, per40Key);
-        pct = proStintPercentile(allPlayers, p.position, per40Key, per40Value);
+      let pct;
+      if (stat.directPctile) {
+        pct = getLeagueStrength(p); // already a 0-1 percentile — use as-is, don't re-rank against a peer pool
+      } else {
+        const value = teamSwGetValue(p, stat.key);
+        pct = teamSwPercentile(allPlayers, p.position, stat.key, value);
+        if (pct == null && PRO_STINT_PER40_EQUIVALENT[stat.key]) {
+          const per40Key = PRO_STINT_PER40_EQUIVALENT[stat.key];
+          const per40Value = getProStintPer40(p, per40Key);
+          pct = proStintPercentile(allPlayers, p.position, per40Key, per40Value);
+        }
       }
       if (pct == null) continue;
       if (!buckets.has(stat.label)) buckets.set(stat.label, { weightedSum: 0, weightTotal: 0, count: 0 });
@@ -2457,7 +2471,7 @@ function renderMockTeamSW() {
   const statless = rosterPlayers.filter(p =>
     !TEAM_SW_STATS.some(stat =>
       stat.key !== 'height' && (
-        teamSwGetValue(p, stat.key) != null ||
+        (stat.directPctile ? getLeagueStrength(p) != null : teamSwGetValue(p, stat.key) != null) ||
         (PRO_STINT_PER40_EQUIVALENT[stat.key] && getProStintPer40(p, PRO_STINT_PER40_EQUIVALENT[stat.key]) != null)
       )
     )

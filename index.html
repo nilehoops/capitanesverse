@@ -1820,6 +1820,12 @@ const LEAGUE_ALIAS_PS = {
 };
 let leagueStrengthMap = {};
 fetch('data/league_strength.json?v=' + Date.now()).then(r => r.json()).then(d => { leagueStrengthMap = d; });
+// Built from every (team, conf) pair already on record in players_index.json
+// — lets a plain "NCAA" league value on a pasted stint resolve to the
+// correct conference-specific league strength via the Team column, which
+// was already being captured but previously discarded unused.
+let teamConfLookup = {};
+fetch('data/team_conf_lookup.json?v=' + Date.now()).then(r => r.json()).then(d => { teamConfLookup = d; });
 
 // Same name-format variants (periods in initials, Jr./Jr, nicknames) hit
 // during the original bulk per40 merge — needed here too, or a paste of a
@@ -1902,10 +1908,22 @@ function buildStintFromCells(cells, columnOrder, fallbackSeason, defaultLeague) 
   const per = numFromIfPresent('per');
 
   const league = (map.league || defaultLeague || null)?.replace(/-/g, ' ').replace(/\s+/g, ' ').trim() || null;
-  const strength = leagueStrengthMap[league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[league]] ?? null;
+  const team = map.team || null;
+  // A plain "NCAA" league value has no conference-specific match in
+  // league_strength.json on its own (it only has entries like "NCAA SEC") —
+  // resolve the actual conference from Team first, when we have it on
+  // record, before falling back to the generic (and typically unmatched)
+  // lookup below.
+  let strength = null;
+  if (league && /^ncaa$/i.test(league) && team && teamConfLookup[team]) {
+    strength = leagueStrengthMap[`NCAA ${teamConfLookup[team]}`] ?? null;
+  }
+  if (strength == null) {
+    strength = leagueStrengthMap[league] ?? leagueStrengthMap[LEAGUE_ALIAS_PS[league]] ?? null;
+  }
   return {
     name: map.name || null, // only present in bulk rows; ignored by the single-row caller
-    league, season, leagueStrengthPctile: strength,
+    league, team, season, leagueStrengthPctile: strength,
     pts40, orb40, drb40, ast40, tov40, stl40, blk40,
     '3p_pct': p3pct, ft_pct: ftpct, '2p_pct': twoPct,
     asttov: astTov, '3par': threePar, fta_rate: ftaRate,

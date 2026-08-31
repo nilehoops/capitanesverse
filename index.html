@@ -2268,7 +2268,21 @@ function getLeagueStrength(player) {
   const stints = player.proStints || [];
   if (!stints.length) return null;
   const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
-  return primary.leagueStrengthPctile != null ? primary.leagueStrengthPctile : null;
+  if (primary.leagueStrengthPctile != null) return primary.leagueStrengthPctile;
+
+  // Resolved live in the browser, not baked into players_detail.json — this
+  // way the fix applies to whatever the current data actually contains,
+  // including anything added after this code ships, without ever requiring
+  // a replacement data file that risks overwriting newer work.
+  const league = primary.league;
+  if (league && /^ncaa$/i.test(league)) {
+    const team = primary.team || player.team || null; // prefer the stint's own team, fall back to the player's current one
+    if (team && teamConfLookup[team]) {
+      const resolved = leagueStrengthMap[`NCAA ${teamConfLookup[team]}`];
+      if (resolved != null) return resolved;
+    }
+  }
+  return null;
 }
 // Fields where pro-stint per-40 data is confirmed compatible with the
 // Bart-format stat of the same displayed dimension — verified scale match

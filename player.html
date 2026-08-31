@@ -626,7 +626,7 @@ function render(player, players) {
           ${shotDietHtml(players, player)}
           <div class="stat-table">
             ${Object.entries(STAT_LABELS).map(([key, label]) => {
-              const v = player.stats[key];
+              const v = player.stats?.[key];
               return v == null ? '' : `<div><span class="k">${label}:</span> <span class="v">${v}</span></div>`;
             }).join('')}
           </div>

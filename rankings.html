@@ -450,7 +450,7 @@ function upperBoundCount(sortedArr, v) { // count of elements <= v
 }
 
 function buildPctMap(peers, key, group) {
-  const getVal = (pl) => group === 'adv' ? pl.advanced[key] : pl.stats[key];
+  const getVal = (pl) => group === 'adv' ? pl.advanced?.[key] : pl.stats?.[key];
   const vals = peers.map(getVal).filter(v => v != null).sort((a, b) => a - b);
   const n = vals.length;
   const map = new Map();
@@ -612,12 +612,12 @@ function renderTable(allPlayers) {
 
   const bodyRows = rows.map((p, i) => {
     const coreCells = visCoreKeys.map(k => {
-      const raw = fmtRaw(p.stats[k]);
+      const raw = fmtRaw(p.stats?.[k]);
       const pct = corePctMaps[k].get(p.id);
       if (raw == null) return '<td>—</td>';
       return `<td><span style="color:${pctColor(pct)}">${raw}</span>${pct != null ? `<sub style="color:#8A8A8A;">${pct}</sub>` : ''}</td>`;
     }).join('');
-    const advCells = visAdvKeys.map(k => `<td>${p.advanced[k] != null ? p.advanced[k] : '—'}</td>`).join('');
+    const advCells = visAdvKeys.map(k => `<td>${p.advanced?.[k] != null ? p.advanced[k] : '—'}</td>`).join('');
     return `<tr>
       <td>${i + 1}</td>
       <td class="name"><a href="player.html?id=${p.id}">${p.onRoster ? `<span class="roster-tag">${p.name}</span>` : p.name}</a></td>

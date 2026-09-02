@@ -2264,21 +2264,84 @@ const TEAM_SW_STATS = [
 const TEAM_SW_LOWER_IS_BETTER = new Set(['tov', 'drtg', 'tov40']);
 // Player's own competition-level percentile, from their highest-minutes
 // pro-stint. Only meaningful when we actually have it recorded.
+// Normalizes a school name for comparison: lowercase, strips periods and
+// common suffixes/punctuation, collapses whitespace. Deliberately doesn't
+// touch "St." vs "State" — those are genuinely different, common school-name
+// patterns (Oregon St. vs Oregon State-type schools are real, distinct
+// programs), so normalizing them together risks a false match.
+function normalizeTeamName(name) {
+  return String(name).toLowerCase().replace(/[.,']/g, '').replace(/\s+/g, ' ').trim();
+}
+function levenshtein(a, b) {
+  const m = a.length, n = b.length;
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]);
+  for (let j = 0; j <= n; j++) dp[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i - 1] === b[j - 1] ? dp[i - 1][j - 1]
+        : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+    }
+  }
+  return dp[m][n];
+}
+// Conservative on purpose: an exact normalized match always wins first; the
+// edit-distance fallback only fires for genuinely close variants (typos,
+// stray characters), scaled to name length so short names need a near-exact
+// match while longer ones tolerate a couple more characters of drift.
+function resolveTeamConf(rawTeam) {
+  if (!rawTeam) return null;
+  const normalized = normalizeTeamName(rawTeam);
+  if (teamConfLookup[rawTeam]) return teamConfLookup[rawTeam]; // exact, unmodified match first
+  for (const knownTeam in teamConfLookup) {
+    if (normalizeTeamName(knownTeam) === normalized) return teamConfLookup[knownTeam];
+  }
+  let bestMatch = null, bestDist = Infinity;
+  for (const knownTeam in teamConfLookup) {
+    const knownNorm = normalizeTeamName(knownTeam);
+    const dist = levenshtein(normalized, knownNorm);
+    const threshold = Math.max(1, Math.floor(Math.min(normalized.length, knownNorm.length) * 0.15));
+    if (dist <= threshold && dist < bestDist) { bestDist = dist; bestMatch = knownTeam; }
+  }
+  return bestMatch ? teamConfLookup[bestMatch] : null;
+}
+
+// Parses "2024", "2024-25", "2024-2025", etc. into a comparable end year.
+// A "2024-25" range genuinely represents a later season than a bare "2024"
+// label, not an equal one — using just the first 4 digits would tie them.
+// Missing or unparseable seasons sort last: an unlabeled stint isn't
+// trustworthy as "most recent" just because it lacks a season entirely.
+function seasonStartYear(season) {
+  const s = String(season || '');
+  const rangeMatch = s.match(/^(\d{4})-(\d{2,4})/);
+  if (rangeMatch) {
+    const startYear = Number(rangeMatch[1]);
+    const endPart = rangeMatch[2];
+    const endYear = endPart.length === 2 ? Number(String(startYear).slice(0, 2) + endPart) : Number(endPart);
+    return endYear;
+  }
+  const singleMatch = s.match(/^(\d{4})/);
+  return singleMatch ? Number(singleMatch[1]) : -Infinity;
+}
 function getLeagueStrength(player) {
   const stints = player.proStints || [];
   if (!stints.length) return null;
-  const primary = stints.reduce((best, s) => (s.mins || 0) > (best.mins || 0) ? s : best, stints[0]);
-  if (primary.leagueStrengthPctile != null) return primary.leagueStrengthPctile;
+  // Most-recent-season, not highest-minutes — a player's current-season
+  // competition level is what belongs on their profile, not whichever
+  // season happened to have the most playing time.
+  const mostRecent = stints.reduce((best, s) =>
+    seasonStartYear(s.season) > seasonStartYear(best.season) ? s : best, stints[0]);
+  if (mostRecent.leagueStrengthPctile != null) return mostRecent.leagueStrengthPctile;
 
   // Resolved live in the browser, not baked into players_detail.json — this
   // way the fix applies to whatever the current data actually contains,
   // including anything added after this code ships, without ever requiring
   // a replacement data file that risks overwriting newer work.
-  const league = primary.league;
+  const league = mostRecent.league;
   if (league && /^ncaa$/i.test(league)) {
-    const team = primary.team || player.team || null; // prefer the stint's own team, fall back to the player's current one
-    if (team && teamConfLookup[team]) {
-      const resolved = leagueStrengthMap[`NCAA ${teamConfLookup[team]}`];
+    const team = mostRecent.team || player.team || null; // prefer the stint's own team, fall back to the player's current one
+    const conf = resolveTeamConf(team);
+    if (conf) {
+      const resolved = leagueStrengthMap[`NCAA ${conf}`];
       if (resolved != null) return resolved;
     }
   }

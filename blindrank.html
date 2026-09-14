@@ -971,7 +971,12 @@ Promise.all([
   fetchJsonOrThrow(USERS_PATH),
 ]).then(([indexData, detailData, users]) => {
   const detailById = new Map(detailData.map(d => [d.id, d]));
-  allPlayers = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
+  // Talent pool restricted to yes/unknown availability — players confirmed
+  // unavailable ('no') are excluded from the ranking pool entirely, not
+  // just hidden from view.
+  allPlayers = indexData
+    .filter(p => p.availabilitySimple !== 'no')
+    .map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
   renderLogin(users);
 }).catch(err => {
   document.getElementById('app').innerHTML = `<div class="login-wrap">Could not load data: ${err.message}</div>`;

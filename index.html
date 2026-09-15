@@ -140,6 +140,13 @@
   .board-row .n { margin-right: 6px; }
   .board-empty { font-size: 14px; font-weight: 400; color: #6A6A6A; }
   .roster-tag { background: #FFD400; color: #1631FF; padding: 0 3px; }
+  /* Training camp invites: inverse of the regular yellow-bg/blue-text tag
+     and dark photo square — blue box, yellow letters, so they read as a
+     distinct status at a glance. */
+  .roster-photos .camp-slot { background: #1631FF; }
+  .roster-photos .noimg.camp-slot { color: #FFD400; }
+  .roster-photos .placeholder.camp-slot svg { fill: #FFD400; }
+  .camp-tag { background: #1631FF; color: #FFD400; }
 
   .avail-toggle { padding: 4px 24px 14px; font-size: 17px; }
   .avail-toggle span { margin-right: 10px; }
@@ -599,6 +606,7 @@
     </div>
 
     <label class="addplayer-onroster"><input id="ap_onRoster" type="checkbox"> On Current Roster</label>
+    <label class="addplayer-onroster"><input id="ap_trainingCampInvite" type="checkbox"> Training Camp Invite</label>
 
     <div class="addplayer-group">
       <button type="button" class="addplayer-group-toggle" data-target="apg-bio">+ Biography</button>
@@ -693,6 +701,7 @@
 const ROSTER_SLOTS = 12; // 6x2 grid matching the header layout
 function renderRoster(players) {
   const roster = players.filter(p => p.onRoster);
+  const camp = players.filter(p => p.trainingCampInvite);
   const placeholderSvg = `<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-8 8-8s8 3.6 8 8"/></svg>`;
   const photoSlots = [];
   const nameSlots = [];
@@ -704,6 +713,20 @@ function renderRoster(players) {
       nameSlots.push(r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`);
     } else {
       photoSlots.push(`<div class="placeholder">${placeholderSvg}</div>`);
+      nameSlots.push('');
+    }
+  }
+  // Training camp invites: 3 extra slots, visually distinct (blue box,
+  // yellow letters — inverse of the regular roster's dark box / gray text)
+  // so they read as a different status at a glance, not just more roster spots.
+  for (let i = 0; i < 3; i++) {
+    const c = camp[i];
+    if (c) {
+      photoSlots.push(c.photoUrl ? `<img class="camp-slot" src="${c.photoUrl}" alt="${c.name}">` : `<div class="noimg camp-slot">${getInitials(c.name)}</div>`);
+      const inner = `<span class="roster-tag camp-tag">${c.name.split(' ')[0]}</span>`;
+      nameSlots.push(c.id ? `<a href="player.html?id=${c.id}">${inner}</a>` : `<span>${inner}</span>`);
+    } else {
+      photoSlots.push(`<div class="placeholder camp-slot">${placeholderSvg}</div>`);
       nameSlots.push('');
     }
   }
@@ -1593,7 +1616,7 @@ async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
 
 const INDEX_KEYS_AP = ['id','name','position','team','conf','class','heightIn','heightDisplay',
   'overallRank','positionalRank','tier','tierLabel','rankWithinTier','latino',
-  'availabilitySimple','availabilityNote','onRoster','photoUrl'];
+  'availabilitySimple','availabilityNote','onRoster','trainingCampInvite','photoUrl'];
 const DETAIL_KEYS_AP = ['id','stats','advanced','biography','proStints','videos','dataGapNote'];
 
 async function pushNewPlayerToFile(path, newPlayerSlice, playerName) {
@@ -2217,6 +2240,7 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
     advanced: advancedObj,
     biography,
     onRoster: document.getElementById('ap_onRoster').checked,
+    trainingCampInvite: document.getElementById('ap_trainingCampInvite').checked,
     photoUrl: photoUrl || null,
     videos: [],
   };
@@ -2229,6 +2253,7 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
      'ap_age','ap_weight','ap_agent','ap_hometown','ap_highSchool','ap_currentStatus','ap_photoUrl']
       .forEach(id => document.getElementById(id).value = '');
     document.getElementById('ap_onRoster').checked = false;
+    document.getElementById('ap_trainingCampInvite').checked = false;
     document.querySelectorAll('#apStatGrid input, #apAdvGrid input').forEach(el => el.value = '');
     document.getElementById('ap_pasteArea').value = '';
     pastedExtra = {};

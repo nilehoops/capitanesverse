@@ -2266,12 +2266,6 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
 // explicit size dimension, then averages per-stat across the whole roster
 // to surface team-wide patterns rather than any one player's profile.
 const TEAM_SW_STATS = [
-  { key: 'prpg', label: 'PRPG!' }, { key: 'dPrpg', label: 'D-PRPG' },
-  { key: 'bpm', label: 'BPM' }, { key: 'obpm', label: 'OBPM' }, { key: 'dbpm', label: 'DBPM' },
-  { key: 'ortg', label: 'ORtg' }, { key: 'drtg', label: 'D-Rtg' },
-  { key: 'usg', label: 'Usg', pct: true, scale100: true },
-  { key: 'efg', label: 'eFG', pct: true, scale100: true },
-  { key: 'ts', label: 'TS', pct: true, scale100: true },
   { key: 'orb', label: 'OR', pct: true, scale100: true },
   { key: 'drb', label: 'DR', pct: true, scale100: true },
   { key: 'ast', label: 'Ast', pct: true, scale100: true },
@@ -2280,12 +2274,79 @@ const TEAM_SW_STATS = [
   { key: 'stl', label: 'Stl', pct: true, scale100: true },
   { key: 'ftr', label: 'FTR', pct: true, scale100: true },
   { key: 'astToRatio', label: 'A:TO' },
-  { key: 'rimPct', label: 'Rim%', pct: true },
+  { key: 'twoPct', label: '2P%', pct: true },
   { key: 'threePct', label: '3P%', pct: true },
+  { key: 'threePRate', label: '3PAr', pct: true, scale100: true },
   { key: 'ftPct', label: 'FT%', pct: true },
+  { key: 'efg', label: 'eFG', pct: true, scale100: true },
+  { key: 'ts', label: 'TS', pct: true, scale100: true },
   { key: 'leagueStrength', label: 'Lg Strength', directPctile: true }, // already a 0-1 percentile, not a raw stat to rank against peers
   { key: 'height', label: 'Height' }, // explicit size dimension
+  { key: 'bmi', label: 'BMI' },
 ];
+// Combines NCAA (real makes/attempts) with every pro-stint (estimated
+// makes/attempts, derived from pts40 + shooting rates, since pro-stint data
+// only has rates/percentages, never raw counts). Sums true components
+// across all sources rather than averaging percentages — the only
+// mathematically correct way to combine rate stats across samples of very
+// different size. Verified the underlying FGA-derivation formula against a
+// real player before trusting it (0.222 attempts/min, a plausible value).
+function getCombinedCareerComponents(player) {
+  let twoPM = 0, twoPA = 0, threePM = 0, threePA = 0, ftm = 0, fta = 0;
+  let hasAny = false;
+
+  const s = player.stats;
+  if (s && s.twoPM != null && s.twoPA != null) {
+    twoPM += s.twoPM; twoPA += s.twoPA; hasAny = true;
+  }
+  if (s && s.threePM != null && s.threePA != null) {
+    threePM += s.threePM; threePA += s.threePA; hasAny = true;
+  }
+  if (s && s.ftMakes != null && s.ftAttempts != null) {
+    ftm += s.ftMakes; fta += s.ftAttempts; hasAny = true;
+  }
+
+  for (const stint of (player.proStints || [])) {
+    const { pts40, '3par': par3, '2p_pct': p2pct, '3p_pct': p3pct, fta_rate: ftaRate, ft_pct: ftPct, mins } = stint;
+    if ([pts40, par3, p2pct, p3pct, ftaRate, ftPct, mins].some(v => v == null)) continue;
+    const denom = 2 * (1 - par3) * p2pct + 3 * par3 * p3pct + ftaRate * ftPct;
+    if (!denom) continue;
+    const fga40 = pts40 / denom;
+    const estFga = fga40 * mins / 40;
+    const est3PA = par3 * estFga, est2PA = (1 - par3) * estFga;
+    const estFta = ftaRate * estFga;
+    twoPM += est2PA * p2pct; twoPA += est2PA;
+    threePM += est3PA * p3pct; threePA += est3PA;
+    ftm += estFta * ftPct; fta += estFta;
+    hasAny = true;
+  }
+
+  return hasAny ? { twoPM, twoPA, threePM, threePA, ftm, fta } : null;
+}
+function getCombinedCareerRate(player, key) {
+  const c = getCombinedCareerComponents(player);
+  if (!c) return null;
+  const fga = c.twoPA + c.threePA;
+  // Scale matches each stat's existing convention exactly: twoPct/threePct/ftPct
+  // are 0-1 everywhere else in this codebase (no scale100 flag); ftr/threePRate/
+  // efg/ts are 0-100 (scale100: true) — mismatching this would silently corrupt
+  // every percentile comparison downstream.
+  if (key === 'twoPct') return c.twoPA ? c.twoPM / c.twoPA : null;
+  if (key === 'threePct') return c.threePA ? c.threePM / c.threePA : null;
+  if (key === 'ftPct') return c.fta ? c.ftm / c.fta : null;
+  if (key === 'ftr') return fga ? (c.fta / fga) * 100 : null;
+  if (key === 'threePRate') return fga ? (c.threePA / fga) * 100 : null;
+  if (key === 'efg') return fga ? ((c.twoPM + c.threePM + 0.5 * c.threePM) / fga) * 100 : null;
+  if (key === 'ts') return (fga || c.fta) ? ((2 * c.twoPM + 3 * c.threePM + c.ftm) / (2 * (fga + 0.44 * c.fta))) * 100 : null;
+  return null;
+}
+function getBMI(player) {
+  const h = player.heightIn;
+  const wRaw = player.biography?.weight;
+  if (!h || !wRaw) return null;
+  const lbs = parseFloat(String(wRaw).match(/^\d+/)?.[0]);
+  return lbs ? (703 * lbs) / (h * h) : null;
+}
 const TEAM_SW_LOWER_IS_BETTER = new Set(['tov', 'drtg', 'tov40']);
 // Player's own competition-level percentile, from their highest-minutes
 // pro-stint. Only meaningful when we actually have it recorded.
@@ -2405,8 +2466,17 @@ function proStintFallbackValue(player, key) {
   }
   return null;
 }
+const COMBINED_CAREER_KEYS = new Set(['twoPct', 'threePct', 'ftPct', 'ftr', 'threePRate', 'efg', 'ts']);
 function teamSwGetValue(player, key) {
   if (key === 'height') return player.heightIn;
+  if (key === 'bmi') return getBMI(player);
+  if (COMBINED_CAREER_KEYS.has(key)) {
+    const combined = getCombinedCareerRate(player, key);
+    if (combined != null) return combined;
+    // Fall back to whichever single source exists, if combining wasn't possible
+    const own = player.stats ? player.stats[key] : null;
+    return own != null ? own : proStintFallbackValue(player, key);
+  }
   const own = player.stats ? player.stats[key] : null;
   if (own != null) return own;
   return proStintFallbackValue(player, key);

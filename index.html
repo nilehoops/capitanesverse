@@ -2518,16 +2518,16 @@ function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
   const rosterPlayers = playerIds.map(id => allPlayers.find(p => p.id === id)).filter(Boolean);
   if (!rosterPlayers.length) return [];
   const minuteWeights = estimateRosterMinuteWeights(rosterPlayers);
-  const buckets = new Map(); // label -> { weightedSum, weightTotal, count }
+  const buckets = new Map(); // label -> { weightedSum, weightTotal, count, contributingIds: Set }
 
   for (const p of rosterPlayers) {
     const w = minuteWeights.get(p.id);
     // Height applies to everyone regardless of NCAA stats availability.
     const heightPct = teamSwPercentile(allPlayers, p.position, 'height', teamSwGetValue(p, 'height'));
     if (heightPct != null) {
-      if (!buckets.has('Height')) buckets.set('Height', { weightedSum: 0, weightTotal: 0, count: 0 });
+      if (!buckets.has('Height')) buckets.set('Height', { weightedSum: 0, weightTotal: 0, count: 0, contributingIds: new Set() });
       const b = buckets.get('Height');
-      b.weightedSum += heightPct * w; b.weightTotal += w; b.count++;
+      b.weightedSum += heightPct * w; b.weightTotal += w; b.count++; b.contributingIds.add(p.id);
     }
 
     for (const stat of TEAM_SW_STATS) {
@@ -2545,16 +2545,17 @@ function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
         }
       }
       if (pct == null) continue;
-      if (!buckets.has(stat.label)) buckets.set(stat.label, { weightedSum: 0, weightTotal: 0, count: 0 });
+      if (!buckets.has(stat.label)) buckets.set(stat.label, { weightedSum: 0, weightTotal: 0, count: 0, contributingIds: new Set() });
       const b = buckets.get(stat.label);
-      b.weightedSum += pct * w; b.weightTotal += w; b.count++;
+      b.weightedSum += pct * w; b.weightTotal += w; b.count++; b.contributingIds.add(p.id);
     }
   }
 
   const aggregates = [];
   for (const [label, b] of buckets) {
     const avg = b.weightedSum / b.weightTotal;
-    aggregates.push({ label, avgPct: Math.round(avg * 100), sampleSize: b.count });
+    const missingPlayers = rosterPlayers.filter(p => !b.contributingIds.has(p.id)).map(p => p.name);
+    aggregates.push({ label, avgPct: Math.round(avg * 100), sampleSize: b.count, missingPlayers });
   }
   aggregates.sort((a, b) => b.avgPct - a.avgPct);
   return aggregates;
@@ -2579,7 +2580,7 @@ function renderTeamStrengthsWeaknessesInto(aggregates, linesElId, moreLinkElId, 
         + aggregates.map(a => `
           <div class="team-sw-full-row" style="break-inside:avoid;">
             <span>${a.label}</span>
-            <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}${ordinalSuffix(a.avgPct)} %ile <span style="color:#6A6A6A;font-weight:400;">(n=${a.sampleSize})</span></span>
+            <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}${ordinalSuffix(a.avgPct)} %ile <span style="color:#6A6A6A;font-weight:400;" title="${a.missingPlayers.length ? 'Not counted: ' + a.missingPlayers.join(', ') : ''}">(n=${a.sampleSize})</span></span>
           </div>`).join('')
         + `</div>`;
       full.style.display = 'block';
@@ -2650,7 +2651,7 @@ function renderMockTeamSW() {
     ? aggregates.map(a => `
         <div class="team-sw-full-row" style="border-bottom-color:#1A1A1A;">
           <span>${a.label}</span>
-          <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}<sup>th</sup> %ile <span style="color:#6A6A6A;font-weight:400;">(n=${a.sampleSize})</span></span>
+          <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}<sup>th</sup> %ile <span style="color:#6A6A6A;font-weight:400;" title="${a.missingPlayers.length ? 'Not counted: ' + a.missingPlayers.join(', ') : ''}">(n=${a.sampleSize})</span></span>
         </div>`).join('')
     : '<div style="color:#8A8A8A;font-size:13px;">Not enough roster stat data yet.</div>';
 

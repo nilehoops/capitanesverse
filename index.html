@@ -2823,6 +2823,27 @@ document.getElementById('teamQueryRunBtn').addEventListener('click', async () =>
     return;
   }
 
+  // Evaluate the same conditions against the user's own current mock
+  // roster, so historical matches have a direct reference point rather
+  // than being shown in isolation. Uses teamSwGetValue (combined-career +
+  // pro-stint fallbacks) since these are live players, not historical
+  // export data — a meaningfully different, fuller lookup than the raw
+  // p.stats access used for historical roster entries below.
+  const mockRosterPlayers = mockRosterIds.map(id => cachedPlayers?.find(p => p.id === id)).filter(Boolean);
+  const mockConditionCounts = conditions.map(cond => {
+    return mockRosterPlayers.filter(p => {
+      const value = cond.statKey === 'height' ? p.heightIn : teamSwGetValue(p, cond.statKey);
+      if (value == null) return false;
+      return cond.statOp === '>=' ? value >= cond.threshold : value <= cond.threshold;
+    }).length;
+  });
+  const mockAllPass = conditions.every((cond, i) => {
+    const count = mockConditionCounts[i];
+    return cond.countOp === '>=' ? count >= cond.targetCount
+      : cond.countOp === '<=' ? count <= cond.targetCount
+      : count === cond.targetCount;
+  });
+
   const matches = [];
   for (const profile of data.profiles) {
     if (!profile.roster) continue; // some team-seasons (playtype-only) have no roster export
@@ -2849,11 +2870,17 @@ document.getElementById('teamQueryRunBtn').addEventListener('click', async () =>
 
   matches.sort((a, b) => (b.perConditionCounts[0] ?? 0) - (a.perConditionCounts[0] ?? 0));
 
+  const mockSummaryHtml = mockRosterPlayers.length
+    ? `<div style="font-size:12px; margin-bottom:8px; padding:6px 8px; border-radius:3px; background:${mockAllPass ? '#0F2A16' : '#2A0F0F'}; color:${mockAllPass ? '#3FCF5C' : '#D81F2A'};">
+        Your mock roster ${mockAllPass ? 'matches' : 'does not match'} this query (${mockConditionCounts.join(' / ')} player(s) per condition).
+      </div>`
+    : '';
+
   if (!matches.length) {
-    resultsDiv.innerHTML = '<div style="color:#8A8A8A;font-size:12px;">No matching team-seasons found.</div>';
+    resultsDiv.innerHTML = mockSummaryHtml + '<div style="color:#8A8A8A;font-size:12px;">No matching team-seasons found.</div>';
     return;
   }
-  resultsDiv.innerHTML = `
+  resultsDiv.innerHTML = mockSummaryHtml + `
     <div style="font-size:12px; color:#8A8A8A; margin-bottom:6px;">${matches.length} matching team-season(s):</div>
     <div style="max-height:180px; overflow-y:auto; font-size:12px;">
       ${matches.map(m => `

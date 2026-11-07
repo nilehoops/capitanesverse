@@ -275,6 +275,9 @@ a { color: inherit; text-decoration: none; }
 .full-table-wrap { display: none; margin-top: 8px; overflow-x: auto; }
 .full-table-wrap.open { display: block; }
 .lab-filter { font-size:11px;padding:2px 4px;background:var(--bg);border:1px solid var(--border);color:var(--text); }
+.lab-tab { background:none;border:none;border-bottom:2px solid transparent;padding:8px 18px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted); }
+.lab-tab.active { border-bottom-color:#000;color:#000; }
+.lab-tab:hover { color:#000; }
 .full-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }
 .full-table-wrap th {
   background: var(--surface); color: var(--muted); font-weight: 600;
@@ -412,54 +415,70 @@ a { color: inherit; text-decoration: none; }
 </div><!-- /main -->
 
 <!-- Lineup Lab Modal -->
-<div id="lineupLabModal" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,.92);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 10px;">
-  <div style="background:#fff;border:1px solid var(--border);padding:20px 24px;max-width:900px;width:100%;position:relative;">
-    <button onclick="document.getElementById('lineupLabModal').style.display='none'" style="position:absolute;top:12px;right:16px;background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1;">×</button>
-    <div style="font-family:'Oswald',sans-serif;font-size:24px;font-weight:700;margin-bottom:14px;">Lineup Lab Tool</div>
-
-    <!-- Filter bar -->
-    <div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:12px;padding:10px;background:var(--surface);border:1px solid var(--border);margin-bottom:14px;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <label>Min. minutes:</label>
-        <input type="range" id="labMinsSlider" min="0" max="150" value="0" step="5" style="width:100px;accent-color:var(--blue);">
-        <span id="labMinsLabel" style="font-weight:700;min-width:28px;">0</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <label>Location:</label>
-        <select id="labLocation" class="lab-filter">
-          <option value="">All</option><option value="Home">Home</option><option value="Road">Away</option>
-        </select>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <label>Period:</label>
-        <select id="labPeriod" class="lab-filter">
-          <option value="0">Full game</option><option value="1">Q1</option><option value="2">Q2</option><option value="3">Q3</option><option value="4">Q4</option>
-        </select>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <label>Half:</label>
-        <select id="labHalf" class="lab-filter">
-          <option value="">Full game</option><option value="First Half">1st half</option><option value="Second Half">2nd half</option><option value="Overtime">OT</option>
-        </select>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <label>Last N games:</label>
-        <select id="labLastN" class="lab-filter">
-          <option value="0">All</option><option value="3">3</option><option value="5">5</option><option value="7">7</option><option value="10">10</option><option value="15">15</option>
-        </select>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px;">
-        <label>Outcome:</label>
-        <select id="labOutcome" class="lab-filter">
-          <option value="">All</option><option value="W">Wins</option><option value="L">Losses</option>
-        </select>
-      </div>
-      <div id="labStatus" style="color:var(--muted);font-style:italic;font-size:11px;"></div>
+<div id="lineupLabModal" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 10px;">
+  <div style="background:#fff;border:1px solid var(--border);max-width:960px;width:100%;position:relative;">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:2px solid #000;">
+      <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;">Lineup Lab Tool</div>
+      <button onclick="document.getElementById('lineupLabModal').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;">×</button>
     </div>
 
-    <!-- Results -->
-    <div id="lineupLabInner">
-      <div style="color:var(--muted);font-size:12px;">Adjust filters above to explore lineup combinations.</div>
+    <!-- Tabs -->
+    <div style="display:flex;border-bottom:1px solid var(--border);">
+      <button class="lab-tab active" data-tab="lineups" onclick="switchLabTab('lineups')">Lineup Data</button>
+      <button class="lab-tab" data-tab="players" onclick="switchLabTab('players')">Player Stats</button>
+      <button class="lab-tab" data-tab="wowy" onclick="switchLabTab('wowy')">WOWY</button>
+    </div>
+
+    <div style="padding:16px 20px;">
+
+      <!-- ── LINEUP DATA TAB ── -->
+      <div id="labTab-lineups">
+        <div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:12px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);margin-bottom:12px;">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <label>Min. min:</label>
+            <input type="range" id="labMinsSlider" min="0" max="150" value="0" step="5" style="width:90px;accent-color:var(--blue);">
+            <span id="labMinsLabel" style="font-weight:700;min-width:28px;">0</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;"><label>Location:</label>
+            <select id="labLocation" class="lab-filter"><option value="">All</option><option value="Home">Home</option><option value="Road">Away</option></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;"><label>Period:</label>
+            <select id="labPeriod" class="lab-filter"><option value="0">Full game</option><option value="1">Q1</option><option value="2">Q2</option><option value="3">Q3</option><option value="4">Q4</option></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;"><label>Half:</label>
+            <select id="labHalf" class="lab-filter"><option value="">Full game</option><option value="First Half">1st half</option><option value="Second Half">2nd half</option><option value="Overtime">OT</option></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;"><label>Last N:</label>
+            <select id="labLastN" class="lab-filter"><option value="0">All</option><option value="3">3</option><option value="5">5</option><option value="7">7</option><option value="10">10</option><option value="15">15</option></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;"><label>Outcome:</label>
+            <select id="labOutcome" class="lab-filter"><option value="">All</option><option value="W">Wins</option><option value="L">Losses</option></select>
+          </div>
+          <div id="labStatus" style="color:var(--muted);font-style:italic;font-size:11px;"></div>
+        </div>
+        <div id="lineupLabInner"><div style="color:var(--muted);font-size:12px;">Adjust filters to explore lineup combinations.</div></div>
+      </div>
+
+      <!-- ── PLAYER STATS TAB ── -->
+      <div id="labTab-players" style="display:none;">
+        <div id="playerStatsContent"><div style="color:var(--muted);font-size:12px;">Loading…</div></div>
+      </div>
+
+      <!-- ── WOWY TAB ── -->
+      <div id="labTab-wowy" style="display:none;">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
+          With Or Without You — compares weighted-average team net rating across all duo combinations
+          when each player is on or off the floor. Minutes-weighted using actual lineup data.
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;">
+          <label style="font-weight:600;">Select player:</label>
+          <select id="wowyPlayerSelect" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);" onchange="renderWowy()">
+            <option value="">— choose a player —</option>
+          </select>
+        </div>
+        <div id="wowyContent"></div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -615,6 +634,127 @@ async function fetchLabData() {
 function triggerLabFetch() {
   clearTimeout(labDebounce);
   labDebounce = setTimeout(fetchLabData, 400);
+}
+
+const MEX_DATA_PATH = 'data/mex_data.json';
+let mexData = null;
+
+async function loadMexData() {
+  if (mexData) return mexData;
+  const resp = await fetch(MEX_DATA_PATH + '?v=' + Date.now());
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  mexData = await resp.json();
+  return mexData;
+}
+
+function switchLabTab(tab) {
+  ['lineups','players','wowy'].forEach(t => {
+    document.getElementById(`labTab-${t}`).style.display = t === tab ? '' : 'none';
+    document.querySelectorAll('.lab-tab').forEach(el => {
+      el.classList.toggle('active', el.dataset.tab === tab);
+    });
+  });
+  if (tab === 'players') renderPlayerStats();
+  if (tab === 'wowy') renderWowyInit();
+}
+
+async function renderPlayerStats() {
+  const container = document.getElementById('playerStatsContent');
+  try {
+    const d = await loadMexData();
+    const players = d.players;
+    // Key columns to show — full set available but we pick the most meaningful
+    const cols = ['Player','MIN','TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','TOV%','STL%','BLK%','USG%','ORtg','DRtg','eDiff','PER'];
+    const colMap = { 'TS%':'TS%','eFG%':'eFG%','3P%':'3P%','FT%':'FT%','ORB%':'ORB%','DRB%':'DRB%','AST%':'AST%','TOV%':'TOV%','STL%':'STL%','BLK%':'BLK%','USG%':'USG%','ORtg':'ORtg','DRtg':'DRtg','eDiff':'eDiff','PER':'PER' };
+    const sorted = [...players].sort((a, b) => (b['MIN'] || 0) - (a['MIN'] || 0));
+    container.innerHTML = `<div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <thead><tr>${cols.map(c => `<th style="background:var(--surface);padding:4px 8px;border-bottom:1px solid var(--border);text-align:${c==='Player'?'left':'right'};white-space:nowrap;color:var(--muted);font-weight:600;">${c}</th>`).join('')}</tr></thead>
+        <tbody>${sorted.filter(p => (p['MIN']||0) > 1).map(p => `<tr>
+          ${cols.map(c => {
+            const v = p[c];
+            let disp = v == null ? '—' : typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(c.includes('%') || c === 'eDiff' || c === 'PER' ? 1 : 1)) : v;
+            const color = c === 'eDiff' ? (Number(v) >= 0 ? 'var(--green)' : 'var(--red)') : '';
+            return `<td style="padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='Player'?'left':'right'};${color?'color:'+color+';font-weight:700;':''}">${disp}</td>`;
+          }).join('')}
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);font-size:12px;">Could not load player stats: ${esc(e.message)}</div>`;
+  }
+}
+
+async function renderWowyInit() {
+  try {
+    const d = await loadMexData();
+    const sel = document.getElementById('wowyPlayerSelect');
+    if (sel.options.length === 1) {
+      d.wowy.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.abbrev;
+        opt.textContent = w.player;
+        sel.appendChild(opt);
+      });
+    }
+    if (!document.getElementById('wowyContent').innerHTML) {
+      document.getElementById('wowyContent').innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>';
+    }
+  } catch(e) {
+    document.getElementById('wowyContent').innerHTML = `<div style="color:var(--red);font-size:12px;">Could not load WOWY data: ${esc(e.message)}</div>`;
+  }
+}
+
+async function renderWowy() {
+  const abbrev = document.getElementById('wowyPlayerSelect').value;
+  const container = document.getElementById('wowyContent');
+  if (!abbrev) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>'; return; }
+  const d = await loadMexData();
+  const w = d.wowy.find(x => x.abbrev === abbrev);
+  if (!w) return;
+
+  // Also get all lineups involving this player for context
+  const withLineups = d.lineups.filter(c => c.lineup.includes(abbrev)).sort((a,b) => b.NetRtg - a.NetRtg);
+  const withoutLineups = d.lineups.filter(c => !c.lineup.includes(abbrev)).sort((a,b) => b.NetRtg - a.NetRtg);
+
+  const statBlock = (label, stats, color) => `
+    <div style="padding:12px;border:1px solid var(--border);flex:1;min-width:140px;">
+      <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:${color};margin-bottom:8px;">${label}</div>
+      ${[['Net Rtg', stats.NetRtg, true],['Off Rtg', stats.OffRtg, false],['Def Rtg', stats.DefRtg, false],['Minutes', stats.MIN, false],['Combos', stats.combos, false]]
+        .map(([lbl, val, signed]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;border-bottom:1px solid var(--border);">
+          <span style="color:var(--muted);">${lbl}</span>
+          <span style="font-weight:700;color:${lbl==='Net Rtg'?(Number(val)>=0?'var(--green)':'var(--red)'):''}">${val==null?'—':typeof val==='number'?val.toFixed(1):val}</span>
+        </div>`).join('')}
+    </div>`;
+
+  container.innerHTML = `
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
+      ${statBlock(`With ${w.player}`, w.with, 'var(--green)')}
+      ${statBlock(`Without ${w.player}`, w.without, 'var(--red)')}
+      <div style="padding:12px;border:2px solid #000;flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Net Rtg Difference</div>
+        <div style="font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;color:${(w.with.NetRtg-w.without.NetRtg)>=0?'var(--green)':'var(--red)'};">
+          ${(w.with.NetRtg-w.without.NetRtg)>=0?'+':''}${(w.with.NetRtg-w.without.NetRtg).toFixed(1)}
+        </div>
+      </div>
+    </div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Best combos with ${w.player}</div>
+    <div style="overflow-x:auto;margin-bottom:14px;">${buildWowyMiniTable(withLineups.slice(0,8))}</div>
+    <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Best combos without ${w.player}</div>
+    <div style="overflow-x:auto;">${buildWowyMiniTable(withoutLineups.slice(0,5))}</div>`;
+}
+
+function buildWowyMiniTable(rows) {
+  if (!rows.length) return '<div style="color:var(--muted);font-size:11px;">No combinations.</div>';
+  const cols = ['lineup','MIN','NetRtg','OffRtg','DefRtg','TS%','TOV%','OREB%'];
+  return `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <thead><tr>${cols.map(c=>`<th style="background:var(--surface);padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};color:var(--muted);">${c}</th>`).join('')}</tr></thead>
+    <tbody>${rows.map(r=>`<tr>${cols.map(c=>{
+      const v=r[c];
+      const disp = v==null?'—':typeof v==='number'?v.toFixed(1):v;
+      const color = c==='NetRtg'?(Number(v)>=0?'var(--green)':'var(--red)'):'';
+      return `<td style="padding:2px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};${color?'color:'+color+';font-weight:700;':''}">${disp}</td>`;
+    }).join('')}</tr>`).join('')}</tbody>
+  </table>`;
 }
 
 function renderLabContent(data, minMins) {
@@ -963,7 +1103,7 @@ document.querySelector('.lineup-lab-btn').addEventListener('click', () => {
   document.getElementById('lineupLabModal').style.display = 'flex';
   if (!window._labEverOpened) {
     window._labEverOpened = true;
-    fetchLabData();
+    fetchLabData(); // fetch live lineup data for the lineups tab
   }
 });
 loadTeamStats('full');

@@ -7,16 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #000;
-  --surface: #0D0D0D;
-  --border: #1A1A1A;
+  --bg: #fff;
+  --surface: #F4F4F4;
+  --border: #DEDEDE;
   --yellow: #FFD400;
   --blue: #1631FF;
   --green: #18AF4A;
   --red: #D81F2A;
-  --text: #ECECEC;
-  --muted: #6A6A6A;
-  --dim: #9A9A9A;
+  --text: #0A0A0A;
+  --muted: #555;
+  --dim: #333;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: var(--bg); color: var(--text); font-family: 'Lora', serif; font-size: 13px; }
@@ -91,7 +91,7 @@ a { color: inherit; text-decoration: none; }
 .staff-feed {
   overflow-y: auto;
   max-height: 170px;
-  background: #111;
+  background: var(--surface);
   padding: 6px 8px;
 }
 .staff-feed-row { font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border); color: var(--dim); }
@@ -278,7 +278,10 @@ a { color: inherit; text-decoration: none; }
 <body>
 
 <header class="page-header">
-  <div class="page-title">2027 Capitanes In-Season Analytics &amp; Research</div>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div class="page-title">2027 Capitanes In-Season Analytics &amp; Research</div>
+    <a href="index.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;flex-shrink:0;">⇄ Offseason Tool</a>
+  </div>
   <div class="page-search">
     <span>Search:</span>
     <input id="mainSearch" type="text" placeholder="(players or teams)">
@@ -386,7 +389,7 @@ a { color: inherit; text-decoration: none; }
 
 <!-- Lineup Lab Modal -->
 <div id="lineupLabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;">
-  <div style="background:#111;border:1px solid var(--border);padding:24px;max-width:700px;width:92%;position:relative;max-height:85vh;overflow-y:auto;">
+  <div style="background:var(--surface);border:1px solid var(--border);padding:24px;max-width:700px;width:92%;position:relative;max-height:85vh;overflow-y:auto;">
     <button onclick="document.getElementById('lineupLabModal').style.display='none'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">×</button>
     <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;margin-bottom:14px;color:var(--yellow);">Lineup Lab Tool</div>
     <div id="lineupLabInner" style="font-size:12px;color:var(--dim);">Click any lineup combination on the main page to explore its full stats breakdown here.</div>
@@ -396,6 +399,18 @@ a { color: inherit; text-decoration: none; }
 <script>
 const DATA_PATH = 'data/lineup_data.json';
 const STAFF_PATH = 'data/staff_notes.json';
+
+// Player cross-reference is pre-built by fetch_lineup_data.py and stored
+// in lineup_data.json under "playerXref" — no fuzzy matching needed here.
+let playerXref = {}; // abbrev name -> { id, name, photoUrl, position, overallRank }
+
+function photoForLineupName(abbrevName) {
+  return playerXref[abbrevName]?.photoUrl || null;
+}
+
+function idForLineupName(abbrevName) {
+  return playerXref[abbrevName]?.id || null;
+}
 
 const MIN_DUO = 30, MIN_TRIO = 25, MIN_QUAD = 20, MIN_FIVE = 15;
 
@@ -415,45 +430,62 @@ function fmt(v, dp=1) {
   return (v >= 0 ? '+' : '') + Number(v).toFixed(dp);
 }
 
-// Person silhouette SVG
+// Person silhouette SVG (fallback when no photo)
 function personSvg(size=22) {
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="#ECECEC">
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="#111">
     <circle cx="12" cy="7.5" r="4.5"/>
     <path d="M3.5 21c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5"/>
   </svg>`;
 }
 
-// Group of N people icons, slightly overlapping for larger groups
-function groupIcons(n, size=22) {
-  const icons = [];
-  for (let i = 0; i < n; i++) icons.push(personSvg(size));
-  return `<div class="lc-icons" style="justify-content:center;">${icons.join('')}</div>`;
+// Photo or silhouette for a single player, optionally linked to their profile
+function playerIcon(abbrevName, size=22, linkToProfile=false) {
+  const photo = photoForLineupName(abbrevName);
+  const id = idForLineupName(abbrevName);
+  const imgHtml = photo
+    ? `<img src="${esc(photo)}" alt="${esc(abbrevName)}"
+        style="width:${size}px;height:${size}px;border-radius:50%;object-fit:cover;object-position:top;"
+        onerror="this.style.display='none'">`
+    : personSvg(size);
+  if (linkToProfile && id) {
+    return `<a href="player.html?id=${esc(id)}" title="${esc(abbrevName)}" onclick="event.stopPropagation()">${imgHtml}</a>`;
+  }
+  return imgHtml;
+}
+
+// Group icons using real player names from the combo, each linking to their profile
+function groupIcons(names, size=22) {
+  if (!names || !names.length) {
+    return `<div class="lc-icons">${Array(2).fill(personSvg(size)).join('')}</div>`;
+  }
+  return `<div class="lc-icons">${names.map(n => playerIcon(n, size, true)).join('')}</div>`;
 }
 
 function rotationPersonSvg(size=28) {
-  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="#ECECEC">
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="#111">
     <circle cx="12" cy="7.5" r="4.5"/>
     <path d="M3.5 21c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5"/>
   </svg>`;
 }
 
 function buildRotationPlayer(name, mins) {
+  const icon = name && name !== '—'
+    ? playerIcon(name, 32)
+    : rotationPersonSvg(32);
   return `<div class="rot-player">
-    ${rotationPersonSvg(28)}
+    ${icon}
     <span class="rot-player-mins">${mins}</span>
     <span class="rot-player-name">${esc(name)}</span>
   </div>`;
 }
 
 function buildLineupCard(combo, n) {
-  const names = combo.GROUP_NAME.split(' - ');
-  const shortNames = names.map(p => p.trim()).join('\n');
+  const names = combo.GROUP_NAME.split(' - ').map(p => p.trim());
   const net = combo.NET_RATING;
   const mins = Math.round(combo.MIN);
-  // Icon size scales with group size
-  const iconSize = n <= 2 ? 22 : n === 3 ? 20 : n === 4 ? 17 : 15;
+  const iconSize = n <= 2 ? 26 : n === 3 ? 22 : n === 4 ? 19 : 16;
   return `<div class="lineup-card" onclick="openLineupLab(${esc(JSON.stringify(combo))})" style="cursor:pointer;">
-    ${groupIcons(n, iconSize)}
+    ${groupIcons(names, iconSize)}
     <span class="lc-net ${net >= 0 ? 'pos' : 'neg'}">${fmt(net)} net rtg,<br>${mins} minutes</span>
     <span class="lc-names">${names.map(esc).join('<br>')}</span>
   </div>`;
@@ -536,6 +568,9 @@ async function loadLineupData() {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
 
+    // Load the pre-built cross-reference so player icons and links work
+    playerXref = data.playerXref || {};
+
     function getBestWorst(arr, min) {
       const q = arr.filter(c => c.MIN >= min);
       return {
@@ -611,8 +646,8 @@ function buildRotationPlaceholders() {
 }
 
 buildRotationPlaceholders();
-loadLineupData();
 loadStaffNotes();
+loadLineupData();
 </script>
 </body>
 </html>

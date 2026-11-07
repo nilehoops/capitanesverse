@@ -949,11 +949,16 @@ function renderLineupContent(data) {
     ? new Date(data.meta.fetched_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
     : '';
 
+  const tDuo   = thresholds.duos    || 0;
+  const tTrio  = thresholds.trios   || 0;
+  const tQuad  = thresholds.quads   || 0;
+  const tFive  = thresholds.fiveman || 0;
+
   let html = fetchedAt ? `<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Full 2025-26 season · updated ${fetchedAt}</div>` : '';
-  html += buildTier('duos',  duos.best,  duos.worst,  2, data.duos  ||[], minMins, 'tbl-duo');
-  html += buildTier('trios', trios.best, trios.worst, 3, data.trios ||[], minMins, 'tbl-trio');
+  html += buildTier('duos',  duos.best,  duos.worst,  2, data.duos  ||[], tDuo,  'tbl-duo');
+  html += buildTier('trios', trios.best, trios.worst, 3, data.trios ||[], tTrio, 'tbl-trio');
   if ((data.quads||[]).length) {
-    html += buildTier('quads', quads.best, quads.worst, 4, data.quads||[], minMins, 'tbl-quad');
+    html += buildTier('quads', quads.best, quads.worst, 4, data.quads||[], tQuad, 'tbl-quad');
   } else {
     html += `<div class="lineup-tier"><div class="lineup-half-title best">best quads</div>
       <div style="font-size:11px;color:var(--muted);padding:6px 0;">Re-run fetch_lineup_data.py to add 4-man lineup data</div></div>`;
@@ -970,7 +975,7 @@ function renderLineupContent(data) {
         <div class="see-all-row" onclick="toggleTable('tbl-five')">See All 5-Man Units...</div>
       </div>
     </div>
-    <div class="full-table-wrap" id="tbl-five">${buildFullTable(data.fiveman||[], minMins)}</div>
+    <div class="full-table-wrap" id="tbl-five">${buildFullTable(data.fiveman||[], tFive)}</div>
   </div>`;
 
   container.innerHTML = html;

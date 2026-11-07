@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>2027 Capitanes In-Season Analytics &amp; Research</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #000;
+  --surface: #0D0D0D;
+  --border: #1A1A1A;
+  --yellow: #FFD400;
+  --blue: #1631FF;
+  --green: #18AF4A;
+  --red: #D81F2A;
+  --text: #ECECEC;
+  --muted: #6A6A6A;
+  --dim: #9A9A9A;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--bg); color: var(--text); font-family: 'Lora', serif; font-size: 13px; }
+a { color: inherit; text-decoration: none; }
+
+/* ── Page header ── */
+.page-header {
+  padding: 10px 16px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.page-title {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: clamp(16px, 2.2vw, 26px);
+  line-height: 1.1;
+  color: var(--text);
+}
+.page-search {
+  font-size: 12px;
+  color: var(--dim);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.page-search input {
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--muted);
+  color: var(--text);
+  font-family: 'Lora', serif;
+  font-size: 12px;
+  padding: 2px 4px;
+  width: 180px;
+}
+.page-search input:focus { outline: none; border-bottom-color: var(--yellow); }
+
+/* ── Main two-column layout ── */
+.main {
+  display: grid;
+  grid-template-columns: 38% 62%;
+  min-height: calc(100vh - 54px);
+  align-items: start;
+}
+
+/* ═══════════════════════════════
+   LEFT COLUMN
+═══════════════════════════════ */
+.left-col {
+  border-right: 1px solid var(--border);
+  padding-bottom: 20px;
+}
+
+/* Staff Notes */
+.staff-notes-block {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 12px;
+  padding: 10px 14px 12px;
+  border-bottom: 1px solid var(--border);
+  min-height: 180px;
+}
+.big-label {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: clamp(32px, 5vw, 52px);
+  line-height: 0.95;
+  color: var(--blue);
+  writing-mode: horizontal-tb;
+  align-self: start;
+}
+.staff-feed {
+  overflow-y: auto;
+  max-height: 170px;
+  background: #111;
+  padding: 6px 8px;
+}
+.staff-feed-row { font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border); color: var(--dim); }
+.staff-feed-row:last-child { border-bottom: none; }
+.staff-feed-meta { color: #3A3A3A; font-size: 10px; }
+
+/* League Ranks */
+.league-ranks-block {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0 12px;
+  padding: 10px 14px 0;
+}
+.ranks-content { }
+.ranks-primary {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.rank-item { }
+.rank-ordinal {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: clamp(22px, 3.5vw, 38px);
+  line-height: 1;
+  display: block;
+}
+.rank-stat-name {
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: clamp(14px, 2vw, 22px);
+  line-height: 1;
+  display: block;
+}
+.rank-stat-name sub {
+  font-size: 0.55em;
+  font-weight: 400;
+  color: var(--dim);
+  vertical-align: baseline;
+}
+.ranks-secondary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 4px 6px;
+  margin-bottom: 6px;
+}
+.rank-item-sm .rank-ordinal { font-size: clamp(12px, 1.8vw, 20px); }
+.rank-item-sm .rank-stat-name { font-size: clamp(10px, 1.3vw, 14px); }
+.ranks-oreb-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 6px;
+}
+.see-all-link {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--blue);
+  font-weight: 600;
+  cursor: pointer;
+}
+.see-all-link:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════
+   RIGHT COLUMN
+═══════════════════════════════ */
+.right-col {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Current Rotation */
+.rotation-block {
+  display: flex;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.rotation-players-wrap { flex: 1; }
+.rotation-row { display: flex; gap: 6px 10px; flex-wrap: wrap; margin-bottom: 4px; }
+.rot-player { text-align: center; width: 50px; }
+.rot-player svg { display: block; margin: 0 auto 1px; }
+.rot-player-name { font-size: 9px; color: var(--dim); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rot-player-mins { font-size: 11px; font-weight: 700; color: var(--text); display: block; }
+.rotation-label-vert {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  font-family: 'Oswald', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* Lineup Data */
+.lineup-block { padding: 10px 12px; }
+.lineup-data-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.lineup-data-title {
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  font-size: clamp(18px, 2.5vw, 28px);
+  color: var(--text);
+}
+.lineup-lab-btn {
+  background: var(--yellow);
+  color: var(--blue);
+  font-family: 'Oswald', sans-serif;
+  font-weight: 700;
+  font-size: 11px;
+  padding: 6px 10px;
+  border: none;
+  cursor: pointer;
+  line-height: 1.3;
+  text-align: center;
+  flex-shrink: 0;
+}
+.lineup-lab-btn:hover { filter: brightness(1.1); }
+
+/* Each tier row: best left, worst right */
+.lineup-tier { margin-bottom: 14px; }
+.lineup-tier-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 16px;
+}
+.lineup-half { }
+.lineup-half-title {
+  font-family: 'Lora', serif;
+  font-weight: 700;
+  font-size: clamp(13px, 1.8vw, 20px);
+  margin-bottom: 6px;
+}
+.lineup-half-title.best { color: var(--green); }
+.lineup-half-title.worst { color: var(--red); }
+.lineup-cards-row { display: flex; gap: 8px; flex-wrap: nowrap; }
+.lineup-card { text-align: center; flex: 1; min-width: 0; }
+.lc-icons { display: flex; justify-content: center; gap: 1px; margin-bottom: 2px; }
+.lc-net {
+  font-size: 11px;
+  font-weight: 700;
+  display: block;
+  line-height: 1.3;
+}
+.lc-net.pos { color: var(--green); }
+.lc-net.neg { color: var(--red); }
+.lc-names { font-size: 9px; color: var(--dim); display: block; line-height: 1.4; margin-top: 1px; }
+.see-all-row {
+  text-align: right;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--dim);
+  cursor: pointer;
+}
+.see-all-row:hover { color: var(--text); }
+
+/* Full table (expanded) */
+.full-table-wrap { display: none; margin-top: 8px; overflow-x: auto; }
+.full-table-wrap.open { display: block; }
+.full-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }
+.full-table-wrap th {
+  background: var(--surface); color: var(--muted); font-weight: 600;
+  padding: 3px 6px; border-bottom: 1px solid var(--border); text-align: right;
+}
+.full-table-wrap th:first-child { text-align: left; }
+.full-table-wrap td {
+  padding: 2px 6px; text-align: right;
+  border-bottom: 1px solid var(--border); color: var(--dim);
+}
+.full-table-wrap td:first-child { text-align: left; color: var(--text); }
+.full-table-wrap tr:hover td { background: var(--surface); }
+</style>
+</head>
+<body>
+
+<header class="page-header">
+  <div class="page-title">2027 Capitanes In-Season Analytics &amp; Research</div>
+  <div class="page-search">
+    <span>Search:</span>
+    <input id="mainSearch" type="text" placeholder="(players or teams)">
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- ═══ LEFT COLUMN ═══ -->
+  <div class="left-col">
+
+    <!-- Staff Notes -->
+    <div class="staff-notes-block">
+      <div class="big-label">Staff<br>Notes</div>
+      <div class="staff-feed" id="staffFeed">
+        <div style="color:var(--muted);font-size:11px;">Loading...</div>
+      </div>
+    </div>
+
+    <!-- League Ranks -->
+    <div class="league-ranks-block">
+      <div class="big-label">League<br>Ranks</div>
+      <div class="ranks-content" id="ranksContent">
+        <!-- Primary: ORTG / NetRTG / DRTG -->
+        <div class="ranks-primary">
+          <div class="rank-item">
+            <span class="rank-ordinal" id="r-ortg" style="color:var(--red);">—</span>
+            <span class="rank-stat-name">ORTG<sub id="v-ortg"></sub></span>
+          </div>
+          <div class="rank-item">
+            <span class="rank-ordinal" id="r-netrtg">—</span>
+            <span class="rank-stat-name">NetRTG<sub id="v-netrtg"></sub></span>
+          </div>
+          <div class="rank-item">
+            <span class="rank-ordinal" id="r-drtg" style="color:var(--blue);">—</span>
+            <span class="rank-stat-name">DRTG<sub id="v-drtg"></sub></span>
+          </div>
+        </div>
+        <!-- Secondary: EFG/TOV/dEFG/dTOV -->
+        <div class="ranks-secondary">
+          <div class="rank-item-sm rank-item">
+            <span class="rank-ordinal" id="r-efg" style="color:var(--red);">—</span>
+            <span class="rank-stat-name">EFG%<sub id="v-efg"></sub></span>
+          </div>
+          <div class="rank-item-sm rank-item">
+            <span class="rank-ordinal" id="r-tov">—</span>
+            <span class="rank-stat-name">TOV%<sub id="v-tov"></sub></span>
+          </div>
+          <div class="rank-item-sm rank-item">
+            <span class="rank-ordinal" id="r-defg">—</span>
+            <span class="rank-stat-name">dEFG%<sub id="v-defg"></sub></span>
+          </div>
+          <div class="rank-item-sm rank-item">
+            <span class="rank-ordinal" id="r-dtov" style="color:var(--blue);">—</span>
+            <span class="rank-stat-name">dTOV%<sub id="v-dtov"></sub></span>
+          </div>
+        </div>
+        <!-- OREB / DREB -->
+        <div class="ranks-oreb-row">
+          <div class="rank-item-sm rank-item">
+            <span class="rank-ordinal" id="r-oreb" style="color:var(--red);">—</span>
+            <span class="rank-stat-name">OREB%<sub id="v-oreb"></sub></span>
+          </div>
+          <div class="rank-item-sm rank-item">
+            <span class="rank-ordinal" id="r-dreb">—</span>
+            <span class="rank-stat-name">DREB%<sub id="v-dreb"></sub></span>
+          </div>
+        </div>
+        <span class="see-all-link">See All<br>Team Stats</span>
+      </div>
+    </div>
+
+  </div><!-- /left-col -->
+
+  <!-- ═══ RIGHT COLUMN ═══ -->
+  <div class="right-col">
+
+    <!-- Current Rotation -->
+    <div class="rotation-block">
+      <div class="rotation-players-wrap">
+        <div class="rotation-row" id="rotationRow1">
+          <!-- 5 players top row -->
+        </div>
+        <div class="rotation-row" id="rotationRow2">
+          <!-- 5 players bottom row -->
+        </div>
+      </div>
+      <div class="rotation-label-vert">Current Rotation<br>(Last Five Games)</div>
+    </div>
+
+    <!-- Lineup Data -->
+    <div class="lineup-block">
+      <div class="lineup-data-header">
+        <span class="lineup-data-title">Lineup Data</span>
+        <button class="lineup-lab-btn" onclick="document.getElementById('lineupLabModal').style.display='flex'">Lineup Lab<br>Tool</button>
+      </div>
+      <div id="lineupContent">
+        <div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading lineup data...</div>
+      </div>
+    </div>
+
+  </div><!-- /right-col -->
+
+</div><!-- /main -->
+
+<!-- Lineup Lab Modal -->
+<div id="lineupLabModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;">
+  <div style="background:#111;border:1px solid var(--border);padding:24px;max-width:700px;width:92%;position:relative;max-height:85vh;overflow-y:auto;">
+    <button onclick="document.getElementById('lineupLabModal').style.display='none'" style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;">×</button>
+    <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;margin-bottom:14px;color:var(--yellow);">Lineup Lab Tool</div>
+    <div id="lineupLabInner" style="font-size:12px;color:var(--dim);">Click any lineup combination on the main page to explore its full stats breakdown here.</div>
+  </div>
+</div>
+
+<script>
+const DATA_PATH = 'data/lineup_data.json';
+const STAFF_PATH = 'data/staff_notes.json';
+
+const MIN_DUO = 30, MIN_TRIO = 25, MIN_QUAD = 20, MIN_FIVE = 15;
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = String(s ?? '');
+  return d.innerHTML;
+}
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'], v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+function fmt(v, dp=1) {
+  if (v == null) return '—';
+  return (v >= 0 ? '+' : '') + Number(v).toFixed(dp);
+}
+
+// Person silhouette SVG
+function personSvg(size=22) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="#ECECEC">
+    <circle cx="12" cy="7.5" r="4.5"/>
+    <path d="M3.5 21c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5"/>
+  </svg>`;
+}
+
+// Group of N people icons, slightly overlapping for larger groups
+function groupIcons(n, size=22) {
+  const icons = [];
+  for (let i = 0; i < n; i++) icons.push(personSvg(size));
+  return `<div class="lc-icons" style="justify-content:center;">${icons.join('')}</div>`;
+}
+
+function rotationPersonSvg(size=28) {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="#ECECEC">
+    <circle cx="12" cy="7.5" r="4.5"/>
+    <path d="M3.5 21c0-4.7 3.8-8.5 8.5-8.5s8.5 3.8 8.5 8.5"/>
+  </svg>`;
+}
+
+function buildRotationPlayer(name, mins) {
+  return `<div class="rot-player">
+    ${rotationPersonSvg(28)}
+    <span class="rot-player-mins">${mins}</span>
+    <span class="rot-player-name">${esc(name)}</span>
+  </div>`;
+}
+
+function buildLineupCard(combo, n) {
+  const names = combo.GROUP_NAME.split(' - ');
+  const shortNames = names.map(p => p.trim()).join('\n');
+  const net = combo.NET_RATING;
+  const mins = Math.round(combo.MIN);
+  // Icon size scales with group size
+  const iconSize = n <= 2 ? 22 : n === 3 ? 20 : n === 4 ? 17 : 15;
+  return `<div class="lineup-card" onclick="openLineupLab(${esc(JSON.stringify(combo))})" style="cursor:pointer;">
+    ${groupIcons(n, iconSize)}
+    <span class="lc-net ${net >= 0 ? 'pos' : 'neg'}">${fmt(net)} net rtg,<br>${mins} minutes</span>
+    <span class="lc-names">${names.map(esc).join('<br>')}</span>
+  </div>`;
+}
+
+function buildTier(tierName, bestCombos, worstCombos, n, allCombos, minMins, tierId) {
+  const bestCards = bestCombos.slice(0, 3).map(c => buildLineupCard(c, n)).join('');
+  const worstCards = worstCombos.slice(0, 3).map(c => buildLineupCard(c, n)).join('');
+  const tableHtml = buildFullTable(allCombos, minMins);
+  return `<div class="lineup-tier">
+    <div class="lineup-tier-cols">
+      <div class="lineup-half">
+        <div class="lineup-half-title best">${esc('best ' + tierName)}</div>
+        <div class="lineup-cards-row">${bestCards}</div>
+      </div>
+      <div class="lineup-half">
+        <div class="lineup-half-title worst">${esc('worst ' + tierName)}</div>
+        <div class="lineup-cards-row">${worstCards}</div>
+        <div class="see-all-row" onclick="toggleTable('${tierId}')">See All ${esc(tierName.charAt(0).toUpperCase() + tierName.slice(1))}...</div>
+      </div>
+    </div>
+    <div class="full-table-wrap" id="${tierId}">${tableHtml}</div>
+  </div>`;
+}
+
+function buildFullTable(combos, minMins) {
+  const rows = combos.filter(c => c.MIN >= minMins).sort((a, b) => b.NET_RATING - a.NET_RATING);
+  if (!rows.length) return '<div style="color:var(--muted);padding:6px;font-size:11px;">No combinations meet the minutes threshold.</div>';
+  return `<table>
+    <thead><tr><th>Lineup</th><th>Min</th><th>GP</th><th>Net</th><th>OFF</th><th>DEF</th><th>EFG%</th><th>TOV%</th></tr></thead>
+    <tbody>${rows.map(c => `<tr>
+      <td>${esc(c.GROUP_NAME)}</td>
+      <td>${Math.round(c.MIN)}</td>
+      <td>${c.GP}</td>
+      <td style="color:${c.NET_RATING >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700;">${fmt(c.NET_RATING)}</td>
+      <td>${(c.OFF_RATING||0).toFixed(1)}</td>
+      <td>${(c.DEF_RATING||0).toFixed(1)}</td>
+      <td>${((c.EFG_PCT||0)*100).toFixed(1)}</td>
+      <td>${((c.TM_TOV_PCT||0)*100).toFixed(1)}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function toggleTable(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+function openLineupLab(combo) {
+  const modal = document.getElementById('lineupLabModal');
+  const inner = document.getElementById('lineupLabInner');
+  const players = combo.GROUP_NAME.split(' - ');
+  inner.innerHTML = `
+    <div style="font-size:14px;font-weight:700;margin-bottom:10px;color:var(--text);">${esc(combo.GROUP_NAME)}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:12px;">
+      ${[
+        ['Net Rating', fmt(combo.NET_RATING)],
+        ['Off Rating', (combo.OFF_RATING||0).toFixed(1)],
+        ['Def Rating', (combo.DEF_RATING||0).toFixed(1)],
+        ['Minutes', Math.round(combo.MIN)],
+        ['GP', combo.GP],
+        ['W-L', `${combo.W}-${combo.L}`],
+        ['EFG%', ((combo.EFG_PCT||0)*100).toFixed(1)],
+        ['TOV%', ((combo.TM_TOV_PCT||0)*100).toFixed(1)],
+        ['OREB%', ((combo.OREB_PCT||0)*100).toFixed(1)],
+        ['DREB%', ((combo.DREB_PCT||0)*100).toFixed(1)],
+        ['AST/TO', (combo.AST_TO||0).toFixed(2)],
+        ['PIE', (combo.PIE||0).toFixed(3)],
+      ].map(([label, val]) => `<div style="background:var(--bg);padding:8px;border:1px solid var(--border);">
+        <span style="color:var(--muted);font-size:10px;display:block;">${label}</span>
+        <span style="font-weight:700;font-size:16px;color:var(--text);">${val}</span>
+      </div>`).join('')}
+    </div>`;
+  modal.style.display = 'flex';
+}
+
+async function loadLineupData() {
+  const container = document.getElementById('lineupContent');
+  try {
+    const resp = await fetch(DATA_PATH + '?v=' + Date.now());
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+
+    function getBestWorst(arr, min) {
+      const q = arr.filter(c => c.MIN >= min);
+      return {
+        best: [...q].sort((a, b) => b.NET_RATING - a.NET_RATING),
+        worst: [...q].sort((a, b) => a.NET_RATING - b.NET_RATING),
+      };
+    }
+
+    const duos  = getBestWorst(data.duos   || [], MIN_DUO);
+    const trios = getBestWorst(data.trios  || [], MIN_TRIO);
+    const quads = getBestWorst(data.quads  || [], MIN_QUAD);
+    const five  = getBestWorst(data.fiveman|| [], MIN_FIVE);
+
+    const fetchedAt = data.meta?.fetched_at
+      ? new Date(data.meta.fetched_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+      : '';
+
+    let html = fetchedAt ? `<div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Full 2025-26 season · updated ${fetchedAt}</div>` : '';
+    html += buildTier('duos',  duos.best,  duos.worst,  2, data.duos  ||[], MIN_DUO,  'tbl-duo');
+    html += buildTier('trios', trios.best, trios.worst, 3, data.trios ||[], MIN_TRIO, 'tbl-trio');
+    if ((data.quads||[]).length) {
+      html += buildTier('quads', quads.best, quads.worst, 4, data.quads||[], MIN_QUAD, 'tbl-quad');
+    } else {
+      html += `<div class="lineup-tier"><div class="lineup-half-title best">best quads</div>
+        <div style="font-size:11px;color:var(--muted);padding:6px 0;">Re-run fetch_lineup_data.py to add 4-man lineup data</div></div>`;
+    }
+    // 5-man: only 2 cards each side per wireframe
+    html += `<div class="lineup-tier">
+      <div class="lineup-tier-cols">
+        <div class="lineup-half">
+          <div class="lineup-half-title best">best 5-man units</div>
+          <div class="lineup-cards-row">${five.best.slice(0,2).map(c=>buildLineupCard(c,5)).join('')}</div>
+        </div>
+        <div class="lineup-half">
+          <div class="lineup-half-title worst">worst 5-man units</div>
+          <div class="lineup-cards-row">${five.worst.slice(0,2).map(c=>buildLineupCard(c,5)).join('')}</div>
+          <div class="see-all-row" onclick="toggleTable('tbl-five')">See All 5-Man Units...</div>
+        </div>
+      </div>
+      <div class="full-table-wrap" id="tbl-five">${buildFullTable(data.fiveman||[], MIN_FIVE)}</div>
+    </div>`;
+
+    container.innerHTML = html;
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--red);font-size:12px;">Could not load lineup data: ${esc(e.message)}</div>`;
+  }
+}
+
+async function loadStaffNotes() {
+  const feed = document.getElementById('staffFeed');
+  try {
+    const resp = await fetch(STAFF_PATH + '?v=' + Date.now());
+    if (!resp.ok) throw new Error();
+    const notes = await resp.json();
+    const list = Array.isArray(notes) ? notes : (notes.comments || []);
+    if (!list.length) { feed.innerHTML = '<div style="color:var(--muted);">No recent notes.</div>'; return; }
+    feed.innerHTML = list.slice(0,12).map(n => {
+      const body = (n.body||'').slice(0,110) + ((n.body||'').length > 110 ? '…' : '');
+      const date = n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : '';
+      return `<div class="staff-feed-row">${esc(body)}<span class="staff-feed-meta"> ${esc(n.author||'')}${date?' · '+date:''}</span></div>`;
+    }).join('');
+  } catch(e) {
+    feed.innerHTML = '<div style="color:var(--muted);">No staff notes loaded.</div>';
+  }
+}
+
+// Rotation placeholder — 10 silhouettes with XX Minutes
+function buildRotationPlaceholders() {
+  const r1 = document.getElementById('rotationRow1');
+  const r2 = document.getElementById('rotationRow2');
+  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('—', 'XX Min');
+  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
+}
+
+buildRotationPlaceholders();
+loadLineupData();
+loadStaffNotes();
+</script>
+</body>
+</html>

@@ -1076,13 +1076,73 @@ document.querySelectorAll('.stat-filter').forEach(btn => {
 buildRotationPlaceholders();
 loadStaffNotes();
 
-// Load playerXref (photos + profile links) from the stored JSON once at startup
-// All lineup data itself comes live from stats.nba.com
-fetch(XREF_PATH + '?v=' + Date.now())
-  .then(r => r.ok ? r.json() : {})
-  .then(d => { playerXref = d.playerXref || {}; })
-  .catch(() => {})
-  .finally(() => fetchAllGroupsLive());
+// Main page reads from the static mex_data.json — no live API call needed
+// Live API fetching only happens inside the Lab when filters are applied
+loadMexData()
+  .then(d => {
+    // Build playerXref from wowy/player data
+    playerXref = {};
+    (d.players || []).forEach(p => {
+      // Store by abbreviated form e.g. "J. Bouknight" -> photoUrl
+      const parts = (p.Player || '').split(' ');
+      if (parts.length >= 2) {
+        const key = `${parts[0][0]}. ${parts[parts.length - 1]}`;
+        playerXref[key] = { id: null, name: p.Player, photoUrl: null };
+      }
+    });
+    // Also try to load full playerXref from players_index
+    return fetch('data/players_index.json?v=' + Date.now())
+      .then(r => r.ok ? r.json() : [])
+      .then(idx => {
+        const byKey = {};
+        (idx || []).forEach(p => {
+          const parts = (p.name || '').split(/\s+/);
+          if (parts.length >= 2) {
+            const key = `${parts[0][0]}. ${parts[parts.length - 1]}`;
+            byKey[key] = { id: p.id, name: p.name, photoUrl: p.photoUrl };
+          }
+        });
+        playerXref = { ...playerXref, ...byKey };
+        return d;
+      })
+      .catch(() => d);
+  })
+  .then(d => {
+    // Render main page from static data
+    const data = {
+      duos: d.lineups.filter(c => c.lineup.split(', ').length === 2),
+      trios: d.lineups.filter(c => c.lineup.split(', ').length === 3),
+      quads: d.lineups.filter(c => c.lineup.split(', ').length === 4),
+      fiveman: d.lineups.filter(c => c.lineup.split(', ').length === 5),
+    };
+    // Normalize field names from Excel format to API format
+    ['duos','trios','quads','fiveman'].forEach(key => {
+      data[key] = data[key].map(c => ({
+        ...c,
+        GROUP_NAME: c.lineup,
+        NET_RATING: c.NetRtg,
+        OFF_RATING: c.OffRtg,
+        DEF_RATING: c.DefRtg,
+        MIN: c.MIN,
+        GP: null,
+        EFG_PCT: c['eFG%'] != null ? c['eFG%'] / 100 : null,
+        TM_TOV_PCT: c['TOV%'] != null ? c['TOV%'] / 100 : null,
+      }));
+    });
+    data._thresholds = {
+      duos:    pct30Threshold(data.duos),
+      trios:   pct30Threshold(data.trios),
+      quads:   pct30Threshold(data.quads),
+      fiveman: pct30Threshold(data.fiveman),
+    };
+    document.getElementById('lineupFetchStatus').textContent =
+      `${data.duos.length} duos · ${data.trios.length} trios · full 2025-26 season`;
+    renderLineupContent(data);
+  })
+  .catch(e => {
+    document.getElementById('lineupContent').innerHTML =
+      `<div style="color:var(--red);font-size:12px;">Could not load lineup data: ${esc(e.message)}</div>`;
+  });
 
 // Wire all filter controls — slider is client-side only, rest trigger a refetch
 document.getElementById('minMinsSlider').addEventListener('input', function() {

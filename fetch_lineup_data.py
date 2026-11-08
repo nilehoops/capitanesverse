@@ -325,7 +325,20 @@ def main():
         }, f, separators=(",", ":"))
     ts_kb = os.path.getsize(ts_path) // 1024
     print(f"\n  Team stats written to {ts_path} ({ts_kb} KB)")
-    print("\nCommit data/lineup_data.json and data/team_stats.json to update the site.")
+    # Player stats — replaces the manual Excel workflow
+    print("\nFetching MXC player stats...")
+    player_stats = fetch_player_stats(focus_team_id)
+    if player_stats:
+        mex_data = build_mex_data(player_stats, output)
+        mex_path = os.path.join("data", "mex_data.json")
+        with open(mex_path, "w") as f:
+            json.dump(mex_data, f, separators=(",", ":"))
+        mex_kb = os.path.getsize(mex_path) // 1024
+        print(f"  mex_data.json written ({mex_kb} KB) — {len(player_stats)} players")
+    else:
+        print("  Warning: could not fetch player stats — mex_data.json not updated")
+
+    print("\nCommit data/lineup_data.json, data/team_stats.json and data/mex_data.json to update the site.")
 
 
 def fetch_team_stats(filters=None):
@@ -385,6 +398,194 @@ def fetch_team_stats(filters=None):
         rank_col(col, lower_is_better=lower)
 
     return {"teams": teams}
+
+
+def fetch_player_stats(team_id):
+    """Fetch per-player stats for a single team across Base + Advanced measures.
+    Returns a list of merged player dicts with all available fields."""
+    base_params = (
+        f"?LeagueID=20&Season={SEASON}&SeasonType=Regular+Season"
+        f"&TeamID={team_id}&PerMode=Totals"
+        "&PaceAdjust=N&PlusMinus=N&Rank=N"
+        "&Outcome=&Location=&Month=0&SeasonSegment="
+        "&DateFrom=&DateTo=&OpponentTeamID=0"
+        "&VsConference=&VsDivision=&GameSegment=&Period=0"
+        "&ShotClockRange=&LastNGames=0&GameScope=&PlayerExperience="
+        "&PlayerPosition=&StarterBench=&TwoWay=0"
+    )
+    all_data = {}
+    for measure in ("Base", "Advanced"):
+        url = f"https://stats.nba.com/stats/leaguedashplayerstats{base_params}&MeasureType={measure}"
+        try:
+            req = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            rs = data["resultSets"][0]
+            hdrs = rs["headers"]
+            rows = [dict(zip(hdrs, row)) for row in rs["rowSet"]]
+            for row in rows:
+                pid = row.get("PLAYER_ID")
+                if pid not in all_data:
+                    all_data[pid] = {
+                        "PLAYER_ID": pid,
+                        "Player": row.get("PLAYER_NAME"),
+                        "TEAM_ABBREVIATION": row.get("TEAM_ABBREVIATION"),
+                    }
+                all_data[pid].update(row)
+            print(f"  {measure}: {len(rows)} players")
+            time.sleep(1)
+        except Exception as e:
+            print(f"  {measure}: ERROR — {e}")
+
+    players = list(all_data.values())
+
+    # Compute derived columns that the Excel template used to calculate
+    for p in players:
+        fgm  = p.get("FGM")  or 0
+        fga  = p.get("FGA")  or 0
+        fg3m = p.get("FG3M") or 0
+        fg3a = p.get("FG3A") or 0
+        ftm  = p.get("FTM")  or 0
+        fta  = p.get("FTA")  or 0
+        stl  = p.get("STL")  or 0
+        blk  = p.get("BLK")  or 0
+        ast  = p.get("AST")  or 0
+        tov  = p.get("TOV")  or 0
+        mins = p.get("MIN")  or 0
+
+        p["2PTM"]  = fgm - fg3m
+        p["2PA"]   = fga - fg3a
+        p["2PT%"]  = (fgm - fg3m) / (fga - fg3a) if (fga - fg3a) > 0 else None
+        p["3PAr"]  = fg3a / fga if fga > 0 else None
+        p["FTR"]   = fta / fga  if fga > 0 else None
+        p["AST/TO"]      = ast / tov if tov > 0 else None
+        p["Stl+Blk"]     = stl + blk
+        p["Stl+Blk/min"] = (stl + blk) / mins if mins > 0 else None
+
+        # Rename API fields to match template column names
+        p["3PTM"] = fg3m
+        p["3PA"]  = fg3a
+        p["3P%"]  = p.get("FG3_PCT")
+        p["FT%"]  = p.get("FT_PCT")
+        p["eFG%"] = p.get("EFG_PCT")
+        p["TS%"]  = p.get("TS_PCT")
+        p["ORB%"] = p.get("OREB_PCT")
+        p["DRB%"] = p.get("DREB_PCT")
+        p["TRB%"] = p.get("REB_PCT")
+        p["AST%"] = p.get("AST_PCT")
+        p["TOV%"] = p.get("TM_TOV_PCT") or p.get("TOV_PCT")
+        p["STL%"] = p.get("STL_PCT")
+        p["BLK%"] = p.get("BLK_PCT")
+        p["USG%"] = p.get("USG_PCT")
+        p["ORtg"] = p.get("OFF_RATING")
+        p["DRtg"] = p.get("DEF_RATING")
+        p["PER"]  = p.get("PLAYER_EFFICIENCY_RATING") or p.get("PIE")
+        p["ORB"]  = p.get("OREB")
+        p["DRB"]  = p.get("DREB")
+        p["REB"]  = p.get("REB")
+
+    return players
+
+
+def build_mex_data(players, lineup_output):
+    """Build the full mex_data.json structure from fetched player stats
+    and the already-computed lineup combinations."""
+    mxc_lineups = lineup_output.get("duos", [])
+
+    # Build abbreviated name -> player for WOWY cross-reference
+    SUFFIXES = {'jr','sr','ii','iii','iv','v'}
+    p_by_key = {}
+    for p in players:
+        name = p.get("Player") or ""
+        parts = name.split()
+        if len(parts) >= 2:
+            last = [w for w in parts[1:] if w.lower() not in SUFFIXES]
+            if last:
+                key = f"{parts[0][0]}. {last[-1]}"
+                p_by_key[key] = name
+
+    # Normalise lineup names (strip leading dots that some API responses add)
+    def get_players_in_lineup(group_name):
+        return [n.strip().lstrip('.') for n in group_name.split(' - ')]
+
+    all_abbrevs = set()
+    for combo in mxc_lineups:
+        for n in get_players_in_lineup(combo.get("GROUP_NAME", "")):
+            if n:
+                all_abbrevs.add(n)
+
+    def wavg(combos, key):
+        total = sum(c.get("POSS") or c.get("MIN_ACTUAL") or 0 for c in combos)
+        if not total:
+            return None
+        return sum((c.get(key) or 0) * (c.get("POSS") or c.get("MIN_ACTUAL") or 0) for c in combos) / total
+
+    wowy = []
+    for abbrev in sorted(all_abbrevs):
+        with_p    = [c for c in mxc_lineups if abbrev in get_players_in_lineup(c.get("GROUP_NAME", ""))]
+        without_p = [c for c in mxc_lineups if abbrev not in get_players_in_lineup(c.get("GROUP_NAME", ""))]
+        full_name = p_by_key.get(abbrev, abbrev)
+        wowy.append({
+            "player": full_name,
+            "abbrev": abbrev,
+            "with": {
+                "POSS":    round(sum(c.get("POSS") or 0 for c in with_p), 1),
+                "NetRtg":  wavg(with_p, "NET_RATING"),
+                "OffRtg":  wavg(with_p, "OFF_RATING"),
+                "DefRtg":  wavg(with_p, "DEF_RATING"),
+                "combos":  len(with_p),
+            },
+            "without": {
+                "POSS":    round(sum(c.get("POSS") or 0 for c in without_p), 1),
+                "NetRtg":  wavg(without_p, "NET_RATING"),
+                "OffRtg":  wavg(without_p, "OFF_RATING"),
+                "DefRtg":  wavg(without_p, "DEF_RATING"),
+                "combos":  len(without_p),
+            },
+        })
+
+    # Build nameLookup for player.html cross-reference
+    name_lookup = {}
+    for p in players:
+        name = p.get("Player") or ""
+        name_lookup[name.lower()] = name
+        parts = name.split()
+        if len(parts) >= 2:
+            SUFFIXES_SET = {'jr','sr','ii','iii','iv','v'}
+            last = [w for w in parts[1:] if w.lower() not in SUFFIXES_SET]
+            if last:
+                name_lookup[f"{parts[0][0].lower()}. {last[-1].lower()}"] = name
+
+    # Normalise lineup datapoints to the same field names the site uses
+    lineups_normalised = []
+    for c in mxc_lineups:
+        lineups_normalised.append({
+            "lineup":   c.get("GROUP_NAME", ""),
+            "MIN":      c.get("MIN_ACTUAL") or c.get("MIN") or 0,
+            "POSS":     c.get("POSS") or 0,
+            "NetRtg":   c.get("NET_RATING"),
+            "OffRtg":   c.get("OFF_RATING"),
+            "DefRtg":   c.get("DEF_RATING"),
+            "eFG%":     (c.get("EFG_PCT") or 0) * 100 if c.get("EFG_PCT") is not None else None,
+            "TOV%":     (c.get("TM_TOV_PCT") or 0) * 100 if c.get("TM_TOV_PCT") is not None else None,
+            "OREB%":    (c.get("OREB_PCT") or 0) * 100 if c.get("OREB_PCT") is not None else None,
+            "DREB%":    (c.get("DREB_PCT") or 0) * 100 if c.get("DREB_PCT") is not None else None,
+            "AST%":     (c.get("AST_PCT") or 0) * 100 if c.get("AST_PCT") is not None else None,
+            "PACE":     c.get("PACE"),
+            "TS%":      (c.get("TS_PCT") or 0) * 100 if c.get("TS_PCT") is not None else None,
+        })
+
+    return {
+        "meta": {
+            "season": SEASON,
+            "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "source": "NBA Stats API — auto-generated, no manual Excel input required",
+        },
+        "players": players,
+        "lineups": lineups_normalised,
+        "wowy": wowy,
+        "nameLookup": name_lookup,
+    }
 
 
 if __name__ == "__main__":

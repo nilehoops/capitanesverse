@@ -142,7 +142,13 @@ def fetch_team_lineups(team_id, group_quantity, min_minutes=0):
         data = json.loads(resp.read().decode("utf-8"))
     rs = data.get("resultSets", [{}])[0]
     headers_raw = rs.get("headers", [])
-    return [dict(zip(headers_raw, row)) for row in rs.get("rowSet", [])]
+    rows = [dict(zip(headers_raw, row)) for row in rs.get("rowSet", [])]
+    # MIN in PerMinute mode is normalized (often 0 for small samples).
+    # SUM_TIME_PLAYED is total seconds — convert to real minutes for filtering.
+    for r in rows:
+        stp = r.get("SUM_TIME_PLAYED")
+        r["MIN_ACTUAL"] = round(stp / 60, 1) if stp else 0.0
+    return rows
 
 
 def fetch_lineups_all_teams(team_ids, group_quantity, min_minutes=0):
@@ -288,7 +294,38 @@ def main():
     print(f"\n  MXC: {len(output['duos'])} duos, {len(output['trios'])} trios, {len(output['quads'])} quads, {len(output['fiveman'])} 5-man")
     print(f"  League: {len(output['league']['duos'])} duos, {len(output['league']['trios'])} trios")
     print(f"  Fetched at: {output['meta']['fetched_at']}")
-    print("\nCommit both data files to the repo to update the site.")
+    # Team stats — full season + filter slices for the league ranks section
+    print("\nFetching team stats...")
+    slices = [
+        ("all",        {}),
+        ("home",       {"Location": "Home"}),
+        ("away",       {"Location": "Road"}),
+        ("last5",      {"LastNGames": 5}),
+        ("last10",     {"LastNGames": 10}),
+        ("first_half", {"GameSegment": "First Half"}),
+        ("second_half",{"GameSegment": "Second Half"}),
+        ("q1",         {"Period": 1}),
+        ("q2",         {"Period": 2}),
+        ("q3",         {"Period": 3}),
+        ("q4",         {"Period": 4}),
+    ]
+    team_stats_output = {}
+    for label, filters in slices:
+        print(f"\n  Slice: {label}")
+        result = fetch_team_stats(filters)
+        if result:
+            team_stats_output[label] = result["teams"]
+        time.sleep(2)
+
+    ts_path = os.path.join("data", "team_stats.json")
+    with open(ts_path, "w") as f:
+        json.dump({
+            "meta": {"season": SEASON, "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")},
+            "slices": team_stats_output,
+        }, f, separators=(",", ":"))
+    ts_kb = os.path.getsize(ts_path) // 1024
+    print(f"\n  Team stats written to {ts_path} ({ts_kb} KB)")
+    print("\nCommit data/lineup_data.json and data/team_stats.json to update the site.")
 
 
 def fetch_team_stats(filters=None):
@@ -302,13 +339,14 @@ def fetch_team_stats(filters=None):
         "&PerMode=PerGame&PaceAdjust=N&PlusMinus=N&Rank=N"
         "&Outcome=&Location={loc}&Month=0&SeasonSegment="
         "&DateFrom={date_from}&DateTo={date_to}&OpponentTeamID=0"
-        "&VsConference=&VsDivision=&GameSegment=&Period={period}"
+        "&VsConference=&VsDivision=&GameSegment={game_segment}&Period={period}"
         "&ShotClockRange=&LastNGames={last_n}&GameScope=&PlayerExperience="
         "&PlayerPosition=&StarterBench=&TwoWay=0"
     ).format(
         loc=filters.get('Location', ''),
         date_from=filters.get('DateFrom', ''),
         date_to=filters.get('DateTo', ''),
+        game_segment=filters.get('GameSegment', '').replace(' ', '+'),
         period=filters.get('Period', 0),
         last_n=filters.get('LastNGames', 0),
     )
@@ -346,17 +384,7 @@ def fetch_team_stats(filters=None):
         lower = col in ("DEF_RATING", "TM_TOV_PCT", "OPP_EFG_PCT")
         rank_col(col, lower_is_better=lower)
 
-    output = {
-        "meta": {"season": SEASON, "filters": filters, "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")},
-        "teams": teams,
-    }
-    os.makedirs("data", exist_ok=True)
-    path = os.path.join("data", "team_stats.json")
-    with open(path, "w") as f:
-        json.dump(output, f, separators=(",", ":"))
-    kb = os.path.getsize(path) // 1024
-    print(f"  Written to {path} ({kb} KB)")
-    return output
+    return {"teams": teams}
 
 
 if __name__ == "__main__":

@@ -123,12 +123,11 @@ def discover_teams():
     return seen, seen[cap_abbrev]
 
 
-def fetch_team_lineups(team_id, group_quantity, min_minutes=0):
-    """Fetch lineup combinations for a single team."""
-    url = (
+def _lineup_url(team_id, group_quantity, measure_type, min_minutes=0):
+    return (
         "https://stats.nba.com/stats/leaguedashlineups"
         f"?LeagueID=20&Season={SEASON}&SeasonType=Regular+Season"
-        "&MeasureType=Advanced&PerMode=PerMinute"
+        f"&MeasureType={measure_type}&PerMode=PerMinute"
         f"&GroupQuantity={group_quantity}"
         f"&TeamID={team_id}"
         "&PaceAdjust=N&Rank=N&Outcome=&Location=&Month=0"
@@ -137,18 +136,48 @@ def fetch_team_lineups(team_id, group_quantity, min_minutes=0):
         "&ShotClockRange=&LastNGames=0&GameScope=&PlayerExperience="
         f"&PlayerPosition=&StarterBench=&TwoWay=0&MinutesFilter={min_minutes}"
     )
+
+
+def _fetch_lineup_measure(team_id, group_quantity, measure_type, min_minutes=0):
+    url = _lineup_url(team_id, group_quantity, measure_type, min_minutes)
     req = urllib.request.Request(url, headers=HEADERS)
     with urllib.request.urlopen(req, timeout=20) as resp:
         data = json.loads(resp.read().decode("utf-8"))
     rs = data.get("resultSets", [{}])[0]
-    headers_raw = rs.get("headers", [])
-    rows = [dict(zip(headers_raw, row)) for row in rs.get("rowSet", [])]
-    # MIN in PerMinute mode is normalized (often 0 for small samples).
-    # SUM_TIME_PLAYED is total seconds — convert to real minutes for filtering.
-    for r in rows:
+    hdrs = rs.get("headers", [])
+    return [dict(zip(hdrs, row)) for row in rs.get("rowSet", [])]
+
+
+def fetch_team_lineups(team_id, group_quantity, min_minutes=0):
+    """Fetch lineup combinations for a single team, merging Advanced +
+    Opponent measures so opponent stats are available alongside team stats."""
+    # Advanced — primary measure with all team-side ratings
+    adv_rows = _fetch_lineup_measure(team_id, group_quantity, "Advanced", min_minutes)
+
+    # Add MIN_ACTUAL from SUM_TIME_PLAYED — MIN in PerMinute mode is a
+    # normalized rate value, not actual minutes played.
+    for r in adv_rows:
         stp = r.get("SUM_TIME_PLAYED")
         r["MIN_ACTUAL"] = round(stp / 60, 1) if stp else 0.0
-    return rows
+
+    # Opponent — prefix OPP_ fields to avoid colliding with team-side names
+    try:
+        time.sleep(0.3)
+        opp_rows = _fetch_lineup_measure(team_id, group_quantity, "Opponent", min_minutes)
+        opp_by_id = {r["GROUP_ID"]: r for r in opp_rows}
+        OPP_FIELDS = ["EFG_PCT", "FG2_PCT", "FG3_PCT", "FT_PCT", "TOV_PCT",
+                      "FTA_RATE", "FGM", "FGA", "FG_PCT", "FG3M", "FG3A",
+                      "FG2M", "FG2A", "FTM", "FTA"]
+        for r in adv_rows:
+            opp = opp_by_id.get(r.get("GROUP_ID"), {})
+            for f in OPP_FIELDS:
+                if f in opp:
+                    r[f"OPP_{f}"] = opp[f]
+    except Exception as e:
+        # Opponent fetch failing is non-fatal — advanced data is still usable
+        pass
+
+    return adv_rows
 
 
 def fetch_lineups_all_teams(team_ids, group_quantity, min_minutes=0):
@@ -573,6 +602,12 @@ def build_mex_data(players, lineup_output):
             "AST%":     (c.get("AST_PCT") or 0) * 100 if c.get("AST_PCT") is not None else None,
             "PACE":     c.get("PACE"),
             "TS%":      (c.get("TS_PCT") or 0) * 100 if c.get("TS_PCT") is not None else None,
+            "Opp eFG%": (c.get("OPP_EFG_PCT") or 0) * 100 if c.get("OPP_EFG_PCT") is not None else None,
+            "Opp 2PT%": (c.get("OPP_FG2_PCT") or 0) * 100 if c.get("OPP_FG2_PCT") is not None else None,
+            "Opp 3P%":  (c.get("OPP_FG3_PCT") or 0) * 100 if c.get("OPP_FG3_PCT") is not None else None,
+            "Opp FT%":  (c.get("OPP_FT_PCT") or 0) * 100 if c.get("OPP_FT_PCT") is not None else None,
+            "Opp TOV%": (c.get("OPP_TOV_PCT") or 0) * 100 if c.get("OPP_TOV_PCT") is not None else None,
+            "Opp FTA Rate": c.get("OPP_FTA_RATE"),
         })
 
     return {

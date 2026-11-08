@@ -374,6 +374,19 @@ a { color: inherit; text-decoration: none; }
           <button class="stat-filter" data-filter="l5">L5</button>
           <button class="stat-filter" data-filter="l10">L10</button>
         </div>
+        <select id="rankSliceSelect" onchange="loadRanks(this.value)" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);margin-top:8px;width:100%;background:#fff;color:var(--text);">
+          <option value="all">Full season</option>
+          <option value="home">Home</option>
+          <option value="away">Away</option>
+          <option value="last5">Last 5 games</option>
+          <option value="last10">Last 10 games</option>
+          <option value="first_half">1st half</option>
+          <option value="second_half">2nd half</option>
+          <option value="q1">Q1</option>
+          <option value="q2">Q2</option>
+          <option value="q3">Q3</option>
+          <option value="q4">Q4</option>
+        </select>
         <span class="see-all-link" id="seeAllTeamStats">See All Team Stats</span>
       </div>
     </div>
@@ -403,7 +416,7 @@ a { color: inherit; text-decoration: none; }
         <button class="lineup-lab-btn">Lineup Lab<br>Tool</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
-        Top 30% by minutes played · <span id="lineupFetchStatus" style="font-style:italic;"></span>
+        Top 30% by possessions · <span id="lineupFetchStatus" style="font-style:italic;"></span>
       </div>
       <div id="lineupContent">
         <div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading lineup data...</div>
@@ -508,11 +521,19 @@ function idForLineupName(n)    { return playerXref[n]?.id || null; }
 
 // 30th-percentile minutes threshold — computed from actual data so it
 // adapts to however many combinations exist for each group size.
+function getPoss(row) {
+  // POSS = total possessions played by this lineup combination.
+  // Cleaner sample size measure than minutes since it directly reflects
+  // how many times the lineup ran a play. Falls back to MIN_ACTUAL or
+  // MIN for older data or mex_data.json rows.
+  return row.POSS ?? row.MIN_ACTUAL ?? row.MIN ?? 0;
+}
+
 function pct30Threshold(rows) {
   if (!rows.length) return 0;
-  const sorted = [...rows].sort((a, b) => b.MIN - a.MIN);
+  const sorted = [...rows].sort((a, b) => getPoss(b) - getPoss(a));
   const idx = Math.floor(sorted.length * 0.3);
-  return sorted[Math.min(idx, sorted.length - 1)].MIN;
+  return getPoss(sorted[Math.min(idx, sorted.length - 1)]);
 }
 
 function getLabFilters() {
@@ -636,7 +657,8 @@ function triggerLabFetch() {
   labDebounce = setTimeout(fetchLabData, 400);
 }
 
-const MEX_DATA_PATH = 'data/mex_data.json';
+const MEX_DATA_PATH    = 'data/mex_data.json';    // Player Stats + WOWY (from Excel)
+const LINEUP_DATA_PATH = 'data/lineup_data.json'; // All 4 group sizes (from fetch script)
 let mexData = null;
 
 async function loadMexData() {
@@ -745,7 +767,7 @@ async function renderWowy() {
 
 function buildWowyMiniTable(rows) {
   if (!rows.length) return '<div style="color:var(--muted);font-size:11px;">No combinations.</div>';
-  const cols = ['lineup','MIN','NetRtg','OffRtg','DefRtg','TS%','TOV%','OREB%'];
+  const cols = ['lineup','POSS','NetRtg','OffRtg','DefRtg','TS%','TOV%','OREB%'];
   return `<table style="width:100%;border-collapse:collapse;font-size:11px;">
     <thead><tr>${cols.map(c=>`<th style="background:var(--surface);padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};color:var(--muted);">${c}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(r=>`<tr>${cols.map(c=>{
@@ -768,7 +790,7 @@ function renderLabContent(data, minMins) {
     { key: 'fiveman', n: 5, label: '5-Man Units' },
   ];
   inner.innerHTML = tiers.map(t => {
-    const rows = (data[t.key] || []).filter(c => c.MIN >= minMins).sort((a, b) => b.NET_RATING - a.NET_RATING);
+    const rows = (data[t.key] || []).filter(c => getPoss(c) >= minMins).sort((a, b) => b.NET_RATING - a.NET_RATING);
     if (!rows.length) return `<div style="margin-bottom:14px;"><div style="font-weight:700;margin-bottom:4px;">${t.label}</div><div style="color:var(--muted);font-size:11px;">No combinations meet the minutes threshold.</div></div>`;
     return `<div style="margin-bottom:18px;">
       <div style="font-weight:700;font-size:14px;margin-bottom:6px;">${t.label} (${rows.length} combinations, ${minMins}+ min)</div>
@@ -847,11 +869,11 @@ function buildRotationPlayer(name, mins) {
 function buildLineupCard(combo, n) {
   const names = combo.GROUP_NAME.split(' - ').map(p => p.trim());
   const net = combo.NET_RATING;
-  const mins = Math.round(combo.MIN);
+  const mins = Math.round(getPoss(combo));
   const iconSize = n <= 2 ? 26 : n === 3 ? 22 : n === 4 ? 19 : 16;
   return `<div class="lineup-card" onclick="openLineupLab(${esc(JSON.stringify(combo))})" style="cursor:pointer;">
     ${groupIcons(names, iconSize)}
-    <span class="lc-net ${net >= 0 ? 'pos' : 'neg'}">${fmt(net)} net rtg,<br>${mins} minutes</span>
+    <span class="lc-net ${net >= 0 ? 'pos' : 'neg'}">${fmt(net)} net rtg,<br>${mins} poss</span>
     <span class="lc-names">${names.map(esc).join('<br>')}</span>
   </div>`;
 }
@@ -877,13 +899,13 @@ function buildTier(tierName, bestCombos, worstCombos, n, allCombos, minMins, tie
 }
 
 function buildFullTable(combos, minMins) {
-  const rows = combos.filter(c => c.MIN >= minMins).sort((a, b) => b.NET_RATING - a.NET_RATING);
+  const rows = combos.filter(c => getPoss(c) >= minMins).sort((a, b) => b.NET_RATING - a.NET_RATING);
   if (!rows.length) return '<div style="color:var(--muted);padding:6px;font-size:11px;">No combinations meet the minutes threshold.</div>';
   return `<table>
-    <thead><tr><th>Lineup</th><th>Min</th><th>GP</th><th>Net</th><th>OFF</th><th>DEF</th><th>EFG%</th><th>TOV%</th></tr></thead>
+    <thead><tr><th>Lineup</th><th>Poss</th><th>GP</th><th>Net</th><th>OFF</th><th>DEF</th><th>EFG%</th><th>TOV%</th></tr></thead>
     <tbody>${rows.map(c => `<tr>
       <td>${esc(c.GROUP_NAME)}</td>
-      <td>${Math.round(c.MIN)}</td>
+      <td>${Math.round(getPoss(c))}</td>
       <td>${c.GP}</td>
       <td style="color:${c.NET_RATING >= 0 ? 'var(--green)' : 'var(--red)'};font-weight:700;">${fmt(c.NET_RATING)}</td>
       <td>${(c.OFF_RATING||0).toFixed(1)}</td>
@@ -933,7 +955,7 @@ function renderLineupContent(data) {
 
   function getBestWorst(arr, key) {
     const minMins = thresholds[key] || 0;
-    const q = arr.filter(c => c.MIN >= minMins);
+    const q = arr.filter(c => getPoss(c) >= minMins);
     return {
       best: [...q].sort((a, b) => b.NET_RATING - a.NET_RATING),
       worst: [...q].sort((a, b) => a.NET_RATING - b.NET_RATING),
@@ -1009,15 +1031,9 @@ function buildRotationPlaceholders() {
   for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
 }
 
-const STATS_FILES = {
-  full: 'data/team_stats.json',
-  home: 'data/team_stats_home.json',
-  away: 'data/team_stats_away.json',
-  l5:   'data/team_stats_l5.json',
-  l10:  'data/team_stats_l10.json',
-};
+const TEAM_STATS_PATH = 'data/team_stats.json';
 const FOCUS_ABBREV = 'MXC';
-let cachedTeamStats = {};
+let cachedTeamStats = null; // the full slices file, loaded once
 
 function renderTeamRanks(data) {
   const mxc = (data.teams || []).find(t => t.TEAM_ABBREVIATION === FOCUS_ABBREV);
@@ -1056,84 +1072,57 @@ function renderTeamRanks(data) {
   document.getElementById('r-dreb').style.color = '';
 }
 
-async function loadTeamStats(filterKey) {
-  const path = STATS_FILES[filterKey];
-  if (cachedTeamStats[filterKey]) { renderTeamRanks(cachedTeamStats[filterKey]); return; }
+async function loadRanks(slice) {
+  slice = slice || 'all';
   try {
-    const resp = await fetch(path + '?v=' + Date.now());
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    cachedTeamStats[filterKey] = data;
-    renderTeamRanks(data);
+    if (!cachedTeamStats) {
+      const resp = await fetch(TEAM_STATS_PATH + '?v=' + Date.now());
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      cachedTeamStats = await resp.json();
+    }
+    const teams = cachedTeamStats.slices?.[slice];
+    if (!teams) return; // slice not in file yet — silently leave dashes
+    renderTeamRanks({ teams });
   } catch(e) {
     // silently leave ranks as dashes if file doesn't exist yet
   }
 }
 
-document.querySelectorAll('.stat-filter').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.stat-filter').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadTeamStats(btn.dataset.filter);
-  });
-});
-
 buildRotationPlaceholders();
 loadStaffNotes();
+loadRanks('all');
 
-// Main page reads from the static mex_data.json — no live API call needed
-// Live API fetching only happens inside the Lab when filters are applied
-loadMexData()
-  .then(d => {
-    // Build playerXref from wowy/player data
-    playerXref = {};
-    (d.players || []).forEach(p => {
-      // Store by abbreviated form e.g. "J. Bouknight" -> photoUrl
-      const parts = (p.Player || '').split(' ');
+// Load playerXref from players_index.json
+fetch('data/players_index.json?v=' + Date.now())
+  .then(r => r.ok ? r.json() : [])
+  .then(idx => {
+    (idx || []).forEach(p => {
+      const parts = (p.name || '').split(/\s+/);
       if (parts.length >= 2) {
         const key = `${parts[0][0]}. ${parts[parts.length - 1]}`;
-        playerXref[key] = { id: null, name: p.Player, photoUrl: null };
+        playerXref[key] = { id: p.id, name: p.name, photoUrl: p.photoUrl };
       }
     });
-    // Also try to load full playerXref from players_index
-    return fetch('data/players_index.json?v=' + Date.now())
-      .then(r => r.ok ? r.json() : [])
-      .then(idx => {
-        const byKey = {};
-        (idx || []).forEach(p => {
-          const parts = (p.name || '').split(/\s+/);
-          if (parts.length >= 2) {
-            const key = `${parts[0][0]}. ${parts[parts.length - 1]}`;
-            byKey[key] = { id: p.id, name: p.name, photoUrl: p.photoUrl };
-          }
-        });
-        playerXref = { ...playerXref, ...byKey };
-        return d;
-      })
-      .catch(() => d);
+  }).catch(() => {});
+
+// Main page reads from lineup_data.json (all 4 group sizes from fetch script)
+// Falls back to mex_data.json duos if lineup_data.json not yet committed
+fetch(LINEUP_DATA_PATH + '?v=' + Date.now())
+  .then(r => {
+    if (!r.ok) throw new Error('lineup_data.json not found — run fetch_lineup_data.py and commit the output');
+    return r.json();
   })
   .then(d => {
-    // Render main page from static data
     const data = {
-      duos: d.lineups.filter(c => c.lineup.split(', ').length === 2),
-      trios: d.lineups.filter(c => c.lineup.split(', ').length === 3),
-      quads: d.lineups.filter(c => c.lineup.split(', ').length === 4),
-      fiveman: d.lineups.filter(c => c.lineup.split(', ').length === 5),
+      duos:    d.duos    || [],
+      trios:   d.trios   || [],
+      quads:   d.quads   || [],
+      fiveman: d.fiveman || [],
     };
-    // Normalize field names from Excel format to API format
-    ['duos','trios','quads','fiveman'].forEach(key => {
-      data[key] = data[key].map(c => ({
-        ...c,
-        GROUP_NAME: c.lineup,
-        NET_RATING: c.NetRtg,
-        OFF_RATING: c.OffRtg,
-        DEF_RATING: c.DefRtg,
-        MIN: c.MIN,
-        GP: null,
-        EFG_PCT: c['eFG%'] != null ? c['eFG%'] / 100 : null,
-        TM_TOV_PCT: c['TOV%'] != null ? c['TOV%'] / 100 : null,
-      }));
-    });
+    // Merge playerXref from lineup_data.json if present
+    if (d.playerXref) playerXref = { ...playerXref, ...Object.fromEntries(
+      Object.entries(d.playerXref).filter(([,v]) => v).map(([k,v]) => [k, v])
+    )};
     data._thresholds = {
       duos:    pct30Threshold(data.duos),
       trios:   pct30Threshold(data.trios),
@@ -1141,12 +1130,28 @@ loadMexData()
       fiveman: pct30Threshold(data.fiveman),
     };
     document.getElementById('lineupFetchStatus').textContent =
-      `${data.duos.length} duos · ${data.trios.length} trios · full 2025-26 season`;
+      `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads · ${data.fiveman.length} 5-man`;
     renderLineupContent(data);
   })
   .catch(e => {
-    document.getElementById('lineupContent').innerHTML =
-      `<div style="color:var(--red);font-size:12px;">Could not load lineup data: ${esc(e.message)}</div>`;
+    // Fallback: use mex_data.json duos while lineup_data.json isn't committed yet
+    loadMexData().then(d => {
+      const normalize = c => ({
+        GROUP_NAME: c.lineup, NET_RATING: c.NetRtg, OFF_RATING: c.OffRtg,
+        DEF_RATING: c.DefRtg, MIN: c.MIN, GP: null,
+        EFG_PCT: c['eFG%'] != null ? c['eFG%'] / 100 : null,
+        TM_TOV_PCT: c['TOV%'] != null ? c['TOV%'] / 100 : null,
+      });
+      const duos = d.lineups.map(normalize);
+      const data = { duos, trios: [], quads: [], fiveman: [],
+        _thresholds: { duos: pct30Threshold(duos), trios: 0, quads: 0, fiveman: 0 } };
+      document.getElementById('lineupFetchStatus').textContent =
+        `${duos.length} duos · trios/quads/5-man: commit lineup_data.json`;
+      renderLineupContent(data);
+    }).catch(() => {
+      document.getElementById('lineupContent').innerHTML =
+        `<div style="color:var(--red);font-size:12px;">Could not load lineup data: ${esc(e.message)}</div>`;
+    });
   });
 
 // Wire all filter controls — slider is client-side only, rest trigger a refetch

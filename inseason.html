@@ -368,11 +368,7 @@ a { color: inherit; text-decoration: none; }
           </div>
         </div>
         <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;" id="statsFilters">
-          <button class="stat-filter active" data-filter="full">Full Season</button>
-          <button class="stat-filter" data-filter="home">Home</button>
-          <button class="stat-filter" data-filter="away">Away</button>
-          <button class="stat-filter" data-filter="l5">L5</button>
-          <button class="stat-filter" data-filter="l10">L10</button>
+
         </div>
         <select id="rankSliceSelect" onchange="loadRanks(this.value)" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);margin-top:8px;width:100%;background:#fff;color:var(--text);">
           <option value="all">Full season</option>
@@ -1036,7 +1032,7 @@ const FOCUS_ABBREV = 'MXC';
 let cachedTeamStats = null; // the full slices file, loaded once
 
 function renderTeamRanks(data) {
-  const mxc = (data.teams || []).find(t => t.TEAM_ABBREVIATION === FOCUS_ABBREV);
+  const mxc = (data.teams || []).find(t => t.TEAM_ID === 1612709931 || t.TEAM_ABBREVIATION === FOCUS_ABBREV);
   if (!mxc) return;
   const total = data.teams.length;
 

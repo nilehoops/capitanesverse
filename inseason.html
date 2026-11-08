@@ -690,31 +690,45 @@ async function renderTeamProfile(d) {
 
   // Aggregate team stats across all lineup combinations, weighted by MIN
   const lineups = d.lineups || [];
-  const totalMin = lineups.reduce((s, c) => s + (c.MIN || 0), 0);
+  // Use MIN_ACTUAL (SUM_TIME_PLAYED/60) for real minutes — MIN in PerMinute
+  // mode is a normalized rate value, not actual minutes played.
+  const getW = c => c.MIN_ACTUAL || (c.SUM_TIME_PLAYED ? c.SUM_TIME_PLAYED / 60 : 0) || c.POSS || 0;
+  const totalMin = lineups.reduce((s, c) => s + getW(c), 0);
   if (!totalMin) { container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No lineup data.</div>'; return; }
 
   function wavg(key) {
-    const total = lineups.reduce((s, c) => s + (c.MIN || 0), 0);
+    const total = lineups.reduce((s, c) => s + getW(c), 0);
     if (!total) return null;
-    const wtd = lineups.reduce((s, c) => s + (c[key] != null ? c[key] * (c.MIN || 0) : 0), 0);
+    const wtd = lineups.reduce((s, c) => s + (c[key] != null ? c[key] * getW(c) : 0), 0);
     return wtd / total;
   }
 
   // Load schema for column grouping — falls back to sensible defaults
   const schema = await fetch('data/mex_schema.json').then(r => r.ok ? r.json() : null).catch(() => null);
   const groups = schema?.lineupDatapoints?.groups || {
-    'Ratings': ['NetRtg','OffRtg','DefRtg'],
-    'Offense': ['TS%','eFG%','TOV%','OREB%','AST%','PACE','FTA Rate'],
-    'Defense': ['DREB%','Opp eFG%','Opp TOV%','Opp FT%'],
+    'Ratings': ['NET_RATING','OFF_RATING','DEF_RATING'],
+    'Offense': ['TS_PCT','EFG_PCT','TM_TOV_PCT','OREB_PCT','AST_PCT','PACE'],
+    'Defense': ['DREB_PCT','OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_FTA_RATE'],
+  };
+  const FIELD_LABELS = {
+    'NET_RATING':'NetRtg','OFF_RATING':'OffRtg','DEF_RATING':'DefRtg',
+    'TS_PCT':'TS%','EFG_PCT':'eFG%','TM_TOV_PCT':'TOV%',
+    'OREB_PCT':'OREB%','AST_PCT':'AST%','PACE':'Pace',
+    'DREB_PCT':'DREB%','REB_PCT':'REB%',
+    'OPP_EFG_PCT':'Opp eFG%','OPP_FG2_PCT':'Opp 2PT%','OPP_FG3_PCT':'Opp 3P%',
+    'OPP_TOV_PCT':'Opp TOV%','OPP_FTA_RATE':'Opp FTA Rate',
   };
 
-  const pctCols = new Set(['TS%','eFG%','TOV%','OREB%','DREB%','AST%','REB%','Opp eFG%','Opp 2PT%','Opp 3P%','Opp FT%','Opp TOV%','Opp FTA Rate']);
+  // API returns pct fields as 0-1 (e.g. EFG_PCT=0.605 → display as 60.5%)
+  const pctFields = new Set(['TS_PCT','EFG_PCT','TM_TOV_PCT','OREB_PCT','DREB_PCT','AST_PCT','REB_PCT',
+    'OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_FT_PCT','OPP_TOV_PCT',
+    'TS%','eFG%','TOV%','OREB%','DREB%','AST%','REB%',
+    'Opp eFG%','Opp 2PT%','Opp 3P%','Opp FT%','Opp TOV%']);
 
   function fmtTeamStat(key, val) {
     if (val == null) return null;
     const v = Number(val);
-    if (pctCols.has(key)) return v.toFixed(1) + '%';
-    if (key === 'FTA Rate' || key === 'PACE') return v.toFixed(1);
+    if (pctFields.has(key)) return (v * 100).toFixed(1) + '%';
     return v.toFixed(1);
   }
 
@@ -723,12 +737,12 @@ async function renderTeamProfile(d) {
       const val = wavg(key);
       const display = fmtTeamStat(key, val);
       if (!display) return '';
-      const isRating = gname === 'Ratings';
-      const color = key === 'NetRtg'
+      const label = FIELD_LABELS[key] || key;
+      const color = key === 'NET_RATING' || key === 'NetRtg'
         ? (val >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;')
         : '';
       return `<div style="font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
-        <span style="color:var(--muted);">${key}</span>
+        <span style="color:var(--muted);">${label}</span>
         <span style="${color}">${display}</span>
       </div>`;
     }).filter(Boolean).join('');
@@ -741,7 +755,7 @@ async function renderTeamProfile(d) {
 
   container.innerHTML = `
     <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
-      Weighted avg · ${lineups.length} combos · ${totalMin.toFixed(0)} min
+      Weighted avg · ${lineups.length} combos · ${Math.round(totalMin)} min
     </div>
     ${groupHtml}`;
 }

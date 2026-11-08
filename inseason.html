@@ -374,6 +374,19 @@ a { color: inherit; text-decoration: none; }
           <button class="stat-filter" data-filter="l5">L5</button>
           <button class="stat-filter" data-filter="l10">L10</button>
         </div>
+        <select id="rankSliceSelect" onchange="loadRanks(this.value)" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);margin-top:8px;width:100%;background:#fff;color:var(--text);">
+          <option value="all">Full season</option>
+          <option value="home">Home</option>
+          <option value="away">Away</option>
+          <option value="last5">Last 5 games</option>
+          <option value="last10">Last 10 games</option>
+          <option value="first_half">1st half</option>
+          <option value="second_half">2nd half</option>
+          <option value="q1">Q1</option>
+          <option value="q2">Q2</option>
+          <option value="q3">Q3</option>
+          <option value="q4">Q4</option>
+        </select>
         <span class="see-all-link" id="seeAllTeamStats">See All Team Stats</span>
       </div>
     </div>
@@ -1018,15 +1031,9 @@ function buildRotationPlaceholders() {
   for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
 }
 
-const STATS_FILES = {
-  full: 'data/team_stats.json',
-  home: 'data/team_stats_home.json',
-  away: 'data/team_stats_away.json',
-  l5:   'data/team_stats_l5.json',
-  l10:  'data/team_stats_l10.json',
-};
+const TEAM_STATS_PATH = 'data/team_stats.json';
 const FOCUS_ABBREV = 'MXC';
-let cachedTeamStats = {};
+let cachedTeamStats = null; // the full slices file, loaded once
 
 function renderTeamRanks(data) {
   const mxc = (data.teams || []).find(t => t.TEAM_ABBREVIATION === FOCUS_ABBREV);
@@ -1065,30 +1072,25 @@ function renderTeamRanks(data) {
   document.getElementById('r-dreb').style.color = '';
 }
 
-async function loadTeamStats(filterKey) {
-  const path = STATS_FILES[filterKey];
-  if (cachedTeamStats[filterKey]) { renderTeamRanks(cachedTeamStats[filterKey]); return; }
+async function loadRanks(slice) {
+  slice = slice || 'all';
   try {
-    const resp = await fetch(path + '?v=' + Date.now());
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    cachedTeamStats[filterKey] = data;
-    renderTeamRanks(data);
+    if (!cachedTeamStats) {
+      const resp = await fetch(TEAM_STATS_PATH + '?v=' + Date.now());
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      cachedTeamStats = await resp.json();
+    }
+    const teams = cachedTeamStats.slices?.[slice];
+    if (!teams) return; // slice not in file yet — silently leave dashes
+    renderTeamRanks({ teams });
   } catch(e) {
     // silently leave ranks as dashes if file doesn't exist yet
   }
 }
 
-document.querySelectorAll('.stat-filter').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.stat-filter').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    loadTeamStats(btn.dataset.filter);
-  });
-});
-
 buildRotationPlaceholders();
 loadStaffNotes();
+loadRanks('all');
 
 // Load playerXref from players_index.json
 fetch('data/players_index.json?v=' + Date.now())

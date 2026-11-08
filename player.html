@@ -544,7 +544,60 @@ function videoSlot(video, label, slotIndex) {
   return player + customRow;
 }
 
-function render(player, players) {
+let _mexSchema = null;
+async function getMexSchema() {
+  if (_mexSchema) return _mexSchema;
+  try {
+    const r = await fetch('data/mex_schema.json');
+    if (r.ok) _mexSchema = await r.json();
+  } catch(e) {}
+  return _mexSchema;
+}
+
+function fmtStatVal(key, val) {
+  if (val == null) return null;
+  const v = Number(val);
+  if (isNaN(v)) return String(val);
+  // Percentage fields stored as 0-1
+  const pctFields = new Set(['2PT%','3P%','FT%','3PAr','FTR','TS%','eFG%','ORB%','DRB%','TRB%','AST%','TOV%','STL%','BLK%','USG%']);
+  if (pctFields.has(key)) return (v * 100).toFixed(1) + '%';
+  if (['AST/TO','Stl+Blk/min'].includes(key)) return v.toFixed(2);
+  if (Number.isInteger(v)) return v;
+  return v.toFixed(1);
+}
+
+function renderInSeasonStats(stats, schema) {
+  if (!stats) return '';
+  const groups = schema?.playerStats?.groups || {
+    'Shooting': ['MIN','FGM','FGA','2PT%','3P%','FT%','3PAr','FTR','TS%','eFG%'],
+    'Rebounding': ['ORB%','DRB%'],
+    'Playmaking': ['AST%','TOV%','AST/TO'],
+    'Defense': ['STL%','BLK%'],
+    'Impact': ['USG%','ORtg','DRtg','PER'],
+  };
+
+  const groupHtml = Object.entries(groups).map(([groupName, keys]) => {
+    const rows = keys.map(k => {
+      const val = stats[k];
+      const display = fmtStatVal(k, val);
+      if (display == null) return '';
+      const color = '';
+      return `<div><span class="k">${k}:</span> <span class="v" style="${color}">${display}</span></div>`;
+    }).filter(Boolean).join('');
+    if (!rows) return '';
+    return `<div style="margin-bottom:6px;">
+      <div style="font-size:11px;font-weight:700;color:#888;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em;">${groupName}</div>
+      <div class="stat-table">${rows}</div>
+    </div>`;
+  }).join('');
+
+  return `<div class="stats" style="margin-bottom:12px;">
+    <div class="stats-head">2025-26 In-Season Stats</div>
+    ${groupHtml || '<div style="font-size:12px;color:#888;">No stats available.</div>'}
+  </div>`;
+}
+
+function render(player, players, inSeasonStats, mexSchema) {
   const { strengths, weaknesses, source: swSource } = computeStrengthsWeaknesses(players, player);
   const { availableRank, latinoRank } = computeDerivedRanks(players, player);
   const videos = player.videos || [];
@@ -620,6 +673,8 @@ function render(player, players) {
             ${weaknesses.map(pbarRow).join('') || '<div class="box-sub">No notable weaknesses yet.</div>'}
           </div>
         </div>
+
+        ${renderInSeasonStats(inSeasonStats, mexSchema)}
 
         <div class="stats">
           <div class="stats-head">NCAA Career Stats/Metrics</div>
@@ -783,8 +838,9 @@ function fetchJsonOrThrow(path) {
 Promise.all([
   fetchJsonOrThrow('data/players_index.json'),
   fetchJsonOrThrow('data/players_detail.json'),
+  fetch('data/mex_data.json').then(r => r.ok ? r.json() : null).catch(() => null),
 ])
-  .then(([indexData, detailData]) => {
+  .then(([indexData, detailData, mexData]) => {
     const detailById = new Map(detailData.map(d => [d.id, d]));
     const players = indexData.map(p => ({ ...p, ...(detailById.get(p.id) || {}) }));
     const player = players.find(p => p.id === playerId);
@@ -792,7 +848,24 @@ Promise.all([
       document.getElementById('app').innerHTML = `<div class="notfound">Player not found: ${playerId || '(no id given)'}</div>`;
       return;
     }
-    render(player, players);
+
+    // Cross-reference against mex_data.json by name
+    let inSeasonStats = null;
+    if (mexData?.players) {
+      const lookup = mexData.nameLookup || {};
+      const pname = player.name?.toLowerCase();
+      // Try exact name match first, then abbreviated (e.g. "J. Bouknight")
+      const parts = player.name?.split(/\s+/) || [];
+      const abbrevKey = parts.length >= 2
+        ? `${parts[0][0].toLowerCase()}. ${parts[parts.length - 1].toLowerCase()}`
+        : null;
+      const matchedName = lookup[pname] || (abbrevKey && lookup[abbrevKey]);
+      if (matchedName) {
+        inSeasonStats = mexData.players.find(p => p.Player === matchedName) || null;
+      }
+    }
+
+    getMexSchema().then(schema => render(player, players, inSeasonStats, schema));
   })
   .catch(err => {
     console.error('Could not load player data', err);

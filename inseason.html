@@ -387,6 +387,14 @@ a { color: inherit; text-decoration: none; }
       </div>
     </div>
 
+    <!-- Team Profile -->
+    <div style="padding:10px 14px;border-top:1px solid var(--border);">
+      <div class="big-label" style="font-size:clamp(22px,3.5vw,36px);margin-bottom:8px;">Team<br>Profile</div>
+      <div id="teamProfileContent">
+        <div style="font-size:11px;color:var(--muted);">Loading…</div>
+      </div>
+    </div>
+
   </div><!-- /left-col -->
 
   <!-- ═══ RIGHT COLUMN ═══ -->
@@ -676,23 +684,86 @@ function switchLabTab(tab) {
   if (tab === 'wowy') renderWowyInit();
 }
 
+async function renderTeamProfile(d) {
+  const container = document.getElementById('teamProfileContent');
+  if (!container) return;
+
+  // Aggregate team stats across all lineup combinations, weighted by MIN
+  const lineups = d.lineups || [];
+  const totalMin = lineups.reduce((s, c) => s + (c.MIN || 0), 0);
+  if (!totalMin) { container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No lineup data.</div>'; return; }
+
+  function wavg(key) {
+    const total = lineups.reduce((s, c) => s + (c.MIN || 0), 0);
+    if (!total) return null;
+    const wtd = lineups.reduce((s, c) => s + (c[key] != null ? c[key] * (c.MIN || 0) : 0), 0);
+    return wtd / total;
+  }
+
+  // Load schema for column grouping — falls back to sensible defaults
+  const schema = await fetch('data/mex_schema.json').then(r => r.ok ? r.json() : null).catch(() => null);
+  const groups = schema?.lineupDatapoints?.groups || {
+    'Ratings': ['NetRtg','OffRtg','DefRtg'],
+    'Offense': ['TS%','eFG%','TOV%','OREB%','AST%','PACE','FTA Rate'],
+    'Defense': ['DREB%','Opp eFG%','Opp TOV%','Opp FT%'],
+  };
+
+  const pctCols = new Set(['TS%','eFG%','TOV%','OREB%','DREB%','AST%','REB%','Opp eFG%','Opp 2PT%','Opp 3P%','Opp FT%','Opp TOV%','Opp FTA Rate']);
+
+  function fmtTeamStat(key, val) {
+    if (val == null) return null;
+    const v = Number(val);
+    if (pctCols.has(key)) return v.toFixed(1) + '%';
+    if (key === 'FTA Rate' || key === 'PACE') return v.toFixed(1);
+    return v.toFixed(1);
+  }
+
+  const groupHtml = Object.entries(groups).map(([gname, keys]) => {
+    const rows = keys.map(key => {
+      const val = wavg(key);
+      const display = fmtTeamStat(key, val);
+      if (!display) return '';
+      const isRating = gname === 'Ratings';
+      const color = key === 'NetRtg'
+        ? (val >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;')
+        : '';
+      return `<div style="font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+        <span style="color:var(--muted);">${key}</span>
+        <span style="${color}">${display}</span>
+      </div>`;
+    }).filter(Boolean).join('');
+    if (!rows) return '';
+    return `<div style="margin-bottom:8px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${gname}</div>
+      ${rows}
+    </div>`;
+  }).join('');
+
+  container.innerHTML = `
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
+      Weighted avg · ${lineups.length} combos · ${totalMin.toFixed(0)} min
+    </div>
+    ${groupHtml}`;
+}
+
 async function renderPlayerStats() {
   const container = document.getElementById('playerStatsContent');
   try {
     const d = await loadMexData();
     const players = d.players;
     // Key columns to show — full set available but we pick the most meaningful
-    const cols = ['Player','MIN','TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','TOV%','STL%','BLK%','USG%','ORtg','DRtg','eDiff','PER'];
-    const colMap = { 'TS%':'TS%','eFG%':'eFG%','3P%':'3P%','FT%':'FT%','ORB%':'ORB%','DRB%':'DRB%','AST%':'AST%','TOV%':'TOV%','STL%':'STL%','BLK%':'BLK%','USG%':'USG%','ORtg':'ORtg','DRtg':'DRtg','eDiff':'eDiff','PER':'PER' };
-    const sorted = [...players].sort((a, b) => (b['MIN'] || 0) - (a['MIN'] || 0));
+    const cols = ['Player','MIN','TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','TOV%','STL%','BLK%','USG%','ORtg','DRtg','PER'];
+    const colMap = { 'TS%':'TS%','eFG%':'eFG%','3P%':'3P%','FT%':'FT%','ORB%':'ORB%','DRB%':'DRB%','AST%':'AST%','TOV%':'TOV%','STL%':'STL%','BLK%':'BLK%','USG%':'USG%','ORtg':'ORtg','DRtg':'DRtg','PER':'PER' };
+    const getName = p => p['Player'] || p['PLAYER_NAME'] || '—';
+    const sorted = [...players].sort((a, b) => (b['MIN'] || b['FGA'] || 0) - (a['MIN'] || a['FGA'] || 0));
     container.innerHTML = `<div style="overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <thead><tr>${cols.map(c => `<th style="background:var(--surface);padding:4px 8px;border-bottom:1px solid var(--border);text-align:${c==='Player'?'left':'right'};white-space:nowrap;color:var(--muted);font-weight:600;">${c}</th>`).join('')}</tr></thead>
-        <tbody>${sorted.filter(p => (p['MIN']||0) > 1).map(p => `<tr>
+        <tbody>${sorted.filter(p => (p['MIN']||0) > 0 || (p['FGA']||0) > 0).map(p => `<tr>
           ${cols.map(c => {
-            const v = p[c];
-            let disp = v == null ? '—' : typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(c.includes('%') || c === 'eDiff' || c === 'PER' ? 1 : 1)) : v;
-            const color = c === 'eDiff' ? (Number(v) >= 0 ? 'var(--green)' : 'var(--red)') : '';
+            const v = c === 'Player' ? getName(p) : p[c];
+            let disp = v == null ? '—' : typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(c.includes('%') || c === 'PER' ? 1 : 1)) : v;
+            const color = '';
             return `<td style="padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='Player'?'left':'right'};${color?'color:'+color+';font-weight:700;':''}">${disp}</td>`;
           }).join('')}
         </tr>`).join('')}</tbody>
@@ -737,7 +808,7 @@ async function renderWowy() {
   const statBlock = (label, stats, color) => `
     <div style="padding:12px;border:1px solid var(--border);flex:1;min-width:140px;">
       <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:${color};margin-bottom:8px;">${label}</div>
-      ${[['Net Rtg', stats.NetRtg, true],['Off Rtg', stats.OffRtg, false],['Def Rtg', stats.DefRtg, false],['Minutes', stats.MIN, false],['Combos', stats.combos, false]]
+      ${[['Net Rtg', stats.NetRtg, true],['Off Rtg', stats.OffRtg, false],['Def Rtg', stats.DefRtg, false],['Poss', stats.POSS ?? stats.MIN, false],['Combos', stats.combos, false]]
         .map(([lbl, val, signed]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;border-bottom:1px solid var(--border);">
           <span style="color:var(--muted);">${lbl}</span>
           <span style="font-weight:700;color:${lbl==='Net Rtg'?(Number(val)>=0?'var(--green)':'var(--red)'):''}">${val==null?'—':typeof val==='number'?val.toFixed(1):val}</span>
@@ -1087,6 +1158,7 @@ async function loadRanks(slice) {
 buildRotationPlaceholders();
 loadStaffNotes();
 loadRanks('all');
+loadMexData().then(renderTeamProfile).catch(() => {});
 
 // Load playerXref from players_index.json
 fetch('data/players_index.json?v=' + Date.now())
@@ -1132,6 +1204,7 @@ fetch(LINEUP_DATA_PATH + '?v=' + Date.now())
   .catch(e => {
     // Fallback: use mex_data.json duos while lineup_data.json isn't committed yet
     loadMexData().then(d => {
+      renderTeamProfile(d);
       const normalize = c => ({
         GROUP_NAME: c.lineup, NET_RATING: c.NetRtg, OFF_RATING: c.OffRtg,
         DEF_RATING: c.DefRtg, MIN: c.MIN, GP: null,

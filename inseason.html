@@ -719,30 +719,28 @@ async function renderTeamProfile(d) {
 
   // Load schema for column grouping — falls back to sensible defaults
   const schema = await fetch('data/mex_schema.json').then(r => r.ok ? r.json() : null).catch(() => null);
-  const groups = schema?.lineupDatapoints?.groups || {
-    'Ratings': ['NET_RATING','OFF_RATING','DEF_RATING'],
-    'Offense': ['TS_PCT','EFG_PCT','TM_TOV_PCT','OREB_PCT','AST_PCT','PACE'],
-    'Defense': ['DREB_PCT','OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_OREB_PCT','OPP_FTA_RATE'],
+  // Keys must match the normalised field names in mex_data.json lineups
+  const groups = {
+    'Ratings': ['NetRtg','OffRtg','DefRtg'],
+    'Offense': ['TS%','eFG%','TOV%','OREB%','AST%','PACE'],
+    'Defense': ['DREB%','OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_OREB_PCT','OPP_FTA_RATE'],
   };
   const FIELD_LABELS = {
-    'NET_RATING':'NetRtg','OFF_RATING':'OffRtg','DEF_RATING':'DefRtg',
-    'TS_PCT':'TS%','EFG_PCT':'eFG%','TM_TOV_PCT':'TOV%',
-    'OREB_PCT':'OREB%','AST_PCT':'AST%','PACE':'Pace',
-    'DREB_PCT':'DREB%','REB_PCT':'REB%',
     'OPP_EFG_PCT':'Opp eFG%','OPP_FG2_PCT':'Opp 2PT%','OPP_FG3_PCT':'Opp 3P%',
     'OPP_TOV_PCT':'Opp TOV%','OPP_OREB_PCT':'Opp OREB%','OPP_FTA_RATE':'Opp FTA Rate',
   };
 
-  // API returns pct fields as 0-1 (e.g. EFG_PCT=0.605 → display as 60.5%)
-  const pctFields = new Set(['TS_PCT','EFG_PCT','TM_TOV_PCT','OREB_PCT','DREB_PCT','AST_PCT','REB_PCT',
-    'OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_FT_PCT','OPP_TOV_PCT',
-    'TS%','eFG%','TOV%','OREB%','DREB%','AST%','REB%',
-    'Opp eFG%','Opp 2PT%','Opp 3P%','Opp FT%','Opp TOV%']);
+  // OPP_ fields: from team_stats.json, stored 0-1, need ×100 for display
+  // Lineup fields (TS%, eFG% etc): from mex_data.json, already 0-100
+  const oppPctFields  = new Set(['OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_FT_PCT','OPP_TOV_PCT','OPP_OREB_PCT']);
+  const linePctFields = new Set(['TS%','eFG%','TOV%','OREB%','DREB%','AST%','REB%']);
 
   function fmtTeamStat(key, val) {
     if (val == null) return null;
     const v = Number(val);
-    if (pctFields.has(key)) return (v * 100).toFixed(1) + '%';
+    if (oppPctFields.has(key))  return (v * 100).toFixed(1) + '%';
+    if (linePctFields.has(key)) return v.toFixed(1) + '%';
+    if (key === 'OPP_FTA_RATE') return v.toFixed(2);
     return v.toFixed(1);
   }
 
@@ -755,7 +753,7 @@ async function renderTeamProfile(d) {
       const display = fmtTeamStat(key, val);
       if (!display) return '';
       const label = FIELD_LABELS[key] || key;
-      const color = key === 'NET_RATING' || key === 'NetRtg'
+      const color = key === 'NetRtg'
         ? (val >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;')
         : '';
       return `<div style="font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">

@@ -688,7 +688,21 @@ async function renderTeamProfile(d) {
   const container = document.getElementById('teamProfileContent');
   if (!container) return;
 
-  // Aggregate team stats across all lineup combinations, weighted by MIN
+  // Load team-level stats (opponent data comes from Four Factors in team_stats.json,
+  // not from lineup combinations which don't include opponent fields)
+  let teamRow = null;
+  try {
+    if (cachedTeamStats) {
+      teamRow = (cachedTeamStats.slices?.all || []).find(t => t.TEAM_ID === 1612709931);
+    } else {
+      const r = await fetch(TEAM_STATS_PATH + '?v=' + Date.now());
+      if (r.ok) {
+        cachedTeamStats = await r.json();
+        teamRow = (cachedTeamStats.slices?.all || []).find(t => t.TEAM_ID === 1612709931);
+      }
+    }
+  } catch(e) {}
+
   const lineups = d.lineups || [];
   // Use MIN_ACTUAL (SUM_TIME_PLAYED/60) for real minutes — MIN in PerMinute
   // mode is a normalized rate value, not actual minutes played.
@@ -708,7 +722,7 @@ async function renderTeamProfile(d) {
   const groups = schema?.lineupDatapoints?.groups || {
     'Ratings': ['NET_RATING','OFF_RATING','DEF_RATING'],
     'Offense': ['TS_PCT','EFG_PCT','TM_TOV_PCT','OREB_PCT','AST_PCT','PACE'],
-    'Defense': ['DREB_PCT','OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_FTA_RATE'],
+    'Defense': ['DREB_PCT','OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_OREB_PCT','OPP_FTA_RATE'],
   };
   const FIELD_LABELS = {
     'NET_RATING':'NetRtg','OFF_RATING':'OffRtg','DEF_RATING':'DefRtg',
@@ -716,7 +730,7 @@ async function renderTeamProfile(d) {
     'OREB_PCT':'OREB%','AST_PCT':'AST%','PACE':'Pace',
     'DREB_PCT':'DREB%','REB_PCT':'REB%',
     'OPP_EFG_PCT':'Opp eFG%','OPP_FG2_PCT':'Opp 2PT%','OPP_FG3_PCT':'Opp 3P%',
-    'OPP_TOV_PCT':'Opp TOV%','OPP_FTA_RATE':'Opp FTA Rate',
+    'OPP_TOV_PCT':'Opp TOV%','OPP_OREB_PCT':'Opp OREB%','OPP_FTA_RATE':'Opp FTA Rate',
   };
 
   // API returns pct fields as 0-1 (e.g. EFG_PCT=0.605 → display as 60.5%)
@@ -732,9 +746,12 @@ async function renderTeamProfile(d) {
     return v.toFixed(1);
   }
 
+  // Opponent fields come from team_stats.json (Four Factors measure)
+  const OPP_KEYS = new Set(['OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_FTA_RATE','OPP_OREB_PCT']);
+
   const groupHtml = Object.entries(groups).map(([gname, keys]) => {
     const rows = keys.map(key => {
-      const val = wavg(key);
+      const val = OPP_KEYS.has(key) ? (teamRow ? teamRow[key] : null) : wavg(key);
       const display = fmtTeamStat(key, val);
       if (!display) return '';
       const label = FIELD_LABELS[key] || key;

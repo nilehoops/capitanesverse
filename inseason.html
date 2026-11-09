@@ -393,10 +393,10 @@ a { color: inherit; text-decoration: none; }
       </div>
     </div>
 
-    <!-- Team Profile -->
+    <!-- Ranking Trajectory -->
     <div style="padding:10px 14px;border-top:1px solid var(--border);">
-      <div class="big-label" style="font-size:clamp(22px,3.5vw,36px);margin-bottom:8px;">Team<br>Profile</div>
-      <div id="teamProfileContent">
+      <div class="big-label" style="font-size:clamp(22px,3.5vw,36px);margin-bottom:8px;">Season<br>Splits</div>
+      <div id="trajectoryContent">
         <div style="font-size:11px;color:var(--muted);">Loading…</div>
       </div>
     </div>
@@ -423,7 +423,7 @@ a { color: inherit; text-decoration: none; }
     <div class="lineup-block">
       <div class="lineup-data-header">
         <span class="lineup-data-title">Lineup Data</span>
-        <button class="lineup-lab-btn">Lineup Lab<br>Tool</button>
+        <button class="lineup-lab-btn" onclick="openLineupLab()">Lineup Lab<br>Tool</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
         Top 30% by possessions · <span id="lineupFetchStatus" style="font-style:italic;"></span>
@@ -708,134 +708,98 @@ function switchLabTab(tab) {
   if (tab === 'wowy') renderWowyInit();
 }
 
-async function renderTeamProfile(d) {
-  const container = document.getElementById('teamProfileContent');
+async function renderTeamProfile() {} // kept as no-op to avoid reference errors
+
+async function renderTrajectory() {
+  const container = document.getElementById('trajectoryContent');
   if (!container) return;
 
-  // Load team-level stats (opponent data comes from Four Factors in team_stats.json,
-  // not from lineup combinations which don't include opponent fields)
-  let teamRow = null;
   try {
-    if (cachedTeamStats) {
-      teamRow = (cachedTeamStats.slices?.all || []).find(t => t.TEAM_ID === 1612709931);
-    } else {
+    if (!cachedTeamStats) {
       const r = await fetch(TEAM_STATS_PATH + '?v=' + Date.now());
-      if (r.ok) {
-        cachedTeamStats = await r.json();
-        teamRow = (cachedTeamStats.slices?.all || []).find(t => t.TEAM_ID === 1612709931);
-      }
+      if (r.ok) cachedTeamStats = await r.json();
     }
   } catch(e) {}
 
-  // Use 5-man units from lineup_data.json for more accurate team-level aggregation
-  // Falls back to mex_data.json duos if lineup_data.json isn't loaded yet
-  let lineups = d.lineups || [];
-  try {
-    const ldResp = await fetch(LINEUP_DATA_PATH + '?v=' + Date.now());
-    if (ldResp.ok) {
-      const ld = await ldResp.json();
-      if ((ld.fiveman || []).length) lineups = ld.fiveman;
-    }
-  } catch(e) {}
-  // Use MIN_ACTUAL (SUM_TIME_PLAYED/60) for real minutes — MIN in PerMinute
-  // mode is a normalized rate value, not actual minutes played.
-  const getW = c => c.MIN_ACTUAL || (c.SUM_TIME_PLAYED ? c.SUM_TIME_PLAYED / 60 : 0) || c.POSS || 0;
-  const totalMin = lineups.reduce((s, c) => s + getW(c), 0);
-  if (!totalMin) { container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No lineup data.</div>'; return; }
-
-  function wavg(key) {
-    const total = lineups.reduce((s, c) => s + getW(c), 0);
-    if (!total) return null;
-    const wtd = lineups.reduce((s, c) => s + (c[key] != null ? c[key] * getW(c) : 0), 0);
-    return wtd / total;
+  if (!cachedTeamStats) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No data — commit team_stats.json.</div>';
+    return;
   }
 
-  // Load schema for column grouping — falls back to sensible defaults
-  const schema = await fetch('data/mex_schema.json').then(r => r.ok ? r.json() : null).catch(() => null);
-  // Use API field names — 5-man lineup_data.json uses NET_RATING, EFG_PCT etc.
-  const groups = {
-    'Ratings': ['NET_RATING','OFF_RATING','DEF_RATING'],
-    'Offense': ['TS_PCT','EFG_PCT','TM_TOV_PCT','OREB_PCT','AST_PCT','PACE'],
-    'Defense': ['DREB_PCT','OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_OREB_PCT','OPP_FTA_RATE'],
-  };
-  const FIELD_LABELS = {
-    'NET_RATING':'NetRtg','OFF_RATING':'OffRtg','DEF_RATING':'DefRtg',
-    'TS_PCT':'TS%','EFG_PCT':'eFG%','TM_TOV_PCT':'TOV%',
-    'OREB_PCT':'OREB%','AST_PCT':'AST%','DREB_PCT':'DREB%',
-    'OPP_EFG_PCT':'Opp eFG%','OPP_FG2_PCT':'Opp 2PT%','OPP_FG3_PCT':'Opp 3P%',
-    'OPP_TOV_PCT':'Opp TOV%','OPP_OREB_PCT':'Opp OREB%','OPP_FTA_RATE':'Opp FTA Rate',
-  };
+  const MXC_ID = 1612709931;
+  const pctFields = new Set(['EFG_PCT','TM_TOV_PCT','OREB_PCT','DREB_PCT','OPP_EFG_PCT','OPP_TOV_PCT','OPP_OREB_PCT']);
+  const lowerBetter = new Set(['TM_TOV_PCT','DEF_RATING','OPP_EFG_PCT','OPP_TOV_PCT','OPP_OREB_PCT']);
 
-  // OPP_ fields: from team_stats.json, stored 0-1, need ×100 for display
-  // Lineup fields (TS%, eFG% etc): from mex_data.json, already 0-100
-  // All percentage fields in both lineup_data.json (API) and team_stats.json are 0-1 scale
-  const allPctFields = new Set([
-    'TS_PCT','EFG_PCT','TM_TOV_PCT','OREB_PCT','DREB_PCT','AST_PCT','REB_PCT',
-    'OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_FT_PCT','OPP_TOV_PCT','OPP_OREB_PCT',
-    'TS%','eFG%','TOV%','OREB%','DREB%','AST%','REB%',
-  ]);
+  function getMXC(slice) {
+    return (cachedTeamStats.slices?.[slice] || []).find(t => t.TEAM_ID === MXC_ID);
+  }
 
-  function fmtTeamStat(key, val) {
-    if (val == null) return null;
+  function getRank(slice, key, val) {
+    const teams = (cachedTeamStats.slices?.[slice] || []).filter(t => t[key] != null);
+    if (!teams.length || val == null) return null;
+    const better = lowerBetter.has(key)
+      ? teams.filter(t => t[key] <= val).length
+      : teams.filter(t => t[key] >= val).length;
+    return better;
+  }
+
+  function fmt(key, val) {
+    if (val == null) return '—';
     const v = Number(val);
-    if (allPctFields.has(key)) return (v * 100).toFixed(1) + '%';
-    if (key === 'OPP_FTA_RATE') return v.toFixed(2);
+    if (pctFields.has(key)) return (v * 100).toFixed(1) + '%';
     return v.toFixed(1);
   }
 
-  // Opponent fields come from team_stats.json (Four Factors measure)
-  const OPP_KEYS = new Set(['OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_FTA_RATE','OPP_OREB_PCT']);
-
-  // Build percentile lookup from all-slice team data
-  const allTeams = cachedTeamStats?.slices?.all || [];
-  const lowerIsBetter = new Set(['TM_TOV_PCT','TOV%','OPP_EFG_PCT','OPP_FG2_PCT',
-    'OPP_FG3_PCT','OPP_TOV_PCT','OPP_OREB_PCT','OPP_FTA_RATE','DEF_RATING','DefRtg']);
-
-  function teamPctile(key, val) {
-    if (val == null || !allTeams.length) return null;
-    // For lineup-derived fields, build distribution from lineup wavg across all teams
-    // For OPP_ fields sourced from teamRow, use the allTeams array directly
-    const vals = allTeams.map(t => t[key]).filter(v => v != null);
-    if (!vals.length) return null;
-    const better = lowerIsBetter.has(key)
-      ? vals.filter(v => v <= val).length
-      : vals.filter(v => v <= val).length;
-    return Math.round((better / vals.length) * 100);
+  function netColor(v) {
+    if (v == null) return '';
+    return v >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;';
   }
 
-  const groupHtml = Object.entries(groups).map(([gname, keys]) => {
-    const rows = keys.map(key => {
-      const val = OPP_KEYS.has(key) ? (teamRow ? teamRow[key] : null) : wavg(key);
-      const display = fmtTeamStat(key, val);
-      if (!display) return '';
-      const label = FIELD_LABELS[key] || key;
-      const color = key === 'NetRtg'
-        ? (val >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;')
-        : '';
-      // Percentile rank — use OPP_ key for opponent fields, map lineup fields to API equivalents
-      // Groups already use API field names — use key directly for percentile lookup
-      const pctileVal = teamRow ? teamRow[key] : null;
-      const pctile = teamPctile(key, pctileVal);
-      const pctileHtml = pctile != null
-        ? `<sup style="font-size:8px;color:var(--muted);margin-left:2px;">${pctile}th</sup>`
-        : '';
-      return `<div style="font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;">
-        <span style="color:var(--muted);">${label}</span>
-        <span style="${color}">${display}${pctileHtml}</span>
-      </div>`;
-    }).filter(Boolean).join('');
-    if (!rows) return '';
-    return `<div style="margin-bottom:8px;">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${gname}</div>
-      ${rows}
+  // Define comparison groups: each is a set of slices shown side by side
+  const comparisons = [
+    { label: 'Home vs Away', slices: ['home','away'], keys: ['NET_RATING','OFF_RATING','DEF_RATING','EFG_PCT','TM_TOV_PCT'] },
+    { label: 'By Half', slices: ['first_half','second_half'], keys: ['NET_RATING','OFF_RATING','DEF_RATING','EFG_PCT','TM_TOV_PCT'] },
+    { label: 'By Quarter', slices: ['q1','q2','q3','q4'], keys: ['NET_RATING','OFF_RATING','DEF_RATING'] },
+    { label: 'Opponent Strength', slices: ['vs_elite','vs_middle','vs_weak'], keys: ['NET_RATING','OFF_RATING','DEF_RATING','EFG_PCT','TM_TOV_PCT','OPP_EFG_PCT'] },
+  ];
+
+  const sliceLabels = {
+    home:'Home', away:'Away', first_half:'1st Half', second_half:'2nd Half',
+    q1:'Q1', q2:'Q2', q3:'Q3', q4:'Q4',
+    vs_elite:'vs Elite', vs_middle:'vs Mid', vs_weak:'vs Weak',
+  };
+
+  const keyLabels = {
+    NET_RATING:'NetRtg', OFF_RATING:'OffRtg', DEF_RATING:'DefRtg',
+    EFG_PCT:'eFG%', TM_TOV_PCT:'TOV%', OREB_PCT:'OREB%',
+    OPP_EFG_PCT:'Opp eFG%', OPP_TOV_PCT:'Opp TOV%',
+  };
+
+  const html = comparisons.map(comp => {
+    const sliceData = comp.slices.map(sl => ({ sl, row: getMXC(sl) }));
+    const header = `<tr><th style="text-align:left;font-size:10px;color:var(--muted);padding:2px 4px 4px;"></th>${
+      sliceData.map(({sl}) => `<th style="font-size:10px;color:var(--muted);padding:2px 4px 4px;text-align:right;">${sliceLabels[sl]}</th>`).join('')
+    }</tr>`;
+    const rows = comp.keys.map(key => {
+      const cells = sliceData.map(({sl, row}) => {
+        const val = row ? row[key] : null;
+        const rank = getRank(sl, key, val);
+        const color = key === 'NET_RATING' ? netColor(val) : '';
+        const rankStr = rank != null ? `<sup style="font-size:7px;color:var(--muted);">${rank}</sup>` : '';
+        return `<td style="text-align:right;font-size:11px;padding:2px 4px;${color}">${fmt(key,val)}${rankStr}</td>`;
+      }).join('');
+      return `<tr><td style="font-size:10px;color:var(--muted);padding:2px 4px;">${keyLabels[key]||key}</td>${cells}</tr>`;
+    }).join('');
+    return `<div style="margin-bottom:14px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">${comp.label}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>${header}</thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>`;
   }).join('');
 
-  container.innerHTML = `
-    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
-      Weighted avg across ${lineups.length} lineup combinations
-    </div>
-    ${groupHtml}`;
+  container.innerHTML = html;
 }
 
 async function renderPlayerStats() {
@@ -1285,7 +1249,7 @@ async function loadRanks(slice) {
 buildRotationPlaceholders();
 loadStaffNotes();
 loadRanks('all');
-loadMexData().then(renderTeamProfile).catch(() => {});
+renderTrajectory();
 
 // Load playerXref from players_index.json
 fetch('data/players_index.json?v=' + Date.now())
@@ -1371,16 +1335,12 @@ if (labMinsSlider) {
   });
 }
 
-// Open lab and fetch on first open
-const labBtn = document.querySelector('.lineup-lab-btn');
-if (labBtn) {
-  labBtn.addEventListener('click', () => {
-    document.getElementById('lineupLabModal').style.display = 'flex';
-    if (!window._labEverOpened) {
-      window._labEverOpened = true;
-      fetchLabData();
-    }
-  });
+function openLineupLab() {
+  document.getElementById('lineupLabModal').style.display = 'flex';
+  if (!window._labEverOpened) {
+    window._labEverOpened = true;
+    fetchLabData();
+  }
 }
 </script>
 </body>

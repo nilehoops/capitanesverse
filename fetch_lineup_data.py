@@ -368,7 +368,8 @@ def main():
         print(f"  {len(game_log)} games found")
 
         # Opponent strength: elite (top ⅓ net rtg), middle, weak (bottom ⅓)
-        opp_slices = build_opponent_strength_slices(game_log, team_stats_output.get("all", []))
+        abbrev_to_id = build_abbrev_to_team_id(team_ids)
+        opp_slices = build_opponent_strength_slices(game_log, team_stats_output.get("all", []), abbrev_to_id)
         print(f"  Opponent strength slices: " +
               ", ".join(f"{k}={len(v)} games" for k, v in opp_slices.items()))
 
@@ -662,7 +663,7 @@ def fetch_game_log(team_id):
     """Fetch the full season game log for one team across all season types,
     sorted oldest-first. Includes Regular Season + Tip-Off Tournament."""
     all_rows = []
-    for season_type in ("Regular+Season", "Pre+Season"):
+    for season_type in ("Regular+Season", "Pre+Season", "Preseason", "Tip-Off+Tournament", "Exhibition"):
         url = (
             "https://stats.nba.com/stats/leaguegamelog"
             f"?LeagueID=20&Season={SEASON}&SeasonType={season_type}"
@@ -694,7 +695,12 @@ def fetch_game_log(team_id):
 
 
 
-def build_opponent_strength_slices(game_log, all_teams):
+def build_abbrev_to_team_id(team_ids_dict):
+    """team_ids_dict is {abbrev: team_id} from discover_teams() — already verified."""
+    return {abbrev.upper(): tid for abbrev, tid in team_ids_dict.items()}
+
+
+def build_opponent_strength_slices(game_log, all_teams, abbrev_to_id=None):
     """Classify opponents into elite/middle/weak by net rating, then
     return date-range lists for each bucket so team stats can be filtered
     to only games against that quality of opponent.
@@ -719,35 +725,21 @@ def build_opponent_strength_slices(game_log, all_teams):
     middle_ids = {t["TEAM_ID"] for t in ranked[third:n - third]}
 
     buckets = {"vs_elite": [], "vs_middle": [], "vs_weak": []}
-    # Build lookup from last word of team name -> team_id
-    # e.g. "Rio Grande Valley Vipers" -> last word "Vipers"
-    # Also build from known G League abbreviations since leaguegamelog uses them
-    # in MATCHUP but team_stats has null TEAM_ABBREVIATION
-    name_to_id = {}
-    for t in all_teams:
-        tname = (t.get("TEAM_NAME") or "").strip()
-        if tname:
-            # Last word of name (e.g. "Vipers", "Spurs", "Capitanes")
-            name_to_id[tname.split()[-1].upper()] = t["TEAM_ID"]
-            # Also full last two words for teams with common last words
-            words = tname.split()
-            if len(words) >= 2:
-                name_to_id[f"{words[-2]} {words[-1]}".upper()] = t["TEAM_ID"]
+    # Use the abbrev->id map from discover_teams() which already has all
+    # 31 verified abbreviations (AUS, BHM, MXC etc) — this avoids the
+    # TEAM_ABBREVIATION=null problem in team_stats data.
+    lookup = abbrev_to_id or {}
+
+    # Print a sample MATCHUP to confirm the format
+    if game_log:
+        print(f"    Sample MATCHUP: {game_log[0].get('MATCHUP')!r}")
 
     unmatched_games = 0
     for game in game_log:
         matchup = game.get("MATCHUP", "")
-        # MATCHUP is e.g. "MXC vs. RGV" or "MXC @ RGV"
+        # MATCHUP is e.g. "MXC vs. RGV" or "MXC @ RGV" — last word is opp
         opp_abbrev = matchup.split()[-1].upper()
-        # Try direct abbreviation match against known G League abbreviations
-        opp_id = None
-        for t in all_teams:
-            tname = (t.get("TEAM_NAME") or "").upper()
-            # Match by last word of team name against opponent abbreviation
-            last = tname.split()[-1] if tname else ""
-            if last == opp_abbrev or (t.get("TEAM_ABBREVIATION") or "").upper() == opp_abbrev:
-                opp_id = t["TEAM_ID"]
-                break
+        opp_id = lookup.get(opp_abbrev)
         if not opp_id:
             unmatched_games += 1
             continue

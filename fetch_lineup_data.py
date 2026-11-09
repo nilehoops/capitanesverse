@@ -373,24 +373,26 @@ def main():
         print(f"  Opponent strength slices: " +
               ", ".join(f"{k}={len(v)} games" for k, v in opp_slices.items()))
 
-        # Fetch team stats for each opponent strength slice
-        all_extra_slices = opp_slices
-        print(f"\nFetching {len(all_extra_slices)} additional slices...")
-        for label, date_pairs in all_extra_slices.items():
-            if not date_pairs:
+        # Fetch team stats for each opponent strength bucket.
+        # Uses OpponentTeamID so every team's stats reflect their actual
+        # performance against that specific opponent — true like-for-like comparison.
+        print(f"\nFetching opponent strength slices (OpponentTeamID-based)...")
+        for label, opp_id_list in opp_slices.items():
+            if not opp_id_list:
+                print(f"  {label}: no opponents — skipping")
                 continue
-            # Combine all date ranges in this slice into one stats fetch per range,
-            # then merge by keeping the entry with the most games played
-            best = None
-            for date_from, date_to in date_pairs:
-                result = fetch_team_stats({"DateFrom": date_from, "DateTo": date_to})
+            # Collect all teams' rows across all opponent fetches,
+            # then aggregate by summing GP-weighted stats
+            all_rows_for_slice = []
+            for opp_id in opp_id_list:
+                result = fetch_team_stats({"OpponentTeamID": opp_id})
                 if result:
-                    mxc = next((t for t in result["teams"] if t.get("TEAM_ID") == focus_team_id), None)
-                    if mxc and (best is None or (mxc.get("GP") or 0) > (best.get("GP") or 0)):
-                        best = mxc
-                        team_stats_output[label] = result["teams"]
-                time.sleep(1)
-            print(f"  {label}: done")
+                    all_rows_for_slice.extend(result["teams"])
+                time.sleep(0.8)
+            # Aggregate: sum GP, then weighted-average the rate stats
+            if all_rows_for_slice:
+                team_stats_output[label] = aggregate_opp_rows(all_rows_for_slice)
+            print(f"  {label}: done ({len(opp_id_list)} opponents)")
 
         # Rewrite team_stats.json with expanded slices
         with open(ts_path, "w") as f:
@@ -416,14 +418,13 @@ def fetch_team_stats(filters=None):
         f"?LeagueID=20&Season={SEASON}&SeasonType=Regular+Season"
         "&PerMode=PerGame&PaceAdjust=N&PlusMinus=N&Rank=N"
         "&Outcome=&Location={loc}&Month=0&SeasonSegment="
-        "&DateFrom={date_from}&DateTo={date_to}&OpponentTeamID=0"
+        "&DateFrom=&DateTo=&OpponentTeamID={opp_team_id}"
         "&VsConference=&VsDivision=&GameSegment={game_segment}&Period={period}"
         "&ShotClockRange=&LastNGames={last_n}&GameScope=&PlayerExperience="
         "&PlayerPosition=&StarterBench=&TwoWay=0"
     ).format(
         loc=filters.get('Location', ''),
-        date_from=filters.get('DateFrom', ''),
-        date_to=filters.get('DateTo', ''),
+        opp_team_id=filters.get('OpponentTeamID', 0),
         game_segment=filters.get('GameSegment', '').replace(' ', '+'),
         period=filters.get('Period', 0),
         last_n=filters.get('LastNGames', 0),
@@ -659,14 +660,43 @@ def build_mex_data(players, lineup_output):
     }
 
 
+def aggregate_opp_rows(rows):
+    """Aggregate team stat rows fetched across multiple OpponentTeamID calls.
+    Sums GP and computes GP-weighted averages for rate stats."""
+    from collections import defaultdict
+    by_team = defaultdict(list)
+    for r in rows:
+        tid = r.get("TEAM_ID")
+        if tid:
+            by_team[tid].append(r)
+
+    aggregated = []
+    rate_fields = ["OFF_RATING","DEF_RATING","NET_RATING","EFG_PCT","TM_TOV_PCT",
+                   "OREB_PCT","DREB_PCT","OPP_EFG_PCT","OPP_TOV_PCT","OPP_OREB_PCT",
+                   "OPP_FTA_RATE","PACE","AST_PCT","TS_PCT","PIE"]
+    for tid, team_rows in by_team.items():
+        total_gp = sum(r.get("GP") or 0 for r in team_rows)
+        if not total_gp:
+            continue
+        base = dict(team_rows[0])
+        base["GP"] = total_gp
+        for f in rate_fields:
+            vals = [(r.get(f), r.get("GP") or 0) for r in team_rows if r.get(f) is not None]
+            if vals:
+                base[f] = sum(v * gp for v, gp in vals) / sum(gp for _, gp in vals)
+        aggregated.append(base)
+    return aggregated
+
+
 def fetch_game_log(team_id):
     """Fetch the full season game log for one team across all season types,
     sorted oldest-first. Includes Regular Season + Tip-Off Tournament."""
     all_rows = []
-    for season_type in ("Regular+Season", "Pre+Season", "Preseason", "Tip-Off+Tournament", "Exhibition"):
+    for season_type in ("Regular Season", "Pre Season"):
+        st_encoded = season_type.replace(" ", "+")
         url = (
             "https://stats.nba.com/stats/leaguegamelog"
-            f"?LeagueID=20&Season={SEASON}&SeasonType={season_type}"
+            f"?LeagueID=20&Season={SEASON}&SeasonType={st_encoded}"
             "&PlayerOrTeam=T&Direction=ASC&Sorter=DATE"
             f"&TeamID={team_id}&Counter=0"
         )
@@ -734,27 +764,30 @@ def build_opponent_strength_slices(game_log, all_teams, abbrev_to_id=None):
     if game_log:
         print(f"    Sample MATCHUP: {game_log[0].get('MATCHUP')!r}")
 
+    # Collect unique opponent team IDs per bucket
+    seen = {"vs_elite": set(), "vs_middle": set(), "vs_weak": set()}
     unmatched_games = 0
     for game in game_log:
         matchup = game.get("MATCHUP", "")
-        # MATCHUP is e.g. "MXC vs. RGV" or "MXC @ RGV" — last word is opp
         opp_abbrev = matchup.split()[-1].upper()
         opp_id = lookup.get(opp_abbrev)
         if not opp_id:
             unmatched_games += 1
             continue
-        date = game.get("GAME_DATE")
         if opp_id in elite_ids:
-            buckets["vs_elite"].append((date, date))
+            seen["vs_elite"].add(opp_id)
         elif opp_id in weak_ids:
-            buckets["vs_weak"].append((date, date))
+            seen["vs_weak"].add(opp_id)
         else:
-            buckets["vs_middle"].append((date, date))
+            seen["vs_middle"].add(opp_id)
 
     if unmatched_games:
         print(f"    Warning: {unmatched_games} games couldn't be matched to opponent")
 
-    return buckets
+    result = {k: list(v) for k, v in seen.items()}
+    print(f"    Opponent IDs — elite: {len(result['vs_elite'])}, "
+          f"middle: {len(result['vs_middle'])}, weak: {len(result['vs_weak'])}")
+    return result
 
 
 if __name__ == "__main__":

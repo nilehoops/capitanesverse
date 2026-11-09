@@ -160,23 +160,9 @@ def fetch_team_lineups(team_id, group_quantity, min_minutes=0):
         stp = r.get("SUM_TIME_PLAYED")
         r["MIN_ACTUAL"] = round(stp / 60, 1) if stp else 0.0
 
-    # Opponent — prefix OPP_ fields to avoid colliding with team-side names
-    try:
-        time.sleep(0.3)
-        opp_rows = _fetch_lineup_measure(team_id, group_quantity, "Opponent", min_minutes)
-        opp_by_id = {r["GROUP_ID"]: r for r in opp_rows}
-        OPP_FIELDS = ["EFG_PCT", "FG2_PCT", "FG3_PCT", "FT_PCT", "TOV_PCT",
-                      "FTA_RATE", "FGM", "FGA", "FG_PCT", "FG3M", "FG3A",
-                      "FG2M", "FG2A", "FTM", "FTA"]
-        for r in adv_rows:
-            opp = opp_by_id.get(r.get("GROUP_ID"), {})
-            for f in OPP_FIELDS:
-                if f in opp:
-                    r[f"OPP_{f}"] = opp[f]
-    except Exception as e:
-        # Opponent fetch failing is non-fatal — advanced data is still usable
-        pass
-
+    # Note: MeasureType=Opponent is not supported by leaguedashlineups (returns HTTP 500).
+    # Opponent stats at team level are available from leaguedashteamstats with
+    # MeasureType=Four+Factors, which is already fetched in fetch_team_stats().
     return adv_rows
 
 

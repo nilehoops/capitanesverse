@@ -1351,18 +1351,25 @@ fetch(LINEUP_DATA_PATH + '?v=' + Date.now())
   });
 
 // Wire all filter controls — slider is client-side only, rest trigger a refetch
-document.getElementById('minMinsSlider').addEventListener('input', function() {
-  document.getElementById('minMinsLabel').textContent = this.value;
-  // Re-render from last fetched data without a new API call
-  if (window._lastLineupData) renderLineupContent(window._lastLineupData, Number(this.value));
-});
+const minMinsSlider = document.getElementById('minMinsSlider');
+if (minMinsSlider) {
+  minMinsSlider.addEventListener('input', function() {
+    const lbl = document.getElementById('minMinsLabel');
+    if (lbl) lbl.textContent = this.value;
+    if (window._lastLineupData) renderLineupContent(window._lastLineupData, Number(this.value));
+  });
+}
 
 // Lab filter controls — trigger a new fetch when any filter changes
 document.querySelectorAll('.lab-filter').forEach(el => el.addEventListener('change', triggerLabFetch));
-document.getElementById('labMinsSlider').addEventListener('input', function() {
-  document.getElementById('labMinsLabel').textContent = this.value;
-  if (window._lastLabData) renderLabContent(window._lastLabData, Number(this.value));
-});
+const labMinsSlider = document.getElementById('labMinsSlider');
+if (labMinsSlider) {
+  labMinsSlider.addEventListener('input', function() {
+    const lbl = document.getElementById('labMinsLabel');
+    if (lbl) lbl.textContent = this.value;
+    if (window._lastLabData) renderLabContent(window._lastLabData, Number(this.value));
+  });
+}
 
 // Open lab and fetch on first open
 const labBtn = document.querySelector('.lineup-lab-btn');

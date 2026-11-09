@@ -727,7 +727,16 @@ async function renderTeamProfile(d) {
     }
   } catch(e) {}
 
-  const lineups = d.lineups || [];
+  // Use 5-man units from lineup_data.json for more accurate team-level aggregation
+  // Falls back to mex_data.json duos if lineup_data.json isn't loaded yet
+  let lineups = d.lineups || [];
+  try {
+    const ldResp = await fetch(LINEUP_DATA_PATH + '?v=' + Date.now());
+    if (ldResp.ok) {
+      const ld = await ldResp.json();
+      if ((ld.fiveman || []).length) lineups = ld.fiveman;
+    }
+  } catch(e) {}
   // Use MIN_ACTUAL (SUM_TIME_PLAYED/60) for real minutes — MIN in PerMinute
   // mode is a normalized rate value, not actual minutes played.
   const getW = c => c.MIN_ACTUAL || (c.SUM_TIME_PLAYED ? c.SUM_TIME_PLAYED / 60 : 0) || c.POSS || 0;
@@ -771,6 +780,23 @@ async function renderTeamProfile(d) {
   // Opponent fields come from team_stats.json (Four Factors measure)
   const OPP_KEYS = new Set(['OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_FTA_RATE','OPP_OREB_PCT']);
 
+  // Build percentile lookup from all-slice team data
+  const allTeams = cachedTeamStats?.slices?.all || [];
+  const lowerIsBetter = new Set(['TM_TOV_PCT','TOV%','OPP_EFG_PCT','OPP_FG2_PCT',
+    'OPP_FG3_PCT','OPP_TOV_PCT','OPP_OREB_PCT','OPP_FTA_RATE','DEF_RATING','DefRtg']);
+
+  function teamPctile(key, val) {
+    if (val == null || !allTeams.length) return null;
+    // For lineup-derived fields, build distribution from lineup wavg across all teams
+    // For OPP_ fields sourced from teamRow, use the allTeams array directly
+    const vals = allTeams.map(t => t[key]).filter(v => v != null);
+    if (!vals.length) return null;
+    const better = lowerIsBetter.has(key)
+      ? vals.filter(v => v <= val).length
+      : vals.filter(v => v <= val).length;
+    return Math.round((better / vals.length) * 100);
+  }
+
   const groupHtml = Object.entries(groups).map(([gname, keys]) => {
     const rows = keys.map(key => {
       const val = OPP_KEYS.has(key) ? (teamRow ? teamRow[key] : null) : wavg(key);
@@ -780,9 +806,19 @@ async function renderTeamProfile(d) {
       const color = key === 'NetRtg'
         ? (val >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;')
         : '';
-      return `<div style="font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
+      // Percentile rank — use OPP_ key for opponent fields, map lineup fields to API equivalents
+      const apiKey = {
+        'NetRtg':'NET_RATING','OffRtg':'OFF_RATING','DefRtg':'DEF_RATING',
+        'TS%':'TS_PCT','eFG%':'EFG_PCT','TOV%':'TM_TOV_PCT',
+        'OREB%':'OREB_PCT','DREB%':'DREB_PCT','AST%':'AST_PCT',
+      }[key] || key;
+      const pctile = teamPctile(apiKey, OPP_KEYS.has(key) ? val : (teamRow ? teamRow[apiKey] : null));
+      const pctileHtml = pctile != null
+        ? `<sup style="font-size:8px;color:var(--muted);margin-left:2px;">${pctile}th</sup>`
+        : '';
+      return `<div style="font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:baseline;">
         <span style="color:var(--muted);">${label}</span>
-        <span style="${color}">${display}</span>
+        <span style="${color}">${display}${pctileHtml}</span>
       </div>`;
     }).filter(Boolean).join('');
     if (!rows) return '';
@@ -794,7 +830,7 @@ async function renderTeamProfile(d) {
 
   container.innerHTML = `
     <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
-      Weighted avg across ${lineups.length} duo combinations
+      Weighted avg across ${lineups.length} lineup combinations
     </div>
     ${groupHtml}`;
 }

@@ -1362,14 +1362,16 @@ document.getElementById('labMinsSlider').addEventListener('input', function() {
 });
 
 // Open lab and fetch on first open
-document.querySelector('.lineup-lab-btn').addEventListener('click', () => {
-  document.getElementById('lineupLabModal').style.display = 'flex';
-  if (!window._labEverOpened) {
-    window._labEverOpened = true;
-    fetchLabData(); // fetch live lineup data for the lineups tab
-  }
-});
-loadTeamStats('full');
+const labBtn = document.querySelector('.lineup-lab-btn');
+if (labBtn) {
+  labBtn.addEventListener('click', () => {
+    document.getElementById('lineupLabModal').style.display = 'flex';
+    if (!window._labEverOpened) {
+      window._labEverOpened = true;
+      fetchLabData();
+    }
+  });
+}
 </script>
 </body>
 </html>

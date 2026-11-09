@@ -518,15 +518,33 @@ const XREF_PATH  = 'data/lineup_data.json'; // only used for playerXref field
 
 const MXC_TEAM_ID = 1612709931;
 const SEASON      = '2025-26';
-const NBA_STATS_HEADERS = {
-  'User-Agent':          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-  'Referer':             'https://www.nba.com/',
-  'Accept':              'application/json, text/plain, */*',
-  'Accept-Language':     'en-US,en;q=0.9',
-  'Origin':              'https://www.nba.com',
-  'x-nba-stats-origin':  'stats',
-  'x-nba-stats-token':   'true',
-};
+
+// Set this to your deployed Cloudflare Worker URL after deployment.
+// e.g. 'https://nba-proxy.YOUR-NAME.workers.dev'
+// Leave as empty string to disable proxy (live fetches will fail due to CORS).
+const PROXY_BASE = 'https://gleague-proxy.nilehoops.workers.dev';
+
+// Route a stats.nba.com URL through the proxy if configured
+function proxyUrl(nbaUrl) {
+  if (!PROXY_BASE) return nbaUrl; // no proxy — will likely CORS-fail from browser
+  return `${PROXY_BASE}?url=${encodeURIComponent(nbaUrl)}`;
+}
+
+// When using the proxy, no custom headers needed (Worker adds them server-side)
+function nbaFetch(url) {
+  if (PROXY_BASE) {
+    return fetch(proxyUrl(url)); // proxy handles headers
+  }
+  return fetch(url, { headers: {
+    'User-Agent':          'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+    'Referer':             'https://www.nba.com/',
+    'Accept':              'application/json, text/plain, */*',
+    'Accept-Language':     'en-US,en;q=0.9',
+    'Origin':              'https://www.nba.com',
+    'x-nba-stats-origin':  'stats',
+    'x-nba-stats-token':   'true',
+  }});
+}
 
 let playerXref = {};   // loaded once from stored lineup_data.json
 let currentFetch = null; // AbortController for in-flight request
@@ -590,7 +608,7 @@ async function fetchMXCLineups(groupQuantity, filters = {}) {
   });
 
   const url = `https://stats.nba.com/stats/leaguedashlineups?${params}`;
-  const resp = await fetch(url, { headers: NBA_STATS_HEADERS, signal: filters.signal });
+  const resp = await nbaFetch(url);
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   const data = await resp.json();
   const rs   = data.resultSets?.[0];
@@ -1200,7 +1218,7 @@ async function loadRanksByDate() {
   );
 
   try {
-    const resp = await fetch(url, { headers: NBA_STATS_HEADERS });
+    const resp = await nbaFetch(url);
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     const rs = data.resultSets?.[0];

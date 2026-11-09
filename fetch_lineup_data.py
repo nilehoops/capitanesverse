@@ -232,53 +232,62 @@ def main():
         return
     print()
 
-    duos_all = fetch_lineups_all_teams(team_ids, group_quantity=2)
-    time.sleep(2)
-    trios_all = fetch_lineups_all_teams(team_ids, group_quantity=3)
-    time.sleep(2)
-    quads_all = fetch_lineups_all_teams(team_ids, group_quantity=4)
-    time.sleep(2)
-    fiveman_all = fetch_lineups_all_teams(team_ids, group_quantity=5)
+    lineup_path = os.path.join("data", "lineup_data.json")
+    if os.path.exists(lineup_path):
+        print(f"\nLineup data already exists ({os.path.getsize(lineup_path)//1024} KB) — skipping re-fetch.")
+        print("Delete data/lineup_data.json manually if you need to re-pull (e.g. new season).")
+        with open(lineup_path) as f:
+            existing = json.load(f)
+        output = existing
+    else:
+        duos_all = fetch_lineups_all_teams(team_ids, group_quantity=2)
+        time.sleep(2)
+        trios_all = fetch_lineups_all_teams(team_ids, group_quantity=3)
+        time.sleep(2)
+        quads_all = fetch_lineups_all_teams(team_ids, group_quantity=4)
+        time.sleep(2)
+        fiveman_all = fetch_lineups_all_teams(team_ids, group_quantity=5)
 
-    if not duos_all and not trios_all and not fiveman_all:
-        print("\nNo data fetched — check your connection and retry.")
-        return
+        if not duos_all and not trios_all and not fiveman_all:
+            print("\nNo data fetched — check your connection and retry.")
+            return
 
-    # Build cross-reference for MXC players only
-    print("\nBuilding player cross-reference for MXC roster...")
-    by_key = build_player_xref()
+    if 'duos_all' in dir():
+        # Freshly fetched — build cross-reference and write output
+        print("\nBuilding player cross-reference for MXC roster...")
+        by_key = build_player_xref()
 
-    mxc_names = set()
-    for arr in [duos_all, trios_all, quads_all, fiveman_all]:
-        for combo in arr:
-            if combo.get("TEAM_ABBREVIATION") == CAPITANES_ABBREV:
-                for name in combo.get('GROUP_NAME', '').split(' - '):
-                    mxc_names.add(name.strip())
+        mxc_names = set()
+        for arr in [duos_all, trios_all, quads_all, fiveman_all]:
+            for combo in arr:
+                if combo.get("TEAM_ABBREVIATION") == CAPITANES_ABBREV:
+                    for name in combo.get('GROUP_NAME', '').split(' - '):
+                        mxc_names.add(name.strip())
 
-    player_xref = {}
-    matched = 0
-    for abbrev in sorted(mxc_names):
-        p = xref_name(abbrev, by_key)
-        if p:
-            player_xref[abbrev] = {
-                'id': p.get('id'),
-                'name': p.get('name'),
-                'photoUrl': p.get('photoUrl'),
-                'position': p.get('position'),
-                'overallRank': p.get('overallRank'),
-            }
-            matched += 1
-        else:
-            player_xref[abbrev] = None
+        player_xref = {}
+        matched = 0
+        for abbrev in sorted(mxc_names):
+            p = xref_name(abbrev, by_key)
+            if p:
+                player_xref[abbrev] = {
+                    'id': p.get('id'),
+                    'name': p.get('name'),
+                    'photoUrl': p.get('photoUrl'),
+                    'position': p.get('position'),
+                    'overallRank': p.get('overallRank'),
+                }
+                matched += 1
+            else:
+                player_xref[abbrev] = None
 
-    print(f"  Matched {matched} of {len(mxc_names)} MXC players")
-    unmatched = [n for n, v in player_xref.items() if v is None]
-    if unmatched:
-        print(f"  Unmatched (not in players_index.json): {unmatched}")
+        print(f"  Matched {matched} of {len(mxc_names)} MXC players")
+        unmatched = [n for n, v in player_xref.items() if v is None]
+        if unmatched:
+            print(f"  Unmatched (not in players_index.json): {unmatched}")
 
-    focus_abbrev = next(a for a, tid in team_ids.items() if tid == focus_team_id)
-    output = build_output(duos_all, trios_all, fiveman_all, quads_all,
-                          player_xref, focus_abbrev, focus_team_id)
+        focus_abbrev = next(a for a, tid in team_ids.items() if tid == focus_team_id)
+        output = build_output(duos_all, trios_all, fiveman_all, quads_all,
+                              player_xref, focus_abbrev, focus_team_id)
 
     os.makedirs("data", exist_ok=True)
 
@@ -295,19 +304,18 @@ def main():
     with open(mxc_path, "w") as f:
         json.dump(mxc_output, f, separators=(",", ":"))
 
-    # File 2: Full league — larger, loaded only on demand for comparisons
-    league_path = os.path.join("data", "lineup_league.json")
-    with open(league_path, "w") as f:
-        json.dump({"meta": output["meta"], **output["league"]}, f, separators=(",", ":"))
+    if "league" in output:
+        league_path = os.path.join("data", "lineup_league.json")
+        with open(league_path, "w") as f:
+            json.dump({"meta": output["meta"], **output["league"]}, f, separators=(",", ":"))
+        league_kb = os.path.getsize(league_path) // 1024
+        print(f"  {league_path} ({league_kb} KB) — full league, loaded on demand")
+        print(f"  League: {len(output['league']['duos'])} duos, {len(output['league']['trios'])} trios")
 
-    import os as _os
-    mxc_kb = _os.path.getsize(mxc_path) // 1024
-    league_kb = _os.path.getsize(league_path) // 1024
+    mxc_kb = os.path.getsize(mxc_path) // 1024
     print(f"\nWritten:")
     print(f"  {mxc_path} ({mxc_kb} KB) — MXC only, page loads this on startup")
-    print(f"  {league_path} ({league_kb} KB) — full league, loaded on demand")
-    print(f"\n  MXC: {len(output['duos'])} duos, {len(output['trios'])} trios, {len(output['quads'])} quads, {len(output['fiveman'])} 5-man")
-    print(f"  League: {len(output['league']['duos'])} duos, {len(output['league']['trios'])} trios")
+    print(f"  MXC: {len(output['duos'])} duos, {len(output['trios'])} trios, {len(output['quads'])} quads, {len(output['fiveman'])} 5-man")
     print(f"  Fetched at: {output['meta']['fetched_at']}")
     # Team stats — full season + filter slices for the league ranks section
     print("\nFetching team stats...")
@@ -352,6 +360,47 @@ def main():
         print(f"  mex_data.json written ({mex_kb} KB) — {len(player_stats)} players")
     else:
         print("  Warning: could not fetch player stats — mex_data.json not updated")
+
+    # Game log — needed for date intervals and opponent strength slices
+    print("\nFetching MXC game log...")
+    game_log = fetch_game_log(focus_team_id)
+    if game_log:
+        print(f"  {len(game_log)} games found")
+
+        # Opponent strength: elite (top ⅓ net rtg), middle, weak (bottom ⅓)
+        opp_slices = build_opponent_strength_slices(game_log, team_stats_output.get("all", []))
+        print(f"  Opponent strength slices: " +
+              ", ".join(f"{k}={len(v)} games" for k, v in opp_slices.items()))
+
+        # Fetch team stats for each opponent strength slice
+        all_extra_slices = opp_slices
+        print(f"\nFetching {len(all_extra_slices)} additional slices...")
+        for label, date_pairs in all_extra_slices.items():
+            if not date_pairs:
+                continue
+            # Combine all date ranges in this slice into one stats fetch per range,
+            # then merge by keeping the entry with the most games played
+            best = None
+            for date_from, date_to in date_pairs:
+                result = fetch_team_stats({"DateFrom": date_from, "DateTo": date_to})
+                if result:
+                    mxc = next((t for t in result["teams"] if t.get("TEAM_ID") == focus_team_id), None)
+                    if mxc and (best is None or (mxc.get("GP") or 0) > (best.get("GP") or 0)):
+                        best = mxc
+                        team_stats_output[label] = result["teams"]
+                time.sleep(1)
+            print(f"  {label}: done")
+
+        # Rewrite team_stats.json with expanded slices
+        with open(ts_path, "w") as f:
+            json.dump({
+                "meta": {"season": SEASON, "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")},
+                "slices": team_stats_output,
+            }, f, separators=(",", ":"))
+        ts_kb = os.path.getsize(ts_path) // 1024
+        print(f"  team_stats.json updated ({ts_kb} KB)")
+    else:
+        print("  Warning: could not fetch game log — interval/opponent slices skipped")
 
     print("\nCommit data/lineup_data.json, data/team_stats.json and data/mex_data.json to update the site.")
 
@@ -607,6 +656,113 @@ def build_mex_data(players, lineup_output):
         "wowy": wowy,
         "nameLookup": name_lookup,
     }
+
+
+def fetch_game_log(team_id):
+    """Fetch the full season game log for one team across all season types,
+    sorted oldest-first. Includes Regular Season + Tip-Off Tournament."""
+    all_rows = []
+    for season_type in ("Regular+Season", "Pre+Season"):
+        url = (
+            "https://stats.nba.com/stats/leaguegamelog"
+            f"?LeagueID=20&Season={SEASON}&SeasonType={season_type}"
+            "&PlayerOrTeam=T&Direction=ASC&Sorter=DATE"
+            f"&TeamID={team_id}&Counter=0"
+        )
+        try:
+            req = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=20) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            rs = data["resultSets"][0]
+            hdrs = rs["headers"]
+            rows = [dict(zip(hdrs, row)) for row in rs["rowSet"]]
+            team_rows = [r for r in rows if r.get("TEAM_ID") == team_id]
+            all_rows.extend(team_rows)
+            if team_rows:
+                print(f"    {season_type.replace('+', ' ')}: {len(team_rows)} games")
+            time.sleep(1)
+        except Exception as e:
+            print(f"    {season_type}: ERROR — {e}")
+    # Sort by date, deduplicate by GAME_ID
+    seen = set()
+    unique = []
+    for r in sorted(all_rows, key=lambda x: x.get("GAME_DATE", "")):
+        if r["GAME_ID"] not in seen:
+            seen.add(r["GAME_ID"])
+            unique.append(r)
+    return unique
+
+
+
+def build_opponent_strength_slices(game_log, all_teams):
+    """Classify opponents into elite/middle/weak by net rating, then
+    return date-range lists for each bucket so team stats can be filtered
+    to only games against that quality of opponent.
+
+    elite  = top third of league by NET_RATING
+    middle = middle third
+    weak   = bottom third
+    """
+    if not all_teams:
+        return {}
+
+    # Rank teams by net rating
+    ranked = sorted(
+        [t for t in all_teams if t.get("NET_RATING") is not None],
+        key=lambda t: t["NET_RATING"],
+        reverse=True,
+    )
+    n = len(ranked)
+    third = n // 3
+    elite_ids  = {t["TEAM_ID"] for t in ranked[:third]}
+    weak_ids   = {t["TEAM_ID"] for t in ranked[n - third:]}
+    middle_ids = {t["TEAM_ID"] for t in ranked[third:n - third]}
+
+    buckets = {"vs_elite": [], "vs_middle": [], "vs_weak": []}
+    # Build lookup from last word of team name -> team_id
+    # e.g. "Rio Grande Valley Vipers" -> last word "Vipers"
+    # Also build from known G League abbreviations since leaguegamelog uses them
+    # in MATCHUP but team_stats has null TEAM_ABBREVIATION
+    name_to_id = {}
+    for t in all_teams:
+        tname = (t.get("TEAM_NAME") or "").strip()
+        if tname:
+            # Last word of name (e.g. "Vipers", "Spurs", "Capitanes")
+            name_to_id[tname.split()[-1].upper()] = t["TEAM_ID"]
+            # Also full last two words for teams with common last words
+            words = tname.split()
+            if len(words) >= 2:
+                name_to_id[f"{words[-2]} {words[-1]}".upper()] = t["TEAM_ID"]
+
+    unmatched_games = 0
+    for game in game_log:
+        matchup = game.get("MATCHUP", "")
+        # MATCHUP is e.g. "MXC vs. RGV" or "MXC @ RGV"
+        opp_abbrev = matchup.split()[-1].upper()
+        # Try direct abbreviation match against known G League abbreviations
+        opp_id = None
+        for t in all_teams:
+            tname = (t.get("TEAM_NAME") or "").upper()
+            # Match by last word of team name against opponent abbreviation
+            last = tname.split()[-1] if tname else ""
+            if last == opp_abbrev or (t.get("TEAM_ABBREVIATION") or "").upper() == opp_abbrev:
+                opp_id = t["TEAM_ID"]
+                break
+        if not opp_id:
+            unmatched_games += 1
+            continue
+        date = game.get("GAME_DATE")
+        if opp_id in elite_ids:
+            buckets["vs_elite"].append((date, date))
+        elif opp_id in weak_ids:
+            buckets["vs_weak"].append((date, date))
+        else:
+            buckets["vs_middle"].append((date, date))
+
+    if unmatched_games:
+        print(f"    Warning: {unmatched_games} games couldn't be matched to opponent")
+
+    return buckets
 
 
 if __name__ == "__main__":

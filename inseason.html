@@ -388,13 +388,7 @@ a { color: inherit; text-decoration: none; }
             <option value="vs_weak">vs. Weak (bottom ⅓ net rtg)</option>
           </optgroup>
         </select>
-        <div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:10px;color:var(--muted);">
-          <span>Date range:</span>
-          <input type="date" id="rankDateFrom" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);width:110px;">
-          <span>→</span>
-          <input type="date" id="rankDateTo" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);width:110px;">
-          <button onclick="loadRanksByDate()" style="font-size:10px;padding:2px 7px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:'Lora',serif;">Go</button>
-        </div>
+
         <span class="see-all-link" id="seeAllTeamStats">See All Team Stats</span>
       </div>
     </div>
@@ -522,7 +516,7 @@ const SEASON      = '2025-26';
 // Set this to your deployed Cloudflare Worker URL after deployment.
 // e.g. 'https://nba-proxy.YOUR-NAME.workers.dev'
 // Leave as empty string to disable proxy (live fetches will fail due to CORS).
-const PROXY_BASE = 'https://gleague-proxy.nilehoops.workers.dev';
+const PROXY_BASE = '';
 
 // Route a stats.nba.com URL through the proxy if configured
 function proxyUrl(nbaUrl) {

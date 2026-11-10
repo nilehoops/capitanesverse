@@ -278,6 +278,7 @@ a { color: inherit; text-decoration: none; }
 .lab-tab { background:none;border:none;border-bottom:2px solid transparent;padding:8px 18px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted); }
 .lab-tab.active { border-bottom-color:#000;color:#000; }
 .lab-tab:hover { color:#000; }
+.season-btn.active { background:var(--blue)!important;color:#fff!important; }
 .full-table-wrap table { width: 100%; border-collapse: collapse; font-size: 10px; }
 .full-table-wrap th {
   background: var(--surface); color: var(--muted); font-weight: 600;
@@ -295,9 +296,17 @@ a { color: inherit; text-decoration: none; }
 <body>
 
 <header class="page-header">
-  <div style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-    <div class="page-title">2027 Capitanes In-Season Analytics &amp; Research</div>
-    <a href="index.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;flex-shrink:0;">⇄ Offseason Tool</a>
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div class="page-title">Capitanes In-Season Analytics &amp; Research — <span id="seasonLabel"></span></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <div style="display:flex;border:1px solid var(--border);overflow:hidden;">
+        <button class="season-btn" data-season="2026-27" onclick="switchSeason('2026-27')"
+          style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);">2026-27</button>
+        <button class="season-btn" data-season="2025-26" onclick="switchSeason('2025-26')"
+          style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
+      </div>
+      <a href="index.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">⇄ Offseason Tool</a>
+    </div>
   </div>
   <div class="page-search">
     <span>Search:</span>
@@ -393,10 +402,10 @@ a { color: inherit; text-decoration: none; }
       </div>
     </div>
 
-    <!-- Team Profile -->
+    <!-- Ranking Trajectory -->
     <div style="padding:10px 14px;border-top:1px solid var(--border);">
-      <div class="big-label" style="font-size:clamp(22px,3.5vw,36px);margin-bottom:8px;">Team<br>Profile</div>
-      <div id="teamProfileContent">
+      <div class="big-label" style="font-size:clamp(22px,3.5vw,36px);margin-bottom:8px;">Season<br>Splits</div>
+      <div id="trajectoryContent">
         <div style="font-size:11px;color:var(--muted);">Loading…</div>
       </div>
     </div>
@@ -423,7 +432,7 @@ a { color: inherit; text-decoration: none; }
     <div class="lineup-block">
       <div class="lineup-data-header">
         <span class="lineup-data-title">Lineup Data</span>
-        <button class="lineup-lab-btn">Lineup Lab<br>Tool</button>
+        <button class="lineup-lab-btn" onclick="openLineupLab()">Lineup Lab<br>Tool</button>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
         Top 30% by possessions · <span id="lineupFetchStatus" style="font-style:italic;"></span>
@@ -508,10 +517,16 @@ a { color: inherit; text-decoration: none; }
 
 <script>
 const STAFF_PATH = 'data/staff_notes.json';
-const XREF_PATH  = 'data/lineup_data.json'; // only used for playerXref field
+// XREF_PATH is now dynamic via dataPath('lineup_data')
 
 const MXC_TEAM_ID = 1612709931;
-const SEASON      = '2025-26';
+const AVAILABLE_SEASONS = ['2026-27', '2025-26'];
+let SEASON = localStorage.getItem('capitanes_season') || '2026-27';
+
+// Season-specific file paths
+function dataPath(file) {
+  return `data/${file}_${SEASON}.json`;
+}
 
 // Set this to your deployed Cloudflare Worker URL after deployment.
 // e.g. 'https://nba-proxy.YOUR-NAME.workers.dev'
@@ -685,13 +700,14 @@ function triggerLabFetch() {
   labDebounce = setTimeout(fetchLabData, 400);
 }
 
-const MEX_DATA_PATH    = 'data/mex_data.json';    // Player Stats + WOWY (from Excel)
-const LINEUP_DATA_PATH = 'data/lineup_data.json'; // All 4 group sizes (from fetch script)
+// Data paths are season-aware — use dataPath() helper
+let MEX_DATA_PATH    = () => dataPath('mex_data');
+let LINEUP_DATA_PATH = () => dataPath('lineup_data');
 let mexData = null;
 
 async function loadMexData() {
   if (mexData) return mexData;
-  const resp = await fetch(MEX_DATA_PATH + '?v=' + Date.now());
+  const resp = await fetch(MEX_DATA_PATH() + '?v=' + Date.now());
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   mexData = await resp.json();
   return mexData;
@@ -708,95 +724,98 @@ function switchLabTab(tab) {
   if (tab === 'wowy') renderWowyInit();
 }
 
-async function renderTeamProfile(d) {
-  const container = document.getElementById('teamProfileContent');
+async function renderTeamProfile() {} // kept as no-op to avoid reference errors
+
+async function renderTrajectory() {
+  const container = document.getElementById('trajectoryContent');
   if (!container) return;
 
-  // Load team-level stats (opponent data comes from Four Factors in team_stats.json,
-  // not from lineup combinations which don't include opponent fields)
-  let teamRow = null;
   try {
-    if (cachedTeamStats) {
-      teamRow = (cachedTeamStats.slices?.all || []).find(t => t.TEAM_ID === 1612709931);
-    } else {
-      const r = await fetch(TEAM_STATS_PATH + '?v=' + Date.now());
-      if (r.ok) {
-        cachedTeamStats = await r.json();
-        teamRow = (cachedTeamStats.slices?.all || []).find(t => t.TEAM_ID === 1612709931);
-      }
+    if (!cachedTeamStats) {
+      const r = await fetch(TEAM_STATS_PATH() + '?v=' + Date.now());
+      if (r.ok) cachedTeamStats = await r.json();
     }
   } catch(e) {}
 
-  const lineups = d.lineups || [];
-  // Use MIN_ACTUAL (SUM_TIME_PLAYED/60) for real minutes — MIN in PerMinute
-  // mode is a normalized rate value, not actual minutes played.
-  const getW = c => c.MIN_ACTUAL || (c.SUM_TIME_PLAYED ? c.SUM_TIME_PLAYED / 60 : 0) || c.POSS || 0;
-  const totalMin = lineups.reduce((s, c) => s + getW(c), 0);
-  if (!totalMin) { container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No lineup data.</div>'; return; }
-
-  function wavg(key) {
-    const total = lineups.reduce((s, c) => s + getW(c), 0);
-    if (!total) return null;
-    const wtd = lineups.reduce((s, c) => s + (c[key] != null ? c[key] * getW(c) : 0), 0);
-    return wtd / total;
+  if (!cachedTeamStats) {
+    container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No data — commit team_stats.json.</div>';
+    return;
   }
 
-  // Load schema for column grouping — falls back to sensible defaults
-  const schema = await fetch('data/mex_schema.json').then(r => r.ok ? r.json() : null).catch(() => null);
-  // Keys must match the normalised field names in mex_data.json lineups
-  const groups = {
-    'Ratings': ['NetRtg','OffRtg','DefRtg'],
-    'Offense': ['TS%','eFG%','TOV%','OREB%','AST%','PACE'],
-    'Defense': ['DREB%','OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_OREB_PCT','OPP_FTA_RATE'],
-  };
-  const FIELD_LABELS = {
-    'OPP_EFG_PCT':'Opp eFG%','OPP_FG2_PCT':'Opp 2PT%','OPP_FG3_PCT':'Opp 3P%',
-    'OPP_TOV_PCT':'Opp TOV%','OPP_OREB_PCT':'Opp OREB%','OPP_FTA_RATE':'Opp FTA Rate',
-  };
+  const MXC_ID = 1612709931;
+  const pctFields = new Set(['EFG_PCT','TM_TOV_PCT','OREB_PCT','DREB_PCT','OPP_EFG_PCT','OPP_TOV_PCT','OPP_OREB_PCT']);
+  const lowerBetter = new Set(['TM_TOV_PCT','DEF_RATING','OPP_EFG_PCT','OPP_TOV_PCT','OPP_OREB_PCT']);
 
-  // OPP_ fields: from team_stats.json, stored 0-1, need ×100 for display
-  // Lineup fields (TS%, eFG% etc): from mex_data.json, already 0-100
-  const oppPctFields  = new Set(['OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_FT_PCT','OPP_TOV_PCT','OPP_OREB_PCT']);
-  const linePctFields = new Set(['TS%','eFG%','TOV%','OREB%','DREB%','AST%','REB%']);
+  function getMXC(slice) {
+    return (cachedTeamStats.slices?.[slice] || []).find(t => t.TEAM_ID === MXC_ID);
+  }
 
-  function fmtTeamStat(key, val) {
-    if (val == null) return null;
+  function getRank(slice, key, val) {
+    const teams = (cachedTeamStats.slices?.[slice] || []).filter(t => t[key] != null);
+    if (!teams.length || val == null) return null;
+    const better = lowerBetter.has(key)
+      ? teams.filter(t => t[key] <= val).length
+      : teams.filter(t => t[key] >= val).length;
+    return better;
+  }
+
+  function fmt(key, val) {
+    if (val == null) return '—';
     const v = Number(val);
-    if (oppPctFields.has(key))  return (v * 100).toFixed(1) + '%';
-    if (linePctFields.has(key)) return v.toFixed(1) + '%';
-    if (key === 'OPP_FTA_RATE') return v.toFixed(2);
+    if (pctFields.has(key)) return (v * 100).toFixed(1) + '%';
     return v.toFixed(1);
   }
 
-  // Opponent fields come from team_stats.json (Four Factors measure)
-  const OPP_KEYS = new Set(['OPP_EFG_PCT','OPP_FG2_PCT','OPP_FG3_PCT','OPP_TOV_PCT','OPP_FTA_RATE','OPP_OREB_PCT']);
+  function netColor(v) {
+    if (v == null) return '';
+    return v >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;';
+  }
 
-  const groupHtml = Object.entries(groups).map(([gname, keys]) => {
-    const rows = keys.map(key => {
-      const val = OPP_KEYS.has(key) ? (teamRow ? teamRow[key] : null) : wavg(key);
-      const display = fmtTeamStat(key, val);
-      if (!display) return '';
-      const label = FIELD_LABELS[key] || key;
-      const color = key === 'NetRtg'
-        ? (val >= 0 ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;')
-        : '';
-      return `<div style="font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;">
-        <span style="color:var(--muted);">${label}</span>
-        <span style="${color}">${display}</span>
-      </div>`;
-    }).filter(Boolean).join('');
-    if (!rows) return '';
-    return `<div style="margin-bottom:8px;">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:2px;">${gname}</div>
-      ${rows}
+  // Define comparison groups: each is a set of slices shown side by side
+  const comparisons = [
+    { label: 'Home vs Away', slices: ['home','away'], keys: ['NET_RATING','OFF_RATING','DEF_RATING','EFG_PCT','TM_TOV_PCT'] },
+    { label: 'By Half', slices: ['first_half','second_half'], keys: ['NET_RATING','OFF_RATING','DEF_RATING','EFG_PCT','TM_TOV_PCT'] },
+    { label: 'By Quarter', slices: ['q1','q2','q3','q4'], keys: ['NET_RATING','OFF_RATING','DEF_RATING'] },
+    { label: 'Opponent Strength', slices: ['vs_elite','vs_middle','vs_weak'], keys: ['NET_RATING','OFF_RATING','DEF_RATING','EFG_PCT','TM_TOV_PCT','OPP_EFG_PCT'] },
+  ];
+
+  const sliceLabels = {
+    home:'Home', away:'Away', first_half:'1st Half', second_half:'2nd Half',
+    q1:'Q1', q2:'Q2', q3:'Q3', q4:'Q4',
+    vs_elite:'vs Elite', vs_middle:'vs Mid', vs_weak:'vs Weak',
+  };
+
+  const keyLabels = {
+    NET_RATING:'NetRtg', OFF_RATING:'OffRtg', DEF_RATING:'DefRtg',
+    EFG_PCT:'eFG%', TM_TOV_PCT:'TOV%', OREB_PCT:'OREB%',
+    OPP_EFG_PCT:'Opp eFG%', OPP_TOV_PCT:'Opp TOV%',
+  };
+
+  const html = comparisons.map(comp => {
+    const sliceData = comp.slices.map(sl => ({ sl, row: getMXC(sl) }));
+    const header = `<tr><th style="text-align:left;font-size:10px;color:var(--muted);padding:2px 4px 4px;"></th>${
+      sliceData.map(({sl}) => `<th style="font-size:10px;color:var(--muted);padding:2px 4px 4px;text-align:right;">${sliceLabels[sl]}</th>`).join('')
+    }</tr>`;
+    const rows = comp.keys.map(key => {
+      const cells = sliceData.map(({sl, row}) => {
+        const val = row ? row[key] : null;
+        const rank = getRank(sl, key, val);
+        const color = key === 'NET_RATING' ? netColor(val) : '';
+        const rankStr = rank != null ? `<sup style="font-size:7px;color:var(--muted);">${rank}</sup>` : '';
+        return `<td style="text-align:right;font-size:11px;padding:2px 4px;${color}">${fmt(key,val)}${rankStr}</td>`;
+      }).join('');
+      return `<tr><td style="font-size:10px;color:var(--muted);padding:2px 4px;">${keyLabels[key]||key}</td>${cells}</tr>`;
+    }).join('');
+    return `<div style="margin-bottom:14px;">
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">${comp.label}</div>
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>${header}</thead>
+        <tbody>${rows}</tbody>
+      </table>
     </div>`;
   }).join('');
 
-  container.innerHTML = `
-    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
-      Weighted avg across ${lineups.length} duo combinations
-    </div>
-    ${groupHtml}`;
+  container.innerHTML = html;
 }
 
 async function renderPlayerStats() {
@@ -805,19 +824,31 @@ async function renderPlayerStats() {
     const d = await loadMexData();
     const players = d.players;
     // Key columns to show — full set available but we pick the most meaningful
-    const cols = ['Player','MIN','TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','TOV%','STL%','BLK%','USG%','ORtg','DRtg','PER'];
-    const colMap = { 'TS%':'TS%','eFG%':'eFG%','3P%':'3P%','FT%':'FT%','ORB%':'ORB%','DRB%':'DRB%','AST%':'AST%','TOV%':'TOV%','STL%':'STL%','BLK%':'BLK%','USG%':'USG%','ORtg':'ORtg','DRtg':'DRtg','PER':'PER' };
+    const cols = ['Player','MIN','TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','TOV%','USG%','ORtg','DRtg','PIE'];
+    // Fields stored 0-1 in API that need ×100 for display
+    const pct01 = new Set(['TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','USG%','STL%','BLK%']);
     const getName = p => p['Player'] || p['PLAYER_NAME'] || '—';
-    const sorted = [...players].sort((a, b) => (b['MIN'] || b['FGA'] || 0) - (a['MIN'] || a['FGA'] || 0));
+    const sorted = [...players].sort((a, b) => (b['MIN'] || 0) - (a['MIN'] || 0));
+
+    function fmtStat(col, val) {
+      if (val == null) return '—';
+      const v = Number(val);
+      if (pct01.has(col)) return (v * 100).toFixed(1) + '%';
+      if (col === 'TOV%') return v.toFixed(1) + '%';
+      if (col === 'PIE') return (v * 100).toFixed(1);
+      if (col === 'ORtg' || col === 'DRtg') return v.toFixed(1);
+      if (col === 'MIN') return v.toFixed(1);
+      return Number.isInteger(v) ? v : v.toFixed(1);
+    }
+
     container.innerHTML = `<div style="overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;font-size:11px;">
         <thead><tr>${cols.map(c => `<th style="background:var(--surface);padding:4px 8px;border-bottom:1px solid var(--border);text-align:${c==='Player'?'left':'right'};white-space:nowrap;color:var(--muted);font-weight:600;">${c}</th>`).join('')}</tr></thead>
-        <tbody>${sorted.filter(p => (p['MIN']||0) > 0 || (p['FGA']||0) > 0).map(p => `<tr>
+        <tbody>${sorted.filter(p => (p['MIN']||0) > 0).map(p => `<tr>
           ${cols.map(c => {
             const v = c === 'Player' ? getName(p) : p[c];
-            let disp = v == null ? '—' : typeof v === 'number' ? (Number.isInteger(v) ? v : v.toFixed(c.includes('%') || c === 'PER' ? 1 : 1)) : v;
-            const color = '';
-            return `<td style="padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='Player'?'left':'right'};${color?'color:'+color+';font-weight:700;':''}">${disp}</td>`;
+            const disp = c === 'Player' ? esc(v) : fmtStat(c, v);
+            return `<td style="padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='Player'?'left':'right'};">${disp}</td>`;
           }).join('')}
         </tr>`).join('')}</tbody>
       </table></div>`;
@@ -828,21 +859,31 @@ async function renderPlayerStats() {
 
 async function renderWowyInit() {
   try {
-    const d = await loadMexData();
+    const [d, ld] = await Promise.all([
+      loadMexData(),
+      fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+    window._wowyLineupData = ld;
+
     const sel = document.getElementById('wowyPlayerSelect');
     if (sel.options.length === 1) {
-      d.wowy.forEach(w => {
+      // Build player list from playerXref in lineup_data.json
+      const xref = ld?.playerXref || {};
+      const names = Object.entries(xref)
+        .filter(([, v]) => v)
+        .sort((a, b) => (a[1].name || a[0]).localeCompare(b[1].name || b[0]));
+      names.forEach(([abbrev, info]) => {
         const opt = document.createElement('option');
-        opt.value = w.abbrev;
-        opt.textContent = w.player;
+        opt.value = abbrev;
+        opt.textContent = info.name || abbrev;
         sel.appendChild(opt);
       });
     }
-    if (!document.getElementById('wowyContent').innerHTML) {
-      document.getElementById('wowyContent').innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>';
-    }
+    document.getElementById('wowyContent').innerHTML =
+      '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>';
   } catch(e) {
-    document.getElementById('wowyContent').innerHTML = `<div style="color:var(--red);font-size:12px;">Could not load WOWY data: ${esc(e.message)}</div>`;
+    document.getElementById('wowyContent').innerHTML =
+      `<div style="color:var(--red);font-size:12px;">Could not load WOWY data: ${esc(e.message)}</div>`;
   }
 }
 
@@ -850,39 +891,141 @@ async function renderWowy() {
   const abbrev = document.getElementById('wowyPlayerSelect').value;
   const container = document.getElementById('wowyContent');
   if (!abbrev) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>'; return; }
+
+  const ld = window._wowyLineupData;
+  if (!ld) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Loading…</div>'; return; }
+
+  const xref = ld.playerXref || {};
+  const playerInfo = xref[abbrev] || {};
+  const playerName = playerInfo.name || abbrev;
+  const photoUrl = playerInfo.photoUrl || null;
+
+  // Use true on/off data from teamplayeronoffdetails — play-by-play tracked
   const d = await loadMexData();
-  const w = d.wowy.find(x => x.abbrev === abbrev);
-  if (!w) return;
+  const onOffEntry = (d.onOff || []).find(p =>
+    (p.PLAYER_NAME || '').toLowerCase() === playerName.toLowerCase() ||
+    p.abbrev === abbrev
+  );
 
-  // Also get all lineups involving this player for context
-  const withLineups = d.lineups.filter(c => c.lineup.includes(abbrev)).sort((a,b) => b.NetRtg - a.NetRtg);
-  const withoutLineups = d.lineups.filter(c => !c.lineup.includes(abbrev)).sort((a,b) => b.NetRtg - a.NetRtg);
+  const STATS = [
+    { key: 'OFF_RATING', label: 'OFF',     pct: false },
+    { key: 'DEF_RATING', label: 'DEF',     pct: false },
+    { key: 'NET_RATING', label: 'NET',     pct: false },
+    { key: 'TS_PCT',     label: 'OFF TS%', pct: true  },
+    { key: 'TM_TOV_PCT', label: 'OFF TOV%',pct: true  },
+    { key: 'OREB_PCT',   label: 'OFF ORB%',pct: true  },
+    { key: 'OPP_EFG_PCT',label: 'DEF eFG%',pct: true  },
+    { key: 'OPP_TOV_PCT',label: 'DEF TOV%',pct: true  },
+  ];
 
-  const statBlock = (label, stats, color) => `
-    <div style="padding:12px;border:1px solid var(--border);flex:1;min-width:140px;">
-      <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:${color};margin-bottom:8px;">${label}</div>
-      ${[['Net Rtg', stats.NetRtg, true],['Off Rtg', stats.OffRtg, false],['Def Rtg', stats.DefRtg, false],['Poss', stats.POSS ?? stats.MIN, false],['Combos', stats.combos, false]]
-        .map(([lbl, val, signed]) => `<div style="display:flex;justify-content:space-between;font-size:12px;padding:2px 0;border-bottom:1px solid var(--border);">
-          <span style="color:var(--muted);">${lbl}</span>
-          <span style="font-weight:700;color:${lbl==='Net Rtg'?(Number(val)>=0?'var(--green)':'var(--red)'):''}">${val==null?'—':typeof val==='number'?val.toFixed(1):val}</span>
-        </div>`).join('')}
+  // League averages from team_stats.json all slice
+  const leagueAvgs = {};
+  if (cachedTeamStats?.slices?.all) {
+    const teams = cachedTeamStats.slices.all;
+    STATS.forEach(s => {
+      const vals = teams.map(t => t[s.key]).filter(v => v != null);
+      if (vals.length) leagueAvgs[s.key] = vals.reduce((a,b) => a+b, 0) / vals.length;
+    });
+  }
+
+  const lowerBetter = new Set(['DEF_RATING','TM_TOV_PCT','OPP_EFG_PCT']);
+
+  const onRow  = onOffEntry?.on  || {};
+  const offRow = onOffEntry?.off || {};
+
+  if (!onOffEntry) {
+    container.innerHTML = `<div style="color:var(--muted);font-size:12px;">
+      No on/off data found for ${esc(playerName)}. Re-run fetch_lineup_data.py to update mex_data.json.
     </div>`;
+    return;
+  }
+
+  function fmt(key, val, pct) {
+    if (val == null) return '—';
+    return pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1);
+  }
+
+  function delta(key, val, pct) {
+    const avg = leagueAvgs[key];
+    if (val == null || avg == null) return '';
+    const diff = val - avg;
+    const better = lowerBetter.has(key) ? diff < 0 : diff > 0;
+    const sign = diff >= 0 ? '+' : '';
+    const dispDiff = pct ? (diff * 100).toFixed(1) + '%' : diff.toFixed(1);
+    return `<div style="font-size:9px;color:${better?'#E6A817':'#888'};margin-top:1px;">${sign}${dispDiff}</div>`;
+  }
+
+  function photoHtml(active) {
+    const img = photoUrl
+      ? `<img src="${esc(photoUrl)}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;object-position:top;${active?'':'filter:grayscale(1);opacity:0.5;'}">`
+      : `<div style="width:48px;height:48px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:10px;color:#888;">${active?'ON':'OFF'}</div>`;
+    return `<div style="text-align:center;margin-right:10px;">
+      <div style="position:relative;display:inline-block;">
+        ${img}
+        ${active ? '' : '<div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;">OFF</div>'}
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px;">${esc(playerName.split(' ').pop())}</div>
+    </div>`;
+  }
+
+  function buildRow(row, active) {
+    const min = row.MIN != null ? Number(row.MIN).toFixed(0) : '—';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:8px 4px 8px 0;">${photoHtml(active)}</td>
+      <td style="padding:4px 8px;text-align:right;font-size:11px;">
+        <div style="font-weight:700;">${min}</div>
+        <div style="font-size:9px;color:var(--muted);">min</div>
+      </td>
+      ${STATS.map(s => {
+        const val = row[s.key];
+        const netColor = s.key === 'NET_RATING' ? (val >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
+        return `<td style="padding:4px 8px;text-align:right;">
+          <div style="font-size:12px;font-weight:600;${netColor}">${fmt(s.key, val, s.pct)}</div>
+          ${delta(s.key, val, s.pct)}
+        </td>`;
+      }).join('')}
+    </tr>`;
+  }
+
+  function buildDiffRow() {
+    return `<tr style="border-top:2px solid #000;">
+      <td style="padding:6px 4px;font-size:11px;font-weight:700;color:var(--muted);">ON - OFF</td>
+      <td></td>
+      ${STATS.map(s => {
+        const on  = onRow[s.key];
+        const off = offRow[s.key];
+        if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">—</td>`;
+        const diff = on - off;
+        const better = lowerBetter.has(s.key) ? diff < 0 : diff > 0;
+        const sign = diff >= 0 ? '+' : '';
+        const disp = s.pct ? (diff * 100).toFixed(1) + '%' : diff.toFixed(1);
+        return `<td style="text-align:right;padding:4px 8px;">
+          <span style="font-size:12px;font-weight:700;color:${better?'#E6A817':'#888'};">${sign}${disp}</span>
+        </td>`;
+      }).join('')}
+    </tr>`;
+  }
+
+  const colHeaders = `<tr style="border-bottom:1px solid var(--border);">
+    <th style="text-align:left;font-size:10px;color:var(--muted);padding:4px 4px 6px;">LINEUP</th>
+    <th style="text-align:right;font-size:10px;color:var(--muted);padding:4px 8px 6px;">POSS</th>
+    ${STATS.map(s => `<th style="text-align:right;font-size:10px;color:var(--muted);padding:4px 8px 6px;white-space:nowrap;">${s.label}</th>`).join('')}
+  </tr>`;
 
   container.innerHTML = `
-    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:16px;">
-      ${statBlock(`With ${w.player}`, w.with, 'var(--green)')}
-      ${statBlock(`Without ${w.player}`, w.without, 'var(--red)')}
-      <div style="padding:12px;border:2px solid #000;flex:1;min-width:140px;display:flex;align-items:center;justify-content:center;flex-direction:column;text-align:center;">
-        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Net Rtg Difference</div>
-        <div style="font-family:'Oswald',sans-serif;font-size:36px;font-weight:700;color:${(w.with.NetRtg-w.without.NetRtg)>=0?'var(--green)':'var(--red)'};">
-          ${(w.with.NetRtg-w.without.NetRtg)>=0?'+':''}${(w.with.NetRtg-w.without.NetRtg).toFixed(1)}
-        </div>
-      </div>
+    <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
+      True on/off from play-by-play tracking · subscripts vs. league average
     </div>
-    <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Best combos with ${w.player}</div>
-    <div style="overflow-x:auto;margin-bottom:14px;">${buildWowyMiniTable(withLineups.slice(0,8))}</div>
-    <div style="font-weight:700;font-size:13px;margin-bottom:6px;">Best combos without ${w.player}</div>
-    <div style="overflow-x:auto;">${buildWowyMiniTable(withoutLineups.slice(0,5))}</div>`;
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;">
+        <thead>${colHeaders}</thead>
+        <tbody>
+          ${buildRow(onRow,  true)}
+          ${buildRow(offRow, false)}
+          ${buildDiffRow()}
+        </tbody>
+      </table>
+    </div>`;
 }
 
 function buildWowyMiniTable(rows) {
@@ -1151,7 +1294,7 @@ function buildRotationPlaceholders() {
   for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
 }
 
-const TEAM_STATS_PATH = 'data/team_stats.json';
+let TEAM_STATS_PATH = () => dataPath('team_stats');
 const FOCUS_ABBREV = 'MXC';
 let cachedTeamStats = null; // the full slices file, loaded once
 
@@ -1231,7 +1374,7 @@ async function loadRanks(slice) {
   slice = slice || 'all';
   try {
     if (!cachedTeamStats) {
-      const resp = await fetch(TEAM_STATS_PATH + '?v=' + Date.now());
+      const resp = await fetch(TEAM_STATS_PATH() + '?v=' + Date.now());
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       cachedTeamStats = await resp.json();
     }
@@ -1243,10 +1386,17 @@ async function loadRanks(slice) {
   }
 }
 
+// Init season toggle
+const seasonLabel = document.getElementById('seasonLabel');
+if (seasonLabel) seasonLabel.textContent = SEASON;
+document.querySelectorAll('.season-btn').forEach(btn => {
+  btn.classList.toggle('active', btn.dataset.season === SEASON);
+});
+
 buildRotationPlaceholders();
 loadStaffNotes();
 loadRanks('all');
-loadMexData().then(renderTeamProfile).catch(() => {});
+renderTrajectory();
 
 // Load playerXref from players_index.json
 fetch('data/players_index.json?v=' + Date.now())
@@ -1263,7 +1413,7 @@ fetch('data/players_index.json?v=' + Date.now())
 
 // Main page reads from lineup_data.json (all 4 group sizes from fetch script)
 // Falls back to mex_data.json duos if lineup_data.json not yet committed
-fetch(LINEUP_DATA_PATH + '?v=' + Date.now())
+fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
   .then(r => {
     if (!r.ok) throw new Error('lineup_data.json not found — run fetch_lineup_data.py and commit the output');
     return r.json();
@@ -1312,28 +1462,78 @@ fetch(LINEUP_DATA_PATH + '?v=' + Date.now())
   });
 
 // Wire all filter controls — slider is client-side only, rest trigger a refetch
-document.getElementById('minMinsSlider').addEventListener('input', function() {
-  document.getElementById('minMinsLabel').textContent = this.value;
-  // Re-render from last fetched data without a new API call
-  if (window._lastLineupData) renderLineupContent(window._lastLineupData, Number(this.value));
-});
+const minMinsSlider = document.getElementById('minMinsSlider');
+if (minMinsSlider) {
+  minMinsSlider.addEventListener('input', function() {
+    const lbl = document.getElementById('minMinsLabel');
+    if (lbl) lbl.textContent = this.value;
+    if (window._lastLineupData) renderLineupContent(window._lastLineupData, Number(this.value));
+  });
+}
 
 // Lab filter controls — trigger a new fetch when any filter changes
 document.querySelectorAll('.lab-filter').forEach(el => el.addEventListener('change', triggerLabFetch));
-document.getElementById('labMinsSlider').addEventListener('input', function() {
-  document.getElementById('labMinsLabel').textContent = this.value;
-  if (window._lastLabData) renderLabContent(window._lastLabData, Number(this.value));
-});
+const labMinsSlider = document.getElementById('labMinsSlider');
+if (labMinsSlider) {
+  labMinsSlider.addEventListener('input', function() {
+    const lbl = document.getElementById('labMinsLabel');
+    if (lbl) lbl.textContent = this.value;
+    if (window._lastLabData) renderLabContent(window._lastLabData, Number(this.value));
+  });
+}
 
-// Open lab and fetch on first open
-document.querySelector('.lineup-lab-btn').addEventListener('click', () => {
+function switchSeason(season) {
+  if (season === SEASON) return;
+  SEASON = season;
+  localStorage.setItem('capitanes_season', season);
+  // Clear all caches
+  mexData = null;
+  cachedTeamStats = null;
+  window._wowyLineupData = null;
+  window._labEverOpened = false;
+  // Update active button state
+  document.querySelectorAll('.season-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.season === season);
+  });
+  // Update season label
+  const lbl = document.getElementById('seasonLabel');
+  if (lbl) lbl.textContent = season;
+  // Re-render all sections
+  loadStaffNotes();
+  loadRanks('all');
+  renderTrajectory();
+  document.getElementById('lineupFetchStatus').textContent = 'Loading…';
+  document.getElementById('lineupContent').innerHTML = '';
+  // Re-fetch lineup data for new season
+  fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(d => {
+      const data = { duos: d.duos||[], trios: d.trios||[], quads: d.quads||[], fiveman: d.fiveman||[] };
+      if (d.playerXref) playerXref = { ...playerXref, ...Object.fromEntries(
+        Object.entries(d.playerXref).filter(([,v]) => v).map(([k,v]) => [k,v])
+      )};
+      data._thresholds = {
+        duos: pct30Threshold(data.duos), trios: pct30Threshold(data.trios),
+        quads: pct30Threshold(data.quads), fiveman: pct30Threshold(data.fiveman),
+      };
+      document.getElementById('lineupFetchStatus').textContent =
+        `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads · ${data.fiveman.length} 5-man`;
+      renderLineupContent(data);
+    })
+    .catch(e => {
+      document.getElementById('lineupContent').innerHTML =
+        `<div style="color:var(--red);font-size:12px;">No ${SEASON} lineup data yet — run fetch_lineup_data.py ${SEASON}</div>`;
+      document.getElementById('lineupFetchStatus').textContent = '';
+    });
+}
+
+function openLineupLab() {
   document.getElementById('lineupLabModal').style.display = 'flex';
   if (!window._labEverOpened) {
     window._labEverOpened = true;
-    fetchLabData(); // fetch live lineup data for the lineups tab
+    fetchLabData();
   }
-});
-loadTeamStats('full');
+}
 </script>
 </body>
 </html>

@@ -32,7 +32,31 @@ HEADERS = {
 }
 
 CAPITANES_ABBREV = "MXC"
-SEASON = "2025-26"
+
+# Accept season as a CLI argument — defaults to current season
+import sys as _sys
+SEASON = next((a for a in _sys.argv[1:] if re.match(r'^\d{4}-\d{2}$', a)), "2026-27")
+print(f"Season: {SEASON}")
+
+def probe_season(season, season_type="Regular Season"):
+    """Check if a season string returns data from leaguedashlineups."""
+    url = (
+        "https://stats.nba.com/stats/leaguedashlineups"
+        f"?LeagueID=20&Season={season}&SeasonType={season_type.replace(' ', '+')}"
+        "&MeasureType=Advanced&PerMode=PerMinute"
+        "&GroupQuantity=2&PaceAdjust=N&Rank=N&Outcome=&Location=&Month=0"
+        "&SeasonSegment=&DateFrom=&DateTo=&OpponentTeamID=0"
+        "&VsConference=&VsDivision=&GameSegment=&Period=0"
+        "&ShotClockRange=&LastNGames=0&MinutesFilter=0"
+    )
+    try:
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        count = len(data.get("resultSets", [{}])[0].get("rowSet", []))
+        return count
+    except Exception as e:
+        return 0
 
 LINEUP_COLUMNS = [
     "GROUP_SET", "GROUP_ID", "GROUP_NAME", "TEAM_ID", "TEAM_ABBREVIATION",
@@ -85,39 +109,62 @@ def xref_name(abbrev_name, by_key):
     return by_key.get(f"{initial}. {last}")
 
 
+ACTIVE_SEASON_TYPE = "Regular+Season"  # updated by discover_teams if needed
+
 def discover_teams():
-    """Return {abbrev: team_id} for all G League teams this season, and the
-    Capitanes team ID specifically."""
-    url = (
-        "https://stats.nba.com/stats/leaguedashlineups"
-        f"?LeagueID=20&Season={SEASON}&SeasonType=Regular+Season"
-        "&MeasureType=Advanced&PerMode=PerMinute"
-        "&GroupQuantity=2&PaceAdjust=N&Rank=N&Outcome=&Location=&Month=0"
-        "&SeasonSegment=&DateFrom=&DateTo=&OpponentTeamID=0"
-        "&VsConference=&VsDivision=&GameSegment=&Period=0"
-        "&ShotClockRange=&LastNGames=0&GameScope=&PlayerExperience="
-        "&PlayerPosition=&StarterBench=&TwoWay=0&MinutesFilter=0"
-    )
+    """Return {abbrev: team_id} for all G League teams this season.
+    Falls back to Showcase Cup if Regular Season hasn't started yet."""
+    global ACTIVE_SEASON_TYPE
     print("Discovering G League teams...")
-    req = urllib.request.Request(url, headers=HEADERS)
-    with urllib.request.urlopen(req, timeout=20) as resp:
-        data = json.loads(resp.read().decode("utf-8"))
-    rs = data["resultSets"][0]
-    hdrs = rs["headers"]
-    rows = [dict(zip(hdrs, row)) for row in rs["rowSet"]]
 
-    seen = {}
-    for row in rows:
-        tid = row["TEAM_ID"]
-        abbrev = row.get("TEAM_ABBREVIATION", "")
-        if tid not in seen:
-            seen[abbrev] = tid
+    for season_type in ("Regular+Season", "Showcase"):
+        url = (
+            "https://stats.nba.com/stats/leaguedashlineups"
+            f"?LeagueID=20&Season={SEASON}&SeasonType={season_type}"
+            "&MeasureType=Advanced&PerMode=PerMinute"
+            "&GroupQuantity=2&PaceAdjust=N&Rank=N&Outcome=&Location=&Month=0"
+            "&SeasonSegment=&DateFrom=&DateTo=&OpponentTeamID=0"
+            "&VsConference=&VsDivision=&GameSegment=&Period=0"
+            "&ShotClockRange=&LastNGames=0&GameScope=&PlayerExperience="
+            "&PlayerPosition=&StarterBench=&TwoWay=0&MinutesFilter=0"
+        )
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        rs = data["resultSets"][0]
+        hdrs = rs["headers"]
+        rows = [dict(zip(hdrs, row)) for row in rs["rowSet"]]
 
-    print(f"  Found {len(seen)} teams: {', '.join(sorted(seen.keys()))}")
+        seen = {}
+        for row in rows:
+            tid = row["TEAM_ID"]
+            abbrev = row.get("TEAM_ABBREVIATION", "")
+            if tid not in seen:
+                seen[abbrev] = tid
+
+        if seen:
+            ACTIVE_SEASON_TYPE = season_type
+            label = "Showcase Cup" if season_type == "Showcase" else "Regular Season"
+            print(f"  Found {len(seen)} teams ({label}): {', '.join(sorted(seen.keys()))}")
+            break
+        time.sleep(1)
+    else:
+        seen = {}
+        print(f"  Found 0 teams:")
 
     cap_abbrev = next((a for a in seen if a in ("MXC", "CAP", "MEX")), None)
     if not cap_abbrev:
-        print("  ERROR: Could not find Capitanes (MXC). Check team list above.")
+        print("  ERROR: Could not find Capitanes (MXC) — season may not have started yet.")
+        print("\n  Probing available seasons...")
+        for s in ["2026-27", "2025-26", "2024-25"]:
+            count_reg = probe_season(s)
+            count_show = probe_season(s, season_type="Showcase")
+            parts = []
+            if count_reg:  parts.append(f"Regular: {count_reg} rows")
+            if count_show: parts.append(f"Showcase: {count_show} rows")
+            status = ", ".join(parts) if parts else "no data"
+            print(f"    {s}: {status}")
+        print(f"\n  Run with a valid season, e.g.: python fetch_lineup_data.py 2025-26")
         return None, None
     print(f"  Capitanes: {cap_abbrev} (ID {seen[cap_abbrev]})")
     return seen, seen[cap_abbrev]
@@ -126,7 +173,7 @@ def discover_teams():
 def _lineup_url(team_id, group_quantity, measure_type, min_minutes=0):
     return (
         "https://stats.nba.com/stats/leaguedashlineups"
-        f"?LeagueID=20&Season={SEASON}&SeasonType=Regular+Season"
+        f"?LeagueID=20&Season={SEASON}&SeasonType={ACTIVE_SEASON_TYPE}"
         f"&MeasureType={measure_type}&PerMode=PerMinute"
         f"&GroupQuantity={group_quantity}"
         f"&TeamID={team_id}"
@@ -232,10 +279,10 @@ def main():
         return
     print()
 
-    lineup_path = os.path.join("data", "lineup_data.json")
+    lineup_path = os.path.join("data", f"lineup_data_{SEASON}.json")
     if os.path.exists(lineup_path):
         print(f"\nLineup data already exists ({os.path.getsize(lineup_path)//1024} KB) — skipping re-fetch.")
-        print("Delete data/lineup_data.json manually if you need to re-pull (e.g. new season).")
+        print(f"Delete data/lineup_data_{SEASON}.json manually if you need to re-pull (e.g. new season).")
         with open(lineup_path) as f:
             existing = json.load(f)
         output = existing
@@ -300,12 +347,12 @@ def main():
         "quads":   output["quads"],
         "fiveman": output["fiveman"],
     }
-    mxc_path = os.path.join("data", "lineup_data.json")
+    mxc_path = os.path.join("data", f"lineup_data_{SEASON}.json")
     with open(mxc_path, "w") as f:
         json.dump(mxc_output, f, separators=(",", ":"))
 
     if "league" in output:
-        league_path = os.path.join("data", "lineup_league.json")
+        league_path = os.path.join("data", f"lineup_league_{SEASON}.json")
         with open(league_path, "w") as f:
             json.dump({"meta": output["meta"], **output["league"]}, f, separators=(",", ":"))
         league_kb = os.path.getsize(league_path) // 1024
@@ -340,7 +387,7 @@ def main():
             team_stats_output[label] = result["teams"]
         time.sleep(2)
 
-    ts_path = os.path.join("data", "team_stats.json")
+    ts_path = os.path.join("data", f"team_stats_{SEASON}.json")
     with open(ts_path, "w") as f:
         json.dump({
             "meta": {"season": SEASON, "fetched_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")},
@@ -348,18 +395,27 @@ def main():
         }, f, separators=(",", ":"))
     ts_kb = os.path.getsize(ts_path) // 1024
     print(f"\n  Team stats written to {ts_path} ({ts_kb} KB)")
+    # True on/off stats from play-by-play tracking
+    print("\nFetching MXC player on/off stats...")
+    try:
+        on_off_data = fetch_player_on_off(focus_team_id)
+        print(f"  {len(on_off_data)} players with on/off data")
+    except Exception as e:
+        print(f"  ERROR: {e}")
+        on_off_data = []
+
     # Player stats — replaces the manual Excel workflow
     print("\nFetching MXC player stats...")
     player_stats = fetch_player_stats(focus_team_id)
     if player_stats:
-        mex_data = build_mex_data(player_stats, output)
-        mex_path = os.path.join("data", "mex_data.json")
+        mex_data = build_mex_data(player_stats, output, on_off_data)
+        mex_path = os.path.join("data", f"mex_data_{SEASON}.json")
         with open(mex_path, "w") as f:
             json.dump(mex_data, f, separators=(",", ":"))
         mex_kb = os.path.getsize(mex_path) // 1024
-        print(f"  mex_data.json written ({mex_kb} KB) — {len(player_stats)} players")
+        print(f"  mex_data_{SEASON}.json written ({mex_kb} KB) — {len(player_stats)} players")
     else:
-        print("  Warning: could not fetch player stats — mex_data.json not updated")
+        print(f"  Warning: could not fetch player stats — mex_data_{SEASON}.json not updated")
 
     # Game log — needed for date intervals and opponent strength slices
     print("\nFetching MXC game log...")
@@ -405,7 +461,7 @@ def main():
     else:
         print("  Warning: could not fetch game log — interval/opponent slices skipped")
 
-    print("\nCommit data/lineup_data.json, data/team_stats.json and data/mex_data.json to update the site.")
+    print(f"\nCommit data/lineup_data_{SEASON}.json, data/team_stats_{SEASON}.json and data/mex_data_{SEASON}.json to update the site.")
 
 
 def fetch_team_stats(filters=None):
@@ -415,7 +471,7 @@ def fetch_team_stats(filters=None):
     Writes data/team_stats.json."""
     filters = filters or {}
     base_params = (
-        f"?LeagueID=20&Season={SEASON}&SeasonType=Regular+Season"
+        f"?LeagueID=20&Season={SEASON}&SeasonType={ACTIVE_SEASON_TYPE}"
         "&PerMode=PerGame&PaceAdjust=N&PlusMinus=N&Rank=N"
         "&Outcome=&Location={loc}&Month=0&SeasonSegment="
         "&DateFrom=&DateTo=&OpponentTeamID={opp_team_id}"
@@ -470,7 +526,7 @@ def fetch_player_stats(team_id):
     """Fetch per-player stats for a single team across Base + Advanced measures.
     Returns a list of merged player dicts with all available fields."""
     base_params = (
-        f"?LeagueID=20&Season={SEASON}&SeasonType=Regular+Season"
+        f"?LeagueID=20&Season={SEASON}&SeasonType={ACTIVE_SEASON_TYPE}"
         f"&TeamID={team_id}&PerMode=Totals"
         "&PaceAdjust=N&PlusMinus=N&Rank=N"
         "&Outcome=&Location=&Month=0&SeasonSegment="
@@ -553,7 +609,7 @@ def fetch_player_stats(team_id):
     return players
 
 
-def build_mex_data(players, lineup_output):
+def build_mex_data(players, lineup_output, on_off_data=None):
     """Build the full mex_data.json structure from fetched player stats
     and the already-computed lineup combinations."""
     mxc_lineups = lineup_output.get("duos", [])
@@ -656,6 +712,7 @@ def build_mex_data(players, lineup_output):
         "players": players,
         "lineups": lineups_normalised,
         "wowy": wowy,
+        "onOff": on_off_data,
         "nameLookup": name_lookup,
     }
 
@@ -692,7 +749,11 @@ def fetch_game_log(team_id):
     """Fetch the full season game log for one team across all season types,
     sorted oldest-first. Includes Regular Season + Tip-Off Tournament."""
     all_rows = []
-    for season_type in ("Regular Season", "Pre Season"):
+    # Start with the active season type, then try the other
+    season_types = ["Regular Season", "Showcase"]
+    if ACTIVE_SEASON_TYPE == "Showcase":
+        season_types = ["Showcase", "Regular Season"]
+    for season_type in season_types:
         st_encoded = season_type.replace(" ", "+")
         url = (
             "https://stats.nba.com/stats/leaguegamelog"
@@ -788,6 +849,62 @@ def build_opponent_strength_slices(game_log, all_teams, abbrev_to_id=None):
     print(f"    Opponent IDs — elite: {len(result['vs_elite'])}, "
           f"middle: {len(result['vs_middle'])}, weak: {len(result['vs_weak'])}")
     return result
+
+
+def fetch_player_on_off(team_id):
+    """Fetch true on/off stats for all players on a team using
+    teamplayeronoffdetails — computed from actual play-by-play lineup
+    tracking, not approximated from duo combinations."""
+    results = {}
+    for measure in ("Base", "Advanced", "Four Factors"):
+        url = (
+            "https://stats.nba.com/stats/teamplayeronoffdetails"
+            f"?TeamID={team_id}&LeagueID=20&Season={SEASON}"
+            f"&SeasonType={ACTIVE_SEASON_TYPE}"
+            f"&MeasureType={measure.replace(' ', '+')}"
+            "&PerMode=PerGame&PaceAdjust=N&PlusMinus=N&Rank=N"
+            "&Outcome=&Location=&Month=0&SeasonSegment="
+            "&DateFrom=&DateTo=&OpponentTeamID=0"
+            "&VsConference=&VsDivision=&GameSegment=&Period=0"
+            "&ShotClockRange=&LastNGames=0"
+        )
+        req = urllib.request.Request(url, headers=HEADERS)
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        # Endpoint returns two result sets: OverallPlayerOnOffSummary (on) and off
+        for rs in data.get("resultSets", []):
+            rs_name = rs.get("name", "")
+            hdrs = rs.get("headers", [])
+            rows = [dict(zip(hdrs, row)) for row in rs.get("rowSet", [])]
+            if rs_name not in results:
+                results[rs_name] = {}
+            for row in rows:
+                pid = row.get("PLAYER_ID")
+                if pid:
+                    if pid not in results[rs_name]:
+                        results[rs_name][pid] = {}
+                    results[rs_name][pid].update(row)
+        time.sleep(1)
+
+    # Merge into a list of {player, on: {...}, off: {...}}
+    on_key  = next((k for k in results if "On"  in k), None)
+    off_key = next((k for k in results if "Off" in k), None)
+    if not on_key or not off_key:
+        return []
+
+    merged = []
+    all_pids = set(results[on_key].keys()) | set(results[off_key].keys())
+    for pid in all_pids:
+        on_row  = results[on_key].get(pid, {})
+        off_row = results[off_key].get(pid, {})
+        merged.append({
+            "PLAYER_ID":   pid,
+            "PLAYER_NAME": on_row.get("PLAYER_NAME") or off_row.get("PLAYER_NAME"),
+            "on":  on_row,
+            "off": off_row,
+        })
+    return sorted(merged, key=lambda x: (x["on"].get("MIN") or 0), reverse=True)
 
 
 if __name__ == "__main__":

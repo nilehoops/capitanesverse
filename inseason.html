@@ -434,8 +434,32 @@ a { color: inherit; text-decoration: none; }
         <span class="lineup-data-title">Lineup Data</span>
         <button class="lineup-lab-btn" onclick="openLineupLab()">Lineup Lab<br>Tool</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">
-        Top 30% by possessions · <span id="lineupFetchStatus" style="font-style:italic;"></span>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;font-size:11px;">
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="color:var(--muted);">with</span>
+          <select id="lineupWithFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
+            <option value="">anyone</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <span style="color:var(--muted);">without</span>
+          <select id="lineupWithoutFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
+            <option value="">anyone</option>
+          </select>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+          <span style="color:var(--muted);">min poss</span>
+          <select id="lineupFloorMode" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);">
+            <option value="dynamic">dynamic</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="0">all</option>
+          </select>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
+        <span id="lineupFetchStatus" style="font-style:italic;"></span>
       </div>
       <div id="lineupContent">
         <div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading lineup data...</div>
@@ -565,18 +589,26 @@ function idForLineupName(n)    { return playerXref[n]?.id || null; }
 // 30th-percentile minutes threshold — computed from actual data so it
 // adapts to however many combinations exist for each group size.
 function getPoss(row) {
-  // POSS = total possessions played by this lineup combination.
-  // Cleaner sample size measure than minutes since it directly reflects
-  // how many times the lineup ran a play. Falls back to MIN_ACTUAL or
-  // MIN for older data or mex_data.json rows.
   return row.POSS ?? row.MIN_ACTUAL ?? row.MIN ?? 0;
 }
 
-function pct30Threshold(rows) {
+// Dynamic floor: minimum possessions to show a lineup combination.
+// Scales with season progress — early season a 10-poss duo is meaningful,
+// late season the same combo is noise.
+// groupSize: 2=duos, 3=trios, 4=quads, 5=fiveman
+function dynamicFloor(rows, groupSize) {
   if (!rows.length) return 0;
-  const sorted = [...rows].sort((a, b) => getPoss(b) - getPoss(a));
-  const idx = Math.floor(sorted.length * 0.3);
-  return getPoss(sorted[Math.min(idx, sorted.length - 1)]);
+  const totalPoss = rows.reduce((s, r) => s + getPoss(r), 0);
+  // Minimum share of total group possessions to be considered meaningful.
+  // Larger groups have fewer combinations and each one is rarer — lower threshold.
+  const minShare = { 2: 0.015, 3: 0.008, 4: 0.004, 5: 0.002 }[groupSize] || 0.01;
+  const absMin   = { 2: 8,     3: 5,     4: 3,     5: 2    }[groupSize] || 5;
+  return Math.max(absMin, totalPoss * minShare);
+}
+
+function pct30Threshold(rows, groupSize) {
+  // Legacy name kept for compatibility — now delegates to dynamicFloor
+  return dynamicFloor(rows, groupSize || 2);
 }
 
 function getLabFilters() {
@@ -651,10 +683,10 @@ async function fetchAllGroupsLive() {
     const data = { duos, trios, quads, fiveman };
     // Compute 30th-percentile threshold per group size from actual data
     data._thresholds = {
-      duos:   pct30Threshold(duos),
-      trios:  pct30Threshold(trios),
-      quads:  pct30Threshold(quads),
-      fiveman:pct30Threshold(fiveman),
+      duos:    dynamicFloor(duos,    2),
+      trios:   dynamicFloor(trios,   3),
+      quads:   dynamicFloor(quads,   4),
+      fiveman: dynamicFloor(fiveman, 5),
     };
     statusEl.textContent = `${duos.length} duos · ${trios.length} trios · ${quads.length} quads · ${fiveman.length} 5-man`;
     renderLineupContent(data);
@@ -1430,11 +1462,13 @@ fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
       Object.entries(d.playerXref).filter(([,v]) => v).map(([k,v]) => [k, v])
     )};
     data._thresholds = {
-      duos:    pct30Threshold(data.duos),
-      trios:   pct30Threshold(data.trios),
-      quads:   pct30Threshold(data.quads),
-      fiveman: pct30Threshold(data.fiveman),
+      duos:    dynamicFloor(data.duos,    2),
+      trios:   dynamicFloor(data.trios,   3),
+      quads:   dynamicFloor(data.quads,   4),
+      fiveman: dynamicFloor(data.fiveman, 5),
     };
+    window._lastLineupData = data;
+    populateLineupPlayerFilters(data);
     document.getElementById('lineupFetchStatus').textContent =
       `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads · ${data.fiveman.length} 5-man`;
     renderLineupContent(data);
@@ -1451,7 +1485,7 @@ fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
       });
       const duos = d.lineups.map(normalize);
       const data = { duos, trios: [], quads: [], fiveman: [],
-        _thresholds: { duos: pct30Threshold(duos), trios: 0, quads: 0, fiveman: 0 } };
+        _thresholds: { duos: dynamicFloor(duos, 2), trios: 0, quads: 0, fiveman: 0 } };
       document.getElementById('lineupFetchStatus').textContent =
         `${duos.length} duos · trios/quads/5-man: commit lineup_data.json`;
       renderLineupContent(data);
@@ -1513,8 +1547,8 @@ function switchSeason(season) {
         Object.entries(d.playerXref).filter(([,v]) => v).map(([k,v]) => [k,v])
       )};
       data._thresholds = {
-        duos: pct30Threshold(data.duos), trios: pct30Threshold(data.trios),
-        quads: pct30Threshold(data.quads), fiveman: pct30Threshold(data.fiveman),
+        duos: dynamicFloor(data.duos, 2), trios: dynamicFloor(data.trios, 3),
+        quads: dynamicFloor(data.quads, 4), fiveman: dynamicFloor(data.fiveman, 5),
       };
       document.getElementById('lineupFetchStatus').textContent =
         `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads · ${data.fiveman.length} 5-man`;
@@ -1525,6 +1559,62 @@ function switchSeason(season) {
         `<div style="color:var(--red);font-size:12px;">No ${SEASON} lineup data yet — run fetch_lineup_data.py ${SEASON}</div>`;
       document.getElementById('lineupFetchStatus').textContent = '';
     });
+}
+
+function populateLineupPlayerFilters(data) {
+  const players = new Set();
+  (data.duos || []).forEach(c => {
+    (c.GROUP_NAME || '').split(' - ').forEach(n => { if(n.trim()) players.add(n.trim()); });
+  });
+  ['lineupWithFilter','lineupWithoutFilter'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    while (sel.options.length > 1) sel.remove(1);
+    [...players].sort().forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p; opt.textContent = p;
+      sel.appendChild(opt);
+    });
+    if (cur) sel.value = cur;
+  });
+}
+
+function applyLineupFilters() {
+  if (!window._lastLineupData) return;
+  const withPlayer    = document.getElementById('lineupWithFilter')?.value    || '';
+  const withoutPlayer = document.getElementById('lineupWithoutFilter')?.value || '';
+  const floorMode     = document.getElementById('lineupFloorMode')?.value     || 'dynamic';
+
+  function matchesFilters(combo) {
+    const players = (combo.GROUP_NAME || '').split(' - ').map(n => n.trim());
+    if (withPlayer    && !players.includes(withPlayer))    return false;
+    if (withoutPlayer &&  players.includes(withoutPlayer)) return false;
+    return true;
+  }
+
+  const base = window._lastLineupData;
+  const filtered = {
+    duos:    (base.duos    || []).filter(matchesFilters),
+    trios:   (base.trios   || []).filter(matchesFilters),
+    quads:   (base.quads   || []).filter(matchesFilters),
+    fiveman: (base.fiveman || []).filter(matchesFilters),
+  };
+
+  // Compute thresholds for filtered data
+  function getFloor(rows, groupSize) {
+    if (floorMode === 'dynamic') return dynamicFloor(rows, groupSize);
+    return Number(floorMode);
+  }
+
+  filtered._thresholds = {
+    duos:    getFloor(filtered.duos,    2),
+    trios:   getFloor(filtered.trios,   3),
+    quads:   getFloor(filtered.quads,   4),
+    fiveman: getFloor(filtered.fiveman, 5),
+  };
+
+  renderLineupContent(filtered);
 }
 
 function openLineupLab() {

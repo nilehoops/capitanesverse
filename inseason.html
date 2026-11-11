@@ -54,10 +54,10 @@ a { color: inherit; text-decoration: none; }
 }
 .page-search input:focus { outline: none; border-bottom-color: var(--yellow); }
 
-/* ── Main layout: left | middle | right | rotation-strip ── */
+/* ── Main layout: left | middle | right ── */
 .main {
   display: grid;
-  grid-template-columns: 20% 1fr 26% 90px;
+  grid-template-columns: 20% 1fr 28%;
   min-height: calc(100vh - 54px);
   align-items: start;
 }
@@ -413,31 +413,39 @@ a { color: inherit; text-decoration: none; }
   <!-- ═══ RIGHT COLUMN ═══ -->
   <div class="right-col">
 
-    <!-- Player Stats -->
-    <div style="padding:6px 10px 8px;border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:2px;">
-        <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
-        <div style="padding-top:4px;">
-          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;white-space:nowrap;margin-bottom:2px;">
-            <button class="pstab active" data-tab="inseason" id="pstab-inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 5px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">NCAA</button>
-          </div>
-          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
-            <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">Overall</button><button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Offense</button><button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Defense</button>
+    <!-- Player Stats + Rotation side by side -->
+    <div style="display:flex;border-bottom:1px solid var(--border);">
+      <div style="flex:1;min-width:0;padding:6px 10px 8px;">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:2px;">
+          <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
+          <div style="padding-top:4px;">
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;white-space:nowrap;margin-bottom:2px;">
+              <button class="pstab active" data-tab="inseason" id="pstab-inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 5px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">NCAA</button>
+            </div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
+              <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">Overall</button><button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Offense</button><button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Defense</button>
+            </div>
           </div>
         </div>
+        <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loading…</div></div>
       </div>
-      <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loading…</div></div>
+      <!-- Rotation strip — beside Player Stats only, not full page height -->
+      <div style="border-left:1px solid var(--border);padding:6px 3px;display:flex;flex-direction:column;align-items:center;width:62px;flex-shrink:0;">
+        <div style="display:flex;gap:1px;">
+          <div class="rotation-row" id="rotationRow1"></div>
+          <div class="rotation-row" id="rotationRow2"></div>
+        </div>
+        <div class="rotation-label-vert" style="margin-top:4px;">Current Rotation<br>(Last Five Games)</div>
+      </div>
     </div>
 
     <!-- WOWY -->
     <div style="padding:6px 10px;">
-      <div class="big-label" style="color:#000;margin-bottom:8px;">WOWY</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">
-        With Or Without You — on/off court impact for each player.
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;">
+      <div class="big-label" style="color:#000;margin-bottom:4px;">WOWY</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">With Or Without You — on/off court impact for each player.</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;">
         <label style="font-weight:600;">Player:</label>
-        <select id="wowyPlayerSelect" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);" onchange="renderWowy()">
+        <select id="wowyPlayerSelect" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);" onchange="renderWowy()">
           <option value="">— choose —</option>
         </select>
       </div>
@@ -445,15 +453,6 @@ a { color: inherit; text-decoration: none; }
     </div>
 
   </div><!-- /right-col -->
-
-  <!-- ═══ ROTATION STRIP (4th column) ═══ -->
-  <div class="rotation-strip">
-    <div class="rotation-players-wrap" style="flex-direction:column;gap:4px;">
-      <div class="rotation-row" id="rotationRow1" style="flex-direction:column;gap:4px;"></div>
-      <div class="rotation-row" id="rotationRow2" style="flex-direction:column;gap:4px;"></div>
-    </div>
-    <div class="rotation-label-vert" style="margin-top:8px;">Current Rotation<br>(Last Five Games)</div>
-  </div>
 
 </div><!-- /main -->
 

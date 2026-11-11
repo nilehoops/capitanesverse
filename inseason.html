@@ -420,7 +420,7 @@ a { color: inherit; text-decoration: none; }
         <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
         <div style="padding-top:4px;">
           <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;margin-bottom:3px;">
-            <button class="pstab active" data-tab="inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">NCAA</button>
+            <button class="pstab active" data-tab="inseason" id="pstab-inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 5px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">NCAA</button>
           </div>
           <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
             <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">Overall</button><button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Offense</button><button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Defense</button>
@@ -1434,6 +1434,8 @@ async function loadRanks(slice) {
 // Init season toggle
 const seasonLabel = document.getElementById('seasonLabel');
 if (seasonLabel) seasonLabel.textContent = SEASON;
+const psTabEl = document.getElementById('pstab-inseason');
+if (psTabEl) psTabEl.textContent = SEASON;
 document.querySelectorAll('.season-btn').forEach(btn => {
   btn.classList.toggle('active', btn.dataset.season === SEASON);
 });
@@ -1541,9 +1543,11 @@ function switchSeason(season) {
   document.querySelectorAll('.season-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.season === season);
   });
-  // Update season label
+  // Update season label and inseason tab
   const lbl = document.getElementById('seasonLabel');
   if (lbl) lbl.textContent = season;
+  const psTabInseason = document.getElementById('pstab-inseason');
+  if (psTabInseason) psTabInseason.textContent = season;
   // Re-render all sections
   loadStaffNotes();
   loadRanks('all');
@@ -1679,29 +1683,82 @@ async function renderBap() {
   const container = document.getElementById('bapBoards');
   if (!container) return;
   try {
-    const players = await loadBap();
-    // Build pool — exclude unavailable, filter by active tab
-    let pool = players.filter(p => p.availabilitySimple !== 'no');
+    // Load both the scouted player database and the current season's league data
+    const [scoutedPlayers, leagueData] = await Promise.all([
+      loadBap(),
+      fetch(dataPath('lineup_league') + '?v=' + Date.now())
+        .then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+
     if (_bapTab === 'gleague') {
-      // Low-minute G League: G League players with low minutes (available/unknown)
-      pool = pool.filter(p => {
-        const league = (p.league || p.conf || '').toLowerCase();
-        return league.includes('g league') || league.includes('nba g');
+      // Players appearing in this season's G League API data
+      // who are NOT yet in players_index.json (unaccounted for)
+      if (!leagueData) {
+        container.innerHTML = '<div style="color:var(--muted);font-size:11px;">No league data yet — run fetch_lineup_data.py</div>';
+        return;
+      }
+
+      // Build set of names already in the scouting database
+      const scoutedNames = new Set(scoutedPlayers.map(p => p.name?.toLowerCase().trim()));
+
+      // Extract all player names from league duos
+      const leaguePlayerNames = new Set();
+      (leagueData.duos || []).forEach(c => {
+        (c.GROUP_NAME || '').split(' - ').forEach(abbrev => {
+          abbrev = abbrev.trim();
+          if (abbrev) leaguePlayerNames.add(abbrev);
+        });
       });
+
+      // Build unaccounted player list — in league data but not in scouting db
+      // Use playerXref from lineup_data to get full names where available
+      const ldResp = await fetch(dataPath('lineup_data') + '?v=' + Date.now());
+      const ldData = ldResp.ok ? await ldResp.json() : {};
+      const xref = ldData.playerXref || {};
+
+      const unaccounted = [...leaguePlayerNames]
+        .filter(abbrev => {
+          const fullName = xref[abbrev]?.name || abbrev;
+          return !scoutedNames.has(fullName.toLowerCase().trim());
+        })
+        .map(abbrev => ({
+          abbrev,
+          name: xref[abbrev]?.name || abbrev,
+          id: xref[abbrev]?.id || null,
+          photoUrl: xref[abbrev]?.photoUrl || null,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+      // Split into 4 columns alphabetically
+      const cols = [[], [], [], []];
+      unaccounted.forEach((p, i) => cols[i % 4].push(p));
+
+      const colTitles = ['A–G', 'H–N', 'O–S', 'T–Z'];
+      container.innerHTML = cols.map((col, i) => `
+        <div>
+          <div style="font-size:13px;font-weight:700;border-bottom:2px solid var(--border);padding-bottom:3px;margin-bottom:6px;">
+            Unaccounted ${esc(colTitles[i])}
+          </div>
+          ${col.length ? col.map(p =>
+            `<a href="${p.id ? `player.html?id=${esc(p.id)}` : '#'}" style="font-size:12px;line-height:1.6;display:block;color:inherit;text-decoration:none;">${esc(p.name)}</a>`
+          ).join('') : '<div style="font-size:11px;color:var(--muted);">None.</div>'}
+        </div>`).join('');
+
     } else if (_bapTab === 'lnbp') {
-      // LNBP Players
-      pool = pool.filter(p => (p.league || p.conf || '').toLowerCase().includes('lnbp'));
+      // LNBP: players in scouting db with LNBP in their availabilityNote
+      const lnbp = scoutedPlayers.filter(p =>
+        (p.availabilityNote || '').toUpperCase().includes('LNBP')
+      );
+      const latino = lnbp.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
+      const byPos  = pos => lnbp.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
+
+      container.innerHTML = [
+        bapRenderBoard('Latino Ranks:', latino,         'rankings.html?pos=overall&latino=yes'),
+        bapRenderBoard('Guard Ranks:',  byPos('Guard'), 'rankings.html?pos=guard'),
+        bapRenderBoard('Wing Ranks:',   byPos('Wing'),  'rankings.html?pos=wing'),
+        bapRenderBoard('Big Ranks:',    byPos('Big'),   'rankings.html?pos=big'),
+      ].join('');
     }
-
-    const latino  = pool.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
-    const byPos   = pos => pool.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
-
-    container.innerHTML = [
-      bapRenderBoard('Latino Ranks:', latino,      'rankings.html?pos=overall&latino=yes'),
-      bapRenderBoard('Guard Ranks:',  byPos('Guard'), 'rankings.html?pos=guard'),
-      bapRenderBoard('Wing Ranks:',   byPos('Wing'),  'rankings.html?pos=wing'),
-      bapRenderBoard('Big Ranks:',    byPos('Big'),   'rankings.html?pos=big'),
-    ].join('');
   } catch(e) {
     container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Could not load: ${esc(e.message)}</div>`;
   }

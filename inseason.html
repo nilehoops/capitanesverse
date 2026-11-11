@@ -1683,82 +1683,89 @@ async function renderBap() {
   const container = document.getElementById('bapBoards');
   if (!container) return;
   try {
-    // Load both the scouted player database and the current season's league data
-    const [scoutedPlayers, leagueData] = await Promise.all([
-      loadBap(),
-      fetch(dataPath('lineup_league') + '?v=' + Date.now())
-        .then(r => r.ok ? r.json() : null).catch(() => null),
-    ]);
+    const all = await loadBap();
+
+    // Base: unsigned players with an overall rank
+    const unsigned = new Set(
+      all.filter(p => p.overallRank != null && p.availabilitySimple !== 'no' && !p.onRoster)
+         .map(p => p.id)
+    );
+
+    let pool;
 
     if (_bapTab === 'gleague') {
-      // Players appearing in this season's G League API data
-      // who are NOT yet in players_index.json (unaccounted for)
-      if (!leagueData) {
-        container.innerHTML = '<div style="color:var(--muted);font-size:11px;">No league data yet — run fetch_lineup_data.py</div>';
-        return;
-      }
-
-      // Build set of names already in the scouting database
-      const scoutedNames = new Set(scoutedPlayers.map(p => p.name?.toLowerCase().trim()));
-
-      // Extract all player names from league duos
-      const leaguePlayerNames = new Set();
-      (leagueData.duos || []).forEach(c => {
-        (c.GROUP_NAME || '').split(' - ').forEach(abbrev => {
-          abbrev = abbrev.trim();
-          if (abbrev) leaguePlayerNames.add(abbrev);
-        });
-      });
-
-      // Build unaccounted player list — in league data but not in scouting db
-      // Use playerXref from lineup_data to get full names where available
+      // Criterion a: in current G League data AND bottom 40th percentile minutes
+      // Load league data to compute per-player minutes
       const ldResp = await fetch(dataPath('lineup_data') + '?v=' + Date.now());
       const ldData = ldResp.ok ? await ldResp.json() : {};
       const xref = ldData.playerXref || {};
 
-      const unaccounted = [...leaguePlayerNames]
-        .filter(abbrev => {
-          const fullName = xref[abbrev]?.name || abbrev;
-          return !scoutedNames.has(fullName.toLowerCase().trim());
-        })
-        .map(abbrev => ({
-          abbrev,
-          name: xref[abbrev]?.name || abbrev,
-          id: xref[abbrev]?.id || null,
-          photoUrl: xref[abbrev]?.photoUrl || null,
-        }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+      // Build name->id map from players_index for cross-referencing
+      const nameToId = {};
+      const SFXS = new Set(['jr','sr','ii','iii','iv','v']);
+      all.forEach(p => {
+        if (!p.name) return;
+        const parts = p.name.toLowerCase().split(/\s+/);
+        const last = parts.filter(w => !SFXS.has(w)).pop();
+        if (last) nameToId[`${parts[0][0]}. ${last}`] = p.id;
+        nameToId[p.name.toLowerCase()] = p.id;
+      });
 
-      // Split into 4 columns alphabetically
-      const cols = [[], [], [], []];
-      unaccounted.forEach((p, i) => cols[i % 4].push(p));
+      // Compute total possessions per player across all lineup combinations
+      const playerPoss = {};
+      (ldData.duos || []).forEach(c => {
+        const poss = c.POSS || 0;
+        (c.GROUP_NAME || '').split(' - ').forEach(abbrev => {
+          abbrev = abbrev.trim();
+          if (!abbrev) return;
+          playerPoss[abbrev] = (playerPoss[abbrev] || 0) + poss;
+        });
+      });
 
-      const colTitles = ['A–G', 'H–N', 'O–S', 'T–Z'];
-      container.innerHTML = cols.map((col, i) => `
-        <div>
-          <div style="font-size:13px;font-weight:700;border-bottom:2px solid var(--border);padding-bottom:3px;margin-bottom:6px;">
-            Unaccounted ${esc(colTitles[i])}
-          </div>
-          ${col.length ? col.map(p =>
-            `<a href="${p.id ? `player.html?id=${esc(p.id)}` : '#'}" style="font-size:12px;line-height:1.6;display:block;color:inherit;text-decoration:none;">${esc(p.name)}</a>`
-          ).join('') : '<div style="font-size:11px;color:var(--muted);">None.</div>'}
-        </div>`).join('');
+      // Find 40th percentile threshold
+      const possValues = Object.values(playerPoss).sort((a, b) => a - b);
+      const p40idx = Math.floor(possValues.length * 0.4);
+      const p40threshold = possValues[p40idx] || 0;
 
-    } else if (_bapTab === 'lnbp') {
-      // LNBP: players in scouting db with LNBP in their availabilityNote
-      const lnbp = scoutedPlayers.filter(p =>
+      // Players below 40th percentile — cross-reference to players_index
+      const lowMinIds = new Set();
+      Object.entries(playerPoss).forEach(([abbrev, poss]) => {
+        if (poss <= p40threshold) {
+          // Try xref first, then name lookup
+          const info = xref[abbrev];
+          const fullName = info?.name || abbrev;
+          const id = info?.id || nameToId[fullName.toLowerCase()] ||
+                     nameToId[abbrev.toLowerCase()];
+          if (id) lowMinIds.add(id);
+        }
+      });
+
+      // Pool: (unsigned AND in G League low-minutes) OR (unsigned — criterion b)
+      pool = all.filter(p =>
+        p.overallRank != null &&
+        p.availabilitySimple !== 'no' &&
+        !p.onRoster &&
+        (lowMinIds.has(p.id) || unsigned.has(p.id))
+      );
+
+    } else {
+      // Criterion c: LNBP players (signed, but pursuable)
+      pool = all.filter(p =>
+        p.overallRank != null &&
         (p.availabilityNote || '').toUpperCase().includes('LNBP')
       );
-      const latino = lnbp.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
-      const byPos  = pos => lnbp.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
-
-      container.innerHTML = [
-        bapRenderBoard('Latino Ranks:', latino,         'rankings.html?pos=overall&latino=yes'),
-        bapRenderBoard('Guard Ranks:',  byPos('Guard'), 'rankings.html?pos=guard'),
-        bapRenderBoard('Wing Ranks:',   byPos('Wing'),  'rankings.html?pos=wing'),
-        bapRenderBoard('Big Ranks:',    byPos('Big'),   'rankings.html?pos=big'),
-      ].join('');
     }
+
+    const latino = pool.filter(p => p.latino === true).sort((a, b) => a.overallRank - b.overallRank);
+    const byPos  = pos => pool.filter(p => p.position === pos && p.positionalRank != null)
+                              .sort((a, b) => a.positionalRank - b.positionalRank);
+
+    container.innerHTML = [
+      bapRenderBoard('Latino Ranks:', latino,         'rankings.html?pos=overall&latino=yes'),
+      bapRenderBoard('Guard Ranks:',  byPos('Guard'), 'rankings.html?pos=guard'),
+      bapRenderBoard('Wing Ranks:',   byPos('Wing'),  'rankings.html?pos=wing'),
+      bapRenderBoard('Big Ranks:',    byPos('Big'),   'rankings.html?pos=big'),
+    ].join('');
   } catch(e) {
     container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Could not load: ${esc(e.message)}</div>`;
   }

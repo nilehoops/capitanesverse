@@ -68,12 +68,12 @@ a { color: inherit; text-decoration: none; }
 }
 .main-row:last-child { border-bottom: none; }
 
-/* Left section: 165px — Staff Notes row 1, Season Splits row 2 */
+/* Left section: 12.2% — Staff Notes row 1, Season Splits row 2 */
 .left-section {
-  width: 165px;
-  min-width: 165px;
+  width: 12.2%;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
+  overflow: hidden;
 }
 
 /* Middle section: flex 1 — BAP row 1, Lineup Data row 2 */
@@ -84,18 +84,16 @@ a { color: inherit; text-decoration: none; }
   padding-bottom: 8px;
 }
 
-/* Right section: 375px — Player Stats row 1, WOWY row 2 */
+/* Right section: 27.8% — Player Stats row 1, WOWY row 2 */
 .right-col {
-  width: 375px;
-  min-width: 375px;
+  width: 27.8%;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
 }
 
-/* Rotation strip: 322px — 2 columns × 5 players, row 1 only */
+/* Rotation strip: 23.9% — 2 columns × 5 players, row 1 only */
 .rotation-strip {
-  width: 322px;
-  min-width: 322px;
+  width: 23.9%;
   flex-shrink: 0;
   padding: 6px 4px;
   display: flex;
@@ -378,6 +376,7 @@ a { color: inherit; text-decoration: none; }
             <div style="color:var(--muted);margin-bottom:3px;">Show:</div>
             <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G League</button>
             <button class="bap-btn" data-tab="lnbp" onclick="switchBapTab('lnbp',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">LNBP<br>Players</button>
+            <button class="bap-btn" data-tab="unsigned" onclick="switchBapTab('unsigned',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">Unsigned<br>Players</button>
           </div>
         </div>
         <div id="bapBoards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;font-size:12px;">
@@ -1364,21 +1363,40 @@ async function buildRotationPlaceholders() {
   const r2 = document.getElementById('rotationRow2');
   if (!r1 || !r2) return;
 
-  // Try to load real rotation from mex_data players sorted by minutes
+  // Load real rotation from mex_data players sorted by minutes
+  // Cross-reference with players_index for photos
   try {
-    const d = await loadMexData();
+    const [d, idx] = await Promise.all([
+      loadMexData(),
+      loadBap().catch(() => []),
+    ]);
+
     const players = (d.players || [])
       .filter(p => (p.MIN || 0) > 0)
       .sort((a, b) => (b.MIN || 0) - (a.MIN || 0))
       .slice(0, 10);
 
+    // Build name->photoUrl map from players_index
+    const photoMap = {};
+    (idx || []).forEach(p => {
+      if (p.name && p.photoUrl) photoMap[p.name.toLowerCase()] = p.photoUrl;
+    });
+    // Also try nameLookup from mex_data
+    const nameLookup = d.nameLookup || {};
+
     if (players.length > 0) {
       function rotCard(p) {
-        const name = (p.Player || p.PLAYER_NAME || '').split(' ');
-        const shortName = name.length > 1 ? `${name[0][0]}. ${name[name.length-1]}` : (name[0] || '');
+        const fullName = p.Player || p.PLAYER_NAME || '';
+        // Try nameLookup for display name, then split
+        const displayName = nameLookup[fullName] || fullName;
+        const parts = displayName.split(' ');
+        const shortName = parts.length > 1
+          ? `${parts[0][0]}. ${parts[parts.length - 1]}`
+          : (parts[0] || '');
         const mins = p.MIN != null ? Number(p.MIN).toFixed(0) + ' Min' : 'XX Min';
-        const photo = p.photoUrl
-          ? `<img src="${esc(p.photoUrl)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:top;display:block;margin:0 auto 1px;">`
+        const photoUrl = photoMap[fullName.toLowerCase()] || photoMap[displayName.toLowerCase()];
+        const photo = photoUrl
+          ? `<img src="${esc(photoUrl)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:top;display:block;margin:0 auto 1px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><svg width="36" height="36" viewBox="0 0 36 36" style="display:none;margin:0 auto 1px;"><circle cx="18" cy="13" r="8" fill="#999"/><ellipse cx="18" cy="32" rx="13" ry="9" fill="#999"/></svg>`
           : `<svg width="36" height="36" viewBox="0 0 36 36" style="display:block;margin:0 auto 1px;"><circle cx="18" cy="13" r="8" fill="#999"/><ellipse cx="18" cy="32" rx="13" ry="9" fill="#999"/></svg>`;
         return `<div class="rot-player">${photo}<span class="rot-player-mins">${mins}</span><span class="rot-player-name">${esc(shortName)}</span></div>`;
       }
@@ -1796,11 +1814,18 @@ async function renderBap() {
         const unsigned = p.availabilitySimple !== 'no' && !p.onRoster;
         return inGLeagueBottomPoss || unsigned;
       });
-    } else {
-      // c) LNBP
+    } else if (_bapTab === 'lnbp') {
+      // c) LNBP — currently signed in LNBP, pursuable
       pool = all.filter(p =>
         p.overallRank != null &&
         (p.availabilityNote || '').toUpperCase().includes('LNBP')
+      );
+    } else {
+      // d) Unsigned — all ranked players not on a roster, not signed elsewhere
+      pool = all.filter(p =>
+        p.overallRank != null &&
+        p.availabilitySimple !== 'no' &&
+        !p.onRoster
       );
     }
 

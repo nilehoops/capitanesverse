@@ -1662,20 +1662,23 @@ function bapNameHtml(p) {
 }
 
 function bapRankRow(rank, p) {
+  const teamTag = p._currentTeam
+    ? ` <span style="font-size:10px;color:var(--muted);">(${esc(p._currentTeam)})</span>`
+    : '';
   return `<a href="player.html?id=${esc(p.id)}" style="font-size:12px;line-height:1.6;display:block;color:inherit;text-decoration:none;">
-    <span style="margin-right:4px;color:var(--muted);">${rank}.</span>${bapNameHtml(p)}
+    <span style="margin-right:4px;color:var(--muted);">${rank}.</span>${bapNameHtml(p)}${teamTag}
   </a>`;
 }
 
 function bapRenderBoard(title, list, href) {
   const rows = list.length
-    ? list.slice(0, 10).map((p, i) => bapRankRow(i + 1, p)).join('')
+    ? list.map((p, i) => bapRankRow(i + 1, p)).join('')
     : `<div style="font-size:11px;color:var(--muted);">None yet.</div>`;
   return `<div>
-    <div style="font-size:13px;font-weight:700;border-bottom:2px solid var(--border);padding-bottom:3px;margin-bottom:6px;">
+    <div style="font-size:13px;font-weight:700;border-bottom:2px solid var(--border);padding-bottom:3px;margin-bottom:4px;">
       ${esc(title)}<a href="${esc(href)}" style="font-size:10px;font-weight:600;text-decoration:underline;margin-left:6px;color:inherit;">(Show All)</a>
     </div>
-    ${rows}
+    <div style="max-height:280px;overflow-y:auto;">${rows}</div>
   </div>`;
 }
 
@@ -1685,76 +1688,70 @@ async function renderBap() {
   try {
     const all = await loadBap();
 
-    // Base: unsigned players with an overall rank
-    const unsigned = new Set(
-      all.filter(p => p.overallRank != null && p.availabilitySimple !== 'no' && !p.onRoster)
-         .map(p => p.id)
-    );
+    // Load exact G League roster file (name -> team abbrev lookup)
+    const rosterResp = await fetch(`data/gleague_roster_${SEASON}.json?v=` + Date.now());
+    const rosterData = rosterResp.ok ? await rosterResp.json() : null;
+    const nameToTeam = rosterData?.nameToTeam || {}; // lowercase name -> team abbrev
 
-    let pool;
+    // Load league lineup data for possession counts
+    const llResp = await fetch(dataPath('lineup_league') + '?v=' + Date.now());
+    const llData = llResp.ok ? await llResp.json() : null;
 
-    if (_bapTab === 'gleague') {
-      // Criterion a: in current G League data AND bottom 40th percentile minutes
-      // Load league data to compute per-player minutes
-      const ldResp = await fetch(dataPath('lineup_data') + '?v=' + Date.now());
-      const ldData = ldResp.ok ? await ldResp.json() : {};
-      const xref = ldData.playerXref || {};
+    // Compute total poss per player from league duos using exact name lookup
+    // Build full-name -> poss map via playerXref in lineup_data
+    const ldResp = await fetch(dataPath('lineup_data') + '?v=' + Date.now());
+    const ldData = ldResp.ok ? await ldResp.json() : {};
+    const xref = ldData.playerXref || {};
 
-      // Build name->id map from players_index for cross-referencing
-      const nameToId = {};
-      const SFXS = new Set(['jr','sr','ii','iii','iv','v']);
-      all.forEach(p => {
-        if (!p.name) return;
-        const parts = p.name.toLowerCase().split(/\s+/);
-        const last = parts.filter(w => !SFXS.has(w)).pop();
-        if (last) nameToId[`${parts[0][0]}. ${last}`] = p.id;
-        nameToId[p.name.toLowerCase()] = p.id;
-      });
-
-      // Compute total possessions per player across all lineup combinations
-      const playerPoss = {};
-      (ldData.duos || []).forEach(c => {
+    // Map full name (lowercase) -> total poss across all duos
+    const namePoss = {};
+    if (llData) {
+      (llData.duos || []).forEach(c => {
         const poss = c.POSS || 0;
         (c.GROUP_NAME || '').split(' - ').forEach(abbrev => {
           abbrev = abbrev.trim();
-          if (!abbrev) return;
-          playerPoss[abbrev] = (playerPoss[abbrev] || 0) + poss;
+          const fullName = xref[abbrev]?.name || abbrev;
+          namePoss[fullName.toLowerCase()] = (namePoss[fullName.toLowerCase()] || 0) + poss;
         });
       });
+    }
 
-      // Find 40th percentile threshold
-      const possValues = Object.values(playerPoss).sort((a, b) => a - b);
-      const p40idx = Math.floor(possValues.length * 0.4);
-      const p40threshold = possValues[p40idx] || 0;
+    // 40th percentile poss threshold
+    const allPoss = Object.values(namePoss).sort((a, b) => a - b);
+    const p40 = allPoss[Math.floor(allPoss.length * 0.4)] || 0;
 
-      // Players below 40th percentile — cross-reference to players_index
-      const lowMinIds = new Set();
-      Object.entries(playerPoss).forEach(([abbrev, poss]) => {
-        if (poss <= p40threshold) {
-          // Try xref first, then name lookup
-          const info = xref[abbrev];
-          const fullName = info?.name || abbrev;
-          const id = info?.id || nameToId[fullName.toLowerCase()] ||
-                     nameToId[abbrev.toLowerCase()];
-          if (id) lowMinIds.add(id);
-        }
+    // Tag each player in players_index with their current team if in roster
+    const idToTeam = {};
+    const idToPoss = {};
+    all.forEach(p => {
+      if (!p.name) return;
+      const key = p.name.toLowerCase();
+      if (nameToTeam[key]) {
+        idToTeam[p.id] = nameToTeam[key];
+        idToPoss[p.id] = namePoss[key] || 0;
+      }
+    });
+
+    let pool;
+    if (_bapTab === 'gleague') {
+      // a) In current G League AND bottom 40th percentile poss
+      // b) Unsigned (availabilitySimple !== 'no', not onRoster) with overallRank
+      pool = all.filter(p => {
+        if (!p.overallRank) return false;
+        const inGLeagueBottomPoss = idToTeam[p.id] && (idToPoss[p.id] || 0) <= p40;
+        const unsigned = p.availabilitySimple !== 'no' && !p.onRoster;
+        return inGLeagueBottomPoss || unsigned;
       });
-
-      // Pool: (unsigned AND in G League low-minutes) OR (unsigned — criterion b)
-      pool = all.filter(p =>
-        p.overallRank != null &&
-        p.availabilitySimple !== 'no' &&
-        !p.onRoster &&
-        (lowMinIds.has(p.id) || unsigned.has(p.id))
-      );
-
     } else {
-      // Criterion c: LNBP players (signed, but pursuable)
+      // c) LNBP
       pool = all.filter(p =>
         p.overallRank != null &&
         (p.availabilityNote || '').toUpperCase().includes('LNBP')
       );
     }
+
+    // Attach current team tag to each player
+    pool = pool.map(p => ({ ...p, _currentTeam: idToTeam[p.id] || null }));
 
     const latino = pool.filter(p => p.latino === true).sort((a, b) => a.overallRank - b.overallRank);
     const byPos  = pos => pool.filter(p => p.position === pos && p.positionalRank != null)

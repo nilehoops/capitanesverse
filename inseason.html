@@ -811,22 +811,22 @@ async function renderTrajectory() {
 
   const html = comparisons.map(comp => {
     const sliceData = comp.slices.map(sl => ({ sl, row: getMXC(sl) }));
-    const header = `<tr><th style="text-align:left;font-size:9px;color:var(--muted);padding:1px 3px;"></th>${
-      sliceData.map(({sl}) => `<th style="font-size:9px;color:var(--muted);padding:1px 3px;text-align:right;">${sliceLabels[sl]}</th>`).join('')
+    const header = `<tr><th style="text-align:left;font-size:8px;color:var(--muted);padding:0 2px;width:38px;"></th>${
+      sliceData.map(({sl}) => `<th style="font-size:8px;color:var(--muted);padding:0 2px;text-align:right;white-space:nowrap;">${sliceLabels[sl]}</th>`).join('')
     }</tr>`;
     const rows = comp.keys.map(key => {
       const cells = sliceData.map(({sl, row}) => {
         const val = row ? row[key] : null;
         const rank = getRank(sl, key, val);
         const color = key === 'NET_RATING' ? netColor(val) : '';
-        const rankStr = rank != null ? `<sup style="font-size:7px;color:var(--muted);">${rank}</sup>` : '';
-        return `<td style="text-align:right;font-size:10px;padding:1px 3px;${color}">${fmt(key,val)}${rankStr}</td>`;
+        const rankStr = rank != null ? `<sup style="font-size:6px;color:var(--muted);">${rank}</sup>` : '';
+        return `<td style="text-align:right;font-size:9px;padding:0 2px;white-space:nowrap;${color}">${fmt(key,val)}${rankStr}</td>`;
       }).join('');
-      return `<tr><td style="font-size:9px;color:var(--muted);padding:1px 3px;">${keyLabels[key]||key}</td>${cells}</tr>`;
+      return `<tr><td style="font-size:8px;color:var(--muted);padding:0 2px;width:38px;">${keyLabels[key]||key}</td>${cells}</tr>`;
     }).join('');
-    return `<div style="margin-bottom:8px;">
-      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px;">${comp.label}</div>
-      <table style="width:100%;border-collapse:collapse;">
+    return `<div style="margin-bottom:5px;">
+      <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:0;">${comp.label}</div>
+      <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
         <thead>${header}</thead>
         <tbody>${rows}</tbody>
       </table>

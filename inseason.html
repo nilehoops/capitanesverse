@@ -63,7 +63,7 @@ a { color: inherit; text-decoration: none; }
 }
 .mid-col {
   border-right: 1px solid var(--border);
-  padding-bottom: 20px;
+  padding-bottom: 8px;
 }
 .right-col {
   display: flex;
@@ -84,7 +84,7 @@ a { color: inherit; text-decoration: none; }
 ═══════════════════════════════ */
 .left-col {
   border-right: 1px solid var(--border);
-  padding-bottom: 20px;
+  padding-bottom: 8px;
 }
 
 /* Staff Notes */
@@ -92,14 +92,13 @@ a { color: inherit; text-decoration: none; }
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 0 12px;
-  padding: 10px 14px 12px;
+  padding: 6px 10px 8px;
   border-bottom: 1px solid var(--border);
-  min-height: 180px;
 }
 .big-label {
   font-family: 'Oswald', sans-serif;
   font-weight: 700;
-  font-size: clamp(32px, 5vw, 52px);
+  font-size: clamp(24px, 3.5vw, 40px);
   line-height: 0.95;
   color: var(--blue);
   writing-mode: horizontal-tb;
@@ -107,7 +106,7 @@ a { color: inherit; text-decoration: none; }
 }
 .staff-feed {
   overflow-y: auto;
-  max-height: 170px;
+  max-height: 140px;
   background: var(--surface);
   padding: 6px 8px;
 }
@@ -222,12 +221,12 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Lineup Data */
-.lineup-block { padding: 10px 12px; }
+.lineup-block { padding: 6px 10px; }
 .lineup-data-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 .lineup-data-title {
   font-family: 'Lora', serif;
@@ -251,7 +250,7 @@ a { color: inherit; text-decoration: none; }
 .lineup-lab-btn:hover { filter: brightness(1.1); }
 
 /* Each tier row: best left, worst right */
-.lineup-tier { margin-bottom: 14px; }
+.lineup-tier { margin-bottom: 8px; }
 .lineup-tier-cols {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -337,15 +336,15 @@ a { color: inherit; text-decoration: none; }
 
     <!-- Staff Notes -->
     <div class="staff-notes-block">
-      <div class="big-label">Staff<br>Notes</div>
+      <div class="big-label" style="font-size:clamp(22px,3vw,36px);">Staff<br>Notes</div>
       <div class="staff-feed" id="staffFeed">
         <div style="color:var(--muted);font-size:11px;">Loading...</div>
       </div>
     </div>
 
     <!-- Season Splits -->
-    <div style="padding:10px 14px;border-top:1px solid var(--border);">
-      <div class="big-label" style="font-size:clamp(22px,3.5vw,36px);margin-bottom:8px;">Season<br>Splits</div>
+    <div style="padding:4px 8px;border-top:1px solid var(--border);">
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(14px,1.8vw,18px);color:var(--blue);text-align:center;margin-bottom:3px;">Season Splits</div>
       <div id="trajectoryContent">
         <div style="font-size:11px;color:var(--muted);">Loading…</div>
       </div>
@@ -357,9 +356,9 @@ a { color: inherit; text-decoration: none; }
   <div class="mid-col">
 
     <!-- Best Available Players -->
-    <div style="padding:10px 14px 12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:auto 1fr;gap:0 14px;align-items:start;">
+    <div style="padding:6px 14px 8px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:start;">
       <div>
-        <div class="big-label" style="color:var(--blue);">Best<br>Avaliable<br>Players</div>
+        <div class="big-label" style="color:var(--blue);font-size:clamp(22px,3vw,36px);">Best<br>Avaliable<br>Players</div>
         <div style="font-size:11px;margin-top:6px;">
           <div style="color:var(--muted);margin-bottom:3px;">Show:</div>
           <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G League</button>
@@ -415,11 +414,11 @@ a { color: inherit; text-decoration: none; }
   <div class="right-col">
 
     <!-- Player Stats -->
-    <div style="padding:10px 14px 12px;border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px;">
+    <div style="padding:6px 10px 8px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:2px;">
         <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
         <div style="padding-top:4px;">
-          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;margin-bottom:3px;">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;white-space:nowrap;margin-bottom:2px;">
             <button class="pstab active" data-tab="inseason" id="pstab-inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 5px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">NCAA</button>
           </div>
           <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
@@ -431,7 +430,7 @@ a { color: inherit; text-decoration: none; }
     </div>
 
     <!-- WOWY -->
-    <div style="padding:10px 14px;">
+    <div style="padding:6px 10px;">
       <div class="big-label" style="color:#000;margin-bottom:8px;">WOWY</div>
       <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">
         With Or Without You — on/off court impact for each player.
@@ -1663,10 +1662,10 @@ function bapNameHtml(p) {
 
 function bapRankRow(rank, p) {
   const teamTag = p._currentTeam
-    ? ` <span style="font-size:10px;color:var(--muted);">(${esc(p._currentTeam)})</span>`
+    ? ` <span style="font-size:9px;color:var(--muted);">(${esc(p._currentTeam)})</span>`
     : '';
-  return `<a href="player.html?id=${esc(p.id)}" style="font-size:12px;line-height:1.6;display:block;color:inherit;text-decoration:none;">
-    <span style="margin-right:4px;color:var(--muted);">${rank}.</span>${bapNameHtml(p)}${teamTag}
+  return `<a href="player.html?id=${esc(p.id)}" style="font-size:11px;line-height:1.4;display:block;color:inherit;text-decoration:none;">
+    <span style="margin-right:3px;color:var(--muted);">${rank}.</span>${bapNameHtml(p)}${teamTag}
   </a>`;
 }
 
@@ -1675,10 +1674,10 @@ function bapRenderBoard(title, list, href) {
     ? list.map((p, i) => bapRankRow(i + 1, p)).join('')
     : `<div style="font-size:11px;color:var(--muted);">None yet.</div>`;
   return `<div>
-    <div style="font-size:13px;font-weight:700;border-bottom:2px solid var(--border);padding-bottom:3px;margin-bottom:4px;">
-      ${esc(title)}<a href="${esc(href)}" style="font-size:10px;font-weight:600;text-decoration:underline;margin-left:6px;color:inherit;">(Show All)</a>
+    <div style="font-size:11px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:2px;margin-bottom:3px;">
+      ${esc(title)}<a href="${esc(href)}" style="font-size:9px;font-weight:600;text-decoration:underline;margin-left:4px;color:inherit;">(Show All)</a>
     </div>
-    <div style="max-height:280px;overflow-y:auto;">${rows}</div>
+    <div style="max-height:160px;overflow-y:auto;">${rows}</div>
   </div>`;
 }
 

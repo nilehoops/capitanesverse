@@ -54,12 +54,20 @@ a { color: inherit; text-decoration: none; }
 }
 .page-search input:focus { outline: none; border-bottom-color: var(--yellow); }
 
-/* ── Main two-column layout ── */
+/* ── Main three-column layout ── */
 .main {
   display: grid;
-  grid-template-columns: 38% 62%;
+  grid-template-columns: 22% 1fr 30%;
   min-height: calc(100vh - 54px);
   align-items: start;
+}
+.mid-col {
+  border-right: 1px solid var(--border);
+  padding-bottom: 20px;
+}
+.right-col {
+  display: flex;
+  flex-direction: column;
 }
 
 /* ═══════════════════════════════
@@ -250,8 +258,8 @@ a { color: inherit; text-decoration: none; }
 }
 .lineup-half-title.best { color: var(--green); }
 .lineup-half-title.worst { color: var(--red); }
-.lineup-cards-row { display: flex; gap: 8px; flex-wrap: nowrap; }
-.lineup-card { text-align: center; flex: 1; min-width: 0; }
+.lineup-cards-row { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; }
+.lineup-card { text-align: center; flex: 0 0 auto; width: calc(20% - 4px); min-width: 80px; max-width: 120px; }
 .lc-icons { display: flex; justify-content: center; gap: 1px; margin-bottom: 2px; }
 .lc-net {
   font-size: 11px;
@@ -327,82 +335,7 @@ a { color: inherit; text-decoration: none; }
       </div>
     </div>
 
-    <!-- League Ranks -->
-    <div class="league-ranks-block">
-      <div class="big-label">League<br>Ranks</div>
-      <div class="ranks-content" id="ranksContent">
-        <!-- Primary: ORTG / NetRTG / DRTG -->
-        <div class="ranks-primary">
-          <div class="rank-item">
-            <span class="rank-ordinal" id="r-ortg" style="color:var(--red);">—</span>
-            <span class="rank-stat-name">ORTG<sub id="v-ortg"></sub></span>
-          </div>
-          <div class="rank-item">
-            <span class="rank-ordinal" id="r-netrtg">—</span>
-            <span class="rank-stat-name">NetRTG<sub id="v-netrtg"></sub></span>
-          </div>
-          <div class="rank-item">
-            <span class="rank-ordinal" id="r-drtg" style="color:var(--blue);">—</span>
-            <span class="rank-stat-name">DRTG<sub id="v-drtg"></sub></span>
-          </div>
-        </div>
-        <!-- Secondary: EFG/TOV/dEFG/dTOV -->
-        <div class="ranks-secondary">
-          <div class="rank-item-sm rank-item">
-            <span class="rank-ordinal" id="r-efg" style="color:var(--red);">—</span>
-            <span class="rank-stat-name">EFG%<sub id="v-efg"></sub></span>
-          </div>
-          <div class="rank-item-sm rank-item">
-            <span class="rank-ordinal" id="r-tov">—</span>
-            <span class="rank-stat-name">TOV%<sub id="v-tov"></sub></span>
-          </div>
-          <div class="rank-item-sm rank-item">
-            <span class="rank-ordinal" id="r-defg">—</span>
-            <span class="rank-stat-name">dEFG%<sub id="v-defg"></sub></span>
-          </div>
-          <div class="rank-item-sm rank-item">
-            <span class="rank-ordinal" id="r-dtov" style="color:var(--blue);">—</span>
-            <span class="rank-stat-name">dTOV%<sub id="v-dtov"></sub></span>
-          </div>
-        </div>
-        <!-- OREB / DREB -->
-        <div class="ranks-oreb-row">
-          <div class="rank-item-sm rank-item">
-            <span class="rank-ordinal" id="r-oreb" style="color:var(--red);">—</span>
-            <span class="rank-stat-name">OREB%<sub id="v-oreb"></sub></span>
-          </div>
-          <div class="rank-item-sm rank-item">
-            <span class="rank-ordinal" id="r-dreb">—</span>
-            <span class="rank-stat-name">DREB%<sub id="v-dreb"></sub></span>
-          </div>
-        </div>
-        <div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;" id="statsFilters">
-
-        </div>
-        <select id="rankSliceSelect" onchange="loadRanks(this.value)" style="font-size:10px;padding:2px 4px;border:1px solid var(--border);margin-top:8px;width:100%;background:#fff;color:var(--text);">
-          <option value="all">Full season</option>
-          <option value="home">Home</option>
-          <option value="away">Away</option>
-          <option value="last5">Last 5 games</option>
-          <option value="last10">Last 10 games</option>
-          <option value="first_half">1st half</option>
-          <option value="second_half">2nd half</option>
-          <option value="q1">Q1</option>
-          <option value="q2">Q2</option>
-          <option value="q3">Q3</option>
-          <option value="q4">Q4</option>
-          <optgroup label="Opponent Strength">
-            <option value="vs_elite">vs. Elite (top ⅓ net rtg)</option>
-            <option value="vs_middle">vs. Middle</option>
-            <option value="vs_weak">vs. Weak (bottom ⅓ net rtg)</option>
-          </optgroup>
-        </select>
-
-        <span class="see-all-link" id="seeAllTeamStats">See All Team Stats</span>
-      </div>
-    </div>
-
-    <!-- Ranking Trajectory -->
+    <!-- Season Splits -->
     <div style="padding:10px 14px;border-top:1px solid var(--border);">
       <div class="big-label" style="font-size:clamp(22px,3.5vw,36px);margin-bottom:8px;">Season<br>Splits</div>
       <div id="trajectoryContent">
@@ -412,20 +345,22 @@ a { color: inherit; text-decoration: none; }
 
   </div><!-- /left-col -->
 
-  <!-- ═══ RIGHT COLUMN ═══ -->
-  <div class="right-col">
+  <!-- ═══ MIDDLE COLUMN ═══ -->
+  <div class="mid-col">
 
-    <!-- Current Rotation -->
-    <div class="rotation-block">
-      <div class="rotation-players-wrap">
-        <div class="rotation-row" id="rotationRow1">
-          <!-- 5 players top row -->
-        </div>
-        <div class="rotation-row" id="rotationRow2">
-          <!-- 5 players bottom row -->
+    <!-- Best Available Players -->
+    <div style="padding:10px 14px 12px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:auto 1fr;gap:0 14px;align-items:start;">
+      <div>
+        <div class="big-label" style="color:var(--blue);">Best<br>Avaliable<br>Players</div>
+        <div style="font-size:11px;margin-top:6px;">
+          <div style="color:var(--muted);margin-bottom:3px;">Show:</div>
+          <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G League</button>
+          <button class="bap-btn" data-tab="lnbp" onclick="switchBapTab('lnbp',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">LNBP<br>Players</button>
         </div>
       </div>
-      <div class="rotation-label-vert">Current Rotation<br>(Last Five Games)</div>
+      <div id="bapBoards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;font-size:12px;">
+        <div style="color:var(--muted);font-size:11px;">Loading…</div>
+      </div>
     </div>
 
     <!-- Lineup Data -->
@@ -434,7 +369,7 @@ a { color: inherit; text-decoration: none; }
         <span class="lineup-data-title">Lineup Data</span>
         <button class="lineup-lab-btn" onclick="openLineupLab()">Lineup Lab<br>Tool</button>
       </div>
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;font-size:11px;">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:4px;font-size:11px;">
         <div style="display:flex;align-items:center;gap:4px;">
           <span style="color:var(--muted);">with</span>
           <select id="lineupWithFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
@@ -458,12 +393,65 @@ a { color: inherit; text-decoration: none; }
           </select>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
+      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
         <span id="lineupFetchStatus" style="font-style:italic;"></span>
       </div>
       <div id="lineupContent">
         <div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading lineup data...</div>
       </div>
+    </div>
+
+  </div><!-- /mid-col -->
+
+  <!-- ═══ RIGHT COLUMN ═══ -->
+  <div class="right-col">
+
+    <!-- Player Stats + Current Rotation -->
+    <div style="display:flex;border-bottom:1px solid var(--border);">
+
+      <!-- Player Stats main area -->
+      <div style="flex:1;padding:10px 14px 12px;min-width:0;">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
+          <div class="big-label" style="color:#000;">Player<br>Stats</div>
+          <div style="display:flex;gap:8px;font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;flex-wrap:wrap;">
+            <button class="pstab active" data-tab="inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0;">2026-27</button>
+            <button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">G League Career</button>
+            <button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">All Pro Career</button>
+            <button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">NCAA</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;margin-bottom:8px;">
+          <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0;">Overall</button>
+          <button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">Offense</button>
+          <button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">Defense</button>
+        </div>
+        <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loading…</div></div>
+      </div>
+
+      <!-- Current Rotation — vertical strip on right edge -->
+      <div class="rotation-block" style="border-left:1px solid var(--border);">
+        <div class="rotation-players-wrap">
+          <div class="rotation-row" id="rotationRow1"></div>
+          <div class="rotation-row" id="rotationRow2"></div>
+        </div>
+        <div class="rotation-label-vert">Current Rotation<br>(Last Five Games)</div>
+      </div>
+
+    </div>
+
+    <!-- WOWY -->
+    <div style="padding:10px 14px;">
+      <div class="big-label" style="color:#000;margin-bottom:8px;">WOWY</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">
+        With Or Without You — on/off court impact for each player.
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;">
+        <label style="font-weight:600;">Player:</label>
+        <select id="wowyPlayerSelect" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);" onchange="renderWowy()">
+          <option value="">— choose —</option>
+        </select>
+      </div>
+      <div id="wowyContent"></div>
     </div>
 
   </div><!-- /right-col -->
@@ -825,8 +813,8 @@ async function renderTrajectory() {
 
   const html = comparisons.map(comp => {
     const sliceData = comp.slices.map(sl => ({ sl, row: getMXC(sl) }));
-    const header = `<tr><th style="text-align:left;font-size:10px;color:var(--muted);padding:2px 4px 4px;"></th>${
-      sliceData.map(({sl}) => `<th style="font-size:10px;color:var(--muted);padding:2px 4px 4px;text-align:right;">${sliceLabels[sl]}</th>`).join('')
+    const header = `<tr><th style="text-align:left;font-size:9px;color:var(--muted);padding:1px 3px;"></th>${
+      sliceData.map(({sl}) => `<th style="font-size:9px;color:var(--muted);padding:1px 3px;text-align:right;">${sliceLabels[sl]}</th>`).join('')
     }</tr>`;
     const rows = comp.keys.map(key => {
       const cells = sliceData.map(({sl, row}) => {
@@ -834,12 +822,12 @@ async function renderTrajectory() {
         const rank = getRank(sl, key, val);
         const color = key === 'NET_RATING' ? netColor(val) : '';
         const rankStr = rank != null ? `<sup style="font-size:7px;color:var(--muted);">${rank}</sup>` : '';
-        return `<td style="text-align:right;font-size:11px;padding:2px 4px;${color}">${fmt(key,val)}${rankStr}</td>`;
+        return `<td style="text-align:right;font-size:10px;padding:1px 3px;${color}">${fmt(key,val)}${rankStr}</td>`;
       }).join('');
-      return `<tr><td style="font-size:10px;color:var(--muted);padding:2px 4px;">${keyLabels[key]||key}</td>${cells}</tr>`;
+      return `<tr><td style="font-size:9px;color:var(--muted);padding:1px 3px;">${keyLabels[key]||key}</td>${cells}</tr>`;
     }).join('');
-    return `<div style="margin-bottom:14px;">
-      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px;">${comp.label}</div>
+    return `<div style="margin-bottom:8px;">
+      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px;">${comp.label}</div>
       <table style="width:100%;border-collapse:collapse;">
         <thead>${header}</thead>
         <tbody>${rows}</tbody>
@@ -899,15 +887,25 @@ async function renderWowyInit() {
 
     const sel = document.getElementById('wowyPlayerSelect');
     if (sel.options.length === 1) {
-      // Build player list from playerXref in lineup_data.json
+      // Use players from mex_data (full names) with abbrev lookup from playerXref
       const xref = ld?.playerXref || {};
-      const names = Object.entries(xref)
-        .filter(([, v]) => v)
-        .sort((a, b) => (a[1].name || a[0]).localeCompare(b[1].name || b[0]));
-      names.forEach(([abbrev, info]) => {
+      // Build abbrev -> full name map from xref
+      const abbrevToFull = Object.fromEntries(
+        Object.entries(xref).filter(([,v]) => v).map(([abbrev, info]) => [abbrev, info.name || abbrev])
+      );
+      // Fall back: collect all abbrevs from duo GROUP_NAME if not in xref
+      const abbrevs = new Set(Object.keys(abbrevToFull));
+      (ld?.duos || []).forEach(c => {
+        (c.GROUP_NAME || '').split(' - ').forEach(n => { if(n.trim()) abbrevs.add(n.trim()); });
+      });
+      [...abbrevs].sort((a, b) => {
+        const na = abbrevToFull[a] || a;
+        const nb = abbrevToFull[b] || b;
+        return na.localeCompare(nb);
+      }).forEach(abbrev => {
         const opt = document.createElement('option');
         opt.value = abbrev;
-        opt.textContent = info.name || abbrev;
+        opt.textContent = abbrevToFull[abbrev] || abbrev;
         sel.appendChild(opt);
       });
     }
@@ -962,14 +960,28 @@ async function renderWowy() {
 
   const lowerBetter = new Set(['DEF_RATING','TM_TOV_PCT','OPP_EFG_PCT']);
 
-  const onRow  = onOffEntry?.on  || {};
-  const offRow = onOffEntry?.off || {};
+  let onRow  = onOffEntry?.on  || null;
+  let offRow = onOffEntry?.off || null;
+  let dataSource = 'play-by-play tracking';
 
-  if (!onOffEntry) {
-    container.innerHTML = `<div style="color:var(--muted);font-size:12px;">
-      No on/off data found for ${esc(playerName)}. Re-run fetch_lineup_data.py to update mex_data.json.
-    </div>`;
-    return;
+  // Fall back to duo lineup combinations if API on/off data isn't available
+  if (!onRow || !offRow) {
+    dataSource = 'duo combination weighted avg (approximation)';
+    const duos = ld.duos || [];
+    function getPlayers(c) { return (c.GROUP_NAME || '').split(' - ').map(n => n.trim()); }
+    const withCombos    = duos.filter(c =>  getPlayers(c).includes(abbrev));
+    const withoutCombos = duos.filter(c => !getPlayers(c).includes(abbrev));
+    function wavgPoss(combos, key) {
+      const total = combos.reduce((s, c) => s + (c.POSS || 0), 0);
+      if (!total) return null;
+      return combos.reduce((s, c) => s + ((c[key] ?? 0) * (c.POSS || 0)), 0) / total;
+    }
+    onRow  = Object.fromEntries(STATS.map(s => [s.key, wavgPoss(withCombos,  s.key)]));
+    offRow = Object.fromEntries(STATS.map(s => [s.key, wavgPoss(withoutCombos, s.key)]));
+    onRow.MIN  = withCombos.reduce((s, c) => s + (c.POSS || 0), 0);
+    offRow.MIN = withoutCombos.reduce((s, c) => s + (c.POSS || 0), 0);
+    onRow._isPoss  = true;
+    offRow._isPoss = true;
   }
 
   function fmt(key, val, pct) {
@@ -1001,12 +1013,13 @@ async function renderWowy() {
   }
 
   function buildRow(row, active) {
-    const min = row.MIN != null ? Number(row.MIN).toFixed(0) : '—';
+    const vol = row.MIN != null ? Number(row.MIN).toFixed(0) : '—';
+    const volLabel = row._isPoss ? 'poss' : 'min';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px 4px 8px 0;">${photoHtml(active)}</td>
       <td style="padding:4px 8px;text-align:right;font-size:11px;">
-        <div style="font-weight:700;">${min}</div>
-        <div style="font-size:9px;color:var(--muted);">min</div>
+        <div style="font-weight:700;">${vol}</div>
+        <div style="font-size:9px;color:var(--muted);">${volLabel}</div>
       </td>
       ${STATS.map(s => {
         const val = row[s.key];
@@ -1046,7 +1059,7 @@ async function renderWowy() {
 
   container.innerHTML = `
     <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">
-      True on/off from play-by-play tracking · subscripts vs. league average
+      Source: ${esc(dataSource)} · subscripts vs. league average
     </div>
     <div style="overflow-x:auto;">
       <table style="width:100%;border-collapse:collapse;">
@@ -1174,8 +1187,8 @@ function buildLineupCard(combo, n) {
 }
 
 function buildTier(tierName, bestCombos, worstCombos, n, allCombos, minMins, tierId) {
-  const bestCards = bestCombos.slice(0, 3).map(c => buildLineupCard(c, n)).join('');
-  const worstCards = worstCombos.slice(0, 3).map(c => buildLineupCard(c, n)).join('');
+  const bestCards = bestCombos.slice(0, 5).map(c => buildLineupCard(c, n)).join('');
+  const worstCards = worstCombos.slice(0, 5).map(c => buildLineupCard(c, n)).join('');
   const tableHtml = buildFullTable(allCombos, minMins);
   return `<div class="lineup-tier">
     <div class="lineup-tier-cols">
@@ -1284,11 +1297,11 @@ function renderLineupContent(data) {
     <div class="lineup-tier-cols">
       <div class="lineup-half">
         <div class="lineup-half-title best">best 5-man units</div>
-        <div class="lineup-cards-row">${five.best.slice(0,2).map(c=>buildLineupCard(c,5)).join('')}</div>
+        <div class="lineup-cards-row">${five.best.slice(0,5).map(c=>buildLineupCard(c,5)).join('')}</div>
       </div>
       <div class="lineup-half">
         <div class="lineup-half-title worst">worst 5-man units</div>
-        <div class="lineup-cards-row">${five.worst.slice(0,2).map(c=>buildLineupCard(c,5)).join('')}</div>
+        <div class="lineup-cards-row">${five.worst.slice(0,5).map(c=>buildLineupCard(c,5)).join('')}</div>
         <div class="see-all-row" onclick="toggleTable('tbl-five')">See All 5-Man Units...</div>
       </div>
     </div>
@@ -1429,6 +1442,8 @@ buildRotationPlaceholders();
 loadStaffNotes();
 loadRanks('all');
 renderTrajectory();
+renderBap();
+renderPsTab();
 
 // Load playerXref from players_index.json
 fetch('data/players_index.json?v=' + Date.now())
@@ -1615,6 +1630,152 @@ function applyLineupFilters() {
   };
 
   renderLineupContent(filtered);
+}
+
+// ── Best Available Players ────────────────────────────────────
+let _bapData = null;
+let _bapTab  = 'gleague'; // 'gleague' = Low-minute G League, 'lnbp' = LNBP Players
+
+async function loadBap() {
+  if (_bapData) return _bapData;
+  const r = await fetch('data/players_index.json?v=' + Date.now());
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  _bapData = await r.json();
+  return _bapData;
+}
+
+function switchBapTab(tab, btn) {
+  _bapTab = tab;
+  document.querySelectorAll('.bap-btn').forEach(b => {
+    b.style.color = b.dataset.tab === tab ? 'var(--blue)' : 'var(--text)';
+    b.style.fontWeight = b.dataset.tab === tab ? '700' : '';
+  });
+  renderBap();
+}
+
+function bapNameHtml(p) {
+  const name = esc(p.name || '');
+  if (p.onRoster) return `<span style="background:var(--yellow);color:var(--blue);padding:0 2px;">${name}</span>`;
+  if (p.trainingCampInvite) return `<span style="background:var(--blue);color:var(--yellow);padding:0 2px;">${name}</span>`;
+  return name;
+}
+
+function bapRankRow(rank, p) {
+  return `<a href="player.html?id=${esc(p.id)}" style="font-size:12px;line-height:1.6;display:block;color:inherit;text-decoration:none;">
+    <span style="margin-right:4px;color:var(--muted);">${rank}.</span>${bapNameHtml(p)}
+  </a>`;
+}
+
+function bapRenderBoard(title, list, href) {
+  const rows = list.length
+    ? list.slice(0, 10).map((p, i) => bapRankRow(i + 1, p)).join('')
+    : `<div style="font-size:11px;color:var(--muted);">None yet.</div>`;
+  return `<div>
+    <div style="font-size:13px;font-weight:700;border-bottom:2px solid var(--border);padding-bottom:3px;margin-bottom:6px;">
+      ${esc(title)}<a href="${esc(href)}" style="font-size:10px;font-weight:600;text-decoration:underline;margin-left:6px;color:inherit;">(Show All)</a>
+    </div>
+    ${rows}
+  </div>`;
+}
+
+async function renderBap() {
+  const container = document.getElementById('bapBoards');
+  if (!container) return;
+  try {
+    const players = await loadBap();
+    // Build pool — exclude unavailable, filter by active tab
+    let pool = players.filter(p => p.availabilitySimple !== 'no');
+    if (_bapTab === 'gleague') {
+      // Low-minute G League: G League players with low minutes (available/unknown)
+      pool = pool.filter(p => {
+        const league = (p.league || p.conf || '').toLowerCase();
+        return league.includes('g league') || league.includes('nba g');
+      });
+    } else if (_bapTab === 'lnbp') {
+      // LNBP Players
+      pool = pool.filter(p => (p.league || p.conf || '').toLowerCase().includes('lnbp'));
+    }
+
+    const latino  = pool.filter(p => p.latino === true && p.overallRank != null).sort((a, b) => a.overallRank - b.overallRank);
+    const byPos   = pos => pool.filter(p => p.position === pos && p.positionalRank != null).sort((a, b) => a.positionalRank - b.positionalRank);
+
+    container.innerHTML = [
+      bapRenderBoard('Latino Ranks:', latino,      'rankings.html?pos=overall&latino=yes'),
+      bapRenderBoard('Guard Ranks:',  byPos('Guard'), 'rankings.html?pos=guard'),
+      bapRenderBoard('Wing Ranks:',   byPos('Wing'),  'rankings.html?pos=wing'),
+      bapRenderBoard('Big Ranks:',    byPos('Big'),   'rankings.html?pos=big'),
+    ].join('');
+  } catch(e) {
+    container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Could not load: ${esc(e.message)}</div>`;
+  }
+}
+
+// ── In-Season Player Stats tabs ───────────────────────────────
+let _psTab  = 'inseason';
+let _psView = 'overall';
+
+function switchPsTab(tab) {
+  _psTab = tab;
+  document.querySelectorAll('.pstab').forEach(b =>
+    b.style.color = b.dataset.tab === tab ? 'var(--blue)' : 'var(--muted)'
+  );
+  renderPsTab();
+}
+
+function switchPsView(view) {
+  _psView = view;
+  document.querySelectorAll('.psview').forEach(b =>
+    b.style.color = b.dataset.view === view ? 'var(--blue)' : 'var(--muted)'
+  );
+  renderPsTab();
+}
+
+async function renderPsTab() {
+  const container = document.getElementById('psContent');
+  if (!container) return;
+  if (_psTab === 'inseason') {
+    try {
+      const d = await loadMexData();
+      const players = (d.players || []).sort((a, b) => (b.MIN||0) - (a.MIN||0));
+      const allCols = {
+        overall: [['Player', p => p.Player || p.PLAYER_NAME],
+                  ['MIN',    p => p.MIN?.toFixed(1)],
+                  ['TS%',    p => p['TS%'] != null ? (p['TS%']*100).toFixed(1)+'%' : '—'],
+                  ['eFG%',   p => p['eFG%'] != null ? (p['eFG%']*100).toFixed(1)+'%' : '—'],
+                  ['ORtg',   p => p['ORtg']?.toFixed(1)],
+                  ['DRtg',   p => p['DRtg']?.toFixed(1)],
+                  ['USG%',   p => p['USG%'] != null ? (p['USG%']*100).toFixed(1)+'%' : '—'],
+                  ['PIE',    p => p['PIE'] != null ? (p['PIE']*100).toFixed(1) : '—']],
+        offense: [['Player', p => p.Player || p.PLAYER_NAME],
+                  ['MIN',    p => p.MIN?.toFixed(1)],
+                  ['TS%',    p => p['TS%'] != null ? (p['TS%']*100).toFixed(1)+'%' : '—'],
+                  ['eFG%',   p => p['eFG%'] != null ? (p['eFG%']*100).toFixed(1)+'%' : '—'],
+                  ['3P%',    p => p['3P%'] != null ? (p['3P%']*100).toFixed(1)+'%' : '—'],
+                  ['FT%',    p => p['FT%'] != null ? (p['FT%']*100).toFixed(1)+'%' : '—'],
+                  ['AST%',   p => p['AST%'] != null ? (p['AST%']*100).toFixed(1)+'%' : '—'],
+                  ['TOV%',   p => p['TOV%']?.toFixed(1)+'%'],
+                  ['ORtg',   p => p['ORtg']?.toFixed(1)]],
+        defense: [['Player', p => p.Player || p.PLAYER_NAME],
+                  ['MIN',    p => p.MIN?.toFixed(1)],
+                  ['DRB%',   p => p['DRB%'] != null ? (p['DRB%']*100).toFixed(1)+'%' : '—'],
+                  ['STL%',   p => p['STL%'] != null ? (p['STL%']*100).toFixed(1)+'%' : '—'],
+                  ['BLK%',   p => p['BLK%'] != null ? (p['BLK%']*100).toFixed(1)+'%' : '—'],
+                  ['DRtg',   p => p['DRtg']?.toFixed(1)]],
+      };
+      const cols = allCols[_psView] || allCols.overall;
+      container.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10px;">
+        <thead><tr>${cols.map(([h]) => `<th style="padding:2px 4px;text-align:${h==='Player'?'left':'right'};color:var(--muted);border-bottom:1px solid var(--border);">${h}</th>`).join('')}</tr></thead>
+        <tbody>${players.filter(p => (p.MIN||0) > 0).map(p =>
+          `<tr>${cols.map(([, fn]) => `<td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:${fn===cols[0][1]?'left':'right'};">${fn(p) ?? '—'}</td>`).join('')}</tr>`
+        ).join('')}</tbody>
+      </table></div>`;
+    } catch(e) {
+      container.innerHTML = `<div style="color:var(--muted);font-size:11px;">No in-season stats yet.</div>`;
+    }
+  } else {
+    // For G League / Pro / NCAA — load from players_detail.json and show career stats
+    container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Select a player from Best Available Players above to view their ${_psTab} stats on their profile page.</div>`;
+  }
 }
 
 function openLineupLab() {

@@ -54,10 +54,10 @@ a { color: inherit; text-decoration: none; }
 }
 .page-search input:focus { outline: none; border-bottom-color: var(--yellow); }
 
-/* ── Main three-column layout ── */
+/* ── Main layout: left | middle | right | rotation-strip ── */
 .main {
   display: grid;
-  grid-template-columns: 22% 1fr 30%;
+  grid-template-columns: 20% 1fr 26% 90px;
   min-height: calc(100vh - 54px);
   align-items: start;
 }
@@ -68,6 +68,15 @@ a { color: inherit; text-decoration: none; }
 .right-col {
   display: flex;
   flex-direction: column;
+  border-right: 1px solid var(--border);
+}
+.rotation-strip {
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 4px;
+  overflow: hidden;
 }
 
 /* ═══════════════════════════════
@@ -190,13 +199,12 @@ a { color: inherit; text-decoration: none; }
 .rotation-block {
   display: flex;
   gap: 8px;
-  padding: 8px 12px;
-  border-bottom: 1px solid var(--border);
+  padding: 8px 4px;
   align-items: flex-start;
 }
-.rotation-players-wrap { flex: 1; }
-.rotation-row { display: flex; gap: 6px 10px; flex-wrap: wrap; margin-bottom: 4px; }
-.rot-player { text-align: center; width: 50px; }
+.rotation-players-wrap { display: flex; gap: 2px; }
+.rotation-row { display: flex; flex-direction: column; gap: 4px; }
+.rot-player { text-align: center; width: 56px; }
 .rot-player svg { display: block; margin: 0 auto 1px; }
 .rot-player-name { font-size: 9px; color: var(--dim); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rot-player-mins { font-size: 11px; font-weight: 700; color: var(--text); display: block; }
@@ -406,37 +414,20 @@ a { color: inherit; text-decoration: none; }
   <!-- ═══ RIGHT COLUMN ═══ -->
   <div class="right-col">
 
-    <!-- Player Stats + Current Rotation -->
-    <div style="display:flex;border-bottom:1px solid var(--border);">
-
-      <!-- Player Stats main area -->
-      <div style="flex:1;padding:10px 14px 12px;min-width:0;">
-        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-bottom:6px;">
-          <div class="big-label" style="color:#000;">Player<br>Stats</div>
-          <div style="display:flex;gap:8px;font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;flex-wrap:wrap;">
-            <button class="pstab active" data-tab="inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0;">2026-27</button>
-            <button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">G League Career</button>
-            <button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">All Pro Career</button>
-            <button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">NCAA</button>
+    <!-- Player Stats -->
+    <div style="padding:10px 14px 12px;border-bottom:1px solid var(--border);">
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:4px;">
+        <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
+        <div style="padding-top:4px;">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;margin-bottom:3px;">
+            <button class="pstab active" data-tab="inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">NCAA</button>
+          </div>
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
+            <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">Overall</button><button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Offense</button><button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Defense</button>
           </div>
         </div>
-        <div style="display:flex;gap:8px;font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;margin-bottom:8px;">
-          <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0;">Overall</button>
-          <button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">Offense</button>
-          <button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0;">Defense</button>
-        </div>
-        <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loading…</div></div>
       </div>
-
-      <!-- Current Rotation — vertical strip on right edge -->
-      <div class="rotation-block" style="border-left:1px solid var(--border);">
-        <div class="rotation-players-wrap">
-          <div class="rotation-row" id="rotationRow1"></div>
-          <div class="rotation-row" id="rotationRow2"></div>
-        </div>
-        <div class="rotation-label-vert">Current Rotation<br>(Last Five Games)</div>
-      </div>
-
+      <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loading…</div></div>
     </div>
 
     <!-- WOWY -->
@@ -455,6 +446,15 @@ a { color: inherit; text-decoration: none; }
     </div>
 
   </div><!-- /right-col -->
+
+  <!-- ═══ ROTATION STRIP (4th column) ═══ -->
+  <div class="rotation-strip">
+    <div class="rotation-players-wrap" style="flex-direction:column;gap:4px;">
+      <div class="rotation-row" id="rotationRow1" style="flex-direction:column;gap:4px;"></div>
+      <div class="rotation-row" id="rotationRow2" style="flex-direction:column;gap:4px;"></div>
+    </div>
+    <div class="rotation-label-vert" style="margin-top:8px;">Current Rotation<br>(Last Five Games)</div>
+  </div>
 
 </div><!-- /main -->
 
@@ -1440,10 +1440,7 @@ document.querySelectorAll('.season-btn').forEach(btn => {
 
 buildRotationPlaceholders();
 loadStaffNotes();
-loadRanks('all');
 renderTrajectory();
-renderBap();
-renderPsTab();
 
 // Load playerXref from players_index.json
 fetch('data/players_index.json?v=' + Date.now())
@@ -1785,6 +1782,10 @@ function openLineupLab() {
     fetchLabData();
   }
 }
+
+// Deferred startup calls that depend on functions declared later in the script
+renderBap();
+renderPsTab();
 </script>
 </body>
 </html>

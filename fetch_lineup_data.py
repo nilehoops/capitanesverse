@@ -1151,29 +1151,38 @@ def parse_possessions(pbp_rows, mxc_is_home):
         for play in poss_plays:
             is_mxc = (play["team"] == mxc_team_desc) if play["team"] else None
             evt    = play["evt"]
-            desc   = (play["desc_h"] if mxc_is_home else play["desc_v"])
 
             if is_mxc is None:
                 continue
 
-            prefix = "off" if is_mxc == mxc_on_offense else "def"
+            # "off" prefix = MXC offensive action (MXC has ball AND MXC acts)
+            # "def" prefix = opponent offensive action (opp has ball AND opp acts)
+            # Ignore cross-actions (MXC acting on opponent's possession = defensive rebound
+            # will still be caught by the ORB logic below)
+            if mxc_on_offense and is_mxc:
+                prefix = "off"
+            elif not mxc_on_offense and not is_mxc:
+                prefix = "def"
+            else:
+                prefix = None  # opponent foul on MXC, or MXC defensive rebound — handled below
 
-            if evt == 1:   # made FG
-                p[f"{prefix}_fgm"] += 1
-                p[f"{prefix}_fga"] += 1
-                if play["is_3pt"]: p[f"{prefix}_fg3m"] += 1
-            elif evt == 2: # missed FG
-                p[f"{prefix}_fga"] += 1
-            elif evt == 3: # FT
-                p[f"{prefix}_fta"] += 1
-                if "MISS" not in (play["desc_h"] + play["desc_v"]):
-                    p[f"{prefix}_ftm"] += 1
-            elif evt == 5: # TO
-                p[f"{prefix}_tov"] += 1
-            elif evt == 4: # rebound
-                rd = play["desc_h"] + play["desc_v"]
-                if "OFF" in rd:
-                    p[f"{prefix}_oreb"] += 1
+            if prefix:
+                if evt == 1:   # made FG
+                    p[f"{prefix}_fgm"] += 1
+                    p[f"{prefix}_fga"] += 1
+                    if play["is_3pt"]: p[f"{prefix}_fg3m"] += 1
+                elif evt == 2: # missed FG
+                    p[f"{prefix}_fga"] += 1
+                elif evt == 3: # FT
+                    p[f"{prefix}_fta"] += 1
+                    if "MISS" not in (play["desc_h"] + play["desc_v"]):
+                        p[f"{prefix}_ftm"] += 1
+                elif evt == 5: # TO
+                    p[f"{prefix}_tov"] += 1
+                elif evt == 4: # offensive rebound by possessing team
+                    rd = play["desc_h"] + play["desc_v"]
+                    if "OFF" in rd:
+                        p[f"{prefix}_oreb"] += 1
 
         # Score delta for this possession
         prev_home_score = tagged[prev_idx]["home_score"] if prev_idx < len(tagged) else 0

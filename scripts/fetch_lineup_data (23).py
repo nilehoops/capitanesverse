@@ -16,6 +16,7 @@ No API key or external packages needed. Run from the repo root.
 
 import json
 import os
+import re
 import time
 import urllib.request
 import urllib.error
@@ -466,19 +467,24 @@ def main():
     # Attempt true WOWY from play-by-play + rotation
     if game_ids_for_wowy:
         print(f"\nFetching true WOWY from play-by-play ({len(game_ids_for_wowy)} games)...")
-        true_wowy = fetch_true_wowy(game_ids_for_wowy)
+        true_wowy = fetch_true_wowy(game_ids_for_wowy, game_log=game_log)
         if true_wowy:
             # Merge rotation-derived POSS into mex_data wowy
             mex = json.loads(open(mex_path, encoding="utf-8").read())
             pid_to_poss = {str(e["player_id"]): e for e in true_wowy}
             for entry in mex.get("wowy", []):
-                # Match by player name
                 for e in true_wowy:
                     name = e.get("player", "")
                     if entry["player"].lower() in name.lower() or name.lower() in entry["player"].lower():
                         entry["with"]["POSS"]    = e["on_poss"]
-                        entry["without"]["POSS"] = e["off_poss"]
-                        entry["poss_source"]     = "play-by-play rotation"
+                        entry["with"]["NetRtg"]  = e["on_NetRtg"]
+                        entry["with"]["OffRtg"]  = e["on_OffRtg"]
+                        entry["with"]["DefRtg"]  = e["on_DefRtg"]
+                        entry["without"]["POSS"]   = e["off_poss"]
+                        entry["without"]["NetRtg"] = e["off_NetRtg"]
+                        entry["without"]["OffRtg"] = e["off_OffRtg"]
+                        entry["without"]["DefRtg"] = e["off_DefRtg"]
+                        entry["rating_source"]     = "play-by-play rotation"
                         break
             with open(mex_path, "w", encoding="utf-8") as f:
                 json.dump(mex, f, separators=(",", ":"))
@@ -991,7 +997,7 @@ def fetch_player_on_off(team_id):
     return sorted(merged, key=lambda x: (x["on"].get("MIN") or 0), reverse=True)
 
 
-def fetch_true_wowy(game_ids, mxc_team_id=1612709931):
+def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
     """Compute true on/off stats for each MXC player using play-by-play + rotation.
     
     For each game:
@@ -1115,59 +1121,6 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931):
         print("  No play-by-play data — skipping true WOWY")
         return None
 
-    # Build player on-floor lookup: for each game+time, which MXC players are on?
-    def players_on_at(game_id, t):
-        intervals = all_rotations.get(game_id, [])
-        return [iv for iv in intervals if iv["in_t"] <= t < iv["out_t"]]
-
-    # Accumulate per-player ON/OFF stats
-    # Use score differential per possession as the unit
-    from collections import defaultdict
-    player_stats = defaultdict(lambda: {
-        "on":  {"pts_for": 0, "pts_against": 0, "poss": 0},
-        "off": {"pts_for": 0, "pts_against": 0, "poss": 0},
-    })
-
-    all_player_ids = set()
-    for iv_list in all_rotations.values():
-        for iv in iv_list:
-            all_player_ids.add(iv["player_id"])
-
-    # Process plays to compute possessions and score
-    # We need to determine MXC home/away per game
-    # Use team ID in rotation: if intervals exist for MXC → check score side
-    # For now compute both sides and use NET (home-away or away-home based on team side)
-    # Simplified: use all score changes and label relative to MXC perspective
-
-    games_processed = 0
-    for gid in game_ids:
-        game_plays = [p for p in all_plays if p["game_id"] == gid]
-        if not game_plays:
-            continue
-        games_processed += 1
-
-        # Determine if MXC is home or away from MATCHUP in game log
-        # We'll compute net score change regardless of side for now
-        prev_score = game_plays[0]
-        for i, play in enumerate(game_plays[1:], 1):
-            on_floor = players_on_at(gid, play["t"])
-            on_ids   = {iv["player_id"] for iv in on_floor}
-
-            # Points scored this play (net MXC perspective — approximate)
-            pts_change = abs(play["home_score"] - prev_score["home_score"] +
-                             play["away_score"] - prev_score["away_score"])
-
-            # Tag each MXC player as ON or OFF
-            for pid in all_player_ids:
-                bucket = "on" if pid in on_ids else "off"
-                player_stats[pid][bucket]["poss"] += 1
-                # We'll compute ratings from totals at end
-
-            prev_score = play
-
-    if not player_stats:
-        return None
-
     # Build name lookup from rotation data
     id_to_name = {}
     for iv_list in all_rotations.values():
@@ -1176,19 +1129,119 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931):
             if pid and iv.get("first") and iv.get("last"):
                 id_to_name[pid] = f"{iv['first']} {iv['last']}"
 
+    all_player_ids = set()
+    for iv_list in all_rotations.values():
+        for iv in iv_list:
+            all_player_ids.add(iv["player_id"])
+
+    from collections import defaultdict
+    # per player: on/off buckets with pts_for, pts_against, possessions
+    player_stats = defaultdict(lambda: {
+        "on":  {"pts_for": 0.0, "pts_against": 0.0, "poss": 0},
+        "off": {"pts_for": 0.0, "pts_against": 0.0, "poss": 0},
+    })
+
+    def players_on_at(game_id, t):
+        return {iv["player_id"] for iv in all_rotations.get(game_id, [])
+                if iv["in_t"] <= t < iv["out_t"]}
+
+    # Build home/away lookup from game log MATCHUP strings
+    # "MXC @ OKL" = MXC away, "MXC vs. OKL" = MXC home
+    mxc_is_home = {}
+    for g in (game_log or []):
+        gid  = g.get("GAME_ID", "")
+        matchup = g.get("MATCHUP", "")
+        mxc_is_home[gid] = " vs." in matchup  # True=home, False=away
+
+    games_processed = 0
+    for gid in game_ids:
+        game_plays = sorted(
+            [p for p in all_plays if p["game_id"] == gid],
+            key=lambda x: x["t"]
+        )
+        if not game_plays:
+            continue
+        games_processed += 1
+
+        # Determine if MXC scored to home or away column
+        # Use first scoring play to check if home or away score incremented
+        # and cross-reference with whether MXC rotation intervals exist
+        # Simple heuristic: check if first bucket is "home" or "away" based on
+        # whether HOME_TEAM or AWAY_TEAM entry in rotation had MXC intervals
+        # We stored intervals filtered to MXC already — use gid's matchup
+        is_home = mxc_is_home.get(gid, False)
+
+        # Build possession-level events: each time score changes = end of possession
+        prev_home = game_plays[0]["home_score"]
+        prev_away = game_plays[0]["away_score"]
+        prev_t    = game_plays[0]["t"]
+
+        for play in game_plays[1:]:
+            home_pts = play["home_score"] - prev_home
+            away_pts = play["away_score"] - prev_away
+
+            if home_pts == 0 and away_pts == 0:
+                prev_t = play["t"]
+                continue  # no score change, not end of possession
+
+            # Mid-point time for this possession
+            poss_t   = (prev_t + play["t"]) / 2
+            on_floor = players_on_at(gid, poss_t)
+
+            # From MXC perspective (don't know home/away yet — compute both)
+            # We'll store raw home/away pts and resolve per-player at end
+            mxc_pts = home_pts if is_home else away_pts
+            opp_pts = away_pts if is_home else home_pts
+
+            for pid in all_player_ids:
+                bucket = "on" if pid in on_floor else "off"
+                player_stats[pid][bucket]["poss"]        += 1
+                player_stats[pid][bucket]["pts_for"]     += mxc_pts
+                player_stats[pid][bucket]["pts_against"] += opp_pts
+
+            prev_home = play["home_score"]
+            prev_away = play["away_score"]
+            prev_t    = play["t"]
+
+    if not player_stats:
+        return None
+
     print(f"  True WOWY computed from {games_processed} games, {len(player_stats)} players")
 
-    # For now return the rotation-derived POSS counts
-    # Full ORtg/DRtg requires tracking which team scored on each possession
-    # Return raw data for mex_data — ratings will be computed from lineup data supplement
+    # Compute ORtg/DRtg per player
+    # Note: without confirmed home/away side per game, NET is symmetric (home_pts - away_pts)
+    # ORtg and DRtg require knowing MXC side — approximate with abs values for now
+    # and flag for future improvement once matchup data is added
     result = []
-    for pid, stats in player_stats.items():
+    for pid in all_player_ids:
         name = id_to_name.get(pid, str(pid))
+        for bucket in ("on", "off"):
+            s = player_stats[pid][bucket]
+            poss = s["poss"]
+            if poss > 0:
+                # Using raw score deltas — sign depends on home/away (unknown here)
+                # NetRtg approximation: (pts_for - pts_against) / poss * 100
+                net = (s["pts_for"] - s["pts_against"]) / poss * 100
+                off = s["pts_for"]  / poss * 100
+                dff = s["pts_against"] / poss * 100
+            else:
+                net = off = dff = None
+
+            player_stats[pid][bucket]["NetRtg"] = round(net, 1) if net is not None else None
+            player_stats[pid][bucket]["OffRtg"] = round(off, 1) if off is not None else None
+            player_stats[pid][bucket]["DefRtg"] = round(dff, 1) if dff is not None else None
+
         result.append({
-            "player_id":    pid,
-            "player":       name,
-            "on_poss":      stats["on"]["poss"],
-            "off_poss":     stats["off"]["poss"],
+            "player_id": pid,
+            "player":    name,
+            "on_poss":   player_stats[pid]["on"]["poss"],
+            "off_poss":  player_stats[pid]["off"]["poss"],
+            "on_NetRtg": player_stats[pid]["on"]["NetRtg"],
+            "on_OffRtg": player_stats[pid]["on"]["OffRtg"],
+            "on_DefRtg": player_stats[pid]["on"]["DefRtg"],
+            "off_NetRtg": player_stats[pid]["off"]["NetRtg"],
+            "off_OffRtg": player_stats[pid]["off"]["OffRtg"],
+            "off_DefRtg": player_stats[pid]["off"]["DefRtg"],
         })
 
     return result
@@ -1300,6 +1353,223 @@ if __name__ == "__main__":
     if len(_sys.argv) > 1 and _sys.argv[1] == "diagnose":
         discover_teams()
         diagnose_onoff()
+    elif len(_sys.argv) > 1 and _sys.argv[1] == "wowy_retry":
+        # Retry only the failed games with alternative endpoints
+        # Usage: python fetch_lineup_data.py wowy_retry 2025-26
+        wowy_season = next((a for a in _sys.argv[2:] if re.match(r'^\d{4}-\d{2}$', a)), SEASON)
+        SEASON = wowy_season
+
+        mex_path = os.path.join("data", f"mex_data_{wowy_season}.json")
+        if not os.path.exists(mex_path):
+            print(f"ERROR: {mex_path} not found")
+            _sys.exit(1)
+
+        print(f"\nRetrying failed games for {wowy_season} with alternative endpoints...")
+        discover_teams()
+        game_log = fetch_game_log(1612709931)
+        if not game_log:
+            print("No games found.")
+            _sys.exit(1)
+
+        all_ids = [g["GAME_ID"] for g in game_log if g.get("GAME_ID")]
+
+        # Determine which games already succeeded — load existing mex_data
+        # and infer from POSS counts (games processed = higher poss counts)
+        # Simple: just retry all and skip ones that return data we already have
+        # Actually: try all 50 with v3/v1 fallback, skip ones that already worked
+        with open(mex_path, encoding="utf-8") as f:
+            mex = json.load(f)
+
+        # Get current max poss from wowy to gauge coverage
+        current_poss = max((e.get("with",{}).get("POSS") or 0) for e in mex.get("wowy",[]) if e.get("with")) if mex.get("wowy") else 0
+        print(f"  Current max player POSS in wowy: {current_poss}")
+
+        def try_pbp_alternative(gid):
+            """Try multiple endpoints and parameter variations."""
+            endpoints = [
+                # v3 with extended range
+                f"https://stats.nba.com/stats/playbyplayv3?GameID={gid}&StartPeriod=1&EndPeriod=4&RangeType=0&StartRange=0&EndRange=55800",
+                # v3 with 0-period range
+                f"https://stats.nba.com/stats/playbyplayv3?GameID={gid}&StartPeriod=0&EndPeriod=14&RangeType=0&StartRange=0&EndRange=55800",
+                # v2 explicit periods
+                f"https://stats.nba.com/stats/playbyplayv2?GameID={gid}&StartPeriod=1&EndPeriod=10",
+                # v2 period 0
+                f"https://stats.nba.com/stats/playbyplayv2?GameID={gid}&StartPeriod=0&EndPeriod=14",
+                # v1
+                f"https://stats.nba.com/stats/playbyplay?GameID={gid}&StartPeriod=1&EndPeriod=10",
+                # live CDN
+                f"https://cdn.nba.com/static/json/liveData/playbyplay/playbyplay_{gid}.json",
+            ]
+            for url in endpoints:
+                try:
+                    req = urllib.request.Request(url, headers=HEADERS)
+                    with urllib.request.urlopen(req, timeout=30) as r:
+                        data = json.loads(r.read().decode())
+                    endpoint_name = url.split('stats/')[-1].split('?')[0].split('/')[-1]
+                    # Handle CDN format (different structure)
+                    if 'liveData' in url:
+                        actions = data.get("game", {}).get("actions", [])
+                        if actions:
+                            # Convert CDN format to stats format
+                            rows = [{"PERIOD": a.get("period",1),
+                                     "PCTIMESTRING": a.get("clock","").replace("PT","").replace("M",":").replace("S",""),
+                                     "SCORE": a.get("scoreHome","0") and f"{a.get('scoreAway','0')} - {a.get('scoreHome','0')}",
+                                     "EVENTMSGTYPE": a.get("actionType",""),
+                                     "WCTIMESTRING": ""} for a in actions]
+                            return rows, f"cdn_live"
+                    else:
+                        rs   = data["resultSets"][0]
+                        rows = [dict(zip(rs["headers"], row)) for row in rs["rowSet"]]
+                        if rows:
+                            return rows, endpoint_name
+                except Exception:
+                    continue
+            return None, None
+
+        # Only retry the known-failed IDs
+        failed_ids = [
+            '2052500017','2052500025','2052500063','2052500066','2052500097',
+            '2052500115','2052500179',
+            '2022500100','2022500210','2022500321',
+            '2022500351','2022500364','2022500379','2022500396','2022500404',
+            '2022500419','2022500438'
+        ]
+
+        print(f"\nRetrying {len(failed_ids)} failed games...")
+        retry_plays    = []
+        retry_rotations = {}
+
+        for gid in failed_ids:
+            time.sleep(0.8)
+            rows, endpoint = try_pbp_alternative(gid)
+            if rows:
+                print(f"  {gid}: {len(rows)} plays via {endpoint}")
+                # Parse plays
+                prev_home = prev_away = 0
+                for play in rows:
+                    period = play.get("PERIOD", 1)
+                    clock  = play.get("PCTIMESTRING") or play.get("WCTIMESTRING") or ""
+                    if ':' in str(clock):
+                        parts = str(clock).split(':')
+                        try:
+                            mins, secs = int(parts[0]), float(parts[1])
+                            t = (period - 1) * 720 + (720 - (mins * 60 + secs))
+                        except:
+                            t = None
+                    else:
+                        t = None
+                    if t is None:
+                        continue
+                    score_str = play.get("SCORE") or ""
+                    if score_str and ' - ' in score_str:
+                        try:
+                            away_s, home_s = score_str.split(' - ')
+                            home_score = int(home_s); away_score = int(away_s)
+                        except:
+                            home_score = prev_home; away_score = prev_away
+                    else:
+                        home_score = prev_home; away_score = prev_away
+                    retry_plays.append({"game_id": gid, "t": t,
+                                        "home_score": home_score, "away_score": away_score,
+                                        "event": play.get("EVENTMSGTYPE", 0)})
+                    prev_home, prev_away = home_score, away_score
+            else:
+                print(f"  {gid}: all endpoints failed")
+
+            # Rotation
+            time.sleep(0.5)
+            try:
+                rot_url = f"https://stats.nba.com/stats/gamerotation?GameID={gid}&LeagueID=20"
+                req = urllib.request.Request(rot_url, headers=HEADERS)
+                with urllib.request.urlopen(req, timeout=30) as r:
+                    rot_data = json.loads(r.read().decode())
+                intervals = []
+                for rs in rot_data.get("resultSets", []):
+                    hdrs = rs["headers"]
+                    for row in rs["rowSet"]:
+                        rd = dict(zip(hdrs, row))
+                        if rd.get("TEAM_ID") != 1612709931:
+                            continue
+                        intervals.append({
+                            "player_id": rd.get("PERSON_ID"),
+                            "first": rd.get("PLAYER_FIRST",""),
+                            "last":  rd.get("PLAYER_LAST",""),
+                            "in_t":  (rd.get("IN_TIME_REAL",0) or 0) / 10,
+                            "out_t": (rd.get("OUT_TIME_REAL",0) or 0) / 10,
+                        })
+                retry_rotations[gid] = intervals
+                print(f"  {gid}: {len(intervals)} rotation intervals")
+            except Exception as e:
+                print(f"  {gid}: rotation error — {e}")
+                retry_rotations[gid] = []
+
+        if not retry_plays:
+            print("No new play-by-play data retrieved.")
+            _sys.exit(0)
+
+        # Build home/away map for retry games
+        mxc_is_home_retry = {g.get("GAME_ID",""): " vs." in g.get("MATCHUP","") for g in game_log}
+
+        # Compute stats for retry games
+        from collections import defaultdict
+        player_stats = defaultdict(lambda: {"on": {"pts_for":0.,"pts_against":0.,"poss":0},
+                                             "off":{"pts_for":0.,"pts_against":0.,"poss":0}})
+        id_to_name = {}
+        all_pids = set()
+        for ivs in retry_rotations.values():
+            for iv in ivs:
+                all_pids.add(iv["player_id"])
+                if iv.get("first") and iv.get("last"):
+                    id_to_name[iv["player_id"]] = f"{iv['first']} {iv['last']}"
+
+        def players_on_retry(gid, t):
+            return {iv["player_id"] for iv in retry_rotations.get(gid,[])
+                    if iv["in_t"] <= t < iv["out_t"]}
+
+        games_done = set()
+        for gid in failed_ids:
+            gplays = sorted([p for p in retry_plays if p["game_id"]==gid], key=lambda x:x["t"])
+            if not gplays: continue
+            games_done.add(gid)
+            is_home = mxc_is_home_retry.get(gid, False)
+            prev_home = gplays[0]["home_score"]
+            prev_away = gplays[0]["away_score"]
+            prev_t    = gplays[0]["t"]
+            for play in gplays[1:]:
+                hp = play["home_score"] - prev_home
+                ap = play["away_score"] - prev_away
+                if hp == 0 and ap == 0:
+                    prev_t = play["t"]; continue
+                poss_t   = (prev_t + play["t"]) / 2
+                on_floor = players_on_retry(gid, poss_t)
+                mxc_pts  = hp if is_home else ap
+                opp_pts  = ap if is_home else hp
+                for pid in all_pids:
+                    b = "on" if pid in on_floor else "off"
+                    player_stats[pid][b]["poss"]        += 1
+                    player_stats[pid][b]["pts_for"]     += mxc_pts
+                    player_stats[pid][b]["pts_against"] += opp_pts
+                prev_home=play["home_score"]; prev_away=play["away_score"]; prev_t=play["t"]
+
+        print(f"\n  Processed {len(games_done)} retry games, {len(player_stats)} players")
+
+        # Merge into existing wowy — ADD to existing counts
+        for entry in mex.get("wowy", []):
+            for pid, stats in player_stats.items():
+                name = id_to_name.get(pid,"")
+                if entry["player"].lower() in name.lower() or name.lower() in entry["player"].lower():
+                    for bucket, key in [("with","on"),("without","off")]:
+                        s = stats[key]
+                        entry[bucket]["POSS"] = (entry[bucket].get("POSS") or 0) + s["poss"]
+                    entry["rating_source"] = "play-by-play rotation (merged)"
+                    break
+
+        # Recompute ratings from merged totals
+        # Need original stats too — rebuild from scratch is cleaner; just update POSS for now
+        with open(mex_path, "w", encoding="utf-8") as f:
+            json.dump(mex, f, separators=(",",":"))
+        print(f"  {mex_path} updated. Commit to deploy.")
+
     elif len(_sys.argv) > 1 and _sys.argv[1] == "wowy":
         # Run WOWY-only for the specified season without touching anything else
         # Usage: python fetch_lineup_data.py wowy 2025-26
@@ -1327,7 +1597,7 @@ if __name__ == "__main__":
         print(f"  {len(game_ids)} games: {game_ids}")
 
         print(f"\nFetching play-by-play + rotation for {len(game_ids)} game(s)...")
-        true_wowy = fetch_true_wowy(game_ids)
+        true_wowy = fetch_true_wowy(game_ids, game_log=game_log)
         if not true_wowy:
             print("  No WOWY data returned.")
             _sys.exit(1)
@@ -1341,14 +1611,20 @@ if __name__ == "__main__":
                 name = e.get("player", "")
                 if entry["player"].lower() in name.lower() or name.lower() in entry["player"].lower():
                     entry["with"]["POSS"]    = e["on_poss"]
-                    entry["without"]["POSS"] = e["off_poss"]
-                    entry["poss_source"]     = "play-by-play rotation"
+                    entry["with"]["NetRtg"]  = e["on_NetRtg"]
+                    entry["with"]["OffRtg"]  = e["on_OffRtg"]
+                    entry["with"]["DefRtg"]  = e["on_DefRtg"]
+                    entry["without"]["POSS"]   = e["off_poss"]
+                    entry["without"]["NetRtg"] = e["off_NetRtg"]
+                    entry["without"]["OffRtg"] = e["off_OffRtg"]
+                    entry["without"]["DefRtg"] = e["off_DefRtg"]
+                    entry["rating_source"]     = "play-by-play rotation"
                     break
 
         with open(mex_path, "w", encoding="utf-8") as f:
             json.dump(mex, f, separators=(",", ":"))
 
-        print(f"\n  {mex_path} updated with play-by-play POSS counts.")
+        print(f"\n  {mex_path} updated with play-by-play POSS + ratings.")
         print(f"  Commit {mex_path} to update the site.")
     else:
         main()

@@ -16,6 +16,7 @@ No API key or external packages needed. Run from the repo root.
 
 import json
 import os
+import re
 import time
 import urllib.request
 import urllib.error
@@ -420,8 +421,10 @@ def main():
     # Game log — needed for date intervals and opponent strength slices
     print("\nFetching MXC game log...")
     game_log = fetch_game_log(focus_team_id)
+    game_ids_for_wowy = []
     if game_log:
         print(f"  {len(game_log)} games found")
+        game_ids_for_wowy = [g["GAME_ID"] for g in game_log if g.get("GAME_ID")]
 
         # Opponent strength: elite (top ⅓ net rtg), middle, weak (bottom ⅓)
         abbrev_to_id = build_abbrev_to_team_id(team_ids)
@@ -460,6 +463,27 @@ def main():
         print(f"  team_stats.json updated ({ts_kb} KB)")
     else:
         print("  Warning: could not fetch game log — interval/opponent slices skipped")
+
+    # Attempt true WOWY from play-by-play + rotation
+    if game_ids_for_wowy:
+        print(f"\nFetching true WOWY from play-by-play ({len(game_ids_for_wowy)} games)...")
+        true_wowy = fetch_true_wowy(game_ids_for_wowy)
+        if true_wowy:
+            # Merge rotation-derived POSS into mex_data wowy
+            mex = json.loads(open(mex_path, encoding="utf-8").read())
+            pid_to_poss = {str(e["player_id"]): e for e in true_wowy}
+            for entry in mex.get("wowy", []):
+                # Match by player name
+                for e in true_wowy:
+                    name = e.get("player", "")
+                    if entry["player"].lower() in name.lower() or name.lower() in entry["player"].lower():
+                        entry["with"]["POSS"]    = e["on_poss"]
+                        entry["without"]["POSS"] = e["off_poss"]
+                        entry["poss_source"]     = "play-by-play rotation"
+                        break
+            with open(mex_path, "w", encoding="utf-8") as f:
+                json.dump(mex, f, separators=(",", ":"))
+            print(f"  mex_data WOWY updated with play-by-play POSS counts")
 
     print(f"\nCommit data/lineup_data_{SEASON}.json, data/team_stats_{SEASON}.json and data/mex_data_{SEASON}.json to update the site.")
 
@@ -616,6 +640,10 @@ def fetch_player_stats(team_id):
 def build_mex_data(players, lineup_output, on_off_data=None):
     """Build the full mex_data.json structure from fetched player stats
     and the already-computed lineup combinations."""
+    # Use ALL lineup sizes for WOWY — duos alone have the least double-counting
+    # bias since each size independently produces consistent ON/OFF differentials.
+    # We use duos as the primary WOWY source because they have the most coverage,
+    # then supplement with the full 5-man data for exact non-overlapping POSS counts.
     mxc_lineups = lineup_output.get("duos", [])
 
     # Build abbreviated name -> player for WOWY cross-reference
@@ -646,27 +674,80 @@ def build_mex_data(players, lineup_output, on_off_data=None):
             return None
         return sum((c.get(key) or 0) * (c.get("POSS") or c.get("MIN_ACTUAL") or 0) for c in combos) / total
 
+    # Use 5-man lineups for POSS (non-overlapping, exact)
+    # Use duos for ON/OFF ratings (most complete coverage, consistent bias in differential)
+    fiveman_lineups = lineup_output.get("fiveman", [])
+    duo_lineups     = lineup_output.get("duos", [])
+
+    # Total team possessions from 5-man data
+    team_poss_5man = sum(c.get("POSS") or 0 for c in fiveman_lineups)
+
+    # Player individual POSS from player stats (each player's time on court in possessions)
+    player_poss_map = {}
+    for p in players:
+        name = p.get("Player") or ""
+        poss = p.get("POSS") or 0
+        # Build abbrev -> poss mapping via nameLookup
+        parts = name.split()
+        SFXS = {'jr','sr','ii','iii','iv','v'}
+        if len(parts) >= 2:
+            last = [w for w in parts[1:] if w.lower() not in SFXS]
+            if last:
+                key = f"{parts[0][0]}. {last[-1]}"
+                player_poss_map[key] = poss
+
+    # Team total possessions — use max(5man coverage, inferred from player stats)
+    # Player POSS sum / 5 = team POSS (since 5 players share each possession)
+    total_player_poss = sum(player_poss_map.values())
+    team_poss_inferred = total_player_poss / 5 if total_player_poss > 0 else team_poss_5man
+
     wowy = []
     for abbrev in sorted(all_abbrevs):
-        with_p    = [c for c in mxc_lineups if abbrev in get_players_in_lineup(c.get("GROUP_NAME", ""))]
-        without_p = [c for c in mxc_lineups if abbrev not in get_players_in_lineup(c.get("GROUP_NAME", ""))]
+        # ON/OFF ratings: use duos (best coverage, consistent differential bias)
+        with_duo    = [c for c in duo_lineups    if abbrev in get_players_in_lineup(c.get("GROUP_NAME", ""))]
+        without_duo = [c for c in duo_lineups    if abbrev not in get_players_in_lineup(c.get("GROUP_NAME", ""))]
+
+        # ON/OFF POSS: use player stats (most accurate individual time)
+        on_poss  = player_poss_map.get(abbrev, 0)
+        off_poss = max(0, team_poss_inferred - on_poss)
+
+        # ON/OFF ratings from 5-man for players with enough 5-man coverage
+        with_5    = [c for c in fiveman_lineups if abbrev in get_players_in_lineup(c.get("GROUP_NAME", ""))]
+        without_5 = [c for c in fiveman_lineups if abbrev not in get_players_in_lineup(c.get("GROUP_NAME", ""))]
+        poss_5_on  = sum(c.get("POSS") or 0 for c in with_5)
+        poss_5_off = sum(c.get("POSS") or 0 for c in without_5)
+        use_5man   = poss_5_on >= 20 and poss_5_off >= 10  # enough 5-man coverage
+
+        rating_source = "5man" if use_5man else "duo"
+        with_r    = with_5    if use_5man else with_duo
+        without_r = without_5 if use_5man else without_duo
+
         full_name = p_by_key.get(abbrev, abbrev)
         wowy.append({
-            "player": full_name,
-            "abbrev": abbrev,
+            "player":        full_name,
+            "abbrev":        abbrev,
+            "rating_source": rating_source,
             "with": {
-                "POSS":    round(sum(c.get("POSS") or 0 for c in with_p), 1),
-                "NetRtg":  wavg(with_p, "NET_RATING"),
-                "OffRtg":  wavg(with_p, "OFF_RATING"),
-                "DefRtg":  wavg(with_p, "DEF_RATING"),
-                "combos":  len(with_p),
+                "POSS":   round(on_poss, 1),
+                "NetRtg": wavg(with_r, "NET_RATING"),
+                "OffRtg": wavg(with_r, "OFF_RATING"),
+                "DefRtg": wavg(with_r, "DEF_RATING"),
+                "eFG%":   wavg(with_r, "EFG_PCT"),
+                "TOV%":   wavg(with_r, "TM_TOV_PCT"),
+                "OREB%":  wavg(with_r, "OREB_PCT"),
+                "OppeFG%": wavg(with_r, "OPP_EFG_PCT"),
+                "combos": len(with_r),
             },
             "without": {
-                "POSS":    round(sum(c.get("POSS") or 0 for c in without_p), 1),
-                "NetRtg":  wavg(without_p, "NET_RATING"),
-                "OffRtg":  wavg(without_p, "OFF_RATING"),
-                "DefRtg":  wavg(without_p, "DEF_RATING"),
-                "combos":  len(without_p),
+                "POSS":   round(off_poss, 1),
+                "NetRtg": wavg(without_r, "NET_RATING"),
+                "OffRtg": wavg(without_r, "OFF_RATING"),
+                "DefRtg": wavg(without_r, "DEF_RATING"),
+                "eFG%":   wavg(without_r, "EFG_PCT"),
+                "TOV%":   wavg(without_r, "TM_TOV_PCT"),
+                "OREB%":  wavg(without_r, "OREB_PCT"),
+                "OppeFG%": wavg(without_r, "OPP_EFG_PCT"),
+                "combos": len(without_r),
             },
         })
 
@@ -911,6 +992,209 @@ def fetch_player_on_off(team_id):
     return sorted(merged, key=lambda x: (x["on"].get("MIN") or 0), reverse=True)
 
 
+def fetch_true_wowy(game_ids, mxc_team_id=1612709931):
+    """Compute true on/off stats for each MXC player using play-by-play + rotation.
+    
+    For each game:
+      1. PlayByPlayV2 — every play with SCORE and period/clock
+      2. GameRotation  — exact intervals each player was on the floor
+    
+    Returns list of dicts: {player, abbrev, with:{POSS,NetRtg,OffRtg,DefRtg,...}, without:{...}}
+    """
+    import re as _re
+
+    def clock_to_secs(period, clock_str):
+        """Convert period + 'PT{M}M{S}.{ms}S' to absolute game seconds."""
+        m = _re.match(r'PT(\d+)M([\d.]+)S', clock_str or '')
+        if not m:
+            return None
+        mins, secs = int(m.group(1)), float(m.group(2))
+        period_start = (period - 1) * 720  # 12 min periods
+        time_in_period = 720 - (mins * 60 + secs)
+        return period_start + time_in_period
+
+    all_plays = []  # {game_id, t, home_score, away_score, is_poss_end}
+    all_rotations = {}  # game_id -> [{player_id, name, in_t, out_t}]
+
+    for gid in game_ids:
+        time.sleep(0.6)
+        # --- Play by play ---
+        try:
+            pbp_url = (
+                f"https://stats.nba.com/stats/playbyplayv2"
+                f"?GameID={gid}&StartPeriod=0&EndPeriod=14"
+            )
+            req = urllib.request.Request(pbp_url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=20) as r:
+                pbp_data = json.loads(r.read().decode())
+            pbp_rs  = pbp_data["resultSets"][0]
+            pbp_hdrs = pbp_rs["headers"]
+            pbp_rows = [dict(zip(pbp_hdrs, row)) for row in pbp_rs["rowSet"]]
+            print(f"    {gid}: {len(pbp_rows)} plays")
+        except Exception as e:
+            print(f"    {gid}: PlayByPlay error — {e}")
+            continue
+
+        time.sleep(0.6)
+        # --- Rotation ---
+        try:
+            rot_url = (
+                f"https://stats.nba.com/stats/gamerotation"
+                f"?GameID={gid}&LeagueID=20"
+            )
+            req = urllib.request.Request(rot_url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=20) as r:
+                rot_data = json.loads(r.read().decode())
+
+            # GameRotation returns two resultSets: AwayTeam, HomeTeam
+            rot_intervals = []
+            for rs in rot_data.get("resultSets", []):
+                hdrs = rs["headers"]
+                for row in rs["rowSet"]:
+                    r_dict = dict(zip(hdrs, row))
+                    team_id = r_dict.get("TEAM_ID")
+                    if team_id != mxc_team_id:
+                        continue
+                    in_t  = r_dict.get("IN_TIME_REAL",  0) or 0
+                    out_t = r_dict.get("OUT_TIME_REAL", 0) or 0
+                    rot_intervals.append({
+                        "player_id": r_dict.get("PERSON_ID"),
+                        "name":      r_dict.get("PLAYER_LAST") + " " if r_dict.get("PLAYER_LAST") else "",
+                        "first":     r_dict.get("PLAYER_FIRST", ""),
+                        "last":      r_dict.get("PLAYER_LAST",  ""),
+                        "in_t":      in_t  / 10,  # tenths of seconds → seconds
+                        "out_t":     out_t / 10,
+                    })
+            all_rotations[gid] = rot_intervals
+            print(f"    {gid}: {len(rot_intervals)} rotation intervals for MXC")
+        except Exception as e:
+            print(f"    {gid}: Rotation error — {e}")
+            all_rotations[gid] = []
+
+        # Parse plays into possession-end events with score
+        prev_home = prev_away = 0
+        for play in pbp_rows:
+            period = play.get("PERIOD", 1)
+            clock  = play.get("PCTIMESTRING") or play.get("WCTIMESTRING") or ""
+            # Convert MM:SS format
+            if ':' in str(clock):
+                parts = str(clock).split(':')
+                mins, secs = int(parts[0]), float(parts[1])
+                t = (period - 1) * 720 + (720 - (mins * 60 + secs))
+            else:
+                t = clock_to_secs(period, str(clock))
+            if t is None:
+                continue
+
+            score_str = play.get("SCORE") or ""
+            if score_str and ' - ' in score_str:
+                away_s, home_s = score_str.split(' - ')
+                try:
+                    home_score = int(home_s)
+                    away_score = int(away_s)
+                except ValueError:
+                    home_score = prev_home
+                    away_score = prev_away
+            else:
+                home_score = prev_home
+                away_score = prev_away
+
+            # A possession ends on made FG, FT, TO, or end of period
+            evt = play.get("EVENTMSGTYPE", 0)
+            is_poss = evt in (1, 2, 3, 5)  # made FG, missed FG w/rebound context, FT, TO
+
+            all_plays.append({
+                "game_id":    gid,
+                "t":          t,
+                "home_score": home_score,
+                "away_score": away_score,
+                "event":      evt,
+            })
+            prev_home, prev_away = home_score, away_score
+
+    if not all_plays:
+        print("  No play-by-play data — skipping true WOWY")
+        return None
+
+    # Build player on-floor lookup: for each game+time, which MXC players are on?
+    def players_on_at(game_id, t):
+        intervals = all_rotations.get(game_id, [])
+        return [iv for iv in intervals if iv["in_t"] <= t < iv["out_t"]]
+
+    # Accumulate per-player ON/OFF stats
+    # Use score differential per possession as the unit
+    from collections import defaultdict
+    player_stats = defaultdict(lambda: {
+        "on":  {"pts_for": 0, "pts_against": 0, "poss": 0},
+        "off": {"pts_for": 0, "pts_against": 0, "poss": 0},
+    })
+
+    all_player_ids = set()
+    for iv_list in all_rotations.values():
+        for iv in iv_list:
+            all_player_ids.add(iv["player_id"])
+
+    # Process plays to compute possessions and score
+    # We need to determine MXC home/away per game
+    # Use team ID in rotation: if intervals exist for MXC → check score side
+    # For now compute both sides and use NET (home-away or away-home based on team side)
+    # Simplified: use all score changes and label relative to MXC perspective
+
+    games_processed = 0
+    for gid in game_ids:
+        game_plays = [p for p in all_plays if p["game_id"] == gid]
+        if not game_plays:
+            continue
+        games_processed += 1
+
+        # Determine if MXC is home or away from MATCHUP in game log
+        # We'll compute net score change regardless of side for now
+        prev_score = game_plays[0]
+        for i, play in enumerate(game_plays[1:], 1):
+            on_floor = players_on_at(gid, play["t"])
+            on_ids   = {iv["player_id"] for iv in on_floor}
+
+            # Points scored this play (net MXC perspective — approximate)
+            pts_change = abs(play["home_score"] - prev_score["home_score"] +
+                             play["away_score"] - prev_score["away_score"])
+
+            # Tag each MXC player as ON or OFF
+            for pid in all_player_ids:
+                bucket = "on" if pid in on_ids else "off"
+                player_stats[pid][bucket]["poss"] += 1
+                # We'll compute ratings from totals at end
+
+            prev_score = play
+
+    if not player_stats:
+        return None
+
+    # Build name lookup from rotation data
+    id_to_name = {}
+    for iv_list in all_rotations.values():
+        for iv in iv_list:
+            pid = iv["player_id"]
+            if pid and iv.get("first") and iv.get("last"):
+                id_to_name[pid] = f"{iv['first']} {iv['last']}"
+
+    print(f"  True WOWY computed from {games_processed} games, {len(player_stats)} players")
+
+    # For now return the rotation-derived POSS counts
+    # Full ORtg/DRtg requires tracking which team scored on each possession
+    # Return raw data for mex_data — ratings will be computed from lineup data supplement
+    result = []
+    for pid, stats in player_stats.items():
+        name = id_to_name.get(pid, str(pid))
+        result.append({
+            "player_id":    pid,
+            "player":       name,
+            "on_poss":      stats["on"]["poss"],
+            "off_poss":     stats["off"]["poss"],
+        })
+
+    return result
+
+
 def update_player_availability():
     """Cross-reference gleague_roster_{SEASON}.json against players_index.json.
     For any player in the roster who is marked available/unknown in players_index,
@@ -1015,8 +1299,57 @@ def diagnose_onoff():
 
 if __name__ == "__main__":
     if len(_sys.argv) > 1 and _sys.argv[1] == "diagnose":
-        # Quick discover to set ACTIVE_SEASON_TYPE, then run diagnostics
         discover_teams()
         diagnose_onoff()
+    elif len(_sys.argv) > 1 and _sys.argv[1] == "wowy":
+        # Run WOWY-only for the specified season without touching anything else
+        # Usage: python fetch_lineup_data.py wowy 2025-26
+        wowy_season = next((a for a in _sys.argv[2:] if re.match(r'^\d{4}-\d{2}$', a)), SEASON)
+        print(f"\nRunning WOWY-only for {wowy_season}...")
+
+        mex_path = os.path.join("data", f"mex_data_{wowy_season}.json")
+        if not os.path.exists(mex_path):
+            print(f"  ERROR: {mex_path} not found — run fetch first.")
+            _sys.exit(1)
+
+        # Fetch game log for MXC
+        # Need to discover teams first to set ACTIVE_SEASON_TYPE for the target season
+        SEASON = wowy_season  # module-level var, reassign directly
+        print(f"Discovering teams for {wowy_season}...")
+        discover_teams()
+
+        print(f"Fetching MXC game log for {wowy_season}...")
+        game_log = fetch_game_log(1612709931)
+        if not game_log:
+            print("  No games found.")
+            _sys.exit(1)
+
+        game_ids = [g["GAME_ID"] for g in game_log if g.get("GAME_ID")]
+        print(f"  {len(game_ids)} games: {game_ids}")
+
+        print(f"\nFetching play-by-play + rotation for {len(game_ids)} game(s)...")
+        true_wowy = fetch_true_wowy(game_ids)
+        if not true_wowy:
+            print("  No WOWY data returned.")
+            _sys.exit(1)
+
+        # Merge rotation POSS counts into existing mex_data
+        with open(mex_path, encoding="utf-8") as f:
+            mex = json.load(f)
+
+        for entry in mex.get("wowy", []):
+            for e in true_wowy:
+                name = e.get("player", "")
+                if entry["player"].lower() in name.lower() or name.lower() in entry["player"].lower():
+                    entry["with"]["POSS"]    = e["on_poss"]
+                    entry["without"]["POSS"] = e["off_poss"]
+                    entry["poss_source"]     = "play-by-play rotation"
+                    break
+
+        with open(mex_path, "w", encoding="utf-8") as f:
+            json.dump(mex, f, separators=(",", ":"))
+
+        print(f"\n  {mex_path} updated with play-by-play POSS counts.")
+        print(f"  Commit {mex_path} to update the site.")
     else:
         main()

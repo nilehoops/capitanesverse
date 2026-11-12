@@ -7,16 +7,16 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #fff;
-  --surface: #F4F4F4;
-  --border: #DEDEDE;
-  --yellow: #FFD400;
-  --blue: #1631FF;
-  --green: #18AF4A;
-  --red: #D81F2A;
-  --text: #0A0A0A;
-  --muted: #555;
-  --dim: #333;
+  --staff-notes-width: 32%;
+  --rotation-width: 20%;
+  --season-splits-width: 9%;
+  --player-stats-width: 32%;
+  --big-label-size: 35px;
+  --feed-max-height: 210px;
+  --board-row-height: 180px;
+  --blue: #001eff;
+  --green: #18af4a;
+  --red: #d81f2a;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: var(--bg); color: var(--text); font-family: 'Lora', serif; font-size: 13px; }
@@ -54,38 +54,60 @@ a { color: inherit; text-decoration: none; }
 }
 .page-search input:focus { outline: none; border-bottom-color: var(--yellow); }
 
-/* ── Main layout: left | middle | right | rotation-strip ── */
+/* ── Main layout: two independent rows, pixel-exact from source ── */
+/* Source image at 1347px CSS: left=165px, mid=485px, right=375px, rotation=322px */
 .main {
-  display: grid;
-  grid-template-columns: 20% 1fr 26% 90px;
-  min-height: calc(100vh - 54px);
-  align-items: start;
-}
-.mid-col {
-  border-right: 1px solid var(--border);
-  padding-bottom: 8px;
-}
-.right-col {
   display: flex;
   flex-direction: column;
-  border-right: 1px solid var(--border);
 }
-.rotation-strip {
-  border-left: 1px solid var(--border);
+.main-row {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 4px;
+  align-items: flex-start;
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+}
+.main-row:last-child { border-bottom: none; }
+
+/* Left section: 12.2% — Staff Notes row 1, Season Splits row 2 */
+.left-section {
+  width: var(--season-splits-width);
+  min-width: var(--season-splits-width);
+  max-width: var(--season-splits-width);
+  flex-shrink: 0;
+  flex-grow: 0;
+  border-right: 1px solid var(--border);
   overflow: hidden;
 }
 
-/* ═══════════════════════════════
-   LEFT COLUMN
-═══════════════════════════════ */
-.left-col {
+/* Middle section: flex 1 — BAP row 1, Lineup Data row 2 */
+.mid-col {
+  flex: 1;
+  min-width: 0;
   border-right: 1px solid var(--border);
   padding-bottom: 8px;
 }
+
+/* Right section: 27.8% — Player Stats + WOWY stacked */
+.right-col {
+  width: var(--player-stats-width);
+  flex-shrink: 0;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Rotation strip: 23.9% — right edge of row 1 */
+.rotation-strip {
+  width: var(--rotation-width);
+  flex-shrink: 0;
+  padding: 6px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  border-left: 1px solid var(--border);
+}
+
+/* left-col: replaced by .left-section in layout section above */
 
 /* Staff Notes */
 .staff-notes-block {
@@ -93,7 +115,6 @@ a { color: inherit; text-decoration: none; }
   grid-template-columns: auto 1fr;
   gap: 0 12px;
   padding: 6px 10px 8px;
-  border-bottom: 1px solid var(--border);
 }
 .big-label {
   font-family: 'Oswald', sans-serif;
@@ -106,12 +127,29 @@ a { color: inherit; text-decoration: none; }
 }
 .staff-feed {
   overflow-y: auto;
-  max-height: 140px;
-  background: var(--surface);
-  padding: 6px 8px;
+  max-height: var(--feed-max-height);
+  min-width: 0;
+  padding: 4px 6px;
 }
-.staff-feed-row { font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border); color: var(--dim); }
+.staff-feed-row {
+  cursor: pointer;
+}
+.staff-feed-row.expanded .staff-feed-excerpt {
+  display: none;
+}
+.staff-feed-row .staff-feed-full {
+  display: none;
+  font-size: 11px;
+  color: var(--dim);
+  margin-top: 2px;
+  white-space: normal;
+}
+.staff-feed-row.expanded .staff-feed-full {
+  display: block;
+}
+.staff-feed-row { font-size: 11px; padding: 3px 0; border-bottom: 1px solid var(--border); color: var(--dim); user-select: none; }
 .staff-feed-row:last-child { border-bottom: none; }
+.staff-feed-excerpt { display: block; }
 .staff-feed-meta { color: #3A3A3A; font-size: 10px; }
 
 /* League Ranks */
@@ -186,13 +224,7 @@ a { color: inherit; text-decoration: none; }
 .stat-filter.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 .stat-filter:hover:not(.active) { border-color: var(--blue); color: var(--blue); }
 
-/* ═══════════════════════════════
-   RIGHT COLUMN
-═══════════════════════════════ */
-.right-col {
-  display: flex;
-  flex-direction: column;
-}
+/* right-col: defined above in layout section */
 
 /* Current Rotation */
 .rotation-block {
@@ -201,9 +233,9 @@ a { color: inherit; text-decoration: none; }
   padding: 8px 4px;
   align-items: flex-start;
 }
-.rotation-players-wrap { display: flex; gap: 2px; }
-.rotation-row { display: flex; flex-direction: column; gap: 4px; }
-.rot-player { text-align: center; width: 56px; }
+.rotation-players-wrap { display: flex; flex-direction: column; gap: 4px; }
+.rotation-row { display: flex; flex-direction: row; gap: 4px; justify-content: center; }
+.rot-player { text-align: center; flex: 1; }
 .rot-player svg { display: block; margin: 0 auto 1px; }
 .rot-player-name { font-size: 9px; color: var(--dim); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rot-player-mins { font-size: 11px; font-weight: 700; color: var(--text); display: block; }
@@ -331,129 +363,135 @@ a { color: inherit; text-decoration: none; }
 
 <div class="main">
 
-  <!-- ═══ LEFT COLUMN ═══ -->
-  <div class="left-col">
+  <!-- ═══ ROW 1: Staff Notes | Best Available Players | Player Stats ═══ -->
+  <!-- ═══ ROW 1: Staff Notes | Best Available Players | Player Stats + Rotation ═══ -->
+  <div class="main-row">
 
     <!-- Staff Notes -->
-    <div class="staff-notes-block">
-      <div class="big-label" style="font-size:clamp(22px,3vw,36px);">Staff<br>Notes</div>
-      <div class="staff-feed" id="staffFeed">
-        <div style="color:var(--muted);font-size:11px;">Loading...</div>
+    <div class="left-section" id="staffNotesSection" style="width:var(--staff-notes-width);min-width:var(--staff-notes-width);max-width:var(--staff-notes-width);">
+      <div class="staff-notes-block">
+        <div class="big-label">Staff<br>Notes</div>
+        <div class="staff-feed" id="staffFeed">
+          <div style="color:var(--muted);font-size:11px;">Loading...</div>
+        </div>
       </div>
     </div>
 
+    <!-- Best Available Players -->
+    <div class="mid-col" style="padding-bottom:0;border-right:none;">
+      <div style="padding:6px 14px 8px;display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:start;">
+        <div>
+          <div class="big-label" style="color:var(--blue);font-size:clamp(22px,3vw,36px);">Best<br>Avaliable<br>Players</div>
+          <div style="font-size:11px;margin-top:6px;">
+            <div style="color:var(--muted);margin-bottom:3px;">Show:</div>
+            <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G Leaguers</button>
+            <button class="bap-btn" data-tab="lnbp" onclick="switchBapTab('lnbp',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">LNBP<br>Players</button>
+            <button class="bap-btn" data-tab="unsigned" onclick="switchBapTab('unsigned',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">Unsigned<br>Players</button>
+          </div>
+        </div>
+        <div id="bapBoards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;font-size:12px;background:#f4f4f4;padding:4px 6px;">
+          <div style="color:var(--muted);font-size:11px;">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Current Rotation: full right side, 2 rows × 5 players, label on far right edge -->
+    <div class="rotation-strip" style="border-left:1px solid var(--border);flex-direction:row;align-items:stretch;">
+      <div class="rotation-players-wrap" style="flex:1;">
+        <div class="rotation-row" id="rotationRow1"></div>
+        <div class="rotation-row" id="rotationRow2"></div>
+      </div>
+      <div class="rotation-label-vert" style="border-left:1px solid var(--border);padding:4px 2px;">Current Rotation<br>(Last Five Games)</div>
+    </div>
+
+  </div><!-- /row 1 -->
+
+  <!-- ═══ ROW 2: Season Splits | Lineup Data | WOWY ═══ -->
+  <div class="main-row">
+
     <!-- Season Splits -->
-    <div style="padding:4px 8px;border-top:1px solid var(--border);">
-      <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:clamp(14px,1.8vw,18px);color:var(--blue);text-align:center;margin-bottom:3px;">Season Splits</div>
+    <div class="left-section" style="padding:4px 8px;">
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;color:var(--blue);text-align:center;margin-bottom:3px;white-space:nowrap;">Season Splits</div>
       <div id="trajectoryContent">
         <div style="font-size:11px;color:var(--muted);">Loading…</div>
       </div>
     </div>
 
-  </div><!-- /left-col -->
-
-  <!-- ═══ MIDDLE COLUMN ═══ -->
-  <div class="mid-col">
-
-    <!-- Best Available Players -->
-    <div style="padding:6px 14px 8px;border-bottom:1px solid var(--border);display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:start;">
-      <div>
-        <div class="big-label" style="color:var(--blue);font-size:clamp(22px,3vw,36px);">Best<br>Avaliable<br>Players</div>
-        <div style="font-size:11px;margin-top:6px;">
-          <div style="color:var(--muted);margin-bottom:3px;">Show:</div>
-          <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G League</button>
-          <button class="bap-btn" data-tab="lnbp" onclick="switchBapTab('lnbp',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">LNBP<br>Players</button>
-        </div>
-      </div>
-      <div id="bapBoards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;font-size:12px;">
-        <div style="color:var(--muted);font-size:11px;">Loading…</div>
-      </div>
-    </div>
-
     <!-- Lineup Data -->
-    <div class="lineup-block">
-      <div class="lineup-data-header">
-        <span class="lineup-data-title">Lineup Data</span>
-        <button class="lineup-lab-btn" onclick="openLineupLab()">Lineup Lab<br>Tool</button>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:4px;font-size:11px;">
-        <div style="display:flex;align-items:center;gap:4px;">
-          <span style="color:var(--muted);">with</span>
-          <select id="lineupWithFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
-            <option value="">anyone</option>
-          </select>
+    <div class="mid-col">
+      <div class="lineup-block">
+        <div class="lineup-data-header">
+          <span class="lineup-data-title">Lineup Data</span>
+          <button class="lineup-lab-btn" onclick="openLineupLab()">Lineup Lab<br>Tool</button>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;">
-          <span style="color:var(--muted);">without</span>
-          <select id="lineupWithoutFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
-            <option value="">anyone</option>
-          </select>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
-          <span style="color:var(--muted);">min poss</span>
-          <select id="lineupFloorMode" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);">
-            <option value="dynamic">dynamic</option>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="0">all</option>
-          </select>
-        </div>
-      </div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
-        <span id="lineupFetchStatus" style="font-style:italic;"></span>
-      </div>
-      <div id="lineupContent">
-        <div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading lineup data...</div>
-      </div>
-    </div>
-
-  </div><!-- /mid-col -->
-
-  <!-- ═══ RIGHT COLUMN ═══ -->
-  <div class="right-col">
-
-    <!-- Player Stats -->
-    <div style="padding:6px 10px 8px;border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:2px;">
-        <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
-        <div style="padding-top:4px;">
-          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;white-space:nowrap;margin-bottom:2px;">
-            <button class="pstab active" data-tab="inseason" id="pstab-inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 5px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">NCAA</button>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:4px;font-size:11px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="color:var(--muted);">with</span>
+            <select id="lineupWithFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
+              <option value="">anyone</option>
+            </select>
           </div>
-          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
-            <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">Overall</button><button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Offense</button><button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Defense</button>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <span style="color:var(--muted);">without</span>
+            <select id="lineupWithoutFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
+              <option value="">anyone</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
+            <span style="color:var(--muted);">min poss</span>
+            <select id="lineupFloorMode" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);">
+              <option value="dynamic">dynamic</option>
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="0">all</option>
+            </select>
           </div>
         </div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
+          <span id="lineupFetchStatus" style="font-style:italic;"></span>
+        </div>
+        <div id="lineupContent">
+          <div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading lineup data...</div>
+        </div>
       </div>
-      <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loading…</div></div>
     </div>
 
-    <!-- WOWY -->
-    <div style="padding:6px 10px;">
-      <div class="big-label" style="color:#000;margin-bottom:8px;">WOWY</div>
-      <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">
-        With Or Without You — on/off court impact for each player.
+    <!-- Player Stats + WOWY stacked -->
+    <div class="right-col" style="display:flex;flex-direction:column;">
+
+      <!-- Player Stats -->
+      <div style="padding:6px 10px 8px;border-bottom:1px solid var(--border);">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:2px;">
+          <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
+          <div style="padding-top:4px;">
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;white-space:nowrap;margin-bottom:2px;">
+              <button class="pstab active" data-tab="inseason" id="pstab-inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 5px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">NCAA</button>
+            </div>
+            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
+              <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">Overall</button><button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Offense</button><button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Defense</button>
+            </div>
+          </div>
+        </div>
+        <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loading…</div></div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;">
-        <label style="font-weight:600;">Player:</label>
-        <select id="wowyPlayerSelect" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);" onchange="renderWowy()">
-          <option value="">— choose —</option>
-        </select>
+
+      <!-- WOWY -->
+      <div style="padding:6px 10px;">
+        <div class="big-label" style="color:#000;margin-bottom:4px;">WOWY</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">With Or Without You — on/off court impact for each player.</div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;">
+          <label style="font-weight:600;">Player:</label>
+          <select id="wowyPlayerSelect" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);" onchange="renderWowy()">
+            <option value="">— choose —</option>
+          </select>
+        </div>
+        <div id="wowyContent"></div>
       </div>
-      <div id="wowyContent"></div>
+
     </div>
 
-  </div><!-- /right-col -->
-
-  <!-- ═══ ROTATION STRIP (4th column) ═══ -->
-  <div class="rotation-strip">
-    <div class="rotation-players-wrap" style="flex-direction:column;gap:4px;">
-      <div class="rotation-row" id="rotationRow1" style="flex-direction:column;gap:4px;"></div>
-      <div class="rotation-row" id="rotationRow2" style="flex-direction:column;gap:4px;"></div>
-    </div>
-    <div class="rotation-label-vert" style="margin-top:8px;">Current Rotation<br>(Last Five Games)</div>
-  </div>
+  </div><!-- /row 2 -->
 
 </div><!-- /main -->
 
@@ -675,7 +713,7 @@ async function fetchAllGroupsLive() {
       quads:   dynamicFloor(quads,   4),
       fiveman: dynamicFloor(fiveman, 5),
     };
-    statusEl.textContent = `${duos.length} duos · ${trios.length} trios · ${quads.length} quads · ${fiveman.length} 5-man`;
+    statusEl.textContent = `${duos.length} duos · ${trios.length} trios · ${quads.length} quads`;
     renderLineupContent(data);
   } catch (e) {
     if (e.name === 'AbortError') return;
@@ -705,7 +743,7 @@ async function fetchLabData() {
       fetchMXCLineups(4, filters),
       fetchMXCLineups(5, filters),
     ]);
-    statusEl.textContent = `${duos.length} duos · ${trios.length} trios · ${quads.length} quads · ${fiveman.length} 5-man`;
+    statusEl.textContent = `${duos.length} duos · ${trios.length} trios · ${quads.length} quads`;
     renderLabContent({ duos, trios, quads, fiveman }, minMins);
   } catch (e) {
     if (e.name === 'AbortError') return;
@@ -812,22 +850,22 @@ async function renderTrajectory() {
 
   const html = comparisons.map(comp => {
     const sliceData = comp.slices.map(sl => ({ sl, row: getMXC(sl) }));
-    const header = `<tr><th style="text-align:left;font-size:9px;color:var(--muted);padding:1px 3px;"></th>${
-      sliceData.map(({sl}) => `<th style="font-size:9px;color:var(--muted);padding:1px 3px;text-align:right;">${sliceLabels[sl]}</th>`).join('')
+    const header = `<tr><th style="text-align:left;font-size:8px;color:var(--muted);padding:0 2px;width:38px;"></th>${
+      sliceData.map(({sl}) => `<th style="font-size:8px;color:var(--muted);padding:0 2px;text-align:right;white-space:nowrap;">${sliceLabels[sl]}</th>`).join('')
     }</tr>`;
     const rows = comp.keys.map(key => {
       const cells = sliceData.map(({sl, row}) => {
         const val = row ? row[key] : null;
         const rank = getRank(sl, key, val);
         const color = key === 'NET_RATING' ? netColor(val) : '';
-        const rankStr = rank != null ? `<sup style="font-size:7px;color:var(--muted);">${rank}</sup>` : '';
-        return `<td style="text-align:right;font-size:10px;padding:1px 3px;${color}">${fmt(key,val)}${rankStr}</td>`;
+        const rankStr = rank != null ? `<sup style="font-size:6px;color:var(--muted);">${rank}</sup>` : '';
+        return `<td style="text-align:right;font-size:9px;padding:0 2px;white-space:nowrap;${color}">${fmt(key,val)}${rankStr}</td>`;
       }).join('');
-      return `<tr><td style="font-size:9px;color:var(--muted);padding:1px 3px;">${keyLabels[key]||key}</td>${cells}</tr>`;
+      return `<tr><td style="font-size:8px;color:var(--muted);padding:0 2px;width:38px;">${keyLabels[key]||key}</td>${cells}</tr>`;
     }).join('');
-    return `<div style="margin-bottom:8px;">
-      <div style="font-size:9px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px;">${comp.label}</div>
-      <table style="width:100%;border-collapse:collapse;">
+    return `<div style="margin-bottom:5px;">
+      <div style="font-size:8px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:0;">${comp.label}</div>
+      <table style="border-collapse:collapse;">
         <thead>${header}</thead>
         <tbody>${rows}</tbody>
       </table>
@@ -1292,20 +1330,7 @@ function renderLineupContent(data) {
     html += `<div class="lineup-tier"><div class="lineup-half-title best">best quads</div>
       <div style="font-size:11px;color:var(--muted);padding:6px 0;">Re-run fetch_lineup_data.py to add 4-man lineup data</div></div>`;
   }
-  html += `<div class="lineup-tier">
-    <div class="lineup-tier-cols">
-      <div class="lineup-half">
-        <div class="lineup-half-title best">best 5-man units</div>
-        <div class="lineup-cards-row">${five.best.slice(0,5).map(c=>buildLineupCard(c,5)).join('')}</div>
-      </div>
-      <div class="lineup-half">
-        <div class="lineup-half-title worst">worst 5-man units</div>
-        <div class="lineup-cards-row">${five.worst.slice(0,5).map(c=>buildLineupCard(c,5)).join('')}</div>
-        <div class="see-all-row" onclick="toggleTable('tbl-five')">See All 5-Man Units...</div>
-      </div>
-    </div>
-    <div class="full-table-wrap" id="tbl-five">${buildFullTable(data.fiveman||[], tFive)}</div>
-  </div>`;
+  // 5-man units available in Lineup Lab only
 
   container.innerHTML = html;
 }
@@ -1321,9 +1346,14 @@ async function loadStaffNotes() {
     const list = Array.isArray(notes) ? notes : (notes.comments || []);
     if (!list.length) { feed.innerHTML = '<div style="color:var(--muted);">No recent notes.</div>'; return; }
     feed.innerHTML = list.slice(0,12).map(n => {
-      const body = (n.body||'').slice(0,110) + ((n.body||'').length > 110 ? '…' : '');
+      const full = n.body || '';
+      const excerpt = full.slice(0, 110) + (full.length > 110 ? '…' : '');
       const date = n.createdAt ? new Date(n.createdAt).toLocaleDateString('en-US',{month:'numeric',day:'numeric'}) : '';
-      return `<div class="staff-feed-row">${esc(body)}<span class="staff-feed-meta"> ${esc(n.author||'')}${date?' · '+date:''}</span></div>`;
+      const meta = `<span class="staff-feed-meta"> ${esc(n.author||'')}${date?' · '+date:''}</span>`;
+      return `<div class="staff-feed-row" onclick="this.classList.toggle('expanded')">
+        <span class="staff-feed-excerpt">${esc(excerpt)}${meta}</span>
+        <span class="staff-feed-full">${esc(full)}${meta}</span>
+      </div>`;
     }).join('');
   } catch(e) {
     feed.innerHTML = '<div style="color:var(--muted);">No staff notes loaded.</div>';
@@ -1331,9 +1361,55 @@ async function loadStaffNotes() {
 }
 
 // Rotation placeholder — 10 silhouettes with XX Minutes
-function buildRotationPlaceholders() {
+async function buildRotationPlaceholders() {
   const r1 = document.getElementById('rotationRow1');
   const r2 = document.getElementById('rotationRow2');
+  if (!r1 || !r2) return;
+
+  // Load real rotation from mex_data players sorted by minutes
+  // Cross-reference with players_index for photos
+  try {
+    const [d, idx] = await Promise.all([
+      loadMexData(),
+      loadBap().catch(() => []),
+    ]);
+
+    const players = (d.players || [])
+      .filter(p => (p.MIN || 0) > 0)
+      .sort((a, b) => (b.MIN || 0) - (a.MIN || 0))
+      .slice(0, 10);
+
+    // Build name->photoUrl map from players_index
+    const photoMap = {};
+    (idx || []).forEach(p => {
+      if (p.name && p.photoUrl) photoMap[p.name.toLowerCase()] = p.photoUrl;
+    });
+    // Also try nameLookup from mex_data
+    const nameLookup = d.nameLookup || {};
+
+    if (players.length > 0) {
+      function rotCard(p) {
+        const fullName = p.Player || p.PLAYER_NAME || '';
+        // Try nameLookup for display name, then split
+        const displayName = nameLookup[fullName] || fullName;
+        const parts = displayName.split(' ');
+        const shortName = parts.length > 1
+          ? `${parts[0][0]}. ${parts[parts.length - 1]}`
+          : (parts[0] || '');
+        const mins = p.MIN != null ? Number(p.MIN).toFixed(0) + ' Min' : 'XX Min';
+        const photoUrl = photoMap[fullName.toLowerCase()] || photoMap[displayName.toLowerCase()];
+        const photo = photoUrl
+          ? `<img src="${esc(photoUrl)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:top;display:block;margin:0 auto 1px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><svg width="36" height="36" viewBox="0 0 36 36" style="display:none;margin:0 auto 1px;"><circle cx="18" cy="13" r="8" fill="#999"/><ellipse cx="18" cy="32" rx="13" ry="9" fill="#999"/></svg>`
+          : `<svg width="36" height="36" viewBox="0 0 36 36" style="display:block;margin:0 auto 1px;"><circle cx="18" cy="13" r="8" fill="#999"/><ellipse cx="18" cy="32" rx="13" ry="9" fill="#999"/></svg>`;
+        return `<div class="rot-player">${photo}<span class="rot-player-mins">${mins}</span><span class="rot-player-name">${esc(shortName)}</span></div>`;
+      }
+      r1.innerHTML = players.slice(0, 5).map(rotCard).join('');
+      r2.innerHTML = players.slice(5, 10).map(rotCard).join('');
+      return;
+    }
+  } catch(e) {}
+
+  // Fallback placeholders
   for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('—', 'XX Min');
   for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
 }
@@ -1483,7 +1559,7 @@ fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
     window._lastLineupData = data;
     populateLineupPlayerFilters(data);
     document.getElementById('lineupFetchStatus').textContent =
-      `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads · ${data.fiveman.length} 5-man`;
+      `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads`;
     renderLineupContent(data);
   })
   .catch(e => {
@@ -1566,7 +1642,7 @@ function switchSeason(season) {
         quads: dynamicFloor(data.quads, 4), fiveman: dynamicFloor(data.fiveman, 5),
       };
       document.getElementById('lineupFetchStatus').textContent =
-        `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads · ${data.fiveman.length} 5-man`;
+        `${data.duos.length} duos · ${data.trios.length} trios · ${data.quads.length} quads`;
       renderLineupContent(data);
     })
     .catch(e => {
@@ -1677,7 +1753,7 @@ function bapRenderBoard(title, list, href) {
     <div style="font-size:11px;font-weight:700;border-bottom:1px solid var(--border);padding-bottom:2px;margin-bottom:3px;">
       ${esc(title)}<a href="${esc(href)}" style="font-size:9px;font-weight:600;text-decoration:underline;margin-left:4px;color:inherit;">(Show All)</a>
     </div>
-    <div style="max-height:160px;overflow-y:auto;">${rows}</div>
+    <div style="max-height:var(--board-row-height);overflow-y:auto;">${rows}</div>
   </div>`;
 }
 
@@ -1741,11 +1817,18 @@ async function renderBap() {
         const unsigned = p.availabilitySimple !== 'no' && !p.onRoster;
         return inGLeagueBottomPoss || unsigned;
       });
-    } else {
-      // c) LNBP
+    } else if (_bapTab === 'lnbp') {
+      // c) LNBP — currently signed in LNBP, pursuable
       pool = all.filter(p =>
         p.overallRank != null &&
         (p.availabilityNote || '').toUpperCase().includes('LNBP')
+      );
+    } else {
+      // d) Unsigned — all ranked players not on a roster, not signed elsewhere
+      pool = all.filter(p =>
+        p.overallRank != null &&
+        p.availabilitySimple !== 'no' &&
+        !p.onRoster
       );
     }
 
@@ -1810,13 +1893,13 @@ async function renderPsTab() {
                   ['3P%',    p => p['3P%'] != null ? (p['3P%']*100).toFixed(1)+'%' : '—'],
                   ['FT%',    p => p['FT%'] != null ? (p['FT%']*100).toFixed(1)+'%' : '—'],
                   ['AST%',   p => p['AST%'] != null ? (p['AST%']*100).toFixed(1)+'%' : '—'],
-                  ['TOV%',   p => p['TOV%']?.toFixed(1)+'%'],
+                  ['TOV%',   p => p['TOV%'] != null ? p['TOV%'].toFixed(1)+'%' : '—'],
                   ['ORtg',   p => p['ORtg']?.toFixed(1)]],
         defense: [['Player', p => p.Player || p.PLAYER_NAME],
                   ['MIN',    p => p.MIN?.toFixed(1)],
                   ['DRB%',   p => p['DRB%'] != null ? (p['DRB%']*100).toFixed(1)+'%' : '—'],
-                  ['STL%',   p => p['STL%'] != null ? (p['STL%']*100).toFixed(1)+'%' : '—'],
-                  ['BLK%',   p => p['BLK%'] != null ? (p['BLK%']*100).toFixed(1)+'%' : '—'],
+                  ['STL/100', p => p['STL'] != null && p['POSS'] ? (p['STL'] / p['POSS'] * 100).toFixed(1) : '—'],
+                  ['BLK/100', p => p['BLK'] != null && p['POSS'] ? (p['BLK'] / p['POSS'] * 100).toFixed(1) : '—'],
                   ['DRtg',   p => p['DRtg']?.toFixed(1)]],
       };
       const cols = allCols[_psView] || allCols.overall;
@@ -1830,8 +1913,70 @@ async function renderPsTab() {
       container.innerHTML = `<div style="color:var(--muted);font-size:11px;">No in-season stats yet.</div>`;
     }
   } else {
-    // For G League / Pro / NCAA — load from players_detail.json and show career stats
-    container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Select a player from Best Available Players above to view their ${_psTab} stats on their profile page.</div>`;
+    // G League Career / All Pro Career / NCAA — from players_detail.json via players_index slug
+    try {
+      const [mexData, idxData, detailData] = await Promise.all([
+        loadMexData(),
+        loadBap(),
+        fetch('data/players_detail.json?v=' + Date.now()).then(r => r.ok ? r.json() : []),
+      ]);
+
+      // Build name → slug map from players_index
+      const nameToSlug = {};
+      (idxData || []).forEach(p => {
+        if (p.name && p.id) nameToSlug[p.name.toLowerCase()] = p.id;
+      });
+
+      // Build slug → detail map from players_detail
+      const slugToDetail = {};
+      (detailData || []).forEach(p => { if (p.id) slugToDetail[p.id] = p; });
+
+      // Filter stints by tab
+      const leagueFilter = {
+        gleague: s => s.league === 'G League',
+        pro:     s => s.league !== 'NCAA',
+        ncaa:    s => s.league === 'NCAA',
+      }[_psTab];
+
+      // Build rows: one per player, aggregate relevant stints
+      const roster = (mexData.players || []).sort((a, b) => (b.MIN||0) - (a.MIN||0));
+      const cols = [
+        ['Player',  p => p.name],
+        ['League',  p => p.league],
+        ['Season',  p => p.season || '—'],
+        ['Pts/40',  p => p.pts40?.toFixed(1)   ?? '—'],
+        ['Reb/40',  p => ((p.orb40||0) + (p.drb40||0)).toFixed(1)],
+        ['Ast/40',  p => p.ast40?.toFixed(1)   ?? '—'],
+        ['Stl/40',  p => p.stl40?.toFixed(1)   ?? '—'],
+        ['Blk/40',  p => p.blk40?.toFixed(1)   ?? '—'],
+        ['3P%',     p => p['3p_pct'] != null ? (p['3p_pct']*100).toFixed(1)+'%' : '—'],
+        ['FT%',     p => p.ft_pct   != null ? (p.ft_pct*100).toFixed(1)+'%'    : '—'],
+      ];
+
+      // Collect all stint rows across roster
+      const rows = [];
+      roster.forEach(rp => {
+        const name = rp.Player || rp.PLAYER_NAME || '';
+        const slug = nameToSlug[name.toLowerCase()];
+        const detail = slug ? slugToDetail[slug] : null;
+        const stints = (detail?.proStints || []).filter(leagueFilter);
+        stints.forEach(s => rows.push({ ...s, name }));
+      });
+
+      if (!rows.length) {
+        container.innerHTML = `<div style="color:var(--muted);font-size:11px;">No ${_psTab === 'gleague' ? 'G League' : _psTab === 'pro' ? 'pro' : 'NCAA'} career data found.</div>`;
+        return;
+      }
+
+      container.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10px;">
+        <thead><tr>${cols.map(([h]) => `<th style="padding:2px 4px;text-align:${h==='Player'||h==='League'?'left':'right'};color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(row =>
+          `<tr>${cols.map(([, fn], i) => `<td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:${i<=1?'left':'right'};white-space:nowrap;">${fn(row) ?? '—'}</td>`).join('')}</tr>`
+        ).join('')}</tbody>
+      </table></div>`;
+    } catch(e) {
+      container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Could not load career data: ${esc(e.message)}</div>`;
+    }
   }
 }
 
@@ -1846,6 +1991,231 @@ function openLineupLab() {
 // Deferred startup calls that depend on functions declared later in the script
 renderBap();
 renderPsTab();
+</script>
+<!-- ═══ VISUAL EDITOR ═══ -->
+<div id="editorToggle" onclick="toggleEditor()" style="
+  position:fixed;bottom:20px;right:20px;z-index:999;
+  width:36px;height:36px;border-radius:50%;
+  background:var(--blue);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.3);
+  user-select:none;" title="Open Design Editor">⚙</div>
+
+<div id="editorPanel" style="
+  display:none;position:fixed;right:20px;bottom:64px;z-index:998;
+  width:300px;background:#fff;border:1px solid var(--border);
+  border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,.15);
+  font-family:sans-serif;font-size:12px;overflow:hidden;">
+
+  <div style="background:var(--blue);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+    <span style="font-weight:700;font-size:13px;">Design Editor</span>
+    <div style="display:flex;gap:8px;">
+      <button onclick="resetEditor()" style="background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;border-radius:3px;padding:2px 8px;font-size:11px;">Reset</button>
+      <button onclick="toggleEditor()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;">×</button>
+    </div>
+  </div>
+
+  <div style="padding:12px 14px;max-height:70vh;overflow-y:auto;">
+
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Row 1 Widths</div>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Staff Notes</span><span id="lbl-staff-notes-width" style="color:var(--blue);font-weight:700;">42%</span>
+      </div>
+      <input type="range" min="10" max="60" value="42" step="1" id="ctrl-staff-notes-width"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Rotation Strip</span><span id="lbl-rotation-width" style="color:var(--blue);font-weight:700;">23.9%</span>
+      </div>
+      <input type="range" min="10" max="40" value="23.9" step="0.1" id="ctrl-rotation-width"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Row 2 Widths</div>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Season Splits</span><span id="lbl-season-splits-width" style="color:var(--blue);font-weight:700;">12.2%</span>
+      </div>
+      <input type="range" min="6" max="30" value="12.2" step="0.1" id="ctrl-season-splits-width"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Player Stats / WOWY</span><span id="lbl-player-stats-width" style="color:var(--blue);font-weight:700;">27.8%</span>
+      </div>
+      <input type="range" min="15" max="45" value="27.8" step="0.1" id="ctrl-player-stats-width"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Typography</div>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Section Labels</span><span id="lbl-big-label-size" style="color:var(--blue);font-weight:700;">40px</span>
+      </div>
+      <input type="range" min="18" max="60" value="40" step="1" id="ctrl-big-label-size"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Staff Notes Feed</div>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Feed Height</span><span id="lbl-feed-max-height" style="color:var(--blue);font-weight:700;">200px</span>
+      </div>
+      <input type="range" min="80" max="400" value="200" step="10" id="ctrl-feed-max-height"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">BAP Boards</div>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Board Scroll Height</span><span id="lbl-board-row-height" style="color:var(--blue);font-weight:700;">160px</span>
+      </div>
+      <input type="range" min="60" max="400" value="160" step="10" id="ctrl-board-row-height"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Colors</div>
+
+    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span>Accent Blue</span>
+      <input type="color" value="#1631FF" id="ctrl-blue" oninput="applyEditor()" style="width:40px;height:24px;border:none;cursor:pointer;">
+    </label>
+    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span>Best (Green)</span>
+      <input type="color" value="#18AF4A" id="ctrl-green" oninput="applyEditor()" style="width:40px;height:24px;border:none;cursor:pointer;">
+    </label>
+    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span>Worst (Red)</span>
+      <input type="color" value="#D81F2A" id="ctrl-red" oninput="applyEditor()" style="width:40px;height:24px;border:none;cursor:pointer;">
+    </label>
+
+    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+      <button onclick="exportEditorCSS()" style="width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:700;font-size:12px;">
+        Copy CSS Variables
+      </button>
+      <div id="exportOutput" style="display:none;margin-top:8px;background:#f4f4f4;padding:8px;border-radius:4px;font-size:10px;font-family:monospace;word-break:break-all;"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const EDITOR_DEFAULTS = {
+  'staff-notes-width':   { val: 42,    unit: '%',  prop: '--staff-notes-width' },
+  'rotation-width':      { val: 23.9,  unit: '%',  prop: '--rotation-width' },
+  'season-splits-width': { val: 12.2,  unit: '%',  prop: '--season-splits-width' },
+  'player-stats-width':  { val: 27.8,  unit: '%',  prop: '--player-stats-width' },
+  'big-label-size':      { val: 40,    unit: 'px', prop: '--big-label-size' },
+  'feed-max-height':     { val: 200,   unit: 'px', prop: '--feed-max-height' },
+  'board-row-height':    { val: 160,   unit: 'px', prop: '--board-row-height' },
+};
+const COLOR_VARS = {
+  'blue':  '--blue',
+  'green': '--green',
+  'red':   '--red',
+};
+
+function loadEditorFromStorage() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('capitanesEditor') || '{}');
+    Object.entries(EDITOR_DEFAULTS).forEach(([key, def]) => {
+      const el = document.getElementById('ctrl-' + key);
+      if (el && saved[key] != null) el.value = saved[key];
+    });
+    Object.keys(COLOR_VARS).forEach(key => {
+      const el = document.getElementById('ctrl-' + key);
+      if (el && saved['color-' + key]) el.value = saved['color-' + key];
+    });
+  } catch(e) {}
+  applyEditor(false);
+}
+
+function applyEditor(save = true) {
+  const root = document.documentElement;
+  const values = {};
+
+  Object.entries(EDITOR_DEFAULTS).forEach(([key, def]) => {
+    const el = document.getElementById('ctrl-' + key);
+    if (!el) return;
+    const v = parseFloat(el.value);
+    root.style.setProperty(def.prop, v + def.unit);
+    document.getElementById('lbl-' + key).textContent = v + def.unit;
+    values[key] = v;
+  });
+
+  // Apply big-label font size directly
+  document.querySelectorAll('.big-label').forEach(el => {
+    el.style.fontSize = values['big-label-size'] + 'px';
+  });
+
+  // Apply board scroll height
+  document.querySelectorAll('#bapBoards [style*="max-height"]').forEach(el => {
+    el.style.maxHeight = values['board-row-height'] + 'px';
+  });
+
+  // Staff Notes section width
+  const sn = document.getElementById('staffNotesSection');
+  if (sn) {
+    const w = values['staff-notes-width'] + '%';
+    sn.style.width = w; sn.style.minWidth = w; sn.style.maxWidth = w;
+  }
+
+  Object.entries(COLOR_VARS).forEach(([key, prop]) => {
+    const el = document.getElementById('ctrl-' + key);
+    if (!el) return;
+    root.style.setProperty(prop, el.value);
+    values['color-' + key] = el.value;
+  });
+
+  if (save) {
+    try { localStorage.setItem('capitanesEditor', JSON.stringify(values)); } catch(e) {}
+  }
+}
+
+function resetEditor() {
+  Object.entries(EDITOR_DEFAULTS).forEach(([key, def]) => {
+    const el = document.getElementById('ctrl-' + key);
+    if (el) el.value = def.val;
+  });
+  document.getElementById('ctrl-blue').value  = '#1631FF';
+  document.getElementById('ctrl-green').value = '#18AF4A';
+  document.getElementById('ctrl-red').value   = '#D81F2A';
+  try { localStorage.removeItem('capitanesEditor'); } catch(e) {}
+  applyEditor(false);
+}
+
+function toggleEditor() {
+  const p = document.getElementById('editorPanel');
+  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+}
+
+function exportEditorCSS() {
+  const lines = Object.entries(EDITOR_DEFAULTS).map(([key, def]) => {
+    const el = document.getElementById('ctrl-' + key);
+    return `  ${def.prop}: ${el.value}${def.unit};`;
+  });
+  Object.entries(COLOR_VARS).forEach(([key, prop]) => {
+    const el = document.getElementById('ctrl-' + key);
+    lines.push(`  ${prop}: ${el.value};`);
+  });
+  const css = `:root {\n${lines.join('\n')}\n}`;
+  navigator.clipboard.writeText(css).catch(() => {});
+  const out = document.getElementById('exportOutput');
+  out.style.display = 'block';
+  out.textContent = css;
+}
+
+// Load saved values on startup
+loadEditorFromStorage();
 </script>
 </body>
 </html>

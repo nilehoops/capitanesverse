@@ -966,7 +966,7 @@ def update_player_availability():
             continue  # already has a note — do not overwrite
 
         team_full = TEAM_NAMES.get(team_abbrev, team_abbrev)
-        today = datetime.now().strftime("%-m/%-d")  # e.g. "11/12"
+        today = f"{datetime.now().month}/{datetime.now().day}"  # e.g. "11/12"
         note = f"Signed w/{team_full} (G League), {today}"
         p["availabilitySimple"] = "no"
         p["availabilityNote"]   = note

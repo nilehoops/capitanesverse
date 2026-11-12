@@ -1002,24 +1002,50 @@ async function runWowy() {
   const container = document.getElementById('wowyContent');
   container.innerHTML = '<div style="color:var(--muted);font-size:11px;">Computing…</div>';
 
-  const allCombos = [...(ld?.duos||[]), ...(ld?.trios||[]), ...(ld?.quads||[]), ...(ld?.fiveman||[])];
   function getPlayers(c) { return (c.GROUP_NAME||'').split(' - ').map(n=>n.trim()); }
 
+  // Use 5-man for POSS (non-overlapping, accurate sample size)
+  // Use duos for ratings (most complete coverage, consistent bias in differential)
+  const fivemanCombos = ld?.fiveman || [];
+  const ratingCombos  = [...(ld?.duos||[]), ...(ld?.trios||[]), ...(ld?.quads||[]), ...(ld?.fiveman||[])];
+
+  // Available fields: E_OFF_RATING, E_DEF_RATING, E_NET_RATING (smoothed for small samples)
+  // EFG_PCT, TM_TOV_PCT, OREB_PCT, DREB_PCT, TS_PCT
+  // No OPP_ fields — Four Factors not fetched for lineups yet
   const API_KEYS = {
-    POSS: 'POSS', OFF: 'OFF_RATING', DEF: 'DEF_RATING', NET: 'NET_RATING',
-    'OFF eFG%': 'EFG_PCT', 'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
-    'DEF eFG%': 'OPP_EFG_PCT', 'DEF TOV%': 'OPP_TOV_PCT', 'DEF ORB%': 'OPP_OREB_PCT',
+    OFF: 'E_OFF_RATING', DEF: 'E_DEF_RATING', NET: 'E_NET_RATING',
+    'OFF eFG%': 'EFG_PCT',    'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
+    'DEF eFG%': 'OPP_EFG_PCT','DEF TOV%': 'OPP_TOV_PCT','DEF ORB%': 'OPP_OREB_PCT',
   };
-  const LB = new Set(['DEF', 'OFF TOV%', 'DEF eFG%', 'DEF ORB%']);
+  // PBP four factor keys in mex_data wowy entries
+  const PBP_KEYS = {
+    'OFF eFG%': 'OFF_EFG_PCT', 'OFF TOV%': 'OFF_TOV_PCT', 'OFF ORB%': 'OFF_ORB_PCT',
+    'DEF eFG%': 'DEF_EFG_PCT', 'DEF TOV%': 'DEF_TOV_PCT', 'DEF ORB%': 'DEF_ORB_PCT',
+  };
+  const LB  = new Set(['DEF','OFF TOV%','DEF eFG%','DEF ORB%']);
   const PCT = new Set(['OFF eFG%','OFF TOV%','OFF ORB%','DEF eFG%','DEF TOV%','DEF ORB%']);
 
-  function statsFromCombos(combos) {
-    const poss = combos.reduce((s,c)=>s+(c.POSS||0),0);
-    if (!poss) return null;
-    const out = { POSS: poss };
+  function statsFromCombos(fivemanFiltered, ratingFiltered, pbpBucket) {
+    // POSS: prefer PBP rotation (exact), fall back to 5-man lineups
+    const fivePoss = fivemanFiltered.reduce((s,c)=>s+(c.POSS||0),0);
+    const poss = pbpBucket?.POSS ?? fivePoss;
+    const rPoss = ratingFiltered.reduce((s,c)=>s+(c.POSS||0),0);
+    if (!poss && !rPoss) return null;
+    const basePoss = rPoss || poss;
+    const out = { POSS: poss || null };
     Object.entries(API_KEYS).forEach(([key, apiKey]) => {
-      if (key==='POSS') return;
-      out[key] = combos.reduce((s,c)=>s+((c[apiKey]||0)*(c.POSS||0)),0) / poss;
+      // Ratings: prefer PBP if available
+      if (pbpBucket) {
+        if (key==='OFF' && pbpBucket.OffRtg != null)      { out[key] = pbpBucket.OffRtg; return; }
+        if (key==='DEF' && pbpBucket.DefRtg != null)      { out[key] = pbpBucket.DefRtg; return; }
+        if (key==='NET' && pbpBucket.NetRtg != null)      { out[key] = pbpBucket.NetRtg; return; }
+        const pbpKey = PBP_KEYS[key];
+        if (pbpKey && pbpBucket[pbpKey] != null)           { out[key] = pbpBucket[pbpKey]; return; }
+      }
+      // Fall back to lineup combo weighted avg
+      out[key] = basePoss
+        ? ratingFiltered.reduce((s,c)=>s+((c[apiKey]||0)*(c.POSS||0)),0)/basePoss
+        : null;
     });
     return out;
   }
@@ -1073,22 +1099,29 @@ async function runWowy() {
   for (let mask=(1<<N)-1; mask>=0; mask--) {
     const onSet  = selected.filter((_,i)=>  (mask>>(i))&1);
     const offSet = selected.filter((_,i)=>!((mask>>(i))&1));
-    const filtered = allCombos.filter(c=>{
+    const filterFn = c => {
       const ps=getPlayers(c);
       return onSet.every(a=>ps.includes(a)) && offSet.every(a=>!ps.includes(a));
-    });
-    const stats = statsFromCombos(filtered);
+    };
+    // For single-player ON/OFF, pass their PBP wowy bucket for accurate stats
+    let pbpBucket = null;
+    if (selected.length === 1) {
+      const abbrev = selected[0];
+      const wowyE  = _wowyPlayers.find(p=>p.abbrev===abbrev||p.player===abbrev);
+      pbpBucket = onSet.length===1 ? wowyE?.with : wowyE?.without;
+    }
+    const stats = statsFromCombos(fivemanCombos.filter(filterFn), ratingCombos.filter(filterFn), pbpBucket);
     const comboObj = {}; selected.forEach((_,i)=>{ comboObj[selected[i]]=!!((mask>>i)&1); });
     combos.push({ comboObj, stats, isAll: mask===(1<<N)-1, isNone: mask===0 });
   }
 
   // Stat columns config
   const COLS = [
-    { key:'POSS', label:'POSS' },
-    { key:'OFF',  label:'OFF'  },
-    { key:'DEF',  label:'DEF'  },
-    { key:'NET',  label:'NET'  },
-    null, // divider
+    { key:'POSS',    label:'POSS' },
+    { key:'OFF',     label:'OFF'  },
+    { key:'DEF',     label:'DEF'  },
+    { key:'NET',     label:'NET'  },
+    null,
     { key:'OFF eFG%', label:'OFF eFG%' },
     { key:'OFF TOV%', label:'OFF TOV%' },
     { key:'OFF ORB%', label:'OFF ORB%' },

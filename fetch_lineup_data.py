@@ -463,6 +463,10 @@ def main():
 
     print(f"\nCommit data/lineup_data_{SEASON}.json, data/team_stats_{SEASON}.json and data/mex_data_{SEASON}.json to update the site.")
 
+    # Update players_index.json availability for newly signed G League players
+    print("\nUpdating player availability from roster...")
+    update_player_availability()
+
 
 def fetch_team_stats(filters=None):
     """Fetch league-wide team stats for all G League teams.
@@ -907,5 +911,112 @@ def fetch_player_on_off(team_id):
     return sorted(merged, key=lambda x: (x["on"].get("MIN") or 0), reverse=True)
 
 
+def update_player_availability():
+    """Cross-reference gleague_roster_{SEASON}.json against players_index.json.
+    For any player in the roster who is marked available/unknown in players_index,
+    update their availabilitySimple to 'no' and add a note following the existing pattern.
+    Writes updated players_index.json in place."""
+
+    roster_path = os.path.join("data", f"gleague_roster_{SEASON}.json")
+    index_path  = os.path.join("data", "players_index.json")
+
+    if not os.path.exists(roster_path):
+        print(f"  Roster file not found: {roster_path} — skipping availability update")
+        return
+    if not os.path.exists(index_path):
+        print(f"  players_index.json not found — skipping availability update")
+        return
+
+    with open(roster_path, encoding="utf-8") as f:
+        roster = json.load(f)
+    with open(index_path, encoding="utf-8") as f:
+        players = json.load(f)
+
+    # Full team name lookup (abbrev -> full name)
+    TEAM_NAMES = {
+        "MXC": "Mexico City Capitanes", "AUS": "Austin Spurs",
+        "CCG": "Capital City Go-Go",    "CPS": "College Park Skyhawks",
+        "CVL": "Coachella Valley Lakers","DEL": "Delaware Blue Coats",
+        "GBO": "Greensboro Swarm",       "GRG": "Grand Rapids Gold",
+        "IWA": "Iowa Wolves",            "LIN": "Long Island Nets",
+        "LTN": "Laketown Squadron",      "MNE": "Maine Celtics",
+        "NOB": "Noblesville Boom",       "OKL": "Oklahoma City Blue",
+        "OSC": "Osceola Magic",          "RAP": "Raptors 905",
+        "RGV": "Rio Grande Valley Vipers","SCW": "Santa Cruz Warriors",
+        "SDC": "San Diego Clippers",     "SLC": "Salt Lake City Stars",
+        "STO": "Stockton Kings",         "SXF": "Sioux Falls Skyforce",
+        "TEX": "Texas Legends",          "VAL": "Valley Suns",
+        "WCB": "Westchester Knicks",     "WES": "Windy City Bulls",
+        "WIS": "Wisconsin Herd",         "MCC": "Motor City Cruise",
+        "MHU": "Memphis Hustle",         "RCR": "Rip City Remix",
+    }
+
+    # Build name->team map from roster
+    name_to_team = {p["name"].lower(): p["team"] for p in roster.get("players", [])}
+
+    updated = 0
+    for p in players:
+        name_key = (p.get("name") or "").lower()
+        team_abbrev = name_to_team.get(name_key)
+        if not team_abbrev:
+            continue
+        if p.get("onRoster"):
+            continue  # already on MXC roster, skip
+        if p.get("availabilityNote"):
+            continue  # already has a note — do not overwrite
+
+        team_full = TEAM_NAMES.get(team_abbrev, team_abbrev)
+        today = datetime.now().strftime("%-m/%-d")  # e.g. "11/12"
+        note = f"Signed w/{team_full} (G League), {today}"
+        p["availabilitySimple"] = "no"
+        p["availabilityNote"]   = note
+        updated += 1
+        print(f"  Updated: {p['name']} → {note}")
+
+    if updated:
+        with open(index_path, "w", encoding="utf-8") as f:
+            json.dump(players, f, separators=(",", ":"))
+        print(f"  players_index.json updated — {updated} player(s) marked signed")
+    else:
+        print(f"  No availability updates needed")
+
+
+def diagnose_onoff():
+    """Test which on/off endpoints return data for G League."""
+    print(f"\nDiagnosing on/off endpoints for MXC ({SEASON})...")
+    endpoints = [
+        ("teamplayeronoffdetails",
+         f"https://stats.nba.com/stats/teamplayeronoffdetails"
+         f"?TeamID=1612709931&LeagueID=20&Season={SEASON}"
+         f"&SeasonType={ACTIVE_SEASON_TYPE}&MeasureType=Advanced&PerMode=PerGame"
+         "&PaceAdjust=N&PlusMinus=N&Rank=N&Outcome=&Location=&Month=0"
+         "&SeasonSegment=&DateFrom=&DateTo=&OpponentTeamID=0"
+         "&VsConference=&VsDivision=&GameSegment=&Period=0&ShotClockRange=&LastNGames=0"),
+        ("leagueplayerondetails",
+         f"https://stats.nba.com/stats/leagueplayerondetails"
+         f"?LeagueID=20&Season={SEASON}&SeasonType={ACTIVE_SEASON_TYPE}"
+         "&MeasureType=Advanced&PerMode=PerGame&PaceAdjust=N&PlusMinus=N&Rank=N"
+         "&Outcome=&Location=&Month=0&SeasonSegment=&DateFrom=&DateTo="
+         "&OpponentTeamID=0&VsConference=&VsDivision=&GameSegment=&Period=0"
+         "&ShotClockRange=&LastNGames=0"),
+    ]
+    for name, url in endpoints:
+        try:
+            req = urllib.request.Request(url, headers=HEADERS)
+            with urllib.request.urlopen(req, timeout=20) as r:
+                data = json.loads(r.read().decode())
+            for rs in data.get("resultSets", []):
+                rows = rs.get("rowSet", [])
+                print(f"  {name} — {rs['name']}: {len(rows)} rows")
+                if rows:
+                    print(f"    Sample fields: {list(dict(zip(rs['headers'], rows[0])).keys())[:8]}")
+        except Exception as e:
+            print(f"  {name}: ERROR — {e}")
+
 if __name__ == "__main__":
-    main()
+    if len(_sys.argv) > 1 and _sys.argv[1] == "diagnose":
+        # Quick discover to set ACTIVE_SEASON_TYPE, then run diagnostics
+        discover_teams()
+        diagnose_onoff()
+    else:
+        main()

@@ -198,19 +198,36 @@ def _fetch_lineup_measure(team_id, group_quantity, measure_type, min_minutes=0):
 
 def fetch_team_lineups(team_id, group_quantity, min_minutes=0):
     """Fetch lineup combinations for a single team, merging Advanced +
-    Opponent measures so opponent stats are available alongside team stats."""
+    Four Factors measures so opponent stats are available alongside team stats."""
     # Advanced — primary measure with all team-side ratings
     adv_rows = _fetch_lineup_measure(team_id, group_quantity, "Advanced", min_minutes)
 
-    # Add MIN_ACTUAL from SUM_TIME_PLAYED — MIN in PerMinute mode is a
-    # normalized rate value, not actual minutes played.
     for r in adv_rows:
         stp = r.get("SUM_TIME_PLAYED")
         r["MIN_ACTUAL"] = round(stp / 60, 1) if stp else 0.0
 
-    # Note: MeasureType=Opponent is not supported by leaguedashlineups (returns HTTP 500).
-    # Opponent stats at team level are available from leaguedashteamstats with
-    # MeasureType=Four+Factors, which is already fetched in fetch_team_stats().
+    # Opponent stats — try multiple verbiage variants
+    opp_rows = None
+    for measure in ("Opponent", "Four+Factors", "Four Factors", "Defense"):
+        try:
+            rows = _fetch_lineup_measure(team_id, group_quantity, measure, min_minutes)
+            if rows and any(k.startswith("OPP_") for k in rows[0]):
+                opp_rows = rows
+                time.sleep(0.3)
+                break
+            time.sleep(0.3)
+        except Exception:
+            time.sleep(0.3)
+            continue
+
+    if opp_rows:
+        opp_by_id = {r.get("GROUP_ID"): r for r in opp_rows if r.get("GROUP_ID")}
+        for r in adv_rows:
+            opp = opp_by_id.get(r.get("GROUP_ID"), {})
+            for key in ("OPP_EFG_PCT", "OPP_TOV_PCT", "OPP_OREB_PCT", "OPP_FTA_RATE"):
+                if key in opp:
+                    r[key] = opp[key]
+
     return adv_rows
 
 
@@ -997,6 +1014,183 @@ def fetch_player_on_off(team_id):
     return sorted(merged, key=lambda x: (x["on"].get("MIN") or 0), reverse=True)
 
 
+def parse_possessions(pbp_rows, mxc_is_home):
+    """Parse play-by-play rows into a list of possessions using the pbpstats.com methodology.
+
+    A possession ends on:
+      EVENTMSGTYPE 1 (made FG), 2 (missed FG), 5 (turnover)
+      EVENTMSGTYPE 3 with EVENTMSGACTIONTYPE 12 (2 of 2 FT) or 15 (3 of 3 FT)
+
+    Consecutive same-team possession-end events are merged (offensive rebounds
+    extend a possession, not start a new one).
+
+    Returns list of dicts:
+      { t, poss_team, off_fgm, off_fga, off_fg3m, off_tov, off_oreb,
+        off_ftm, off_fta, def_fgm, def_fga, def_fg3m, def_tov, def_oreb,
+        def_fta, pts_for, pts_against }
+    where "off" = MXC offense, "def" = MXC defense (opponent offense).
+    """
+    import re as _re
+
+    def clock_secs(period, clock_str):
+        m = _re.match(r'(\d+):(\d+(?:\.\d+)?)', str(clock_str or ''))
+        if not m:
+            return None
+        mins, secs = int(m.group(1)), float(m.group(2))
+        return (period - 1) * 720 + (720 - (mins * 60 + secs))
+
+    def acting_team(play):
+        """Return 'home' or 'visitor' based on which description is populated."""
+        h = (play.get("HOMEDESCRIPTION") or "").strip()
+        v = (play.get("VISITORDESCRIPTION") or "").strip()
+        if h and not v: return "home"
+        if v and not h: return "visitor"
+        return None  # both or neither (jump balls, end-of-period, etc.)
+
+    # --- First pass: tag each event as a possession-ender and its team ---
+    tagged = []
+    prev_home = prev_away = 0
+    for play in pbp_rows:
+        period  = play.get("PERIOD", 1)
+        clock   = play.get("PCTIMESTRING") or play.get("WCTIMESTRING") or ""
+        t       = clock_secs(period, clock)
+        if t is None:
+            continue
+
+        evt    = play.get("EVENTMSGTYPE", 0)
+        action = play.get("EVENTMSGACTIONTYPE", 0)
+        team   = acting_team(play)
+
+        # Update running score
+        score_str = play.get("SCORE") or ""
+        if score_str and ' - ' in score_str:
+            try:
+                away_s, home_s = score_str.split(' - ')
+                prev_home, prev_away = int(home_s), int(away_s)
+            except ValueError:
+                pass
+
+        desc_h = (play.get("HOMEDESCRIPTION") or "").upper()
+        desc_v = (play.get("VISITORDESCRIPTION") or "").upper()
+        desc   = desc_h + desc_v
+        is_3pt = "3PT" in desc
+
+        # Possession-ender flags
+        is_poss_end = (
+            evt in (1, 2, 5) or
+            (evt == 3 and action in (12, 15))  # 2of2 or 3of3 FT
+        )
+
+        # Heave: missed shot or TO with <2s left in period — not a possession
+        time_in_period = t - (period - 1) * 720
+        near_end = time_in_period >= 718  # within 2 seconds of period end
+        if near_end and evt in (2, 5):
+            is_poss_end = False
+
+        tagged.append({
+            "t":          t,
+            "period":     period,
+            "evt":        evt,
+            "action":     action,
+            "team":       team,
+            "is_3pt":     is_3pt,
+            "is_poss_end": is_poss_end,
+            "home_score": prev_home,
+            "away_score": prev_away,
+            "desc_h":     desc_h,
+            "desc_v":     desc_v,
+        })
+
+    # --- Second pass: merge consecutive same-team possession ends ---
+    # (offensive rebound = same team gets credit for 2 events, collapse to 1)
+    poss_events = [e for e in tagged if e["is_poss_end"] and e["team"]]
+    merged = []
+    for ev in poss_events:
+        if merged and merged[-1]["team"] == ev["team"] and merged[-1]["period"] == ev["period"]:
+            # Same team consecutive — offensive rebound extended the possession
+            # Keep only the LAST event (true possession end), update stats
+            merged[-1] = ev  # replace with the later event
+        else:
+            merged.append(ev)
+
+    # --- Third pass: for each possession, accumulate four factors ---
+    # Walk ALL events between consecutive possession-end markers
+    # Build index of possession-end events by their position in tagged list
+    poss_end_indices = {id(e): i for i, e in enumerate(tagged) if e in merged}
+
+    possessions = []
+    prev_idx = 0
+    for poss_ev in merged:
+        end_idx = next((i for i, e in enumerate(tagged) if e is poss_ev), None)
+        if end_idx is None:
+            continue
+
+        # Events from prev_idx to end_idx (inclusive) belong to this possession
+        poss_plays = tagged[prev_idx:end_idx + 1]
+        poss_team  = poss_ev["team"]  # team that HAD the ball this possession
+
+        # MXC side
+        mxc_team_desc = "home" if mxc_is_home else "visitor"
+        mxc_on_offense = (poss_team == mxc_team_desc)
+
+        # Accumulate four factors
+        p = {
+            "t":           poss_ev["t"],
+            "period":      poss_ev["period"],
+            "poss_team":   poss_team,
+            "mxc_offense": mxc_on_offense,
+            "home_score":  poss_ev["home_score"],
+            "away_score":  poss_ev["away_score"],
+            "off_fgm": 0, "off_fga": 0, "off_fg3m": 0,
+            "off_ftm": 0, "off_fta": 0, "off_tov": 0, "off_oreb": 0,
+            "def_fgm": 0, "def_fga": 0, "def_fg3m": 0,
+            "def_ftm": 0, "def_fta": 0, "def_tov": 0, "def_oreb": 0,
+            "pts_for": 0, "pts_against": 0,
+        }
+
+        for play in poss_plays:
+            is_mxc = (play["team"] == mxc_team_desc) if play["team"] else None
+            evt    = play["evt"]
+            desc   = (play["desc_h"] if mxc_is_home else play["desc_v"])
+
+            if is_mxc is None:
+                continue
+
+            prefix = "off" if is_mxc == mxc_on_offense else "def"
+
+            if evt == 1:   # made FG
+                p[f"{prefix}_fgm"] += 1
+                p[f"{prefix}_fga"] += 1
+                if play["is_3pt"]: p[f"{prefix}_fg3m"] += 1
+            elif evt == 2: # missed FG
+                p[f"{prefix}_fga"] += 1
+            elif evt == 3: # FT
+                p[f"{prefix}_fta"] += 1
+                if "MISS" not in (play["desc_h"] + play["desc_v"]):
+                    p[f"{prefix}_ftm"] += 1
+            elif evt == 5: # TO
+                p[f"{prefix}_tov"] += 1
+            elif evt == 4: # rebound
+                rd = play["desc_h"] + play["desc_v"]
+                if "OFF" in rd:
+                    p[f"{prefix}_oreb"] += 1
+
+        # Score delta for this possession
+        prev_home_score = tagged[prev_idx]["home_score"] if prev_idx < len(tagged) else 0
+        prev_away_score = tagged[prev_idx]["away_score"] if prev_idx < len(tagged) else 0
+        p["pts_for"]     = (p["home_score"] - prev_home_score) if mxc_is_home else \
+                            (p["away_score"] - prev_away_score)
+        p["pts_against"] = (p["away_score"] - prev_away_score) if mxc_is_home else \
+                            (p["home_score"] - prev_home_score)
+        p["pts_for"]     = max(0, p["pts_for"])
+        p["pts_against"] = max(0, p["pts_against"])
+
+        possessions.append(p)
+        prev_idx = end_idx + 1
+
+    return possessions
+
+
 def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
     """Compute true on/off stats for each MXC player using play-by-play + rotation.
     
@@ -1018,8 +1212,14 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
         time_in_period = 720 - (mins * 60 + secs)
         return period_start + time_in_period
 
-    all_plays = []  # {game_id, t, home_score, away_score, is_poss_end}
-    all_rotations = {}  # game_id -> [{player_id, name, in_t, out_t}]
+    all_rotations = {}   # game_id -> [{player_id, first, last, in_t, out_t}]
+    game_possessions = {}  # game_id -> [possession dicts]
+
+    # Build home/away map from game log MATCHUP strings
+    mxc_is_home_map = {}
+    for g in (game_log or []):
+        gid = g.get("GAME_ID", "")
+        mxc_is_home_map[gid] = " vs." in g.get("MATCHUP", "")
 
     for gid in game_ids:
         time.sleep(0.6)
@@ -1032,9 +1232,8 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
             req = urllib.request.Request(pbp_url, headers=HEADERS)
             with urllib.request.urlopen(req, timeout=20) as r:
                 pbp_data = json.loads(r.read().decode())
-            pbp_rs  = pbp_data["resultSets"][0]
-            pbp_hdrs = pbp_rs["headers"]
-            pbp_rows = [dict(zip(pbp_hdrs, row)) for row in pbp_rs["rowSet"]]
+            pbp_rs   = pbp_data["resultSets"][0]
+            pbp_rows = [dict(zip(pbp_rs["headers"], row)) for row in pbp_rs["rowSet"]]
             print(f"    {gid}: {len(pbp_rows)} plays")
         except Exception as e:
             print(f"    {gid}: PlayByPlay error — {e}")
@@ -1043,32 +1242,23 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
         time.sleep(0.6)
         # --- Rotation ---
         try:
-            rot_url = (
-                f"https://stats.nba.com/stats/gamerotation"
-                f"?GameID={gid}&LeagueID=20"
-            )
+            rot_url = f"https://stats.nba.com/stats/gamerotation?GameID={gid}&LeagueID=20"
             req = urllib.request.Request(rot_url, headers=HEADERS)
             with urllib.request.urlopen(req, timeout=20) as r:
                 rot_data = json.loads(r.read().decode())
-
-            # GameRotation returns two resultSets: AwayTeam, HomeTeam
             rot_intervals = []
             for rs in rot_data.get("resultSets", []):
                 hdrs = rs["headers"]
                 for row in rs["rowSet"]:
-                    r_dict = dict(zip(hdrs, row))
-                    team_id = r_dict.get("TEAM_ID")
-                    if team_id != mxc_team_id:
+                    rd = dict(zip(hdrs, row))
+                    if rd.get("TEAM_ID") != mxc_team_id:
                         continue
-                    in_t  = r_dict.get("IN_TIME_REAL",  0) or 0
-                    out_t = r_dict.get("OUT_TIME_REAL", 0) or 0
                     rot_intervals.append({
-                        "player_id": r_dict.get("PERSON_ID"),
-                        "name":      r_dict.get("PLAYER_LAST") + " " if r_dict.get("PLAYER_LAST") else "",
-                        "first":     r_dict.get("PLAYER_FIRST", ""),
-                        "last":      r_dict.get("PLAYER_LAST",  ""),
-                        "in_t":      in_t  / 10,  # tenths of seconds → seconds
-                        "out_t":     out_t / 10,
+                        "player_id": rd.get("PERSON_ID"),
+                        "first":     rd.get("PLAYER_FIRST", ""),
+                        "last":      rd.get("PLAYER_LAST",  ""),
+                        "in_t":      (rd.get("IN_TIME_REAL",  0) or 0) / 10,
+                        "out_t":     (rd.get("OUT_TIME_REAL", 0) or 0) / 10,
                     })
             all_rotations[gid] = rot_intervals
             print(f"    {gid}: {len(rot_intervals)} rotation intervals for MXC")
@@ -1076,133 +1266,65 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
             print(f"    {gid}: Rotation error — {e}")
             all_rotations[gid] = []
 
-        # Parse plays into possession-end events with score
-        prev_home = prev_away = 0
-        for play in pbp_rows:
-            period = play.get("PERIOD", 1)
-            clock  = play.get("PCTIMESTRING") or play.get("WCTIMESTRING") or ""
-            # Convert MM:SS format
-            if ':' in str(clock):
-                parts = str(clock).split(':')
-                mins, secs = int(parts[0]), float(parts[1])
-                t = (period - 1) * 720 + (720 - (mins * 60 + secs))
-            else:
-                t = clock_to_secs(period, str(clock))
-            if t is None:
-                continue
+        # --- Parse possessions using pbpstats.com methodology ---
+        is_home = mxc_is_home_map.get(gid, False)
+        possessions = parse_possessions(pbp_rows, is_home)
+        game_possessions[gid] = possessions
+        print(f"    {gid}: {len(possessions)} possessions")
 
-            score_str = play.get("SCORE") or ""
-            if score_str and ' - ' in score_str:
-                away_s, home_s = score_str.split(' - ')
-                try:
-                    home_score = int(home_s)
-                    away_score = int(away_s)
-                except ValueError:
-                    home_score = prev_home
-                    away_score = prev_away
-            else:
-                home_score = prev_home
-                away_score = prev_away
-
-            # A possession ends on made FG, FT, TO, or end of period
-            evt = play.get("EVENTMSGTYPE", 0)
-            is_poss = evt in (1, 2, 3, 5)  # made FG, missed FG w/rebound context, FT, TO
-
-            all_plays.append({
-                "game_id":    gid,
-                "t":          t,
-                "home_score": home_score,
-                "away_score": away_score,
-                "event":      evt,
-            })
-            prev_home, prev_away = home_score, away_score
-
-    if not all_plays:
+    if not game_possessions:
         print("  No play-by-play data — skipping true WOWY")
         return None
 
-    # Build name lookup from rotation data
+    # Build name and ID lookups from rotation data
     id_to_name = {}
-    for iv_list in all_rotations.values():
-        for iv in iv_list:
-            pid = iv["player_id"]
-            if pid and iv.get("first") and iv.get("last"):
-                id_to_name[pid] = f"{iv['first']} {iv['last']}"
-
     all_player_ids = set()
     for iv_list in all_rotations.values():
         for iv in iv_list:
-            all_player_ids.add(iv["player_id"])
+            pid = iv["player_id"]
+            all_player_ids.add(pid)
+            if pid and iv.get("first") and iv.get("last"):
+                id_to_name[pid] = f"{iv['first']} {iv['last']}"
 
     from collections import defaultdict
-    # per player: on/off buckets with pts_for, pts_against, possessions
-    player_stats = defaultdict(lambda: {
-        "on":  {"pts_for": 0.0, "pts_against": 0.0, "poss": 0},
-        "off": {"pts_for": 0.0, "pts_against": 0.0, "poss": 0},
-    })
+    def empty_bucket():
+        return {
+            "poss": 0, "pts_for": 0.0, "pts_against": 0.0,
+            "off_fgm": 0, "off_fga": 0, "off_fg3m": 0,
+            "off_ftm": 0, "off_fta": 0, "off_tov": 0, "off_oreb": 0,
+            "def_fgm": 0, "def_fga": 0, "def_fg3m": 0,
+            "def_ftm": 0, "def_fta": 0, "def_tov": 0, "def_oreb": 0,
+        }
+    player_stats = defaultdict(lambda: {"on": empty_bucket(), "off": empty_bucket()})
 
-    def players_on_at(game_id, t):
-        return {iv["player_id"] for iv in all_rotations.get(game_id, [])
+    def players_on_at(gid, t):
+        return {iv["player_id"] for iv in all_rotations.get(gid, [])
                 if iv["in_t"] <= t < iv["out_t"]}
 
-    # Build home/away lookup from game log MATCHUP strings
-    # "MXC @ OKL" = MXC away, "MXC vs. OKL" = MXC home
-    mxc_is_home = {}
-    for g in (game_log or []):
-        gid  = g.get("GAME_ID", "")
-        matchup = g.get("MATCHUP", "")
-        mxc_is_home[gid] = " vs." in matchup  # True=home, False=away
-
     games_processed = 0
-    for gid in game_ids:
-        game_plays = sorted(
-            [p for p in all_plays if p["game_id"] == gid],
-            key=lambda x: x["t"]
-        )
-        if not game_plays:
+    total_poss_counted = 0
+    for gid, possessions in game_possessions.items():
+        if not possessions:
             continue
         games_processed += 1
-
-        # Determine if MXC scored to home or away column
-        # Use first scoring play to check if home or away score incremented
-        # and cross-reference with whether MXC rotation intervals exist
-        # Simple heuristic: check if first bucket is "home" or "away" based on
-        # whether HOME_TEAM or AWAY_TEAM entry in rotation had MXC intervals
-        # We stored intervals filtered to MXC already — use gid's matchup
-        is_home = mxc_is_home.get(gid, False)
-
-        # Build possession-level events: each time score changes = end of possession
-        prev_home = game_plays[0]["home_score"]
-        prev_away = game_plays[0]["away_score"]
-        prev_t    = game_plays[0]["t"]
-
-        for play in game_plays[1:]:
-            home_pts = play["home_score"] - prev_home
-            away_pts = play["away_score"] - prev_away
-
-            if home_pts == 0 and away_pts == 0:
-                prev_t = play["t"]
-                continue  # no score change, not end of possession
-
-            # Mid-point time for this possession
-            poss_t   = (prev_t + play["t"]) / 2
-            on_floor = players_on_at(gid, poss_t)
-
-            # From MXC perspective (don't know home/away yet — compute both)
-            # We'll store raw home/away pts and resolve per-player at end
-            mxc_pts = home_pts if is_home else away_pts
-            opp_pts = away_pts if is_home else home_pts
-
+        for p in possessions:
+            on_floor = players_on_at(gid, p["t"])
             for pid in all_player_ids:
                 bucket = "on" if pid in on_floor else "off"
-                player_stats[pid][bucket]["poss"]        += 1
-                player_stats[pid][bucket]["pts_for"]     += mxc_pts
-                player_stats[pid][bucket]["pts_against"] += opp_pts
+                s = player_stats[pid][bucket]
+                s["poss"]        += 1
+                s["pts_for"]     += p["pts_for"]
+                s["pts_against"] += p["pts_against"]
+                for key in ("off_fgm","off_fga","off_fg3m","off_ftm","off_fta",
+                            "off_tov","off_oreb","def_fgm","def_fga","def_fg3m",
+                            "def_ftm","def_fta","def_tov","def_oreb"):
+                    s[key] += p.get(key, 0)
+            total_poss_counted += 1
 
-            prev_home = play["home_score"]
-            prev_away = play["away_score"]
-            prev_t    = play["t"]
+    print(f"  True WOWY: {games_processed} games, {total_poss_counted} possessions, {len(player_stats)} players")
 
+    if not player_stats:
+        return None
     if not player_stats:
         return None
 
@@ -1212,36 +1334,70 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
     # Note: without confirmed home/away side per game, NET is symmetric (home_pts - away_pts)
     # ORtg and DRtg require knowing MXC side — approximate with abs values for now
     # and flag for future improvement once matchup data is added
+    def compute_rates(s):
+        poss = s["poss"]
+        if not poss:
+            return {}
+        def safe(n, d): return round(n/d, 4) if d else None
+        # eFG% = (FGM + 0.5*FG3M) / FGA
+        off_efg = safe(s["off_fgm"] + 0.5*s["off_fg3m"], s["off_fga"])
+        def_efg = safe(s["def_fgm"] + 0.5*s["def_fg3m"], s["def_fga"])
+        # TOV% = TOV / POSS (exact — no estimation needed, we have every possession)
+        off_tov = safe(s["off_tov"], poss)
+        def_tov = safe(s["def_tov"], poss)
+        # ORB% = off_oreb / POSS (rate per possession)
+        off_orb = safe(s["off_oreb"], poss)
+        def_orb = safe(s["def_oreb"], poss)
+        # FTA rate = FTA / POSS (exact possession denominator)
+        off_ftr = safe(s["off_fta"], poss)
+        def_ftr = safe(s["def_fta"], poss)
+        return {
+            "NetRtg": round((s["pts_for"] - s["pts_against"]) / poss * 100, 1),
+            "OffRtg": round(s["pts_for"]  / poss * 100, 1),
+            "DefRtg": round(s["pts_against"] / poss * 100, 1),
+            "off_efg_pct":  off_efg,
+            "def_efg_pct":  def_efg,
+            "off_tov_pct":  off_tov,
+            "def_tov_pct":  def_tov,
+            "off_orb_pct":  off_orb,
+            "def_orb_pct":  def_orb,
+            "off_fta_rate": off_ftr,
+            "def_fta_rate": def_ftr,
+            "POSS": poss,
+        }
+
     result = []
     for pid in all_player_ids:
         name = id_to_name.get(pid, str(pid))
-        for bucket in ("on", "off"):
-            s = player_stats[pid][bucket]
-            poss = s["poss"]
-            if poss > 0:
-                # Using raw score deltas — sign depends on home/away (unknown here)
-                # NetRtg approximation: (pts_for - pts_against) / poss * 100
-                net = (s["pts_for"] - s["pts_against"]) / poss * 100
-                off = s["pts_for"]  / poss * 100
-                dff = s["pts_against"] / poss * 100
-            else:
-                net = off = dff = None
-
-            player_stats[pid][bucket]["NetRtg"] = round(net, 1) if net is not None else None
-            player_stats[pid][bucket]["OffRtg"] = round(off, 1) if off is not None else None
-            player_stats[pid][bucket]["DefRtg"] = round(dff, 1) if dff is not None else None
-
+        on_rates  = compute_rates(player_stats[pid]["on"])
+        off_rates = compute_rates(player_stats[pid]["off"])
         result.append({
             "player_id": pid,
             "player":    name,
             "on_poss":   player_stats[pid]["on"]["poss"],
             "off_poss":  player_stats[pid]["off"]["poss"],
-            "on_NetRtg": player_stats[pid]["on"]["NetRtg"],
-            "on_OffRtg": player_stats[pid]["on"]["OffRtg"],
-            "on_DefRtg": player_stats[pid]["on"]["DefRtg"],
-            "off_NetRtg": player_stats[pid]["off"]["NetRtg"],
-            "off_OffRtg": player_stats[pid]["off"]["OffRtg"],
-            "off_DefRtg": player_stats[pid]["off"]["DefRtg"],
+            "on_NetRtg": on_rates.get("NetRtg"),
+            "on_OffRtg": on_rates.get("OffRtg"),
+            "on_DefRtg": on_rates.get("DefRtg"),
+            "on_off_efg_pct":  on_rates.get("off_efg_pct"),
+            "on_def_efg_pct":  on_rates.get("def_efg_pct"),
+            "on_off_tov_pct":  on_rates.get("off_tov_pct"),
+            "on_def_tov_pct":  on_rates.get("def_tov_pct"),
+            "on_off_orb_pct":  on_rates.get("off_orb_pct"),
+            "on_def_orb_pct":  on_rates.get("def_orb_pct"),
+            "on_off_fta_rate": on_rates.get("off_fta_rate"),
+            "on_def_fta_rate": on_rates.get("def_fta_rate"),
+            "off_NetRtg": off_rates.get("NetRtg"),
+            "off_OffRtg": off_rates.get("OffRtg"),
+            "off_DefRtg": off_rates.get("DefRtg"),
+            "off_off_efg_pct":  off_rates.get("off_efg_pct"),
+            "off_def_efg_pct":  off_rates.get("def_efg_pct"),
+            "off_off_tov_pct":  off_rates.get("off_tov_pct"),
+            "off_def_tov_pct":  off_rates.get("def_tov_pct"),
+            "off_off_orb_pct":  off_rates.get("off_orb_pct"),
+            "off_def_orb_pct":  off_rates.get("def_orb_pct"),
+            "off_off_fta_rate": off_rates.get("off_fta_rate"),
+            "off_def_fta_rate": off_rates.get("def_fta_rate"),
         })
 
     return result
@@ -1639,15 +1795,21 @@ if __name__ == "__main__":
         name_to_wowy = {e["player"].lower(): e for e in mex.get("wowy", [])}
 
         def merge_pbp_into_entry(entry, e):
-            entry["with"]["POSS"]    = e["on_poss"]
-            entry["with"]["NetRtg"]  = e["on_NetRtg"]
-            entry["with"]["OffRtg"]  = e["on_OffRtg"]
-            entry["with"]["DefRtg"]  = e["on_DefRtg"]
-            entry["without"]["POSS"]   = e["off_poss"]
-            entry["without"]["NetRtg"] = e["off_NetRtg"]
-            entry["without"]["OffRtg"] = e["off_OffRtg"]
-            entry["without"]["DefRtg"] = e["off_DefRtg"]
-            entry["rating_source"]     = "play-by-play rotation"
+            for bucket, prefix in [("with","on"), ("without","off")]:
+                entry[bucket]["POSS"]   = e[f"{prefix}_poss"]
+                entry[bucket]["NetRtg"] = e.get(f"{prefix}_NetRtg")
+                entry[bucket]["OffRtg"] = e.get(f"{prefix}_OffRtg")
+                entry[bucket]["DefRtg"] = e.get(f"{prefix}_DefRtg")
+                # PBP-derived four factors
+                entry[bucket]["OFF_EFG_PCT"]  = e.get(f"{prefix}_off_efg_pct")
+                entry[bucket]["DEF_EFG_PCT"]  = e.get(f"{prefix}_def_efg_pct")
+                entry[bucket]["OFF_TOV_PCT"]  = e.get(f"{prefix}_off_tov_pct")
+                entry[bucket]["DEF_TOV_PCT"]  = e.get(f"{prefix}_def_tov_pct")
+                entry[bucket]["OFF_ORB_PCT"]  = e.get(f"{prefix}_off_orb_pct")
+                entry[bucket]["DEF_ORB_PCT"]  = e.get(f"{prefix}_def_orb_pct")
+                entry[bucket]["OFF_FTA_RATE"] = e.get(f"{prefix}_off_fta_rate")
+                entry[bucket]["DEF_FTA_RATE"] = e.get(f"{prefix}_def_fta_rate")
+            entry["rating_source"] = "play-by-play (four factors)"
 
         matched = 0
         for e in true_wowy:

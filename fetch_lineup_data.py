@@ -1553,15 +1553,26 @@ if __name__ == "__main__":
 
         print(f"\n  Processed {len(games_done)} retry games, {len(player_stats)} players")
 
-        # Merge into existing wowy — ADD to existing counts
+        # Merge retry stats into existing wowy entries
+        # Match by last name (most reliable without full ID lookup here)
+        def last(n): return n.lower().split()[-1] if n else ""
+
         for entry in mex.get("wowy", []):
+            el = last(entry["player"])
             for pid, stats in player_stats.items():
-                name = id_to_name.get(pid,"")
-                if entry["player"].lower() in name.lower() or name.lower() in entry["player"].lower():
-                    for bucket, key in [("with","on"),("without","off")]:
+                rname = id_to_name.get(pid, "")
+                if el and el == last(rname):
+                    # Recompute ratings from merged totals
+                    for bucket, key in [("with","on"), ("without","off")]:
                         s = stats[key]
-                        entry[bucket]["POSS"] = (entry[bucket].get("POSS") or 0) + s["poss"]
-                    entry["rating_source"] = "play-by-play rotation (merged)"
+                        prev_poss = entry[bucket].get("POSS") or 0
+                        entry[bucket]["POSS"] = prev_poss + s["poss"]
+                        total = entry[bucket]["POSS"]
+                        if total > 0:
+                            entry[bucket]["NetRtg"] = round((s["pts_for"] - s["pts_against"]) / s["poss"] * 100, 1) if s["poss"] else entry[bucket].get("NetRtg")
+                            entry[bucket]["OffRtg"] = round(s["pts_for"]  / s["poss"] * 100, 1) if s["poss"] else entry[bucket].get("OffRtg")
+                            entry[bucket]["DefRtg"] = round(s["pts_against"] / s["poss"] * 100, 1) if s["poss"] else entry[bucket].get("DefRtg")
+                    entry["rating_source"] = "play-by-play rotation (full)"
                     break
 
         # Recompute ratings from merged totals
@@ -1606,20 +1617,54 @@ if __name__ == "__main__":
         with open(mex_path, encoding="utf-8") as f:
             mex = json.load(f)
 
+        # Build PLAYER_ID -> wowy_entry map from mex_data players for ID-based matching
+        pid_to_wowy = {}
         for entry in mex.get("wowy", []):
-            for e in true_wowy:
-                name = e.get("player", "")
-                if entry["player"].lower() in name.lower() or name.lower() in entry["player"].lower():
-                    entry["with"]["POSS"]    = e["on_poss"]
-                    entry["with"]["NetRtg"]  = e["on_NetRtg"]
-                    entry["with"]["OffRtg"]  = e["on_OffRtg"]
-                    entry["with"]["DefRtg"]  = e["on_DefRtg"]
-                    entry["without"]["POSS"]   = e["off_poss"]
-                    entry["without"]["NetRtg"] = e["off_NetRtg"]
-                    entry["without"]["OffRtg"] = e["off_OffRtg"]
-                    entry["without"]["DefRtg"] = e["off_DefRtg"]
-                    entry["rating_source"]     = "play-by-play rotation"
-                    break
+            abbrev = entry.get("abbrev", "")
+            # Find matching player in mex players to get their NBA PLAYER_ID
+            for p in mex.get("players", []):
+                pname = p.get("Player") or p.get("PLAYER_NAME") or ""
+                parts = pname.split()
+                SFXS = {'jr','sr','ii','iii','iv','v'}
+                if len(parts) >= 2:
+                    last = [w for w in parts[1:] if w.lower() not in SFXS]
+                    if last:
+                        key = f"{parts[0][0]}. {last[-1]}"
+                        if key == abbrev or pname == entry["player"]:
+                            pid = p.get("PLAYER_ID") or p.get("player_id")
+                            if pid:
+                                pid_to_wowy[str(pid)] = entry
+
+        # Also build name-based map as fallback
+        name_to_wowy = {e["player"].lower(): e for e in mex.get("wowy", [])}
+
+        def merge_pbp_into_entry(entry, e):
+            entry["with"]["POSS"]    = e["on_poss"]
+            entry["with"]["NetRtg"]  = e["on_NetRtg"]
+            entry["with"]["OffRtg"]  = e["on_OffRtg"]
+            entry["with"]["DefRtg"]  = e["on_DefRtg"]
+            entry["without"]["POSS"]   = e["off_poss"]
+            entry["without"]["NetRtg"] = e["off_NetRtg"]
+            entry["without"]["OffRtg"] = e["off_OffRtg"]
+            entry["without"]["DefRtg"] = e["off_DefRtg"]
+            entry["rating_source"]     = "play-by-play rotation"
+
+        matched = 0
+        for e in true_wowy:
+            pid  = str(e.get("player_id", ""))
+            name = e.get("player", "").lower()
+            # Try ID match first, then name
+            entry = pid_to_wowy.get(pid) or name_to_wowy.get(name)
+            if not entry:
+                # Fuzzy: check if any part of name matches
+                for k, v in name_to_wowy.items():
+                    if name.split()[-1] in k or k.split()[-1] in name:
+                        entry = v; break
+            if entry:
+                merge_pbp_into_entry(entry, e)
+                matched += 1
+
+        print(f"  Matched {matched}/{len(true_wowy)} players to wowy entries")
 
         with open(mex_path, "w", encoding="utf-8") as f:
             json.dump(mex, f, separators=(",", ":"))

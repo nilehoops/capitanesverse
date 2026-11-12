@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+python fetch_lineup_data.py wowy_retry 2025-26<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -7,16 +7,25 @@
 <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
-  --staff-notes-width: 32%;
-  --rotation-width: 20%;
-  --season-splits-width: 9%;
-  --player-stats-width: 32%;
-  --big-label-size: 35px;
-  --feed-max-height: 210px;
-  --board-row-height: 180px;
-  --blue: #001eff;
-  --green: #18af4a;
-  --red: #d81f2a;
+  /* ── Editor-controlled layout variables ── */
+  --staff-notes-width: 42%;
+  --season-splits-width: 12.2%;
+  --rotation-width: 23.9%;
+  --player-stats-width: 27.8%;
+  --feed-max-height: 200px;
+  --big-label-size: 40px;
+  --board-row-height: 160px;
+  --lineup-cards-per-row: 5;
+  --bg: #fff;
+  --surface: #F4F4F4;
+  --border: #DEDEDE;
+  --yellow: #FFD400;
+  --blue: #1631FF;
+  --green: #18AF4A;
+  --red: #D81F2A;
+  --text: #0A0A0A;
+  --muted: #555;
+  --dim: #333;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { background: var(--bg); color: var(--text); font-family: 'Lora', serif; font-size: 13px; }
@@ -479,12 +488,13 @@ a { color: inherit; text-decoration: none; }
       <!-- WOWY -->
       <div style="padding:6px 10px;">
         <div class="big-label" style="color:#000;margin-bottom:4px;">WOWY</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">With Or Without You — on/off court impact for each player.</div>
-        <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;font-size:11px;">
-          <label style="font-weight:600;">Player:</label>
-          <select id="wowyPlayerSelect" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);" onchange="renderWowy()">
-            <option value="">— choose —</option>
-          </select>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Select up to 5 players to compare on/off impact.</div>
+        <div id="wowySlots" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px;">
+          <!-- 5 player slots rendered by JS -->
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button onclick="runWowy()" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:none;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:700;">Run</button>
+          <button onclick="clearWowy()" style="font-size:11px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;cursor:pointer;">Clear</button>
         </div>
         <div id="wowyContent"></div>
       </div>
@@ -914,6 +924,226 @@ async function renderPlayerStats() {
   }
 }
 
+// ── Multi-player WOWY ─────────────────────────────────────────
+let _wowyPlayers = [];  // array of wowy entries loaded from mex_data
+
+let _wowyPhotoMap = {};  // abbrev/name -> photoUrl
+
+async function initWowySlots() {
+  const d  = await loadMexData();
+  // Load lineup data for playerXref photos
+  if (!window._wowyLineupData) {
+    window._wowyLineupData = await fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
+      .then(r => r.ok ? r.json() : null).catch(() => null);
+  }
+  const ld = window._wowyLineupData;
+  _wowyPlayers = (d.wowy || []).sort((a,b) => (a.player||'').localeCompare(b.player||''));
+
+  // Build photo map: abbrev -> photoUrl from playerXref, then players_index
+  const xref = ld?.playerXref || {};
+  Object.entries(xref).forEach(([abbrev, info]) => {
+    if (info?.photoUrl) _wowyPhotoMap[abbrev] = info.photoUrl;
+    if (info?.name && info?.photoUrl) _wowyPhotoMap[info.name.toLowerCase()] = info.photoUrl;
+  });
+  // Also pull from players_index (already loaded via loadBap)
+  try {
+    const idx = await loadBap();
+    (idx || []).forEach(p => {
+      if (p.photoUrl) {
+        if (p.name) _wowyPhotoMap[p.name.toLowerCase()] = p.photoUrl;
+        // Build abbrev key
+        const parts = (p.name||'').split(/\s+/);
+        const SFXS = new Set(['jr','sr','ii','iii','iv','v']);
+        if (parts.length >= 2) {
+          const last = parts.filter(w => !SFXS.has(w.toLowerCase())).pop();
+          if (last) _wowyPhotoMap[`${parts[0][0].toLowerCase()}. ${last.toLowerCase()}`] = p.photoUrl;
+        }
+      }
+    });
+  } catch(e) {}
+
+  const container = document.getElementById('wowySlots');
+  if (!container || !_wowyPlayers.length) return;
+
+  container.innerHTML = Array.from({length:5}, (_, i) => `
+    <div>
+      <div style="font-size:9px;color:var(--muted);margin-bottom:2px;text-align:center;">Player ${i+1}</div>
+      <select id="wowySlot${i}" style="width:100%;font-size:10px;padding:2px 3px;border:1px solid var(--border);">
+        <option value="">—</option>
+        ${_wowyPlayers.map(p => `<option value="${esc(p.abbrev||p.player)}">${esc(p.player||p.abbrev)}</option>`).join('')}
+      </select>
+    </div>`).join('');
+}
+
+function getSelectedWowyPlayers() {
+  return Array.from({length:5}, (_,i) => {
+    const sel = document.getElementById(`wowySlot${i}`);
+    return sel?.value || '';
+  }).filter(Boolean);
+}
+
+function clearWowy() {
+  for (let i=0;i<5;i++) {
+    const sel = document.getElementById(`wowySlot${i}`);
+    if (sel) sel.value = '';
+  }
+  document.getElementById('wowyContent').innerHTML = '';
+}
+
+async function runWowy() {
+  const selected = getSelectedWowyPlayers();
+  if (!selected.length) {
+    document.getElementById('wowyContent').innerHTML = '<div style="color:var(--muted);font-size:11px;">Select at least one player.</div>';
+    return;
+  }
+
+  const d  = await loadMexData();
+  const ld = window._wowyLineupData;
+  const container = document.getElementById('wowyContent');
+  container.innerHTML = '<div style="color:var(--muted);font-size:11px;">Computing…</div>';
+
+  const STATS = [
+    { key:'OffRtg',  label:'OFF',      lb:false },
+    { key:'DefRtg',  label:'DEF',      lb:true  },
+    { key:'NetRtg',  label:'NET',      lb:false },
+    { key:'eFG%',    label:'eFG%',     lb:false, pct:true },
+    { key:'TOV%',    label:'TOV%',     lb:true,  pct:true },
+    { key:'OREB%',   label:'OREB%',    lb:false, pct:true },
+    { key:'OppeFG%', label:'Opp eFG%', lb:true,  pct:true },
+  ];
+
+  // Helper: weighted average from lineup combos
+  function wavg(combos, apiKey) {
+    const total = combos.reduce((s,c) => s+(c.POSS||0), 0);
+    if (!total) return null;
+    return combos.reduce((s,c) => s+((c[apiKey]||0)*(c.POSS||0)), 0) / total;
+  }
+
+  function getPlayers(c) { return (c.GROUP_NAME||'').split(' - ').map(n=>n.trim()); }
+  const allCombos = [...(ld?.duos||[]), ...(ld?.trios||[]), ...(ld?.quads||[]), ...(ld?.fiveman||[])];
+
+  // Build rows
+  const rows = [];
+
+  // Row for each individual player (from mex_data wowy)
+  selected.forEach(abbrev => {
+    const entry = _wowyPlayers.find(p => p.abbrev===abbrev||p.player===abbrev);
+    if (!entry) return;
+    const xref  = ld?.playerXref || {};
+    const info  = xref[abbrev] || {};
+    rows.push({
+      label:    entry.player || abbrev,
+      abbrev,
+      photoUrl: info.photoUrl || null,
+      type:     'individual',
+      with:     entry.with    || {},
+      without:  entry.without || {},
+    });
+  });
+
+  // If 2+ players selected: add "All together" row from lineup combos
+  if (selected.length >= 2) {
+    const together = allCombos.filter(c => {
+      const ps = getPlayers(c);
+      return selected.every(abbrev => ps.includes(abbrev));
+    });
+    const apart = allCombos.filter(c => {
+      const ps = getPlayers(c);
+      return selected.every(abbrev => !ps.includes(abbrev));
+    });
+    const togetherPoss = together.reduce((s,c)=>s+(c.POSS||0),0);
+    const apartPoss    = apart.reduce((s,c)=>s+(c.POSS||0),0);
+
+    const KEY_MAP = { OffRtg:'OFF_RATING', DefRtg:'DEF_RATING', NetRtg:'NET_RATING',
+                      'eFG%':'EFG_PCT', 'TOV%':'TM_TOV_PCT', 'OREB%':'OREB_PCT', 'OppeFG%':'OPP_EFG_PCT' };
+
+    const togetherStats = {}, apartStats = {};
+    STATS.forEach(s => {
+      const k = KEY_MAP[s.key];
+      togetherStats[s.key] = wavg(together, k);
+      apartStats[s.key]    = wavg(apart,    k);
+    });
+
+    rows.unshift({
+      label:   `All ${selected.length} on`,
+      type:    'group',
+      with:    { POSS: togetherPoss, ...togetherStats },
+      without: { POSS: apartPoss,    ...apartStats    },
+    });
+  }
+
+  // League averages for delta subscripts
+  const leagueAvgs = {};
+  const KEY_MAP2 = { OffRtg:'OFF_RATING', DefRtg:'DEF_RATING', NetRtg:'NET_RATING',
+                     'eFG%':'EFG_PCT', 'TOV%':'TM_TOV_PCT', 'OREB%':'OREB_PCT', 'OppeFG%':'OPP_EFG_PCT' };
+  if (cachedTeamStats?.slices?.all) {
+    STATS.forEach(s => {
+      const vals = cachedTeamStats.slices.all.map(t => t[KEY_MAP2[s.key]]).filter(v=>v!=null);
+      if (vals.length) leagueAvgs[s.key] = vals.reduce((a,b)=>a+b,0)/vals.length * (s.pct?100:1);
+    });
+  }
+
+  function fmtVal(s, val) {
+    if (val==null) return '—';
+    return s.pct ? (val*100).toFixed(1)+'%' : val.toFixed(1);
+  }
+  function deltaHtml(s, val) {
+    const avg = leagueAvgs[s.key];
+    if (val==null||avg==null) return '';
+    const scaled = s.pct ? val*100 : val;
+    const diff = scaled - avg;
+    const better = s.lb ? diff<0 : diff>0;
+    return `<div style="font-size:8px;color:${better?'#E6A817':'#aaa'};">${diff>=0?'+':''}${diff.toFixed(1)}${s.pct?'%':''}</div>`;
+  }
+
+  // Render table
+  const colHdr = `<tr>
+    <th style="text-align:left;font-size:9px;color:var(--muted);padding:3px 4px;min-width:80px;">Player</th>
+    <th style="font-size:9px;color:var(--muted);padding:3px 4px;text-align:right;">POSS</th>
+    ${STATS.map(s=>`<th style="font-size:9px;color:var(--muted);padding:3px 4px;text-align:right;white-space:nowrap;">${s.label}</th>`).join('')}
+  </tr>`;
+
+  function buildRow(label, stats, abbrevOrName, bold) {
+    const poss = stats.POSS != null ? Math.round(stats.POSS) : '—';
+    const photoUrl = abbrevOrName
+      ? (_wowyPhotoMap[abbrevOrName] || _wowyPhotoMap[(abbrevOrName||'').toLowerCase()] || null)
+      : null;
+    const img  = photoUrl
+      ? `<img src="${esc(photoUrl)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;object-position:top;vertical-align:middle;margin-right:4px;" onerror="this.style.display='none'">`
+      : '';
+    return `<tr style="border-bottom:1px solid var(--border);${bold?'font-weight:700;':''}">
+      <td style="font-size:10px;padding:3px 4px;white-space:nowrap;">${img}${esc(label)}</td>
+      <td style="font-size:10px;padding:3px 4px;text-align:right;">${poss}</td>
+      ${STATS.map(s=>`<td style="font-size:10px;padding:3px 4px;text-align:right;">
+        <div style="${s.key==='NetRtg'?(stats[s.key]>=0?'color:var(--green)':'color:var(--red)'):''}">${fmtVal(s,stats[s.key])}</div>
+        ${deltaHtml(s,stats[s.key])}
+      </td>`).join('')}
+    </tr>`;
+  }
+
+  const tableRows = rows.map(r => {
+    const isGroup = r.type === 'group';
+    const key = r.abbrev || r.player || null;
+    return `
+      ${buildRow((isGroup?'':'▶ ')+r.label+' ON',  r.with,    key, isGroup)}
+      ${buildRow((isGroup?'':'▷ ')+r.label+' OFF', r.without, null, false)}
+    `;
+  }).join('');
+
+  const srcLabel = rows[0]?.type === 'group'
+    ? 'lineup weighted avg + play-by-play'
+    : (rows[0]?.with?.NetRtg != null ? 'play-by-play rotation' : 'lineup weighted avg');
+
+  container.innerHTML = `
+    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">Source: ${srcLabel} · subscripts vs. league avg</div>
+    <div style="overflow-x:auto;">
+      <table style="border-collapse:collapse;width:100%;">
+        <thead>${colHdr}</thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>`;
+}
+
 async function renderWowyInit() {
   try {
     const [d, ld] = await Promise.all([
@@ -954,8 +1184,8 @@ async function renderWowyInit() {
   }
 }
 
-async function renderWowy() {
-  const abbrev = document.getElementById('wowyPlayerSelect').value;
+async function renderWowy(abbrev) {
+  if (!abbrev) abbrev = document.getElementById('wowyPlayerSelect')?.value || '';
   const container = document.getElementById('wowyContent');
   if (!abbrev) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>'; return; }
 
@@ -967,58 +1197,48 @@ async function renderWowy() {
   const playerName = playerInfo.name || abbrev;
   const photoUrl = playerInfo.photoUrl || null;
 
-  // Use true on/off data from teamplayeronoffdetails — play-by-play tracked
   const d = await loadMexData();
-  const onOffEntry = (d.onOff || []).find(p =>
-    (p.PLAYER_NAME || '').toLowerCase() === playerName.toLowerCase() ||
-    p.abbrev === abbrev
+
+  // Use the pre-computed wowy array from mex_data (built by fetch script)
+  const wowyEntry = (d.wowy || []).find(p =>
+    p.abbrev === abbrev || p.player === abbrev || p.player === playerName
   );
 
   const STATS = [
-    { key: 'OFF_RATING', label: 'OFF',     pct: false },
-    { key: 'DEF_RATING', label: 'DEF',     pct: false },
-    { key: 'NET_RATING', label: 'NET',     pct: false },
-    { key: 'TS_PCT',     label: 'OFF TS%', pct: true  },
-    { key: 'TM_TOV_PCT', label: 'OFF TOV%',pct: true  },
-    { key: 'OREB_PCT',   label: 'OFF ORB%',pct: true  },
-    { key: 'OPP_EFG_PCT',label: 'DEF eFG%',pct: true  },
-    { key: 'OPP_TOV_PCT',label: 'DEF TOV%',pct: true  },
+    { key: 'OffRtg',  label: 'OFF',      pct: false, lowerBetter: false },
+    { key: 'DefRtg',  label: 'DEF',      pct: false, lowerBetter: true  },
+    { key: 'NetRtg',  label: 'NET',      pct: false, lowerBetter: false },
+    { key: 'eFG%',    label: 'eFG%',     pct: true,  lowerBetter: false },
+    { key: 'TOV%',    label: 'TOV%',     pct: true,  lowerBetter: true  },
+    { key: 'OREB%',   label: 'OREB%',    pct: true,  lowerBetter: false },
+    { key: 'OppeFG%', label: 'Opp eFG%', pct: true,  lowerBetter: true  },
   ];
 
   // League averages from team_stats.json all slice
+  const leagueAvgMap = { OffRtg:'OFF_RATING', DefRtg:'DEF_RATING', NetRtg:'NET_RATING',
+                         'eFG%':'EFG_PCT', 'TOV%':'TM_TOV_PCT', 'OREB%':'OREB_PCT', 'OppeFG%':'OPP_EFG_PCT' };
   const leagueAvgs = {};
   if (cachedTeamStats?.slices?.all) {
     const teams = cachedTeamStats.slices.all;
     STATS.forEach(s => {
-      const vals = teams.map(t => t[s.key]).filter(v => v != null);
-      if (vals.length) leagueAvgs[s.key] = vals.reduce((a,b) => a+b, 0) / vals.length;
+      const apiKey = leagueAvgMap[s.key];
+      if (!apiKey) return;
+      const vals = teams.map(t => t[apiKey]).filter(v => v != null);
+      if (vals.length) leagueAvgs[s.key] = vals.reduce((a,b) => a+b, 0) / vals.length * (s.pct ? 100 : 1);
     });
   }
 
-  const lowerBetter = new Set(['DEF_RATING','TM_TOV_PCT','OPP_EFG_PCT']);
+  let onRow  = wowyEntry ? { ...wowyEntry.with,    MIN: wowyEntry.with?.POSS,    _isPoss: true } : null;
+  let offRow = wowyEntry ? { ...wowyEntry.without,  MIN: wowyEntry.without?.POSS, _isPoss: true } : null;
+  const dataSource = wowyEntry
+    ? (wowyEntry.rating_source === '5man' ? '5-man lineup data (exact)' : 'duo lineup weighted avg')
+    : null;
 
-  let onRow  = onOffEntry?.on  || null;
-  let offRow = onOffEntry?.off || null;
-  let dataSource = 'play-by-play tracking';
-
-  // Fall back to duo lineup combinations if API on/off data isn't available
   if (!onRow || !offRow) {
-    dataSource = 'duo combination weighted avg (approximation)';
-    const duos = ld.duos || [];
-    function getPlayers(c) { return (c.GROUP_NAME || '').split(' - ').map(n => n.trim()); }
-    const withCombos    = duos.filter(c =>  getPlayers(c).includes(abbrev));
-    const withoutCombos = duos.filter(c => !getPlayers(c).includes(abbrev));
-    function wavgPoss(combos, key) {
-      const total = combos.reduce((s, c) => s + (c.POSS || 0), 0);
-      if (!total) return null;
-      return combos.reduce((s, c) => s + ((c[key] ?? 0) * (c.POSS || 0)), 0) / total;
-    }
-    onRow  = Object.fromEntries(STATS.map(s => [s.key, wavgPoss(withCombos,  s.key)]));
-    offRow = Object.fromEntries(STATS.map(s => [s.key, wavgPoss(withoutCombos, s.key)]));
-    onRow.MIN  = withCombos.reduce((s, c) => s + (c.POSS || 0), 0);
-    offRow.MIN = withoutCombos.reduce((s, c) => s + (c.POSS || 0), 0);
-    onRow._isPoss  = true;
-    offRow._isPoss = true;
+    container.innerHTML = `<div style="color:var(--muted);font-size:12px;">
+      No WOWY data for ${esc(playerName)}. Re-run fetch_lineup_data.py to update mex_data.json.
+    </div>`;
+    return;
   }
 
   function fmt(key, val, pct) {
@@ -1026,13 +1246,15 @@ async function renderWowy() {
     return pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1);
   }
 
-  function delta(key, val, pct) {
+  function delta(key, val, pct, lb) {
     const avg = leagueAvgs[key];
     if (val == null || avg == null) return '';
-    const diff = val - avg;
-    const better = lowerBetter.has(key) ? diff < 0 : diff > 0;
+    // val is raw (0-1 for pct), avg is already scaled (* 100 in leagueAvgs)
+    const scaledVal = pct ? val * 100 : val;
+    const diff = scaledVal - avg;
+    const better = lb ? diff < 0 : diff > 0;
     const sign = diff >= 0 ? '+' : '';
-    const dispDiff = pct ? (diff * 100).toFixed(1) + '%' : diff.toFixed(1);
+    const dispDiff = diff.toFixed(1) + (pct ? '%' : '');
     return `<div style="font-size:9px;color:${better?'#E6A817':'#888'};margin-top:1px;">${sign}${dispDiff}</div>`;
   }
 
@@ -1060,10 +1282,11 @@ async function renderWowy() {
       </td>
       ${STATS.map(s => {
         const val = row[s.key];
-        const netColor = s.key === 'NET_RATING' ? (val >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
+        const netC = s.key === 'NetRtg' ? (val >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
+        const dispVal = val == null ? '—' : (s.pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1));
         return `<td style="padding:4px 8px;text-align:right;">
-          <div style="font-size:12px;font-weight:600;${netColor}">${fmt(s.key, val, s.pct)}</div>
-          ${delta(s.key, val, s.pct)}
+          <div style="font-size:12px;font-weight:600;${netC}">${dispVal}</div>
+          ${delta(s.key, val, s.pct, s.lowerBetter)}
         </td>`;
       }).join('')}
     </tr>`;
@@ -1078,7 +1301,7 @@ async function renderWowy() {
         const off = offRow[s.key];
         if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">—</td>`;
         const diff = on - off;
-        const better = lowerBetter.has(s.key) ? diff < 0 : diff > 0;
+        const better = s.lowerBetter ? diff < 0 : diff > 0;
         const sign = diff >= 0 ? '+' : '';
         const disp = s.pct ? (diff * 100).toFixed(1) + '%' : diff.toFixed(1);
         return `<td style="text-align:right;padding:4px 8px;">
@@ -1991,6 +2214,9 @@ function openLineupLab() {
 // Deferred startup calls that depend on functions declared later in the script
 renderBap();
 renderPsTab();
+initWowySlots();
+
+
 </script>
 <!-- ═══ VISUAL EDITOR ═══ -->
 <div id="editorToggle" onclick="toggleEditor()" style="

@@ -1,4 +1,4 @@
-python fetch_lineup_data.py wowy_retry 2025-26<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1002,144 +1002,140 @@ async function runWowy() {
   const container = document.getElementById('wowyContent');
   container.innerHTML = '<div style="color:var(--muted);font-size:11px;">Computing…</div>';
 
-  const STATS = [
-    { key:'OffRtg',  label:'OFF',      lb:false },
-    { key:'DefRtg',  label:'DEF',      lb:true  },
-    { key:'NetRtg',  label:'NET',      lb:false },
-    { key:'eFG%',    label:'eFG%',     lb:false, pct:true },
-    { key:'TOV%',    label:'TOV%',     lb:true,  pct:true },
-    { key:'OREB%',   label:'OREB%',    lb:false, pct:true },
-    { key:'OppeFG%', label:'Opp eFG%', lb:true,  pct:true },
+  const allCombos = [...(ld?.duos||[]), ...(ld?.trios||[]), ...(ld?.quads||[]), ...(ld?.fiveman||[])];
+  function getPlayers(c) { return (c.GROUP_NAME||'').split(' - ').map(n=>n.trim()); }
+
+  const API_KEYS = {
+    POSS: 'POSS', OFF: 'OFF_RATING', DEF: 'DEF_RATING', NET: 'NET_RATING',
+    'OFF eFG%': 'EFG_PCT', 'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
+    'DEF eFG%': 'OPP_EFG_PCT', 'DEF TOV%': 'OPP_TOV_PCT', 'DEF ORB%': 'OPP_OREB_PCT',
+  };
+  const LB = new Set(['DEF', 'OFF TOV%', 'DEF eFG%', 'DEF ORB%']);
+  const PCT = new Set(['OFF eFG%','OFF TOV%','OFF ORB%','DEF eFG%','DEF TOV%','DEF ORB%']);
+
+  function statsFromCombos(combos) {
+    const poss = combos.reduce((s,c)=>s+(c.POSS||0),0);
+    if (!poss) return null;
+    const out = { POSS: poss };
+    Object.entries(API_KEYS).forEach(([key, apiKey]) => {
+      if (key==='POSS') return;
+      out[key] = combos.reduce((s,c)=>s+((c[apiKey]||0)*(c.POSS||0)),0) / poss;
+    });
+    return out;
+  }
+
+  // League averages
+  const leagueAvgs = {};
+  if (cachedTeamStats?.slices?.all) {
+    Object.entries(API_KEYS).forEach(([key, apiKey]) => {
+      if (key==='POSS') return;
+      const vals = cachedTeamStats.slices.all.map(t=>t[apiKey]).filter(v=>v!=null);
+      if (vals.length) leagueAvgs[key] = vals.reduce((a,b)=>a+b,0)/vals.length;
+    });
+  }
+
+  function fmtStat(key, val) {
+    if (val==null) return '—';
+    if (key==='POSS') return Math.round(val).toLocaleString();
+    return PCT.has(key) ? (val*100).toFixed(1) : val.toFixed(1);
+  }
+  function deltaCell(key, val) {
+    const avg = leagueAvgs[key];
+    if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">—</div>';
+    const scaled = PCT.has(key) ? val*100 : val;
+    const diff = scaled - avg;
+    const better = LB.has(key) ? diff<0 : diff>0;
+    const sign = diff>=0 ? '+' : '';
+    return `<div style="font-size:8px;color:${better?'#E6A817':'#aaa'};">${sign}${diff.toFixed(1)}${PCT.has(key)?'%':''}</div>`;
+  }
+
+  // Player photo circle — large Databallr style with OFF overlay
+  function playerCircle(abbrev, isOn) {
+    const entry = _wowyPlayers.find(p=>p.abbrev===abbrev||p.player===abbrev);
+    const name  = entry ? (entry.player||abbrev).split(' ').pop() : abbrev;
+    const url   = _wowyPhotoMap[abbrev] || _wowyPhotoMap[(abbrev||'').toLowerCase()] || null;
+    const photoEl = url
+      ? `<img src="${esc(url)}" style="width:52px;height:52px;border-radius:50%;object-fit:cover;object-position:top;display:block;${!isOn?'filter:grayscale(1);opacity:0.45;':''}" onerror="this.src='';this.style.display='none'">`
+      : `<div style="width:52px;height:52px;border-radius:50%;background:#ddd;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:#888;${!isOn?'opacity:0.4;':''}">${esc(name[0]||'?')}</div>`;
+    const offBadge = !isOn
+      ? `<div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:#fff;letter-spacing:.05em;">OFF</div>`
+      : '';
+    const ring = isOn ? `border:2px solid var(--blue);` : `border:2px solid #ccc;`;
+    return `<div style="text-align:center;min-width:60px;">
+      <div style="position:relative;display:inline-block;border-radius:50%;${ring}">${photoEl}${offBadge}</div>
+      <div style="font-size:9px;font-weight:700;margin-top:3px;color:${isOn?'var(--text)':'var(--muted)'};">${esc(name)}</div>
+    </div>`;
+  }
+
+  // Generate all 2^N combinations
+  const N = selected.length;
+  const combos = [];
+  for (let mask=(1<<N)-1; mask>=0; mask--) {
+    const onSet  = selected.filter((_,i)=>  (mask>>(i))&1);
+    const offSet = selected.filter((_,i)=>!((mask>>(i))&1));
+    const filtered = allCombos.filter(c=>{
+      const ps=getPlayers(c);
+      return onSet.every(a=>ps.includes(a)) && offSet.every(a=>!ps.includes(a));
+    });
+    const stats = statsFromCombos(filtered);
+    const comboObj = {}; selected.forEach((_,i)=>{ comboObj[selected[i]]=!!((mask>>i)&1); });
+    combos.push({ comboObj, stats, isAll: mask===(1<<N)-1, isNone: mask===0 });
+  }
+
+  // Stat columns config
+  const COLS = [
+    { key:'POSS', label:'POSS' },
+    { key:'OFF',  label:'OFF'  },
+    { key:'DEF',  label:'DEF'  },
+    { key:'NET',  label:'NET'  },
+    null, // divider
+    { key:'OFF eFG%', label:'OFF eFG%' },
+    { key:'OFF TOV%', label:'OFF TOV%' },
+    { key:'OFF ORB%', label:'OFF ORB%' },
+    null,
+    { key:'DEF eFG%', label:'DEF eFG%' },
+    { key:'DEF TOV%', label:'DEF TOV%' },
+    { key:'DEF ORB%', label:'DEF ORB%' },
   ];
 
-  // Helper: weighted average from lineup combos
-  function wavg(combos, apiKey) {
-    const total = combos.reduce((s,c) => s+(c.POSS||0), 0);
-    if (!total) return null;
-    return combos.reduce((s,c) => s+((c[apiKey]||0)*(c.POSS||0)), 0) / total;
-  }
+  const colHdrs = COLS.map(c => c
+    ? `<th style="font-size:9px;color:var(--muted);padding:4px 6px;text-align:right;white-space:nowrap;border-bottom:2px solid #000;">${c.label}</th>`
+    : `<th style="width:8px;border-bottom:2px solid #000;"></th>`
+  ).join('');
 
-  function getPlayers(c) { return (c.GROUP_NAME||'').split(' - ').map(n=>n.trim()); }
-  const allCombos = [...(ld?.duos||[]), ...(ld?.trios||[]), ...(ld?.quads||[]), ...(ld?.fiveman||[])];
+  const rows = combos.map(({comboObj, stats, isAll, isNone}) => {
+    const photos = selected.map(a=>playerCircle(a, comboObj[a])).join('');
+    const bg = isAll ? 'background:#f4f8ff;' : isNone ? 'background:#fafafa;' : '';
 
-  // Build rows
-  const rows = [];
+    const cells = COLS.map(c => {
+      if (!c) return `<td style="border-left:1px solid var(--border);"></td>`;
+      const val = stats?.[c.key] ?? null;
+      let mainStyle = '';
+      if (c.key==='NET') mainStyle = val!=null ? (val>=0?'color:var(--green);font-weight:700;':'color:var(--red);font-weight:700;') : '';
+      else if (c.key==='OFF'||c.key==='DEF') mainStyle = 'font-weight:700;';
+      return `<td style="padding:4px 6px;text-align:right;vertical-align:top;">
+        <div style="font-size:11px;${mainStyle}">${fmtStat(c.key,val)}</div>
+        ${c.key!=='POSS'?deltaCell(c.key,val):''}
+      </td>`;
+    }).join('');
 
-  // Row for each individual player (from mex_data wowy)
-  selected.forEach(abbrev => {
-    const entry = _wowyPlayers.find(p => p.abbrev===abbrev||p.player===abbrev);
-    if (!entry) return;
-    const xref  = ld?.playerXref || {};
-    const info  = xref[abbrev] || {};
-    rows.push({
-      label:    entry.player || abbrev,
-      abbrev,
-      photoUrl: info.photoUrl || null,
-      type:     'individual',
-      with:     entry.with    || {},
-      without:  entry.without || {},
-    });
-  });
-
-  // If 2+ players selected: add "All together" row from lineup combos
-  if (selected.length >= 2) {
-    const together = allCombos.filter(c => {
-      const ps = getPlayers(c);
-      return selected.every(abbrev => ps.includes(abbrev));
-    });
-    const apart = allCombos.filter(c => {
-      const ps = getPlayers(c);
-      return selected.every(abbrev => !ps.includes(abbrev));
-    });
-    const togetherPoss = together.reduce((s,c)=>s+(c.POSS||0),0);
-    const apartPoss    = apart.reduce((s,c)=>s+(c.POSS||0),0);
-
-    const KEY_MAP = { OffRtg:'OFF_RATING', DefRtg:'DEF_RATING', NetRtg:'NET_RATING',
-                      'eFG%':'EFG_PCT', 'TOV%':'TM_TOV_PCT', 'OREB%':'OREB_PCT', 'OppeFG%':'OPP_EFG_PCT' };
-
-    const togetherStats = {}, apartStats = {};
-    STATS.forEach(s => {
-      const k = KEY_MAP[s.key];
-      togetherStats[s.key] = wavg(together, k);
-      apartStats[s.key]    = wavg(apart,    k);
-    });
-
-    rows.unshift({
-      label:   `All ${selected.length} on`,
-      type:    'group',
-      with:    { POSS: togetherPoss, ...togetherStats },
-      without: { POSS: apartPoss,    ...apartStats    },
-    });
-  }
-
-  // League averages for delta subscripts
-  const leagueAvgs = {};
-  const KEY_MAP2 = { OffRtg:'OFF_RATING', DefRtg:'DEF_RATING', NetRtg:'NET_RATING',
-                     'eFG%':'EFG_PCT', 'TOV%':'TM_TOV_PCT', 'OREB%':'OREB_PCT', 'OppeFG%':'OPP_EFG_PCT' };
-  if (cachedTeamStats?.slices?.all) {
-    STATS.forEach(s => {
-      const vals = cachedTeamStats.slices.all.map(t => t[KEY_MAP2[s.key]]).filter(v=>v!=null);
-      if (vals.length) leagueAvgs[s.key] = vals.reduce((a,b)=>a+b,0)/vals.length * (s.pct?100:1);
-    });
-  }
-
-  function fmtVal(s, val) {
-    if (val==null) return '—';
-    return s.pct ? (val*100).toFixed(1)+'%' : val.toFixed(1);
-  }
-  function deltaHtml(s, val) {
-    const avg = leagueAvgs[s.key];
-    if (val==null||avg==null) return '';
-    const scaled = s.pct ? val*100 : val;
-    const diff = scaled - avg;
-    const better = s.lb ? diff<0 : diff>0;
-    return `<div style="font-size:8px;color:${better?'#E6A817':'#aaa'};">${diff>=0?'+':''}${diff.toFixed(1)}${s.pct?'%':''}</div>`;
-  }
-
-  // Render table
-  const colHdr = `<tr>
-    <th style="text-align:left;font-size:9px;color:var(--muted);padding:3px 4px;min-width:80px;">Player</th>
-    <th style="font-size:9px;color:var(--muted);padding:3px 4px;text-align:right;">POSS</th>
-    ${STATS.map(s=>`<th style="font-size:9px;color:var(--muted);padding:3px 4px;text-align:right;white-space:nowrap;">${s.label}</th>`).join('')}
-  </tr>`;
-
-  function buildRow(label, stats, abbrevOrName, bold) {
-    const poss = stats.POSS != null ? Math.round(stats.POSS) : '—';
-    const photoUrl = abbrevOrName
-      ? (_wowyPhotoMap[abbrevOrName] || _wowyPhotoMap[(abbrevOrName||'').toLowerCase()] || null)
-      : null;
-    const img  = photoUrl
-      ? `<img src="${esc(photoUrl)}" style="width:20px;height:20px;border-radius:50%;object-fit:cover;object-position:top;vertical-align:middle;margin-right:4px;" onerror="this.style.display='none'">`
-      : '';
-    return `<tr style="border-bottom:1px solid var(--border);${bold?'font-weight:700;':''}">
-      <td style="font-size:10px;padding:3px 4px;white-space:nowrap;">${img}${esc(label)}</td>
-      <td style="font-size:10px;padding:3px 4px;text-align:right;">${poss}</td>
-      ${STATS.map(s=>`<td style="font-size:10px;padding:3px 4px;text-align:right;">
-        <div style="${s.key==='NetRtg'?(stats[s.key]>=0?'color:var(--green)':'color:var(--red)'):''}">${fmtVal(s,stats[s.key])}</div>
-        ${deltaHtml(s,stats[s.key])}
-      </td>`).join('')}
+    return `<tr style="border-bottom:1px solid var(--border);${bg}">
+      <td style="padding:8px 6px;">
+        <div style="display:flex;gap:6px;align-items:flex-end;">${photos}</div>
+      </td>
+      ${cells}
     </tr>`;
-  }
-
-  const tableRows = rows.map(r => {
-    const isGroup = r.type === 'group';
-    const key = r.abbrev || r.player || null;
-    return `
-      ${buildRow((isGroup?'':'▶ ')+r.label+' ON',  r.with,    key, isGroup)}
-      ${buildRow((isGroup?'':'▷ ')+r.label+' OFF', r.without, null, false)}
-    `;
   }).join('');
 
-  const srcLabel = rows[0]?.type === 'group'
-    ? 'lineup weighted avg + play-by-play'
-    : (rows[0]?.with?.NetRtg != null ? 'play-by-play rotation' : 'lineup weighted avg');
-
   container.innerHTML = `
-    <div style="font-size:9px;color:var(--muted);margin-bottom:4px;">Source: ${srcLabel} · subscripts vs. league avg</div>
+    <div style="font-size:9px;color:var(--muted);margin-bottom:6px;">Lineup combo weighted avg · Δ vs. league avg</div>
     <div style="overflow-x:auto;">
       <table style="border-collapse:collapse;width:100%;">
-        <thead>${colHdr}</thead>
-        <tbody>${tableRows}</tbody>
+        <thead><tr>
+          <th style="border-bottom:2px solid #000;padding:4px 6px;text-align:left;font-size:9px;color:var(--muted);">LINEUP</th>
+          ${colHdrs}
+        </tr></thead>
+        <tbody>${rows}</tbody>
       </table>
     </div>`;
 }

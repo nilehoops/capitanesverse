@@ -224,9 +224,9 @@ a { color: inherit; text-decoration: none; }
   padding: 8px 4px;
   align-items: flex-start;
 }
-.rotation-players-wrap { display: flex; gap: 8px; }
-.rotation-row { display: flex; flex-direction: column; gap: 2px; }
-.rot-player { text-align: center; width: 50px; }
+.rotation-players-wrap { display: flex; flex-direction: column; gap: 4px; }
+.rotation-row { display: flex; flex-direction: row; gap: 4px; justify-content: center; }
+.rot-player { text-align: center; flex: 1; }
 .rot-player svg { display: block; margin: 0 auto 1px; }
 .rot-player-name { font-size: 9px; color: var(--dim); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rot-player-mins { font-size: 11px; font-weight: 700; color: var(--text); display: block; }
@@ -386,9 +386,9 @@ a { color: inherit; text-decoration: none; }
       </div>
     </div>
 
-    <!-- Current Rotation: full right side, 2 cols × 5 players -->
+    <!-- Current Rotation: full right side, 2 rows × 5 players -->
     <div class="rotation-strip" style="border-left:1px solid var(--border);">
-      <div style="display:flex;gap:8px;justify-content:center;">
+      <div class="rotation-players-wrap">
         <div class="rotation-row" id="rotationRow1"></div>
         <div class="rotation-row" id="rotationRow2"></div>
       </div>
@@ -1892,13 +1892,13 @@ async function renderPsTab() {
                   ['3P%',    p => p['3P%'] != null ? (p['3P%']*100).toFixed(1)+'%' : '—'],
                   ['FT%',    p => p['FT%'] != null ? (p['FT%']*100).toFixed(1)+'%' : '—'],
                   ['AST%',   p => p['AST%'] != null ? (p['AST%']*100).toFixed(1)+'%' : '—'],
-                  ['TOV%',   p => p['TOV%']?.toFixed(1)+'%'],
+                  ['TOV%',   p => p['TOV%'] != null ? p['TOV%'].toFixed(1)+'%' : '—'],
                   ['ORtg',   p => p['ORtg']?.toFixed(1)]],
         defense: [['Player', p => p.Player || p.PLAYER_NAME],
                   ['MIN',    p => p.MIN?.toFixed(1)],
                   ['DRB%',   p => p['DRB%'] != null ? (p['DRB%']*100).toFixed(1)+'%' : '—'],
-                  ['STL%',   p => p['STL%'] != null ? (p['STL%']*100).toFixed(1)+'%' : '—'],
-                  ['BLK%',   p => p['BLK%'] != null ? (p['BLK%']*100).toFixed(1)+'%' : '—'],
+                  ['STL/100', p => p['STL'] != null && p['POSS'] ? (p['STL'] / p['POSS'] * 100).toFixed(1) : '—'],
+                  ['BLK/100', p => p['BLK'] != null && p['POSS'] ? (p['BLK'] / p['POSS'] * 100).toFixed(1) : '—'],
                   ['DRtg',   p => p['DRtg']?.toFixed(1)]],
       };
       const cols = allCols[_psView] || allCols.overall;
@@ -1912,8 +1912,70 @@ async function renderPsTab() {
       container.innerHTML = `<div style="color:var(--muted);font-size:11px;">No in-season stats yet.</div>`;
     }
   } else {
-    // For G League / Pro / NCAA — load from players_detail.json and show career stats
-    container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Select a player from Best Available Players above to view their ${_psTab} stats on their profile page.</div>`;
+    // G League Career / All Pro Career / NCAA — from players_detail.json via players_index slug
+    try {
+      const [mexData, idxData, detailData] = await Promise.all([
+        loadMexData(),
+        loadBap(),
+        fetch('data/players_detail.json?v=' + Date.now()).then(r => r.ok ? r.json() : []),
+      ]);
+
+      // Build name → slug map from players_index
+      const nameToSlug = {};
+      (idxData || []).forEach(p => {
+        if (p.name && p.id) nameToSlug[p.name.toLowerCase()] = p.id;
+      });
+
+      // Build slug → detail map from players_detail
+      const slugToDetail = {};
+      (detailData || []).forEach(p => { if (p.id) slugToDetail[p.id] = p; });
+
+      // Filter stints by tab
+      const leagueFilter = {
+        gleague: s => s.league === 'G League',
+        pro:     s => s.league !== 'NCAA',
+        ncaa:    s => s.league === 'NCAA',
+      }[_psTab];
+
+      // Build rows: one per player, aggregate relevant stints
+      const roster = (mexData.players || []).sort((a, b) => (b.MIN||0) - (a.MIN||0));
+      const cols = [
+        ['Player',  p => p.name],
+        ['League',  p => p.league],
+        ['Season',  p => p.season || '—'],
+        ['Pts/40',  p => p.pts40?.toFixed(1)   ?? '—'],
+        ['Reb/40',  p => ((p.orb40||0) + (p.drb40||0)).toFixed(1)],
+        ['Ast/40',  p => p.ast40?.toFixed(1)   ?? '—'],
+        ['Stl/40',  p => p.stl40?.toFixed(1)   ?? '—'],
+        ['Blk/40',  p => p.blk40?.toFixed(1)   ?? '—'],
+        ['3P%',     p => p['3p_pct'] != null ? (p['3p_pct']*100).toFixed(1)+'%' : '—'],
+        ['FT%',     p => p.ft_pct   != null ? (p.ft_pct*100).toFixed(1)+'%'    : '—'],
+      ];
+
+      // Collect all stint rows across roster
+      const rows = [];
+      roster.forEach(rp => {
+        const name = rp.Player || rp.PLAYER_NAME || '';
+        const slug = nameToSlug[name.toLowerCase()];
+        const detail = slug ? slugToDetail[slug] : null;
+        const stints = (detail?.proStints || []).filter(leagueFilter);
+        stints.forEach(s => rows.push({ ...s, name }));
+      });
+
+      if (!rows.length) {
+        container.innerHTML = `<div style="color:var(--muted);font-size:11px;">No ${_psTab === 'gleague' ? 'G League' : _psTab === 'pro' ? 'pro' : 'NCAA'} career data found.</div>`;
+        return;
+      }
+
+      container.innerHTML = `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10px;">
+        <thead><tr>${cols.map(([h]) => `<th style="padding:2px 4px;text-align:${h==='Player'||h==='League'?'left':'right'};color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;">${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(row =>
+          `<tr>${cols.map(([, fn], i) => `<td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:${i<=1?'left':'right'};white-space:nowrap;">${fn(row) ?? '—'}</td>`).join('')}</tr>`
+        ).join('')}</tbody>
+      </table></div>`;
+    } catch(e) {
+      container.innerHTML = `<div style="color:var(--muted);font-size:11px;">Could not load career data: ${esc(e.message)}</div>`;
+    }
   }
 }
 

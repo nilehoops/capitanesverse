@@ -1298,7 +1298,10 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
     from collections import defaultdict
     def empty_bucket():
         return {
-            "poss": 0, "pts_for": 0.0, "pts_against": 0.0,
+            "poss": 0,              # total (off + def) for POSS column
+            "off_poss": 0,          # MXC offensive possessions only
+            "def_poss": 0,          # opponent offensive possessions only
+            "pts_for": 0.0, "pts_against": 0.0,
             "off_fgm": 0, "off_fga": 0, "off_fg3m": 0,
             "off_ftm": 0, "off_fta": 0, "off_tov": 0, "off_oreb": 0,
             "def_fgm": 0, "def_fga": 0, "def_fg3m": 0,
@@ -1310,24 +1313,55 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
         return {iv["player_id"] for iv in all_rotations.get(gid, [])
                 if iv["in_t"] <= t < iv["out_t"]}
 
+    # Also pre-compute duo combination stats for multi-player WOWY
+    from itertools import combinations as _combos
+    combo_stats = defaultdict(lambda: {
+        (True,True):   empty_bucket(),
+        (True,False):  empty_bucket(),
+        (False,True):  empty_bucket(),
+        (False,False): empty_bucket(),
+    })
+
     games_processed = 0
     total_poss_counted = 0
+    pid_list = sorted(all_player_ids)
     for gid, possessions in game_possessions.items():
         if not possessions:
             continue
         games_processed += 1
         for p in possessions:
-            on_floor = players_on_at(gid, p["t"])
-            for pid in all_player_ids:
+            on_floor       = players_on_at(gid, p["t"])
+            is_mxc_offense = p.get("mxc_offense", False)
+
+            # Individual player stats
+            for pid in pid_list:
                 bucket = "on" if pid in on_floor else "off"
                 s = player_stats[pid][bucket]
                 s["poss"]        += 1
                 s["pts_for"]     += p["pts_for"]
                 s["pts_against"] += p["pts_against"]
+                if is_mxc_offense: s["off_poss"] += 1
+                else:              s["def_poss"] += 1
                 for key in ("off_fgm","off_fga","off_fg3m","off_ftm","off_fta",
                             "off_tov","off_oreb","def_fgm","def_fga","def_fg3m",
                             "def_ftm","def_fta","def_tov","def_oreb"):
                     s[key] += p.get(key, 0)
+
+            # Multi-player combination stats (duos through 5s) for exact PBP WOWY
+            for size in range(2, min(6, len(pid_list)+1)):
+                for group in _combos(pid_list, size):
+                    bools = tuple(pid in on_floor for pid in group)
+                    s = combo_stats[group][bools]
+                    s["poss"]        += 1
+                    s["pts_for"]     += p["pts_for"]
+                    s["pts_against"] += p["pts_against"]
+                    if is_mxc_offense: s["off_poss"] += 1
+                    else:              s["def_poss"] += 1
+                    for key in ("off_fgm","off_fga","off_fg3m","off_ftm","off_fta",
+                                "off_tov","off_oreb","def_fgm","def_fga","def_fg3m",
+                                "def_ftm","def_fta","def_tov","def_oreb"):
+                        s[key] += p.get(key, 0)
+
             total_poss_counted += 1
 
     print(f"  True WOWY: {games_processed} games, {total_poss_counted} possessions, {len(player_stats)} players")
@@ -1344,22 +1378,24 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
     # ORtg and DRtg require knowing MXC side — approximate with abs values for now
     # and flag for future improvement once matchup data is added
     def compute_rates(s):
-        poss = s["poss"]
+        poss      = s["poss"]
+        off_poss  = s.get("off_poss", poss // 2 or 1)  # MXC offensive possessions
+        def_poss  = s.get("def_poss", poss // 2 or 1)  # opponent offensive possessions
         if not poss:
             return {}
         def safe(n, d): return round(n/d, 4) if d else None
-        # eFG% = (FGM + 0.5*FG3M) / FGA
+        # eFG% = (FGM + 0.5*FG3M) / FGA (uses FGA as denominator, not poss)
         off_efg = safe(s["off_fgm"] + 0.5*s["off_fg3m"], s["off_fga"])
         def_efg = safe(s["def_fgm"] + 0.5*s["def_fg3m"], s["def_fga"])
-        # TOV% = TOV / POSS (exact — no estimation needed, we have every possession)
-        off_tov = safe(s["off_tov"], poss)
-        def_tov = safe(s["def_tov"], poss)
-        # ORB% = off_oreb / POSS (rate per possession)
-        off_orb = safe(s["off_oreb"], poss)
-        def_orb = safe(s["def_oreb"], poss)
-        # FTA rate = FTA / POSS (exact possession denominator)
-        off_ftr = safe(s["off_fta"], poss)
-        def_ftr = safe(s["def_fta"], poss)
+        # TOV% = TOV / own_offensive_poss (exact possession count, correct denominator)
+        off_tov = safe(s["off_tov"], off_poss)
+        def_tov = safe(s["def_tov"], def_poss)
+        # ORB% = off_oreb / own_offensive_poss
+        off_orb = safe(s["off_oreb"], off_poss)
+        def_orb = safe(s["def_oreb"], def_poss)
+        # FTA rate = FTA / own_offensive_poss
+        off_ftr = safe(s["off_fta"], off_poss)
+        def_ftr = safe(s["def_fta"], def_poss)
         return {
             "NetRtg": round((s["pts_for"] - s["pts_against"]) / poss * 100, 1),
             "OffRtg": round(s["pts_for"]  / poss * 100, 1),
@@ -1802,6 +1838,34 @@ if __name__ == "__main__":
 
         # Also build name-based map as fallback
         name_to_wowy = {e["player"].lower(): e for e in mex.get("wowy", [])}
+
+        # Build combo_wowy list from combo_stats (all group sizes 2-5)
+        combo_wowy = []
+        for group, buckets in combo_stats.items():
+            names = [id_to_name.get(pid, str(pid)) for pid in group]
+            entry_c = {
+                "players": names,
+                "pids":    list(group),
+                "combos":  {}
+            }
+            for bools, s in buckets.items():
+                r = compute_rates(s)
+                key = "".join(str(int(b)) for b in bools)
+                entry_c["combos"][key] = {
+                    "POSS":        s["poss"],
+                    "NetRtg":      r.get("NetRtg"),
+                    "OffRtg":      r.get("OffRtg"),
+                    "DefRtg":      r.get("DefRtg"),
+                    "OFF_EFG_PCT": r.get("off_efg_pct"),
+                    "DEF_EFG_PCT": r.get("def_efg_pct"),
+                    "OFF_TOV_PCT": r.get("off_tov_pct"),
+                    "DEF_TOV_PCT": r.get("def_tov_pct"),
+                    "OFF_ORB_PCT": r.get("off_orb_pct"),
+                    "DEF_ORB_PCT": r.get("def_orb_pct"),
+                }
+            combo_wowy.append(entry_c)
+
+        mex["combo_wowy"] = combo_wowy
 
         def merge_pbp_into_entry(entry, e):
             for bucket, prefix in [("with","on"), ("without","off")]:

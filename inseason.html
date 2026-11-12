@@ -71,7 +71,10 @@ a { color: inherit; text-decoration: none; }
 /* Left section: 12.2% — Staff Notes row 1, Season Splits row 2 */
 .left-section {
   width: 12.2%;
+  min-width: 12.2%;
+  max-width: 12.2%;
   flex-shrink: 0;
+  flex-grow: 0;
   border-right: 1px solid var(--border);
   overflow: hidden;
 }
@@ -84,16 +87,18 @@ a { color: inherit; text-decoration: none; }
   padding-bottom: 8px;
 }
 
-/* Right section: 27.8% — Player Stats row 1, WOWY row 2 */
+/* Right section: 27.8% — Player Stats + WOWY stacked */
 .right-col {
   width: 27.8%;
   flex-shrink: 0;
   border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
 }
 
-/* Rotation strip: 51.7% in row 1 (covers right+rotation from source) */
+/* Rotation strip: 23.9% — right edge of row 1 */
 .rotation-strip {
-  width: 51.7%;
+  width: 23.9%;
   flex-shrink: 0;
   padding: 6px 4px;
   display: flex;
@@ -102,13 +107,7 @@ a { color: inherit; text-decoration: none; }
   border-left: 1px solid var(--border);
 }
 
-/* ═══════════════════════════════
-   LEFT COLUMN
-═══════════════════════════════ */
-.left-col {
-  border-right: 1px solid var(--border);
-  padding-bottom: 8px;
-}
+/* left-col: replaced by .left-section in layout section above */
 
 /* Staff Notes */
 .staff-notes-block {
@@ -209,13 +208,7 @@ a { color: inherit; text-decoration: none; }
 .stat-filter.active { background: var(--blue); color: #fff; border-color: var(--blue); }
 .stat-filter:hover:not(.active) { border-color: var(--blue); color: var(--blue); }
 
-/* ═══════════════════════════════
-   RIGHT COLUMN
-═══════════════════════════════ */
-.right-col {
-  display: flex;
-  flex-direction: column;
-}
+/* right-col: defined above in layout section */
 
 /* Current Rotation */
 .rotation-block {
@@ -359,9 +352,9 @@ a { color: inherit; text-decoration: none; }
   <div class="main-row">
 
     <!-- Staff Notes -->
-    <div class="left-section">
+    <div class="left-section" style="width:18%;min-width:18%;max-width:18%;">
       <div class="staff-notes-block">
-        <div class="big-label" style="font-size:clamp(20px,2.5vw,30px);">Staff<br>Notes</div>
+        <div class="big-label">Staff<br>Notes</div>
         <div class="staff-feed" id="staffFeed">
           <div style="color:var(--muted);font-size:11px;">Loading...</div>
         </div>
@@ -375,24 +368,24 @@ a { color: inherit; text-decoration: none; }
           <div class="big-label" style="color:var(--blue);font-size:clamp(22px,3vw,36px);">Best<br>Avaliable<br>Players</div>
           <div style="font-size:11px;margin-top:6px;">
             <div style="color:var(--muted);margin-bottom:3px;">Show:</div>
-            <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G League</button>
+            <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G Leaguers</button>
             <button class="bap-btn" data-tab="lnbp" onclick="switchBapTab('lnbp',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">LNBP<br>Players</button>
             <button class="bap-btn" data-tab="unsigned" onclick="switchBapTab('unsigned',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">Unsigned<br>Players</button>
           </div>
         </div>
-        <div id="bapBoards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;font-size:12px;">
+        <div id="bapBoards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;font-size:12px;background:#f4f4f4;padding:4px 6px;">
           <div style="color:var(--muted);font-size:11px;">Loading…</div>
         </div>
       </div>
     </div>
 
-    <!-- Current Rotation: full right side, 2 rows × 5 players -->
-    <div class="rotation-strip" style="border-left:1px solid var(--border);">
-      <div class="rotation-players-wrap">
+    <!-- Current Rotation: full right side, 2 rows × 5 players, label on far right edge -->
+    <div class="rotation-strip" style="border-left:1px solid var(--border);flex-direction:row;align-items:stretch;">
+      <div class="rotation-players-wrap" style="flex:1;">
         <div class="rotation-row" id="rotationRow1"></div>
         <div class="rotation-row" id="rotationRow2"></div>
       </div>
-      <div class="rotation-label-vert" style="margin-top:6px;">Current Rotation<br>(Last Five Games)</div>
+      <div class="rotation-label-vert" style="border-left:1px solid var(--border);padding:4px 2px;">Current Rotation<br>(Last Five Games)</div>
     </div>
 
   </div><!-- /row 1 -->

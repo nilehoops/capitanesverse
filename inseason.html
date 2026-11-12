@@ -1068,8 +1068,10 @@ async function runWowy() {
   function deltaCell(key, val) {
     const avg = leagueAvgs[key];
     if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">—</div>';
-    const scaled = PCT.has(key) ? val*100 : val;
-    const diff = scaled - avg;
+    // Both val and avg are raw API decimals (e.g. 0.13 for 13%)
+    // Scale both the same way before comparing
+    const scale = PCT.has(key) ? 100 : 1;
+    const diff = (val * scale) - (avg * scale);
     const better = LB.has(key) ? diff<0 : diff>0;
     const sign = diff>=0 ? '+' : '';
     return `<div style="font-size:8px;color:${better?'#E6A817':'#aaa'};">${sign}${diff.toFixed(1)}${PCT.has(key)?'%':''}</div>`;
@@ -1103,12 +1105,35 @@ async function runWowy() {
       const ps=getPlayers(c);
       return onSet.every(a=>ps.includes(a)) && offSet.every(a=>!ps.includes(a));
     };
-    // For single-player ON/OFF, pass their PBP wowy bucket for accurate stats
+    // For 1 player: use their PBP wowy bucket
+    // For 2 players: use pre-computed duo combo PBP stats
     let pbpBucket = null;
     if (selected.length === 1) {
       const abbrev = selected[0];
       const wowyE  = _wowyPlayers.find(p=>p.abbrev===abbrev||p.player===abbrev);
       pbpBucket = onSet.length===1 ? wowyE?.with : wowyE?.without;
+    } else if (selected.length >= 2) {
+      const comboWowy = d.combo_wowy || [];
+      // Resolve full names for each selected abbrev
+      const selNames = selected.map(a => {
+        const e = _wowyPlayers.find(p=>p.abbrev===a||p.player===a);
+        return e?.player || a;
+      });
+      const selSet = new Set(selNames);
+      // Find combo entry whose players set exactly matches selNames set
+      const comboEntry = comboWowy.find(c => {
+        const ps = c.players || [];
+        return ps.length === selNames.length && ps.every(n => selSet.has(n));
+      });
+      if (comboEntry) {
+        // Build the boolean key in the same order as comboEntry.players
+        const key = (comboEntry.players || []).map(n => {
+          const idx = selNames.indexOf(n);
+          const abbrev = selected[idx];
+          return onSet.includes(abbrev) ? '1' : '0';
+        }).join('');
+        pbpBucket = comboEntry.combos?.[key] || null;
+      }
     }
     const stats = statsFromCombos(fivemanCombos.filter(filterFn), ratingCombos.filter(filterFn), pbpBucket);
     const comboObj = {}; selected.forEach((_,i)=>{ comboObj[selected[i]]=!!((mask>>i)&1); });

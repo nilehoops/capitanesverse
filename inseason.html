@@ -1114,25 +1114,37 @@ async function runWowy() {
       pbpBucket = onSet.length===1 ? wowyE?.with : wowyE?.without;
     } else if (selected.length >= 2) {
       const comboWowy = d.combo_wowy || [];
-      // Resolve full names for each selected abbrev
       const selNames = selected.map(a => {
         const e = _wowyPlayers.find(p=>p.abbrev===a||p.player===a);
         return e?.player || a;
       });
       const selSet = new Set(selNames);
-      // Find combo entry whose players set exactly matches selNames set
-      const comboEntry = comboWowy.find(c => {
-        const ps = c.players || [];
-        return ps.length === selNames.length && ps.every(n => selSet.has(n));
-      });
-      if (comboEntry) {
-        // Build the boolean key in the same order as comboEntry.players
-        const key = (comboEntry.players || []).map(n => {
-          const idx = selNames.indexOf(n);
-          const abbrev = selected[idx];
-          return onSet.includes(abbrev) ? '1' : '0';
-        }).join('');
-        pbpBucket = comboEntry.combos?.[key] || null;
+
+      if (selected.length === 2) {
+        // Exact duo lookup from pre-computed combo_wowy
+        const comboEntry = comboWowy.find(c => {
+          const ps = c.players || [];
+          return ps.length === 2 && ps.every(n => selSet.has(n));
+        });
+        if (comboEntry) {
+          const key = (comboEntry.players || []).map(n => {
+            const abbrev = selected[selNames.indexOf(n)];
+            return onSet.includes(abbrev) ? '1' : '0';
+          }).join('');
+          pbpBucket = comboEntry.combos?.[key] || null;
+        }
+      } else {
+        // 3+ players: use individual PBP data for the player with least POSS in this bucket
+        // as the best single-player approximation of the intersection
+        const bucketKey = onSet.length === selected.length ? 'with' : 'without';
+        const entries = selNames.map(n => _wowyPlayers.find(p=>p.player===n)).filter(Boolean);
+        if (entries.length === selected.length) {
+          // Use the entry with fewest POSS (tightest constraint)
+          const minimal = entries.reduce((a,b) =>
+            (a[bucketKey]?.POSS||0) < (b[bucketKey]?.POSS||0) ? a : b
+          );
+          pbpBucket = minimal[bucketKey] || null;
+        }
       }
     }
     const stats = statsFromCombos(fivemanCombos.filter(filterFn), ratingCombos.filter(filterFn), pbpBucket);

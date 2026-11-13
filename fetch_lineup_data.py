@@ -1312,6 +1312,7 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
 
         # --- Parse possessions using pbpstats.com methodology ---
         is_home = mxc_is_home_map.get(gid, False)
+
         possessions = parse_possessions(pbp_rows, is_home)
         game_possessions[gid] = possessions
         mxc_off = sum(1 for p in possessions if p.get("mxc_offense"))

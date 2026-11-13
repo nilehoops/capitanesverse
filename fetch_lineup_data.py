@@ -1423,8 +1423,8 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
         def_ftr = safe(s["def_fta"], def_poss)
         return {
             "NetRtg": round((s["pts_for"] - s["pts_against"]) / poss * 100, 1),
-            "OffRtg": round(s["pts_for"]  / poss * 100, 1),
-            "DefRtg": round(s["pts_against"] / poss * 100, 1),
+            "OffRtg": round(s["pts_for"]  / off_poss * 100, 1) if off_poss else None,
+            "DefRtg": round(s["pts_against"] / def_poss * 100, 1) if def_poss else None,
             "off_efg_pct":  off_efg,
             "def_efg_pct":  def_efg,
             "off_tov_pct":  off_tov,

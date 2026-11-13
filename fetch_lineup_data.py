@@ -1409,18 +1409,22 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
         if not poss:
             return {}
         def safe(n, d): return round(n/d, 4) if d else None
-        # eFG% = (FGM + 0.5*FG3M) / FGA (uses FGA as denominator, not poss)
+        # eFG% = (FGM + 0.5*FG3M) / FGA
         off_efg = safe(s["off_fgm"] + 0.5*s["off_fg3m"], s["off_fga"])
         def_efg = safe(s["def_fgm"] + 0.5*s["def_fg3m"], s["def_fga"])
-        # TOV% = TOV / own_offensive_poss (exact possession count, correct denominator)
-        off_tov = safe(s["off_tov"], off_poss)
-        def_tov = safe(s["def_tov"], def_poss)
-        # ORB% = off_oreb / own_offensive_poss
-        off_orb = safe(s["off_oreb"], off_poss)
-        def_orb = safe(s["def_oreb"], def_poss)
-        # FTA rate = FTA / own_offensive_poss
-        off_ftr = safe(s["off_fta"], off_poss)
-        def_ftr = safe(s["def_fta"], def_poss)
+        # TOV% = TOV / (FGA + 0.44*FTA + TOV) — matches standard NBA/G League formula
+        # so deltas vs team_stats TM_TOV_PCT are apples-to-apples
+        off_tov_denom = s["off_fga"] + 0.44*s["off_fta"] + s["off_tov"]
+        def_tov_denom = s["def_fga"] + 0.44*s["def_fta"] + s["def_tov"]
+        off_tov = safe(s["off_tov"], off_tov_denom)
+        def_tov = safe(s["def_tov"], def_tov_denom)
+        # ORB% = OREB / (FGA - FGM) = offensive rebounds per missed shot
+        # comparable to OREB_PCT from team stats (both measure rebound recovery rate)
+        off_orb = safe(s["off_oreb"], s["off_fga"] - s["off_fgm"])
+        def_orb = safe(s["def_oreb"], s["def_fga"] - s["def_fgm"])
+        # FTA rate = FTA / FGA
+        off_ftr = safe(s["off_fta"], s["off_fga"])
+        def_ftr = safe(s["def_fta"], s["def_fga"])
         return {
             "NetRtg": round((s["pts_for"] - s["pts_against"]) / poss * 100, 1),
             "OffRtg": round(s["pts_for"]  / off_poss * 100, 1) if off_poss else None,

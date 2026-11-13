@@ -1418,10 +1418,13 @@ def fetch_true_wowy(game_ids, mxc_team_id=1612709931, game_log=None):
         def_tov_denom = s["def_fga"] + 0.44*s["def_fta"] + s["def_tov"]
         off_tov = safe(s["off_tov"], off_tov_denom)
         def_tov = safe(s["def_tov"], def_tov_denom)
-        # ORB% = OREB / (FGA - FGM) = offensive rebounds per missed shot
-        # comparable to OREB_PCT from team stats (both measure rebound recovery rate)
-        off_orb = safe(s["off_oreb"], s["off_fga"] - s["off_fgm"])
-        def_orb = safe(s["def_oreb"], s["def_fga"] - s["def_fgm"])
+        # ORB% = OREB / (OREB + Opp_DREB)
+        # Opp_DREB on MXC offense = missed MXC shots not recovered offensively
+        # Opp_DREB on opp offense = missed opp shots not recovered offensively
+        mxc_missed  = s["off_fga"] - s["off_fgm"]
+        opp_missed  = s["def_fga"] - s["def_fgm"]
+        off_orb = safe(s["off_oreb"], s["off_oreb"] + max(0, mxc_missed - s["off_oreb"]))
+        def_orb = safe(s["def_oreb"], s["def_oreb"] + max(0, opp_missed - s["def_oreb"]))
         # FTA rate = FTA / FGA
         off_ftr = safe(s["off_fta"], s["off_fga"])
         def_ftr = safe(s["def_fta"], s["def_fga"])

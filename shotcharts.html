@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Capitanes Shot Charts — Individual &amp; On/Off</title>
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="css/inseason.css">
+<style>
+  .sc-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .sc-control {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .sc-control label {
+    font-family: 'Oswald', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .sc-control select {
+    font-family: 'Lora', serif;
+    font-size: 12px;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+  }
+  .sc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 20px;
+    padding: 16px;
+  }
+  .sc-card {
+    border: 1px solid var(--border);
+    padding: 12px;
+    background: var(--bg);
+  }
+  .sc-card-title {
+    font-family: 'Oswald', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--blue);
+    margin-bottom: 2px;
+  }
+  .sc-card-sub {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--dim);
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
+  <div>
+    <div class="page-title">Capitanes Shot Charts — Individual &amp; On/Off Court</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px;">Play-by-Play (X, Y) Coordinates &amp; Lineup-Tagged Shot Locations</div>
+  </div>
+  <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;display:flex;gap:12px;">
+    <a href="inseason.html" style="color:var(--blue);">← In-Season Dashboard</a>
+    <a href="index.html" style="color:var(--muted);">Home</a>
+  </div>
+</div>
+
+<div class="sc-toolbar">
+  <div class="sc-control">
+    <label>Season</label>
+    <select id="scSeason" onchange="loadShotSeason()">
+      <option value="2025-26" selected>2025-26</option>
+      <option value="2026-27">2026-27</option>
+    </select>
+  </div>
+  <div class="sc-control">
+    <label>Player</label>
+    <select id="scPlayer" onchange="renderShotPage()">
+      <option value="ALL">All Capitanes (Team)</option>
+    </select>
+  </div>
+  <div class="sc-control">
+    <label>Chart Mode</label>
+    <select id="scMode" onchange="renderShotPage()">
+      <option value="ind">Individual Shooter (Single Court)</option>
+      <option value="onoff_off">On-Court vs. Off-Court Offense (Side-by-Side)</option>
+      <option value="onoff_def">On-Court vs. Off-Court Defense (Side-by-Side)</option>
+    </select>
+  </div>
+  <div class="sc-control">
+    <label>Display Style</label>
+    <select id="scView" onchange="renderShotPage()">
+      <option value="dots">Made / Missed Shot Dots</option>
+      <option value="zones">Zone Efficiency &amp; Frequency</option>
+    </select>
+  </div>
+  <div class="sc-control">
+    <label>Period</label>
+    <select id="scPeriod" onchange="renderShotPage()">
+      <option value="ALL">Full Game</option>
+      <option value="1">Q1</option>
+      <option value="2">Q2</option>
+      <option value="3">Q3</option>
+      <option value="4">Q4</option>
+      <option value="OT">OT</option>
+    </select>
+  </div>
+</div>
+
+<div id="scGrid" class="sc-grid">
+  <div style="color:var(--muted);font-size:12px;">Loading shot chart data...</div>
+</div>
+
+<script src="js/shot-charts.js"></script>
+</body>
+</html>

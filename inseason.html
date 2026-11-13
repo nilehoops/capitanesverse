@@ -16,6 +16,7 @@
   --big-label-size: 40px;
   --board-row-height: 160px;
   --lineup-cards-per-row: 5;
+  --base-font: 14px;
   --bg: #fff;
   --surface: #F4F4F4;
   --border: #DEDEDE;
@@ -495,7 +496,9 @@ a { color: inherit; text-decoration: none; }
         <div style="display:flex;gap:6px;margin-bottom:8px;">
           <button onclick="runWowy()" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:none;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:700;">Run</button>
           <button onclick="clearWowy()" style="font-size:11px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;cursor:pointer;">Clear</button>
+          <button onclick="toggleWowyDiag()" style="font-size:10px;padding:3px 6px;background:none;border:1px solid #ccc;border-radius:3px;cursor:pointer;color:var(--muted);">diag</button>
         </div>
+        <div id="wowyDiag" style="display:none;font-size:10px;font-family:monospace;background:#f4f4f4;padding:6px 8px;margin-bottom:6px;border-radius:3px;white-space:pre-wrap;max-height:200px;overflow-y:auto;"></div>
         <div id="wowyContent"></div>
       </div>
 
@@ -988,6 +991,35 @@ function clearWowy() {
     if (sel) sel.value = '';
   }
   document.getElementById('wowyContent').innerHTML = '';
+  document.getElementById('wowyDiag').innerHTML = '';
+}
+
+function toggleWowyDiag() {
+  const el = document.getElementById('wowyDiag');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function showWowyDiag(selected, d, pbpBuckets) {
+  const el = document.getElementById('wowyDiag');
+  if (!el || el.style.display === 'none') return;
+  const lines = [];
+  lines.push(`mex_data has ${(d.wowy||[]).length} wowy entries, ${(d.combo_wowy||[]).length} combo groups`);
+  lines.push(`Selected: ${selected.join(', ')}`);
+  selected.forEach(abbrev => {
+    const e = _wowyPlayers.find(p=>p.abbrev===abbrev||p.player===abbrev);
+    if (!e) { lines.push(`  ${abbrev}: NOT FOUND in wowy`); return; }
+    const w = e.with || {};
+    lines.push(`  ${e.player} (${abbrev}):`);
+    lines.push(`    with:    POSS=${w.POSS} NetRtg=${w.NetRtg} OFF_EFG=${w.OFF_EFG_PCT} DEF_EFG=${w.DEF_EFG_PCT}`);
+    lines.push(`    without: POSS=${(e.without||{}).POSS} NetRtg=${(e.without||{}).NetRtg}`);
+    lines.push(`    source: ${e.rating_source||'none'}`);
+  });
+  if (pbpBuckets) {
+    lines.push(`PBP bucket: POSS=${pbpBuckets.POSS} OFF_EFG=${pbpBuckets.OFF_EFG_PCT} DEF_EFG=${pbpBuckets.DEF_EFG_PCT} OFF_TOV=${pbpBuckets.OFF_TOV_PCT} DEF_TOV=${pbpBuckets.DEF_TOV_PCT}`);
+  } else {
+    lines.push(`PBP bucket: none (using lineup combo fallback)`);
+  }
+  el.textContent = lines.join('\n');
 }
 
 async function runWowy() {
@@ -1114,28 +1146,41 @@ async function runWowy() {
       pbpBucket = onSet.length===1 ? wowyE?.with : wowyE?.without;
     } else if (selected.length >= 2) {
       const comboWowy = d.combo_wowy || [];
-      // Resolve full names for each selected abbrev
       const selNames = selected.map(a => {
         const e = _wowyPlayers.find(p=>p.abbrev===a||p.player===a);
         return e?.player || a;
       });
       const selSet = new Set(selNames);
-      // Find combo entry whose players set exactly matches selNames set
-      const comboEntry = comboWowy.find(c => {
-        const ps = c.players || [];
-        return ps.length === selNames.length && ps.every(n => selSet.has(n));
-      });
-      if (comboEntry) {
-        // Build the boolean key in the same order as comboEntry.players
-        const key = (comboEntry.players || []).map(n => {
-          const idx = selNames.indexOf(n);
-          const abbrev = selected[idx];
-          return onSet.includes(abbrev) ? '1' : '0';
-        }).join('');
-        pbpBucket = comboEntry.combos?.[key] || null;
+
+      if (selected.length === 2) {
+        // Exact duo lookup from pre-computed combo_wowy
+        const comboEntry = comboWowy.find(c => {
+          const ps = c.players || [];
+          return ps.length === 2 && ps.every(n => selSet.has(n));
+        });
+        if (comboEntry) {
+          const key = (comboEntry.players || []).map(n => {
+            const abbrev = selected[selNames.indexOf(n)];
+            return onSet.includes(abbrev) ? '1' : '0';
+          }).join('');
+          pbpBucket = comboEntry.combos?.[key] || null;
+        }
+      } else {
+        // 3+ players: use individual PBP data for the player with least POSS in this bucket
+        // as the best single-player approximation of the intersection
+        const bucketKey = onSet.length === selected.length ? 'with' : 'without';
+        const entries = selNames.map(n => _wowyPlayers.find(p=>p.player===n)).filter(Boolean);
+        if (entries.length === selected.length) {
+          // Use the entry with fewest POSS (tightest constraint)
+          const minimal = entries.reduce((a,b) =>
+            (a[bucketKey]?.POSS||0) < (b[bucketKey]?.POSS||0) ? a : b
+          );
+          pbpBucket = minimal[bucketKey] || null;
+        }
       }
     }
     const stats = statsFromCombos(fivemanCombos.filter(filterFn), ratingCombos.filter(filterFn), pbpBucket);
+    if (mask === (1<<N)-1) showWowyDiag(selected, d, pbpBucket); // show diag for all-on row
     const comboObj = {}; selected.forEach((_,i)=>{ comboObj[selected[i]]=!!((mask>>i)&1); });
     combos.push({ comboObj, stats, isAll: mask===(1<<N)-1, isNone: mask===0 });
   }
@@ -1501,8 +1546,9 @@ function buildLineupCard(combo, n) {
 }
 
 function buildTier(tierName, bestCombos, worstCombos, n, allCombos, minMins, tierId) {
-  const bestCards = bestCombos.slice(0, 5).map(c => buildLineupCard(c, n)).join('');
-  const worstCards = worstCombos.slice(0, 5).map(c => buildLineupCard(c, n)).join('');
+  const n_cards = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lineup-cards-per-row')) || 5;
+  const bestCards = bestCombos.slice(0, n_cards).map(c => buildLineupCard(c, n)).join('');
+  const worstCards = worstCombos.slice(0, n_cards).map(c => buildLineupCard(c, n)).join('');
   const tableHtml = buildFullTable(allCombos, minMins);
   return `<div class="lineup-tier">
     <div class="lineup-tier-cols">
@@ -2274,7 +2320,7 @@ initWowySlots();
 </script>
 <!-- ═══ VISUAL EDITOR ═══ -->
 <div id="editorToggle" onclick="toggleEditor()" style="
-  position:fixed;bottom:20px;right:20px;z-index:999;
+  position:fixed;bottom:20px;left:20px;z-index:999;
   width:36px;height:36px;border-radius:50%;
   background:var(--blue);color:#fff;
   display:flex;align-items:center;justify-content:center;
@@ -2282,7 +2328,7 @@ initWowySlots();
   user-select:none;" title="Open Design Editor">⚙</div>
 
 <div id="editorPanel" style="
-  display:none;position:fixed;right:20px;bottom:64px;z-index:998;
+  display:none;position:fixed;left:20px;bottom:64px;z-index:998;
   width:300px;background:#fff;border:1px solid var(--border);
   border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,.15);
   font-family:sans-serif;font-size:12px;overflow:hidden;">
@@ -2353,6 +2399,26 @@ initWowySlots();
         oninput="applyEditor()" style="width:100%;">
     </label>
 
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Text</div>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Base Font Size</span><span id="lbl-base-font" style="color:var(--blue);font-weight:700;">14px</span>
+      </div>
+      <input type="range" min="10" max="20" value="14" step="1" id="ctrl-base-font"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
+    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Lineup Data</div>
+
+    <label style="display:block;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+        <span>Cards Per Row</span><span id="lbl-lineup-cards-per-row" style="color:var(--blue);font-weight:700;">5</span>
+      </div>
+      <input type="range" min="3" max="10" value="5" step="1" id="ctrl-lineup-cards-per-row"
+        oninput="applyEditor()" style="width:100%;">
+    </label>
+
     <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">BAP Boards</div>
 
     <label style="display:block;margin-bottom:10px;">
@@ -2397,6 +2463,8 @@ const EDITOR_DEFAULTS = {
   'big-label-size':      { val: 40,    unit: 'px', prop: '--big-label-size' },
   'feed-max-height':     { val: 200,   unit: 'px', prop: '--feed-max-height' },
   'board-row-height':    { val: 160,   unit: 'px', prop: '--board-row-height' },
+  'base-font':           { val: 14,    unit: 'px', prop: '--base-font' },
+  'lineup-cards-per-row':{ val: 5,     unit: '',   prop: '--lineup-cards-per-row' },
 };
 const COLOR_VARS = {
   'blue':  '--blue',
@@ -2437,10 +2505,22 @@ function applyEditor(save = true) {
     el.style.fontSize = values['big-label-size'] + 'px';
   });
 
+  // Apply base font to body
+  document.body.style.fontSize = values['base-font'] + 'px';
+
   // Apply board scroll height
   document.querySelectorAll('#bapBoards [style*="max-height"]').forEach(el => {
     el.style.maxHeight = values['board-row-height'] + 'px';
   });
+
+  // Re-render lineup data if card count changed
+  if (save && window._lastLineupData) {
+    const prev = applyEditor._prevCardCount;
+    if (prev !== undefined && prev !== values['lineup-cards-per-row']) {
+      renderLineupContent(window._lastLineupData);
+    }
+    applyEditor._prevCardCount = values['lineup-cards-per-row'];
+  }
 
   // Staff Notes section width
   const sn = document.getElementById('staffNotesSection');

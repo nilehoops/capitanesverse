@@ -25,7 +25,7 @@
   </div>
   <div class="page-search">
     <span>Search:</span>
-    <input id="mainSearch" type="text" placeholder="(players or teams)">
+    <div style="position:relative;display:inline-block;"><input id="mainSearch" type="text" placeholder="(players or teams)" autocomplete="off"><div id="mainSearchRes" style="display:none;position:absolute;top:100%;left:0;width:260px;max-height:280px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,0.14);z-index:9999;font-size:11px;"></div></div>
   </div>
 </header>
 
@@ -373,7 +373,8 @@
 </div>
 
 
-<script src='js/app.js'></script>
+<script src='js/app.js?v=2027'></script>
+
 </body>
 </html>
 

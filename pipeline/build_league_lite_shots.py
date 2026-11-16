@@ -2,9 +2,9 @@
 import sys
 import time
 import pandas as pd
-from nba_api.stats.endpoints import shotchartdetail
+from nba_api.stats.endpoints import leaguegamefinder, shotchartdetail
 
-SEASON = sys.argv[1] if len(sys.argv) > 1 else "2026-27"
+SEASON = sys.argv.pop(1) if len(sys.argv) > 1 else "2026-27"
 LEAGUE_ID = "20"
 
 ZONES = [
@@ -33,83 +33,79 @@ def classify_zone(x, y, is_3):
         return "Left Wing 3" if x < 0 else "Right Wing 3"
 
 print(f"Fetching 31-team G League Lite Shot Charts for {SEASON}...")
-frames = []
-for stype in ["Showcase", "Regular Season"]:
-    try:
-        res = shotchartdetail.ShotChartDetail(
-            team_id=0,
-            player_id=0,
-            league_id=LEAGUE_ID,
-            season_nullable=SEASON,
-            season_type_all_star=stype,
-            context_measure_simple="FGA",
-        ).get_data_frames()
-        if len(res) > 0 and not res[0].empty:
-            frames.append(res[0])
-        time.sleep(0.8)
-    except Exception as e:
-        print(f"  [Note] {stype} skipped: {e}")
-
-if not frames:
-    print(f"No shots found yet for {SEASON}.")
-    sys.exit(0)
-
-df = pd.concat(frames, ignore_index=True).drop_duplicates(subset=["GAME_ID", "GAME_EVENT_ID"])
+gf = leaguegamefinder.LeagueGameFinder(league_id_nullable=LEAGUE_ID, season_nullable=SEASON).get_data_frames().pop(0)
+team_rows = gf[gf["TEAM_ABBREVIATION"].str.len() == 3][["TEAM_ID", "TEAM_ABBREVIATION", "TEAM_NAME"]].drop_duplicates(subset=["TEAM_ID"])
 
 def empty_zones():
-    return {z: [0, 0] for z in ZONES}
+    return {z: {"m": 0, "a": 0} for z in ZONES}
 
 teams = {}
 players = {}
 lg_zones = empty_zones()
+tot_shots = 0
 
-for _, r in df.iterrows():
-    x = float(r["LOC_X"])
-    y = float(r["LOC_Y"])
-    is_3 = "3PT" in str(r["SHOT_TYPE"])
-    made = int(r["SHOT_MADE_FLAG"])
-    z = classify_zone(x, y, is_3)
+for _, tr in team_rows.iterrows():
+    tid = int(tr["TEAM_ID"])
+    ab = str(tr["TEAM_ABBREVIATION"]).strip()
+    tname = str(tr["TEAM_NAME"]).strip()
+    teams[str(tid)] = {"id": str(tid), "abbrev": ab, "name": tname, "zones": empty_zones()}
 
-    lg_zones[z][0] += made
-    lg_zones[z][1] += 1
+    frames = []
+    for stype in ["Showcase", "Regular Season"]:
+        try:
+            res = shotchartdetail.ShotChartDetail(
+                team_id=tid,
+                player_id=0,
+                league_id=LEAGUE_ID,
+                season_nullable=SEASON,
+                season_type_all_star=stype,
+                context_measure_simple="FGA",
+            ).get_data_frames()
+            if res:
+                df_part = res.pop(0)
+                if not df_part.empty:
+                    frames.append(df_part)
+            time.sleep(0.4)
+        except Exception:
+            continue
 
-    tm_id = str(r["TEAM_ID"])
-    tm_name = str(r["TEAM_NAME"])
-    if tm_id not in teams:
-        teams[tm_id] = {"id": tm_id, "name": tm_name, "zones": empty_zones()}
-    teams[tm_id]["zones"][z][0] += made
-    teams[tm_id]["zones"][z][1] += 1
+    if not frames:
+        continue
 
-    pid = str(r["PLAYER_ID"])
-    pname = str(r["PLAYER_NAME"])
-    if pid not in players:
-        players[pid] = {"id": pid, "name": pname, "team": tm_name, "zones": empty_zones()}
-    players[pid]["zones"][z][0] += made
-    players[pid]["zones"][z][1] += 1
+    df = pd.concat(frames, ignore_index=True).drop_duplicates(subset=["GAME_ID", "GAME_EVENT_ID"])
+    tot_shots += len(df)
+    for _, r in df.iterrows():
+        x = float(r["LOC_X"])
+        y = float(r["LOC_Y"])
+        is_3 = "3PT" in str(r["SHOT_TYPE"])
+        made = int(r["SHOT_MADE_FLAG"])
+        z = classify_zone(x, y, is_3)
 
-try:
-    ros = json.load(open(f"data/gleague_roster_{SEASON}.json", encoding="utf-8"))
-    n2t = ros.get("nameToTeam", {})
-    for p in players.values():
-        ab = n2t.get(p["name"].lower())
-        if ab:
-            p["abbrev"] = ab
-            for t in teams.values():
-                if t["name"] == p["team"]:
-                    t["abbrev"] = ab
-except Exception:
-    pass
+        lg_zones[z]["m"] += made
+        lg_zones[z]["a"] += 1
+        teams[str(tid)]["zones"][z]["m"] += made
+        teams[str(tid)]["zones"][z]["a"] += 1
+
+        pid = str(r["PLAYER_ID"])
+        pname = str(r["PLAYER_NAME"])
+        if pid not in players:
+            players[pid] = {"id": pid, "name": pname, "team": tname, "abbrev": ab, "zones": empty_zones()}
+        players[pid]["zones"][z]["m"] += made
+        players[pid]["zones"][z]["a"] += 1
+
+# Convert {"m": m, "a": a} to [m, a] lists for compact JSON
+def pack_zones(zdict):
+    return {z: list((zdict[z]["m"], zdict[z]["a"])) for z in ZONES}
 
 out = {
     "season": SEASON,
-    "leagueZones": lg_zones,
-    "teams": list(teams.values()),
-    "players": list(players.values()),
+    "leagueZones": pack_zones(lg_zones),
+    "teams": [{"id": t["id"], "abbrev": t["abbrev"], "name": t["name"], "zones": pack_zones(t["zones"])} for t in teams.values()],
+    "players": [{"id": p["id"], "name": p["name"], "team": p["team"], "abbrev": p["abbrev"], "zones": pack_zones(p["zones"])} for p in players.values()],
 }
 
 out_path = f"data/league_lite_shots_{SEASON}.json"
 with open(out_path, "w", encoding="utf-8") as f:
     json.dump(out, f)
 
-print(f"Saved {len(teams)} teams & {len(players)} players ({len(df)} total G League shots) to {out_path}!")
-
+print(f"Saved {len(teams)} teams & {len(players)} players ({tot_shots} total shots) to {out_path}!")

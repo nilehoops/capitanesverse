@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>G League Team Profile — Lite Shot Chart</title>
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="inseason.css">
+<style>
+  body { margin:0; padding:10px 14px; background:var(--bg); color:var(--text); }
+  .tm-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; border-bottom:2px solid var(--blue); padding-bottom:6px; margin-bottom:10px; gap:8px; }
+  .tm-title { font-family:'Oswald',sans-serif; font-weight:700; font-size:20px; color:var(--blue); }
+  .tm-nav { display:flex; gap:10px; align-items:center; font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; }
+  .tm-grid { display:grid; grid-template-columns:1.35fr 0.65fr; gap:12px; align-items:start; }
+  .tm-card { border:1px solid var(--border); padding:8px 10px; background:var(--bg); }
+  .tm-card-title { font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; color:var(--blue); margin-bottom:4px; }
+  .tm-shot-wrap { display:flex; gap:10px; align-items:flex-start; }
+  .tm-svg-box { flex:0 0 48%; max-width:320px; }
+  .tm-tbl-box { flex:1; min-width:0; overflow-x:auto; }
+  .tm-roster-grid { display:grid; grid-template-columns:1fr 1fr; gap:4px; font-size:11px; }
+  .tm-rlink { display:block; padding:4px 6px; border:1px solid var(--border); background:var(--surface); color:var(--text); text-decoration:none; font-weight:600; }
+  .tm-rlink:hover { border-color:var(--blue); color:var(--blue); }
+  @media (max-width: 960px) { .tm-grid, .tm-shot-wrap { grid-template-columns:1fr; flex-direction:column; } }
+</style>
+</head>
+<body>
+<div class="tm-head">
+  <div>
+    <div id="tmName" class="tm-title">Loading G League Team...</div>
+    <div id="tmSub" style="font-size:11px;color:var(--dim);font-weight:600;"></div>
+  </div>
+  <div class="tm-nav">
+    <select id="tmSeason" onchange="loadTeamLite()" style="font-family:'Lora',serif;font-size:11px;padding:2px 6px;border:1px solid var(--border);">
+      <option value="2026-27" selected>2026-27</option>
+      <option value="2025-26">2025-26</option>
+    </select>
+    <select id="tmPicker" onchange="switchTeam(this.value)" style="font-family:'Lora',serif;font-size:11px;padding:2px 6px;border:1px solid var(--border);"></select>
+    <a href="shotcharts.html" style="color:var(--blue);">Full MXC Shot Charts</a>
+    <a href="inseason.html" style="color:var(--blue);">Dashboard</a>
+    <a href="index.html" style="color:var(--muted);">← Home</a>
+  </div>
+</div>
+<div id="tmBody" class="tm-grid"></div>
+<script>
+const ZONES_CFG = {
+  "Restricted Area":        { lx: 0,    ly: 18,  path: "M -40 -47.5 L -40 0 A 40 40 0 0 0 40 0 L 40 -47.5 Z" },
+  "Paint (Non-RA)":         { lx: 0,    ly: 98,  path: "M -80 -47.5 L -80 142.5 L 80 142.5 L 80 -47.5 L 40 -47.5 L 40 0 A 40 40 0 0 1 -40 0 L -40 -47.5 Z" },
+  "Left Baseline Mid":      { lx: -145, ly: 20,  path: "M -220 -47.5 L -80 -47.5 L -80 85 L -220 85 Z" },
+  "Right Baseline Mid":     { lx: 145,  ly: 20,  path: "M 80 -47.5 L 220 -47.5 L 220 85 L 80 85 Z" },
+  "Left Elbow / Wing Mid":  { lx: -135, ly: 145, path: "M -220 85 L -80 85 L -80 142.5 L -75 225 L -165 170 A 237.5 237.5 0 0 1 -220 92.5 Z" },
+  "Right Elbow / Wing Mid": { lx: 135,  ly: 145, path: "M 80 85 L 220 85 L 220 92.5 A 237.5 237.5 0 0 1 165 170 L 75 225 L 80 142.5 Z" },
+  "Center Mid-Range":       { lx: 0,    ly: 190, path: "M -80 142.5 L 80 142.5 L 75 225 A 237.5 237.5 0 0 1 -75 225 Z" },
+  "Left Corner 3":          { lx: -235, ly: 22,  path: "M -250 -47.5 L -220 -47.5 L -220 92.5 L -250 92.5 Z" },
+  "Right Corner 3":         { lx: 235,  ly: 22,  path: "M 220 -47.5 L 250 -47.5 L 250 92.5 L 220 92.5 Z" },
+  "Left Wing 3":            { lx: -175, ly: 255, path: "M -250 92.5 L -220 92.5 A 237.5 237.5 0 0 0 -165 170 L -85 222 L -115 422.5 L -250 422.5 Z" },
+  "Right Wing 3":           { lx: 175,  ly: 255, path: "M 220 92.5 L 250 92.5 L 250 422.5 L 115 422.5 L 85 222 L 165 170 A 237.5 237.5 0 0 0 220 92.5 Z" },
+  "Center / Top 3":         { lx: 0,    ly: 300, path: "M -85 222 A 237.5 237.5 0 0 0 85 222 L 115 422.5 L -115 422.5 Z" }
+};
+function getHeatColor(diff) {
+  if (diff >= 5) return { fill: '#D81F2A', txt: '#FFFFFF' };
+  if (diff >= 2) return { fill: '#F07D7B', txt: '#111111' };
+  if (diff > -2) return { fill: '#EAECEF', txt: '#111111' };
+  if (diff > -5) return { fill: '#7BAFD4', txt: '#111111' };
+  return { fill: '#004B8D', txt: '#FFFFFF' };
+}
+function switchTeam(val) {
+  const url = new URL(window.location);
+  url.searchParams.set('team', val);
+  window.history.replaceState({}, '', url);
+  loadTeamLite();
+}
+async function loadTeamLite() {
+  const szn = document.getElementById('tmSeason').value;
+  const params = new URLSearchParams(window.location.search);
+  const queryTeam = (params.get('team') || 'MXC').toLowerCase();
+  const [liteResp, rosResp, idxResp] = await Promise.all([
+    fetch(`data/league_lite_shots_${szn}.json?v=` + Date.now()),
+    fetch(`data/gleague_roster_2026-27.json?v=` + Date.now()),
+    fetch(`data/players_index.json?v=` + Date.now()),
+  ]);
+  if (!liteResp.ok) { document.getElementById('tmName').textContent = `No ${szn} shot data available yet`; return; }
+  const lite = await liteResp.json();
+  const ros = rosResp.ok ? await rosResp.json() : { players: [] };
+  const idx = idxResp.ok ? await idxResp.json() : [];
+  const nameToId = {};
+  (Array.isArray(idx) ? idx : Object.values(idx)).forEach(p => { if (p && p.name && p.id) nameToId[p.name.toLowerCase()] = p.id; });
+  const teams = (lite.teams || []).sort((a, b) => a.name.localeCompare(b.name));
+  const picker = document.getElementById('tmPicker');
+  picker.innerHTML = teams.map(t => `<option value="${t.abbrev || t.id}">${t.name}</option>`).join('');
+  const active = teams.find(t => (t.abbrev || '').toLowerCase() === queryTeam || t.id === queryTeam || t.name.toLowerCase().includes(queryTeam)) || teams.find(t => (t.abbrev || '') === 'MXC') || teams.slice(0, 1).pop();
+  if (!active) return;
+  picker.value = active.abbrev || active.id;
+  const lgZ = lite.leagueZones || {};
+  let totFgm = 0, totFga = 0, fg3m = 0, fg3a = 0;
+  Object.entries(active.zones).forEach(([z, pair]) => {
+    const m = pair.slice(0, 1).pop() || 0, a = pair.slice(1, 2).pop() || 0;
+    totFgm += m; totFga += a;
+    if (z.includes('3')) { fg3m += m; fg3a += a; }
+  });
+  const fg2m = totFgm - fg3m, fg2a = totFga - fg3a;
+  const efg = totFga ? (((totFgm + 0.5 * fg3m) / totFga) * 100).toFixed(1) : '0.0';
+  const threePar = totFga ? ((fg3a / totFga) * 100).toFixed(1) : '0.0';
+  document.getElementById('tmName').textContent = `${active.name} (${active.abbrev || ''}) — Lite Shot Profile`;
+  document.getElementById('tmSub').textContent = `${szn} Season · FGM-FGA: ${totFgm}-${totFga} (${totFga ? ((totFgm/totFga)*100).toFixed(1) : 0}%) · eFG%: ${efg}% · 2PT: ${fg2m}-${fg2a} (${fg2a ? ((fg2m/fg2a)*100).toFixed(1) : 0}%) · 3PT: ${fg3m}-${fg3a} (${fg3a ? ((fg3m/fg3a)*100).toFixed(1) : 0}%) · 3PAr: ${threePar}%`;
+  let polySvg = '', lblSvg = '', rowsHtml = '';
+  Object.entries(ZONES_CFG).forEach(([z, cfg]) => {
+    const pair = active.zones[z] || new Array(0, 0), lpair = lgZ[z] || new Array(0, 0);
+    const m = pair.slice(0, 1).pop() || 0, a = pair.slice(1, 2).pop() || 0;
+    const lm = lpair.slice(0, 1).pop() || 0, la = lpair.slice(1, 2).pop() || 0;
+    const pct = a > 0 ? (m / a) * 100 : 0;
+    const lgPct = la > 0 ? (lm / la) * 100 : 40;
+    const diff = a > 0 ? (pct - lgPct) : 0;
+    const share = totFga > 0 ? (a / totFga) * 100 : 0;
+    const c = a > 0 ? getHeatColor(diff) : { fill: '#F4F4F4', txt: '#888' };
+    const isCorner = z.includes('Corner');
+    polySvg += `<path d="${cfg.path}" fill="${c.fill}" stroke="#FFFFFF" stroke-width="1.5"/>`;
+    lblSvg += `<g transform="translate(${cfg.lx},${cfg.ly})" pointer-events="none"><text x="0" y="-3" text-anchor="middle" font-family="Oswald,sans-serif" font-size="${isCorner ? 12 : 15}" font-weight="700" fill="${c.txt}">${a ? pct.toFixed(1)+'%' : '—'}</text><text x="0" y="9" text-anchor="middle" font-family="Oswald,sans-serif" font-size="${isCorner ? 9 : 10.5}" font-weight="600" fill="${c.txt}">${isCorner ? share.toFixed(0)+'% sh' : m+'/'+a+' ('+share.toFixed(0)+'%)'}</text></g>`;
+    const dCol = diff >= 2 ? 'var(--green)' : (diff <= -2 ? 'var(--red)' : 'var(--dim)');
+    rowsHtml += `<tr><td style="padding:2px 5px;border-bottom:1px solid var(--border);font-weight:600;">${z}</td><td style="padding:2px 5px;border-bottom:1px solid var(--border);text-align:right;">${m}-${a}</td><td style="padding:2px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${a ? pct.toFixed(1)+'%' : '—'}</td><td style="padding:2px 5px;border-bottom:1px solid var(--border);text-align:right;">${share.toFixed(1)}%</td><td style="padding:2px 5px;border-bottom:1px solid var(--border);text-align:right;color:${dCol};font-weight:700;">${a ? (diff>=0?'+':'')+diff.toFixed(1)+'%' : '—'}</td></tr>`;
+  });
+  const courtLines = `<g fill="none" stroke="#222" stroke-width="1.5"><rect x="-250" y="-47.5" width="500" height="470"/><rect x="-80" y="-47.5" width="160" height="190"/><circle cx="0" cy="142.5" r="60"/><path d="M -220 -47.5 L -220 92.5 A 237.5 237.5 0 0 0 220 92.5 L 220 -47.5"/><circle cx="0" cy="0" r="7.5" stroke="#D81F2A" stroke-width="2"/></g>`;
+  const teamRoster = (ros.players || []).filter(p => p.team === active.abbrev);
+  const rosterHtml = teamRoster.length ? teamRoster.map(p => {
+    const pid = nameToId[p.name.toLowerCase()];
+    const href = pid ? `player.html?id=${encodeURIComponent(pid)}` : `player.html?name=${encodeURIComponent(p.name)}`;
+    return `<a class="tm-rlink" href="${href}">${p.name}</a>`;
+  }).join('') : '<div style="color:var(--muted);font-size:11px;">No roster entries mapped yet.</div>';
+  document.getElementById('tmBody').innerHTML = `<div class="tm-card"><div class="tm-card-title">12-Zone Shooting Heatmap (Colored vs. G League Average)</div><div class="tm-shot-wrap"><div class="tm-svg-box"><svg viewBox="-250 -47.5 500 470" style="width:100%;height:auto;display:block;border:1px solid var(--border);background:#FAFAFA;">${polySvg}${courtLines}${lblSvg}</svg></div><div class="tm-tbl-box"><table style="width:100%;border-collapse:collapse;font-size:10.5px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:3px 5px;text-align:left;border-bottom:1px solid var(--border);">Zone</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">FGM-FGA</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">FG%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">Share%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">vs LG</th></tr></thead><tbody>${rowsHtml}</tbody></table></div></div></div><div class="tm-card"><div class="tm-card-title">Active 2026–27 Roster (${teamRoster.length})</div><div class="tm-roster-grid">${rosterHtml}</div></div>`;
+}
+loadTeamLite();
+</script>
+</body>
+</html>

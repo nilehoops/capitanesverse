@@ -23,15 +23,13 @@ jobs:
       - name: Install dependencies
         run: pip install nba_api pandas requests
 
-      - name: Update 2026-27 Lineups & Shot Charts
-        run: |
-          python pipeline/build_exact_lineups.py 2026-27
-          python pipeline/build_shot_charts.py 2026-27
+      - name: Update 2026-27 Shot Charts & Lineup Data
+        run: python pipeline/build_shot_charts.py 2026-27
 
       - name: Commit updated data files
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@://github.com"
           git add data/
-          git diff --staged --quiet || git commit -m "chore: update 2026-27 Capitanes PBP lineups & shot charts"
+          git diff --staged --quiet || git commit -m "chore: update 2026-27 Capitanes shot charts & lineup data"
           git push

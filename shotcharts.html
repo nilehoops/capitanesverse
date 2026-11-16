@@ -1,127 +1,115 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Capitanes Shot Charts — Individual &amp; On/Off</title>
+<title>Capitanes Shot Charts</title>
 <link href="https://googleapis.com" rel="stylesheet">
 <link rel="stylesheet" href="css/inseason.css">
 <style>
-  .sc-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--surface);
-  }
-  .sc-control {
-    display: flex;
-    flex-direction: column;
-    gap: 3px;
-  }
-  .sc-control label {
-    font-family: 'Oswald', sans-serif;
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--muted);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-  }
-  .sc-control select {
-    font-family: 'Lora', serif;
-    font-size: 12px;
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    background: var(--bg);
-    color: var(--text);
-  }
-  .sc-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
-    gap: 20px;
-    padding: 16px;
-  }
-  .sc-card {
-    border: 1px solid var(--border);
-    padding: 12px;
-    background: var(--bg);
-  }
-  .sc-card-title {
-    font-family: 'Oswald', sans-serif;
-    font-weight: 700;
-    font-size: 18px;
-    color: var(--blue);
-    margin-bottom: 2px;
-  }
-  .sc-card-sub {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--dim);
-    margin-bottom: 10px;
-  }
+  html, body { margin:0; padding:0; max-width:100vw; overflow-x:hidden; background:var(--bg); }
+  .sc-top-bar { display:flex; align-items:stretch; justify-content:space-between; padding:4px 8px; border-bottom:1px solid var(--border); background:var(--bg); gap:8px; }
+  .sc-title-box { display:flex; flex-direction:column; justify-content:center; min-width:112px; border-right:1px solid var(--border); padding-right:8px; }
+  .sc-title-main { font-family:'Oswald',sans-serif; font-weight:700; font-size:15px; color:var(--blue); line-height:1.1; }
+  .sc-nav-links { font-family:'Oswald',sans-serif; font-weight:700; font-size:10px; display:flex; gap:7px; margin-top:4px; }
+
+  /* 2-Row Player Headshot Grid */
+  .sc-roster-strip { display:grid; grid-template-rows:repeat(2, auto); grid-auto-flow:column; gap:3px; align-items:center; overflow-x:auto; flex:0 1 auto; }
+  .sc-pcard { width:48px; border:1px solid var(--border); padding:2px 1px; text-align:center; background:var(--bg); }
+  .sc-pcard.is-on { border:2px solid var(--green); background:rgba(24,175,74,0.08); }
+  .sc-pcard.is-off { border:2px solid var(--red); background:rgba(216,31,42,0.08); }
+  .sc-pcard img, .sc-pcard svg { width:20px; height:20px; object-fit:cover; border-radius:50%; display:block; margin:0 auto 1px; background:var(--surface); }
+  .sc-pname { font-size:8px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; display:block; margin-bottom:1px; cursor:pointer; }
+  .sc-pname:hover { color:var(--blue); text-decoration:underline; }
+  .sc-toggles { display:flex; gap:1px; }
+  .sc-tbtn { flex:1; font-family:'Oswald',sans-serif; font-size:7px; font-weight:700; padding:1px 0; border:1px solid var(--border); background:var(--surface); color:var(--muted); cursor:pointer; }
+  .sc-tbtn.on-active { background:var(--green); color:#fff; border-color:var(--green); }
+  .sc-tbtn.off-active { background:var(--red); color:#fff; border-color:var(--red); }
+
+  /* Center Filters + Quick Splits */
+  .sc-mid-controls { display:flex; flex-direction:column; justify-content:center; gap:4px; border-left:1px solid var(--border); padding-left:8px; flex:0 1 auto; }
+  .sc-ctrl-row { display:flex; flex-wrap:wrap; gap:4px 5px; align-items:center; }
+  .sc-control { display:flex; flex-direction:column; gap:0; position:relative; }
+  .sc-control label { font-family:'Oswald',sans-serif; font-size:7.5px; font-weight:700; color:var(--muted); letter-spacing:0.03em; text-transform:uppercase; }
+  .sc-control select, .sc-game-btn { font-family:'Lora',serif; font-size:9.5px; padding:1px 4px; border:1px solid var(--border); background:var(--surface); color:var(--text); cursor:pointer; text-align:left; }
+  .sc-game-menu { display:none; position:absolute; top:100%; left:0; width:260px; max-height:280px; overflow-y:auto; background:var(--bg); border:1px solid var(--border); box-shadow:0 4px 12px rgba(0,0,0,0.12); z-index:999; padding:4px; }
+  .sc-game-menu.open { display:block; }
+  .sc-game-row { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:2px 4px; border-bottom:1px solid var(--border); font-size:10px; }
+  .sc-gbtn { font-family:'Oswald',sans-serif; font-size:9px; font-weight:700; padding:0 5px; border:1px solid var(--border); background:var(--surface); color:var(--muted); cursor:pointer; }
+  .sc-gbtn.inc-active { background:var(--green); color:#fff; border-color:var(--green); }
+  .sc-gbtn.exc-active { background:var(--red); color:#fff; border-color:var(--red); }
+
+  .sc-split-group { display:flex; gap:2px; flex-wrap:wrap; }
+  .sc-pill { font-family:'Oswald',sans-serif; font-size:8.5px; font-weight:700; padding:2px 5px; border:1px solid var(--border); background:var(--surface); color:var(--blue); cursor:pointer; }
+  .sc-pill.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+
+  /* Top-Right Live Macro Summary */
+  .sc-top-macro { display:flex; flex-direction:column; justify-content:center; border-left:1px solid var(--border); padding-left:10px; min-width:295px; flex:1; background:var(--surface); padding:4px 8px; }
+
+  .sc-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:6px 8px; align-items:start; }
+  .sc-stack { display:flex; flex-direction:column; gap:8px; }
+  .sc-card { border:1px solid var(--border); padding:6px 8px; background:var(--bg); }
+  .sc-card-title { font-family:'Oswald',sans-serif; font-weight:700; font-size:13px; color:var(--blue); line-height:1.15; }
+  .sc-card-sub { font-size:10px; font-weight:600; color:var(--dim); margin:2px 0 5px; line-height:1.25; }
+  .sc-card-body { display:flex; gap:8px; align-items:flex-start; }
+  .sc-court-wrap { flex:0 0 46%; max-width:295px; }
+  .sc-table-wrap { flex:1; min-width:0; overflow-x:auto; }
+  .sc-svg-lbl { paint-order:stroke; stroke-width:2.5px; stroke-linejoin:round; }
+  @media (max-width: 1380px) { .sc-top-bar { flex-wrap:wrap; } }
+  @media (max-width: 1050px) { .sc-grid { grid-template-columns:1fr; } }
 </style>
 </head>
 <body>
+<div class="sc-top-bar">
+  <div class="sc-title-box">
+    <div class="sc-title-main">Capitanes Shot Charts</div>
+    <div class="sc-nav-links">
+      <a href="inseason.html" style="color:var(--blue);">← Dashboard</a>
+      <a href="index.html" style="color:var(--muted);">Home</a>
+      <a href="#" onclick="clearLineupToggles();return false;" style="color:var(--red);">Reset</a>
+    </div>
+  </div>
 
-<div class="page-header" style="display:flex;justify-content:space-between;align-items:center;">
-  <div>
-    <div class="page-title">Capitanes Shot Charts — Individual &amp; On/Off Court</div>
-    <div style="font-size:11px;color:var(--muted);margin-top:2px;">Play-by-Play (X, Y) Coordinates &amp; Lineup-Tagged Shot Locations</div>
+  <div id="scRosterStrip" class="sc-roster-strip"></div>
+
+  <div class="sc-mid-controls">
+    <div class="sc-ctrl-row">
+      <div class="sc-control"><label>Season</label><select id="scSeason" onchange="loadShotSeason()"><option value="2025-26" selected>2025-26</option><option value="2026-27">2026-27</option></select></div>
+      <div class="sc-control"><label>Mode</label><select id="scMode" onchange="renderShotPage()"><option value="auto">Auto</option><option value="ind">Individual</option><option value="team_off">Capitanes Offense</option><option value="team_def">Capitanes Defense</option></select></div>
+      <div class="sc-control"><label>Shooter</label><select id="scPlayer" onchange="onShooterSelect()" style="max-width:115px;"><option value="ALL">All Capitanes</option></select></div>
+      <div class="sc-control"><label>Baseline</label><select id="scBaseline" onchange="renderShotPage()"><option value="lg" selected>vs. LG Avg</option><option value="team">vs. MXC Avg</option><option value="freq">Share%</option></select></div>
+      <div class="sc-control"><label>Style</label><select id="scView" onchange="renderShotPage()"><option value="zones" selected>Zones</option><option value="hybrid">Zones+Dots</option><option value="dots">Dots</option></select></div>
+      <div class="sc-control">
+        <label>Games</label>
+        <button type="button" id="scGameBtn" class="sc-game-btn" onclick="toggleGameMenu(event)">All Games (51) ▾</button>
+        <div id="scGameMenu" class="sc-game-menu" onclick="event.stopPropagation()"></div>
+      </div>
+      <div class="sc-control"><label>Last N</label><select id="scLastN" onchange="renderShotPage()"><option value="ALL">Season</option><option value="3">Last 3</option><option value="5">Last 5</option><option value="10">Last 10</option><option value="15">Last 15</option></select></div>
+      <div class="sc-control"><label>Shot Type</label><select id="scShotType" onchange="renderShotPage()"><option value="ALL">All</option><option value="RIM">Rim</option><option value="CATCH">Catch&amp;Shoot</option><option value="PULLUP">Pullup</option><option value="FLOATER">Floater</option></select></div>
+    </div>
+    <div class="sc-ctrl-row">
+      <div class="sc-control">
+        <label>Quick Splits</label>
+        <div class="sc-split-group">
+          <button type="button" class="sc-pill" data-grp="seg" data-val="Regular Season" onclick="toggleQuickPill(this)">Reg Season</button>
+          <button type="button" class="sc-pill" data-grp="seg" data-val="Showcase" onclick="toggleQuickPill(this)">Showcase</button>
+          <button type="button" class="sc-pill" data-grp="loc" data-val="Home" onclick="toggleQuickPill(this)">Home</button>
+          <button type="button" class="sc-pill" data-grp="loc" data-val="Away" onclick="toggleQuickPill(this)">Away</button>
+          <button type="button" class="sc-pill" data-grp="wl" data-val="W" onclick="toggleQuickPill(this)">Wins</button>
+          <button type="button" class="sc-pill" data-grp="wl" data-val="L" onclick="toggleQuickPill(this)">Losses</button>
+          <button type="button" class="sc-pill" data-grp="per" data-val="H1" onclick="toggleQuickPill(this)">1H</button>
+          <button type="button" class="sc-pill" data-grp="per" data-val="H2" onclick="toggleQuickPill(this)">2H</button>
+          <button type="button" class="sc-pill" data-grp="per" data-val="4" onclick="toggleQuickPill(this)">Q4</button>
+          <button type="button" class="sc-pill" onclick="resetAllFilters()" style="color:var(--red);">All</button>
+        </div>
+      </div>
+    </div>
   </div>
-  <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;display:flex;gap:12px;">
-    <a href="inseason.html" style="color:var(--blue);">← In-Season Dashboard</a>
-    <a href="index.html" style="color:var(--muted);">Home</a>
-  </div>
+
+  <div id="scTopMacro" class="sc-top-macro"></div>
 </div>
 
-<div class="sc-toolbar">
-  <div class="sc-control">
-    <label>Season</label>
-    <select id="scSeason" onchange="loadShotSeason()">
-      <option value="2025-26" selected>2025-26</option>
-      <option value="2026-27">2026-27</option>
-    </select>
-  </div>
-  <div class="sc-control">
-    <label>Player</label>
-    <select id="scPlayer" onchange="renderShotPage()">
-      <option value="ALL">All Capitanes (Team)</option>
-    </select>
-  </div>
-  <div class="sc-control">
-    <label>Chart Mode</label>
-    <select id="scMode" onchange="renderShotPage()">
-      <option value="ind">Individual Shooter (Single Court)</option>
-      <option value="onoff_off">On-Court vs. Off-Court Offense (Side-by-Side)</option>
-      <option value="onoff_def">On-Court vs. Off-Court Defense (Side-by-Side)</option>
-    </select>
-  </div>
-  <div class="sc-control">
-    <label>Display Style</label>
-    <select id="scView" onchange="renderShotPage()">
-      <option value="dots">Made / Missed Shot Dots</option>
-      <option value="zones">Zone Efficiency &amp; Frequency</option>
-    </select>
-  </div>
-  <div class="sc-control">
-    <label>Period</label>
-    <select id="scPeriod" onchange="renderShotPage()">
-      <option value="ALL">Full Game</option>
-      <option value="1">Q1</option>
-      <option value="2">Q2</option>
-      <option value="3">Q3</option>
-      <option value="4">Q4</option>
-      <option value="OT">OT</option>
-    </select>
-  </div>
-</div>
-
-<div id="scGrid" class="sc-grid">
-  <div style="color:var(--muted);font-size:12px;">Loading shot chart data...</div>
-</div>
-
-<script src="js/shot-charts.js"></script>
+<div id="scGrid" class="sc-grid"><div style="color:var(--muted);font-size:12px;">Loading shot chart data...</div></div>
+<script src="js/shot-charts.js?v=71"></script>
 </body>
 </html>

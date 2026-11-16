@@ -606,7 +606,7 @@
     </div>
 
     <label class="addplayer-onroster"><input id="ap_onRoster" type="checkbox"> On Current Roster</label>
-    <label class="addplayer-onroster"><input id="ap_trainingCampInvite" type="checkbox"> Training Camp Invite</label>
+    
 
     <div class="addplayer-group">
       <button type="button" class="addplayer-group-toggle" data-target="apg-bio">+ Biography</button>
@@ -716,10 +716,7 @@ function renderRoster(players) {
       nameSlots.push('');
     }
   }
-  // Training camp invites: 3 extra slots, visually distinct (blue box,
-  // yellow letters — inverse of the regular roster's dark box / gray text)
-  // so they read as a different status at a glance, not just more roster spots.
-  for (let i = 0; i < 3; i++) {
+  
     const c = camp[i];
     if (c) {
       photoSlots.push(c.photoUrl ? `<img class="camp-slot" src="${c.photoUrl}" alt="${c.name}">` : `<div class="noimg camp-slot">${getInitials(c.name)}</div>`);

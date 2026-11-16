@@ -10386,7 +10386,7 @@
       "griftRatePctile": 0.032,
       "jumperRate": 0.6485
     },
-    "onRoster": true,
+    "onRoster": false,
     "biography": {
       "weight": "250 lbs",
       "hometown": "Alexandria",
@@ -36288,7 +36288,7 @@
       "jumperRate": 0.745
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -36382,7 +36382,7 @@
       "jumperRate": 0.7275
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -36476,7 +36476,7 @@
       "jumperRate": 0.7241
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -36570,7 +36570,7 @@
       "jumperRate": 0.5432
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -36664,7 +36664,7 @@
       "jumperRate": 0.6783
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -36758,7 +36758,7 @@
       "jumperRate": 0.5988
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -36852,7 +36852,7 @@
       "jumperRate": 0.7807
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -36946,7 +36946,7 @@
       "jumperRate": 0.7877
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -37134,7 +37134,7 @@
       "jumperRate": 0.7
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -37228,7 +37228,7 @@
       "jumperRate": 0.7748
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -37416,7 +37416,7 @@
       "jumperRate": 0.6088
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -37792,7 +37792,7 @@
       "jumperRate": 0.5657
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -38168,7 +38168,7 @@
       "jumperRate": 0.6246
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -38356,7 +38356,7 @@
       "jumperRate": 0.4356
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -38638,7 +38638,7 @@
       "jumperRate": 0.8821
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -38732,7 +38732,7 @@
       "jumperRate": 0.4174
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -39860,7 +39860,7 @@
       "jumperRate": 0.7599
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -40518,7 +40518,7 @@
       "jumperRate": 0.7212
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -40988,7 +40988,7 @@
       "jumperRate": 0.4407
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -41082,7 +41082,7 @@
       "jumperRate": 0.6631
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {
@@ -41176,7 +41176,7 @@
       "jumperRate": 0.564
     },
     "biography": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "videos": [
       {

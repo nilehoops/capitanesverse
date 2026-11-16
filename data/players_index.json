@@ -58,7 +58,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Rio Grande Valley Vipers (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4702680.png"
   },
   {
@@ -675,7 +675,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Santa Cruz Warriors (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -759,7 +759,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Salt Lake City Stars (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -946,7 +946,7 @@
     "latino": false,
     "availabilitySimple": "yes",
     "availabilityNote": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -988,7 +988,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/ Astros de Jalisco (Mexican LNBP), wouldn't be available until Dec. 8/12",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5177104.png",
     "photoAttempted": true
   },
@@ -1009,7 +1009,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ LA Lakers 8/24",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -1155,7 +1155,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Boston Celtics 9/14",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -1218,7 +1218,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "NBA Two-Way \u2014 Miami Heat 6/25",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -1239,7 +1239,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Selected by Cleveland Charge in G League International Draft 7/2",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -1469,7 +1469,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Bez Mbeng 9/8",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -1511,7 +1511,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ 76ers 8/14",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -1679,8 +1679,8 @@
     "latino": false,
     "availabilitySimple": "yes",
     "availabilityNote": "Drafted by MEX in 2026 G League International Draft 7/2",
-    "onRoster": true,
-    "trainingCampInvite": true,
+    "onRoster": false,
+    "trainingCampInvite": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4702739.png"
   },
   {
@@ -1721,7 +1721,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "NCAA 5 in 5 eligibility 8/10",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -2321,7 +2321,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/CLC (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://www.proballers.com/media/cache/headshot_600/player/headshot/234241.png"
   },
   {
@@ -2341,7 +2341,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed an E10 w/ Brooklyn Nets 8/15",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -2487,7 +2487,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Reportedly signing w/ Real Madrid 7/29",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -2508,7 +2508,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Iowa Wolves (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -2590,7 +2590,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Returning rights traded to Salt Lake City 9/19",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4431763.png"
   },
   {
@@ -2610,7 +2610,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "NBA Two-Way \u2014 Orlando Magic 7/2",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -2631,7 +2631,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Team currently uninterested due to intel. 8/16",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/combiner/i?img=/i/headshots/mens-college-basketball/players/full/4432916.png&w=350&h=254"
   },
   {
@@ -2753,7 +2753,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "NBA Two-Way \u2014 Los Angeles Lakers 7/6",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -2982,7 +2982,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Agency expressed disintrest at current time 8/7",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -3087,7 +3087,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Agency expressed disinterest at current time 8/7",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -3485,7 +3485,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Miami Heat 8/10",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -3548,7 +3548,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Valley Suns (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -3631,7 +3631,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Rights traded to Memphis Hustle, will report to training camp 9/10",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -3756,7 +3756,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Long Island Nets (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -3778,7 +3778,7 @@
     "availabilitySimple": "yes",
     "availabilityNote": null,
     "onRoster": false,
-    "trainingCampInvite": true,
+    "trainingCampInvite": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5107797.png",
     "photoAttempted": true
   },
@@ -3841,7 +3841,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Sacramento Kings 9/12",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5176737.png"
   },
   {
@@ -4238,7 +4238,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Osceola Magic (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -4259,7 +4259,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed a E10 w/ Utah Jazz 8/8",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -4529,7 +4529,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Stockton Kings (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -4675,7 +4675,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/ Boston Celtics 7/11",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -4738,7 +4738,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Traded to Stockton, signing an E10 w/ Sacramento 8/19",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -4759,7 +4759,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Jazz traded for his rights after playing SL with them. Possible E10/2way 8/21",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -4822,7 +4822,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "NBA Two-Way \u2014 Phoenix Suns 7/6",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -4864,7 +4864,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/ Detroit Pistons 9/15",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5011,7 +5011,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Traded to Noblesville Boom (G League) 9/1",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4683833.png"
   },
   {
@@ -5031,7 +5031,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signing E10 w/ Denver Nuggets 9/22",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5052,7 +5052,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Recieved offers from Barcelona and Baskonia. 8/2",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5177,7 +5177,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Memphis Hustle (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4897715.png",
     "photoAttempted": true
   },
@@ -5281,7 +5281,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Selected by Cleveland Charge in G League International Draft 7/2",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5176274.png",
     "photoAttempted": true
   },
@@ -5302,7 +5302,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/ Milwaukee Herd (G League) 9/16",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5407,7 +5407,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Exhibit Ten \u2014 Detroit Pistons 6/25",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5490,7 +5490,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/76ers 9/1",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5511,7 +5511,7 @@
     "latino": false,
     "availabilitySimple": "unknown",
     "availabilityNote": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5553,7 +5553,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ LA Lakers (NBA) 9/17",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5742,7 +5742,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "NBA Two-Way \u2014 Sacramento Kings 7/8",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5784,7 +5784,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "NBA Two-Way \u2014 Minnesota Timberwolves 7/2",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5847,7 +5847,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Golden State (NBA) 9/15",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5868,7 +5868,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Austin Spurs (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5889,7 +5889,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Motor City Cruise (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5910,7 +5910,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Traded to Go-Go, possibly signing E10/2Way 8/29",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5931,7 +5931,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed an E10 w/ Sacramento  Kings 8/19",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5952,7 +5952,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Rip City Remix (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5973,7 +5973,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/Utah Jazz 8/31",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -5994,7 +5994,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Capital City Go-Go (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6036,7 +6036,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Motor City Cruise (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/combiner/i?img=/i/headshots/mens-college-basketball/players/full/4397113.png&w=350&h=254"
   },
   {
@@ -6056,7 +6056,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Stockton Kings (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6098,7 +6098,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Agent showed disinterest in coming to MEX 8/20",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6182,7 +6182,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Avalaible, but team currently uninterested due to intel. 8/6",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://cdn.nba.com/headshots/nba/latest/1040x760/1630554.png"
   },
   {
@@ -6265,7 +6265,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Charlotte Hornets 8/7",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6307,7 +6307,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Wisconsin Herd (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6370,7 +6370,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Valley Suns (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6391,7 +6391,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Indiana Pacers 6/26",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6643,7 +6643,7 @@
     "latino": true,
     "availabilitySimple": "no",
     "availabilityNote": "Signed tw-way tender w/ Toronto Raptors 6/25",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6789,7 +6789,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Long Island Nets (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6894,7 +6894,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Osceola Magic (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6915,7 +6915,7 @@
     "latino": false,
     "availabilitySimple": "unknown",
     "availabilityNote": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -6936,7 +6936,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Greensboro Swarm (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -7123,7 +7123,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "signed an E10 w/ Indiana Pacers 6/25",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -7165,7 +7165,7 @@
     "latino": false,
     "availabilitySimple": "unknown",
     "availabilityNote": null,
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -7309,7 +7309,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Sources tell me he will return to Iowa Wolves for the 27 season. 8/1",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -7682,7 +7682,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Oklahoma City Blue (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -7955,7 +7955,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Coachella Valley Lakers (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -8018,7 +8018,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Osceola Magic (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4589481.png"
   },
   {
@@ -8206,7 +8206,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Texas Legends (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -8227,7 +8227,7 @@
     "latino": false,
     "availabilitySimple": "no",
     "availabilityNote": "Signed E10 w/ Charlotte Hornets (NBA) 9/1",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
   },
@@ -8248,7 +8248,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Oklahoma City Blue (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://cdn.nba.com/headshots/nba/latest/1040x760/1629015.png"
   },
   {
@@ -8620,7 +8620,7 @@
     "latino": null,
     "availabilitySimple": "no",
     "availabilityNote": "Signed w/Sioux Falls Skyforce (G League), 2026-27 season",
-    "onRoster": true,
+    "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4703837.png",
     "photoAttempted": true
   },

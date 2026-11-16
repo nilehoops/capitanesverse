@@ -1,1 +1,2076 @@
-{"players":[{"name":"Jabri Abdur-Rahim","team":"CCG"},{"name":"Olumide Adelodun","team":"RAP"},{"name":"Ochai Agbaji","team":"AUS"},{"name":"Obi Agbim","team":"SCW"},{"name":"Rashaun Agee","team":"CLC"},{"name":"Jonas Aidoo","team":"SLC"},{"name":"Michael Ajayi","team":"GBO"},{"name":"Jaden Akins","team":"WCB"},{"name":"Warith Alatishe","team":"MHU"},{"name":"Trey Alexander","team":"SLC"},{"name":"Drake Allen","team":"MCC"},{"name":"Josiah Allick","team":"GBO"},{"name":"Terry Anderson","team":"RCR"},{"name":"D.J. Armstrong, Jr.","team":"GBO"},{"name":"Mark Armstrong","team":"RCR"},{"name":"Zack Austin","team":"CLC"},{"name":"Tobe Awaka","team":"WES"},{"name":"Ileri Ayo-Faleye","team":"SDC"},{"name":"Marcus Bagley","team":"DEL"},{"name":"Will Baker","team":"CPS"},{"name":"Chad Baker-Mazara","team":"MXC"},{"name":"Adama-Alpha Bal","team":"WIS"},{"name":"Ace Baldwin, Jr.","team":"OSC"},{"name":"Aziz Bandaogo","team":"LTN"},{"name":"Brooks Barnhizer","team":"OKL"},{"name":"Miles Barnstable","team":"AUS"},{"name":"Tamar Bates","team":"SLC"},{"name":"Reece Beekman","team":"CCG"},{"name":"Chris Bell","team":"LTN"},{"name":"Jules Bernard","team":"IWA"},{"name":"Ty Berry","team":"WIS"},{"name":"Giorgi Bezhanishvili","team":"CPS"},{"name":"Tyler Bilodeau","team":"LIN"},{"name":"Nate Bittle","team":"RAP"},{"name":"Leaky Black","team":"STO"},{"name":"Buddy Boeheim","team":"OKL"},{"name":"Keylan Boone","team":"RCR"},{"name":"Jadin Booth","team":"RGV"},{"name":"Kylan Boswell","team":"GBO"},{"name":"James Bouknight","team":"MXC"},{"name":"Jordan Bowden","team":"MHU"},{"name":"Nick Boyd","team":"SCW"},{"name":"Pedro Bradshaw","team":"GRG"},{"name":"Malaki Branham","team":"OSC"},{"name":"Koby Brea","team":"VAL"},{"name":"Jalen Bridges","team":"WES"},{"name":"Pierre Brooks II","team":"MCC"},{"name":"Keion Brooks, Jr.","team":"NOB"},{"name":"Johni Broome","team":"WIS"},{"name":"Dion Brown","team":"LIN"},{"name":"Terrell Brown, Jr.","team":"SLC"},{"name":"Kendall Brown","team":"AUS"},{"name":"Kobe Brown","team":"NOB"},{"name":"Maliq Brown","team":"AUS"},{"name":"Keyshawn Bryant","team":"CPS"},{"name":"Kobe Bufkin","team":"SLC"},{"name":"Jeremiah Burke","team":"WIS"},{"name":"Nimari Burnett","team":"RAP"},{"name":"Tyler Burton","team":"SCW"},{"name":"John Butler","team":"WIS"},{"name":"LaMont Butler","team":"CPS"},{"name":"John Camden","team":"VAL"},{"name":"Corey Camper, Jr.","team":"VAL"},{"name":"Isaiah Carr","team":"CCG"},{"name":"Tony Carr","team":"GRG"},{"name":"Cris Carroll","team":"DEL"},{"name":"Tre Carroll","team":"GBO"},{"name":"Devin Carter","team":"MNE"},{"name":"Jace Carter","team":"CVL"},{"name":"Colin Castleton","team":"OSC"},{"name":"Rafael Castro","team":"MXC"},{"name":"Kennedy Chandler","team":"VAL"},{"name":"Tomas Chapero","team":"MXC"},{"name":"Sy Chatman","team":"CLC"},{"name":"Cameron Christie","team":"SDC"},{"name":"Walter Clayton, Jr.","team":"TEX"},{"name":"Zach Cleveland","team":"MHU"},{"name":"Daimion Collins","team":"AUS"},{"name":"Yuri Collins","team":"MHU"},{"name":"Tayton Conerway","team":"STO"},{"name":"Quadir Copeland","team":"RGV"},{"name":"Cam Corhen","team":"CPS"},{"name":"Ricky Council IV","team":"OSC"},{"name":"Matt Cross","team":"TEX"},{"name":"Steven Crowl","team":"GRG"},{"name":"Jalen Crutcher","team":"IWA"},{"name":"L.J. Cryer","team":"SCW"},{"name":"Jarron Cumberland","team":"OSC"},{"name":"Dain Dainja","team":"LIN"},{"name":"Dominique Daniels, Jr.","team":"LTN"},{"name":"N'Faly Dante","team":"WCB"},{"name":"Dre Davis","team":"MNE"},{"name":"Johnell Davis","team":"OSC"},{"name":"R.J. Davis","team":"AUS"},{"name":"J.D. Davison","team":"OSC"},{"name":"Tucker DeVries","team":"MNE"},{"name":"Tyson Degenhart","team":"RAP"},{"name":"Quinn Denker","team":"MXC"},{"name":"RayJ Dennis","team":"CPS"},{"name":"Jordan Derkack","team":"CCG"},{"name":"Malik Dia","team":"LTN"},{"name":"Ibrahima Diallo","team":"SLC"},{"name":"Guillermo Diaz","team":"TEX"},{"name":"Jorge Diaz-Graham","team":"TEX"},{"name":"Hunter Dickinson","team":"LTN"},{"name":"Jordan Dingle","team":"LIN"},{"name":"Khalifa Diop","team":"CLC"},{"name":"Josh Dix","team":"OKL"},{"name":"David Dixon","team":"WCB"},{"name":"Eric Dixon","team":"MHU"},{"name":"Tre Donaldson","team":"SXF"},{"name":"Tae Dozier","team":"MXC"},{"name":"Barry Dunning, Jr.","team":"RCR"},{"name":"Sean East II","team":"STO"},{"name":"Trey Edmonds","team":"GRG"},{"name":"Jon Elmore","team":"AUS"},{"name":"Isaiah Evans","team":"IWA"},{"name":"Barry Evans, Jr.","team":"CCG"},{"name":"Tacko Fall","team":"DEL"},{"name":"R.J. Felton","team":"NOB"},{"name":"Faizon Fields","team":"CVL"},{"name":"Taye Fields","team":"DEL"},{"name":"Keenan Fitzmorris","team":"MCC"},{"name":"Jasper Floyd","team":"TEX"},{"name":"Enrique Freeman","team":"IWA"},{"name":"Wyatt Fricks","team":"GBO"},{"name":"Taylor Funk","team":"SLC"},{"name":"Dawson Garcia","team":"MCC"},{"name":"Marcus Garrett","team":"WIS"},{"name":"Alex Gil-Fernandez","team":"SCW"},{"name":"Keshon Gilbert","team":"CPS"},{"name":"Ja'Kobi Gillespie","team":"AUS"},{"name":"Vladislav Goldin","team":"SXF"},{"name":"Dane Goodwin","team":"GRG"},{"name":"DaJuan Gordon","team":"GBO"},{"name":"Jazian Gortman","team":"CCG"},{"name":"Tyon Grant-Foster","team":"SXF"},{"name":"Hayden Gray","team":"MNE"},{"name":"Caleb Grill","team":"MNE"},{"name":"J'Vonne Hadley","team":"SXF"},{"name":"P.J. Hall","team":"GBO"},{"name":"Zee Hamoda","team":"SDC"},{"name":"Maleeck Harden-Hayes","team":"NOB"},{"name":"Terrence Hargrove, Jr.","team":"WIS"},{"name":"E.J. Harkless","team":"MCC"},{"name":"Justin Harmon","team":"SLC"},{"name":"Bryce Harris","team":"RGV"},{"name":"Dajuan Harris, Jr.","team":"RGV"},{"name":"Toby Harris","team":"IWA"},{"name":"Brendan Hausen","team":"MHU"},{"name":"Coleman Hawkins","team":"GRG"},{"name":"Jordan Hawkins","team":"WES"},{"name":"Chucky Hepburn","team":"RAP"},{"name":"Nolan Hickman","team":"CCG"},{"name":"Devon Higgs","team":"CPS"},{"name":"Cameron Hildreth","team":"NOB"},{"name":"Blake Hinson","team":"STO"},{"name":"A.J. Hoggard","team":"RAP"},{"name":"Sam Hoiberg","team":"VAL"},{"name":"Tanner Holden","team":"SLC"},{"name":"Andrew Holifield","team":"OKL"},{"name":"Bryce Hopkins","team":"GRG"},{"name":"Jaelen House","team":"SLC"},{"name":"Caleb Houstan","team":"RCR"},{"name":"Jett Howard","team":"TEX"},{"name":"Ben Humrichous","team":"LIN"},{"name":"C.J. Huntley","team":"VAL"},{"name":"Graham Ike","team":"SCW"},{"name":"Harrison Ingram","team":"SLC"},{"name":"M.J. Iraldi","team":"NOB"},{"name":"Andre Jackson, Jr.","team":"RAP"},{"name":"Joshua Jefferson","team":"LIN"},{"name":"Trey Jemison","team":"RAP"},{"name":"Basheer Jihad","team":"MCC"},{"name":"Chaney Johnson","team":"LIN"},{"name":"Jordan Johnson","team":"IWA"},{"name":"Meechie Johnson, Jr.","team":"CVL"},{"name":"Keon Johnson","team":"CPS"},{"name":"Keshad Johnson","team":"SXF"},{"name":"Kobe Johnson","team":"CPS"},{"name":"Logan Johnson","team":"MNE"},{"name":"Nate Johnson","team":"OKL"},{"name":"Samson Johnson","team":"RCR"},{"name":"Jarkel Joiner","team":"GBO"},{"name":"Curtis Jones","team":"CLC"},{"name":"Dillon Jones","team":"DEL"},{"name":"Isaac Jones","team":"MCC"},{"name":"Shawn Jones, Jr.","team":"LTN"},{"name":"Kam Jones","team":"WIS"},{"name":"Keonte Jones","team":"GRG"},{"name":"David Jones-Garcia","team":"AUS"},{"name":"Nick Jourdain","team":"WCB"},{"name":"Arthur Kaluma","team":"CVL"},{"name":"James Karnik","team":"RCR"},{"name":"Yuki Kawamura","team":"SDC"},{"name":"Trevor Keels","team":"CCG"},{"name":"Keba Keita","team":"NOB"},{"name":"Kylor Kelley","team":"SXF"},{"name":"Miles Kelly","team":"SCW"},{"name":"Jayson Kent","team":"RCR"},{"name":"Tyreke Key","team":"RAP"},{"name":"Dalton Knecht","team":"WCB"},{"name":"John Knight III","team":"RGV"},{"name":"William Kyle III","team":"CVL"},{"name":"Skal Labissiere","team":"CCG"},{"name":"Viktor Lakhin","team":"STO"},{"name":"Matt Lane","team":"TEX"},{"name":"Tobi Lawal","team":"TEX"},{"name":"Malevy Leons","team":"SCW"},{"name":"Gabe Levin","team":"STO"},{"name":"Kira Lewis, Jr.","team":"MHU"},{"name":"Chris Livingston","team":"CCG"},{"name":"Karim Lopez","team":"MHU"},{"name":"Caleb Love","team":"DEL"},{"name":"Fletcher Loyer","team":"SDC"},{"name":"Seth Lundy","team":"TEX"},{"name":"Gabe Madsen","team":"SXF"},{"name":"Houston Mallette","team":"WES"},{"name":"Kyle Mangas","team":"GBO"},{"name":"Chris Manon","team":"CVL"},{"name":"Chris Mantis","team":"TEX"},{"name":"Tyrone Marshall, Jr.","team":"STO"},{"name":"Cam Martin","team":"IWA"},{"name":"Jaylen Martin","team":"RCR"},{"name":"K.J. Martin","team":"IWA"},{"name":"Remy Martin","team":"WES"},{"name":"Nick Martinelli","team":"SDC"},{"name":"Luke Martinez","team":"MXC"},{"name":"Mitch Mascari","team":"WCB"},{"name":"Jahmai Mashack","team":"MHU"},{"name":"Rienk Mast","team":"NOB"},{"name":"Cameron Matthews","team":"RGV"},{"name":"Zeke Mayo","team":"MXC"},{"name":"Bez Mbeng","team":"SXF"},{"name":"Caleb McConnell","team":"RGV"},{"name":"Robert McCray V","team":"OKL"},{"name":"Kevin McCullar, Jr.","team":"RAP"},{"name":"Gabe McGlothan","team":"MNE"},{"name":"Khamari McGriff","team":"MHU"},{"name":"Isaac McKneely","team":"CPS"},{"name":"Chance McMillian","team":"SCW"},{"name":"Sean McNeil","team":"CLC"},{"name":"Nate Mensah","team":"SDC"},{"name":"Duke Miles","team":"DEL"},{"name":"Igor Milicic, Jr.","team":"WCB"},{"name":"Boopie Miller","team":"GRG"},{"name":"Emanuel Miller","team":"GRG"},{"name":"Terri Miller, Jr.","team":"MXC"},{"name":"Riley Minix","team":"CLC"},{"name":"Jordan Minor","team":"OSC"},{"name":"Nate Missia-Dio","team":"SXF"},{"name":"Dillon Mitchell","team":"MNE"},{"name":"Stevie Mitchell","team":"RGV"},{"name":"Trhae Mitchell","team":"STO"},{"name":"Jonathan Mogbo","team":"STO"},{"name":"Jacksen Moni","team":"SCW"},{"name":"Damari Monsanto","team":"DEL"},{"name":"Jalon Moore","team":"LTN"},{"name":"Alex Morales","team":"OSC"},{"name":"Hank Morgan","team":"MNE"},{"name":"David Muoka","team":"STO"},{"name":"Dwight Murray, Jr.","team":"LIN"},{"name":"Matthew Murrell","team":"SLC"},{"name":"Pete Nance","team":"WIS"},{"name":"Grant Nelson","team":"LIN"},{"name":"Izaiyah Nelson","team":"OSC"},{"name":"Jameer Nelson, Jr.","team":"DEL"},{"name":"Ryan Nembhard","team":"GRG"},{"name":"Grant Newell","team":"WES"},{"name":"Tristen Newton","team":"STO"},{"name":"Tyler Nickel","team":"WCB"},{"name":"Kebba Njie","team":"TEX"},{"name":"Aaron Nkrumah","team":"STO"},{"name":"Markquis Nowell","team":"LTN"},{"name":"Jayden Nunn","team":"AUS"},{"name":"Johnny O'Neil","team":"LTN"},{"name":"Manny Obaseki","team":"WIS"},{"name":"Toby Okani","team":"WCB"},{"name":"AK Okereke","team":"CVL"},{"name":"Felix Okpara","team":"CCG"},{"name":"Norchad Omier","team":"CLC"},{"name":"Miye Oni","team":"SDC"},{"name":"Ugonna Onyenso","team":"MCC"},{"name":"Abou Ousmane","team":"DEL"},{"name":"Cameron Parker","team":"WIS"},{"name":"Dink Pate","team":"WCB"},{"name":"Micah Peavy","team":"OKL"},{"name":"Sean Pedulla","team":"STO"},{"name":"Taelon Peter","team":"AUS"},{"name":"Drew Peterson","team":"WES"},{"name":"Zhuric Phelps","team":"VAL"},{"name":"Julian Phillips","team":"RGV"},{"name":"Jalen Pickett","team":"SDC"},{"name":"Jonathan Pierre","team":"LIN"},{"name":"Jaron Pierre, Jr.","team":"LTN"},{"name":"Jestin Porter","team":"CPS"},{"name":"John Poulakidas","team":"SDC"},{"name":"Jason Preston","team":"SDC"},{"name":"Nick Pringle","team":"LIN"},{"name":"Anthony Pritchard","team":"OKL"},{"name":"Kasean Pryor","team":"OSC"},{"name":"Zyon Pullin","team":"IWA"},{"name":"Lester Quinones","team":"SXF"},{"name":"Guy Ragland, Jr.","team":"DEL"},{"name":"Elias Ralph","team":"SCW"},{"name":"Duop Reath","team":"VAL"},{"name":"Julian Reese","team":"LTN"},{"name":"Kowacie Reeves, Jr.","team":"NOB"},{"name":"Kadary Richmond","team":"CLC"},{"name":"Jordan Riley","team":"MCC"},{"name":"Liam Robbins","team":"WCB"},{"name":"Josh Roberts","team":"MNE"},{"name":"Jax Robinson","team":"CLC"},{"name":"Orlando Robinson","team":"WES"},{"name":"D.J. Rodman","team":"LIN"},{"name":"Chase Ross","team":"CVL"},{"name":"Rayan Rupert","team":"DEL"},{"name":"Cormac Ryan","team":"WIS"},{"name":"Hunter Sallis","team":"SDC"},{"name":"Payton Sandfort","team":"IWA"},{"name":"Agapy Santos","team":"MXC"},{"name":"Nate Santos","team":"IWA"},{"name":"Ben Saraf","team":"LIN"},{"name":"Richie Saunders","team":"MHU"},{"name":"Jordan Schakel","team":"VAL"},{"name":"Ian Schieffelin","team":"SXF"},{"name":"Aaron Scott","team":"LIN"},{"name":"Raysean Seamster","team":"CVL"},{"name":"Mark Sears","team":"RCR"},{"name":"Jaylin Sellers","team":"WES"},{"name":"Steve Settle","team":"CCG"},{"name":"Mike Sharavjamts","team":"OSC"},{"name":"Jamarion Sharp","team":"RAP"},{"name":"Christian Shumate","team":"LTN"},{"name":"Jalen Slawson","team":"NOB"},{"name":"David Sloan","team":"MXC"},{"name":"Javon Small","team":"MHU"},{"name":"Braden Smith","team":"NOB"},{"name":"Deivon Smith","team":"SCW"},{"name":"Dennis Smith","team":"SXF"},{"name":"Malachi Smith","team":"RAP"},{"name":"Tyler Smith","team":"RGV"},{"name":"Zhaire Smith","team":"OKL"},{"name":"Jeremy Sochan","team":"TEX"},{"name":"Primo Spears","team":"WCB"},{"name":"Pat Spencer","team":"VAL"},{"name":"Tre'von Spillers","team":"CLC"},{"name":"A.J. Staton-McCray","team":"SXF"},{"name":"Jake Stephens","team":"WIS"},{"name":"Isaiah Stevens","team":"WES"},{"name":"Kobe Stewart","team":"GBO"},{"name":"David Stockton","team":"VAL"},{"name":"Caleb Stone-Carrawell","team":"RAP"},{"name":"Markhi Strickland","team":"CLC"},{"name":"Peter Suder","team":"WES"},{"name":"Marquel Sutton","team":"WES"},{"name":"Cole Swider","team":"MCC"},{"name":"Aniwaniwa Tait-Jones","team":"CVL"},{"name":"Wade Taylor IV","team":"NOB"},{"name":"Terry Taylor","team":"AUS"},{"name":"Jahmyl Telfort","team":"SDC"},{"name":"Lance Terry","team":"MHU"},{"name":"Jaehshon Thomas","team":"OKL"},{"name":"Saint Thomas","team":"DEL"},{"name":"Stevie Thompson","team":"IWA"},{"name":"Christoph Tilly","team":"OKL"},{"name":"Drew Timme","team":"VAL"},{"name":"Au'Diese Toney","team":"OSC"},{"name":"John Tonje","team":"RCR"},{"name":"Alex Toohey","team":"SCW"},{"name":"Nikola Topic","team":"OKL"},{"name":"Trey Townsend","team":"GBO"},{"name":"Oscar Tshiebwe","team":"RGV"},{"name":"Bryson Tucker","team":"RGV"},{"name":"Ernest Udeh, Jr.","team":"CLC"},{"name":"John Ukomadu","team":"MCC"},{"name":"Milos Uzan","team":"MNE"},{"name":"Mohamed Wague","team":"SLC"},{"name":"Jalen Warley","team":"NOB"},{"name":"Bryson Warren","team":"MCC"},{"name":"Kam Warrens","team":"OKL"},{"name":"Solomon Washington","team":"LTN"},{"name":"Reese Waters","team":"GRG"},{"name":"Jamir Watkins","team":"CCG"},{"name":"Anton Watson","team":"CVL"},{"name":"Romeo Weems","team":"MCC"},{"name":"Blake Wesley","team":"SDC"},{"name":"Phillip Wheeler","team":"VAL"},{"name":"Dariq Whitehead","team":"OKL"},{"name":"Cam Whitmore","team":"GRG"},{"name":"Alondes Williams","team":"CCG"},{"name":"Amari Williams","team":"MNE"},{"name":"Benny Williams","team":"CCG"},{"name":"Brice Williams","team":"MCC"},{"name":"DeAndre Williams","team":"SDC"},{"name":"Malik Williams","team":"AUS"},{"name":"Jalen Wilson","team":"CPS"},{"name":"Justin Wilson","team":"RAP"},{"name":"Isaiah Wong","team":"LIN"},{"name":"Latrell Wrightsell, Jr.","team":"GBO"},{"name":"Noam Yaacov","team":"CLC"},{"name":"Jahmir Young","team":"CVL"},{"name":"Chris Youngblood","team":"RCR"},{"name":"Omer Yurtseven","team":"RGV"},{"name":"Rocco Zikarsky","team":"IWA"},{"name":"Paul Zilinskas","team":"WCB"}],"nameToTeam":{"jabri abdur-rahim":"CCG","olumide adelodun":"RAP","ochai agbaji":"AUS","obi agbim":"SCW","rashaun agee":"CLC","jonas aidoo":"SLC","michael ajayi":"GBO","jaden akins":"WCB","warith alatishe":"MHU","trey alexander":"SLC","drake allen":"MCC","josiah allick":"GBO","terry anderson":"RCR","d.j. armstrong, jr.":"GBO","mark armstrong":"RCR","zack austin":"CLC","tobe awaka":"WES","ileri ayo-faleye":"SDC","marcus bagley":"DEL","will baker":"CPS","chad baker-mazara":"MXC","adama-alpha bal":"WIS","ace baldwin, jr.":"OSC","aziz bandaogo":"LTN","brooks barnhizer":"OKL","miles barnstable":"AUS","tamar bates":"SLC","reece beekman":"CCG","chris bell":"LTN","jules bernard":"IWA","ty berry":"WIS","giorgi bezhanishvili":"CPS","tyler bilodeau":"LIN","nate bittle":"RAP","leaky black":"STO","buddy boeheim":"OKL","keylan boone":"RCR","jadin booth":"RGV","kylan boswell":"GBO","james bouknight":"MXC","jordan bowden":"MHU","nick boyd":"SCW","pedro bradshaw":"GRG","malaki branham":"OSC","koby brea":"VAL","jalen bridges":"WES","pierre brooks ii":"MCC","keion brooks, jr.":"NOB","johni broome":"WIS","dion brown":"LIN","terrell brown, jr.":"SLC","kendall brown":"AUS","kobe brown":"NOB","maliq brown":"AUS","keyshawn bryant":"CPS","kobe bufkin":"SLC","jeremiah burke":"WIS","nimari burnett":"RAP","tyler burton":"SCW","john butler":"WIS","lamont butler":"CPS","john camden":"VAL","corey camper, jr.":"VAL","isaiah carr":"CCG","tony carr":"GRG","cris carroll":"DEL","tre carroll":"GBO","devin carter":"MNE","jace carter":"CVL","colin castleton":"OSC","rafael castro":"MXC","kennedy chandler":"VAL","tomas chapero":"MXC","sy chatman":"CLC","cameron christie":"SDC","walter clayton, jr.":"TEX","zach cleveland":"MHU","daimion collins":"AUS","yuri collins":"MHU","tayton conerway":"STO","quadir copeland":"RGV","cam corhen":"CPS","ricky council iv":"OSC","matt cross":"TEX","steven crowl":"GRG","jalen crutcher":"IWA","l.j. cryer":"SCW","jarron cumberland":"OSC","dain dainja":"LIN","dominique daniels, jr.":"LTN","n'faly dante":"WCB","dre davis":"MNE","johnell davis":"OSC","r.j. davis":"AUS","j.d. davison":"OSC","tucker devries":"MNE","tyson degenhart":"RAP","quinn denker":"MXC","rayj dennis":"CPS","jordan derkack":"CCG","malik dia":"LTN","ibrahima diallo":"SLC","guillermo diaz":"TEX","jorge diaz-graham":"TEX","hunter dickinson":"LTN","jordan dingle":"LIN","khalifa diop":"CLC","josh dix":"OKL","david dixon":"WCB","eric dixon":"MHU","tre donaldson":"SXF","tae dozier":"MXC","barry dunning, jr.":"RCR","sean east ii":"STO","trey edmonds":"GRG","jon elmore":"AUS","isaiah evans":"IWA","barry evans, jr.":"CCG","tacko fall":"DEL","r.j. felton":"NOB","faizon fields":"CVL","taye fields":"DEL","keenan fitzmorris":"MCC","jasper floyd":"TEX","enrique freeman":"IWA","wyatt fricks":"GBO","taylor funk":"SLC","dawson garcia":"MCC","marcus garrett":"WIS","alex gil-fernandez":"SCW","keshon gilbert":"CPS","ja'kobi gillespie":"AUS","vladislav goldin":"SXF","dane goodwin":"GRG","dajuan gordon":"GBO","jazian gortman":"CCG","tyon grant-foster":"SXF","hayden gray":"MNE","caleb grill":"MNE","j'vonne hadley":"SXF","p.j. hall":"GBO","zee hamoda":"SDC","maleeck harden-hayes":"NOB","terrence hargrove, jr.":"WIS","e.j. harkless":"MCC","justin harmon":"SLC","bryce harris":"RGV","dajuan harris, jr.":"RGV","toby harris":"IWA","brendan hausen":"MHU","coleman hawkins":"GRG","jordan hawkins":"WES","chucky hepburn":"RAP","nolan hickman":"CCG","devon higgs":"CPS","cameron hildreth":"NOB","blake hinson":"STO","a.j. hoggard":"RAP","sam hoiberg":"VAL","tanner holden":"SLC","andrew holifield":"OKL","bryce hopkins":"GRG","jaelen house":"SLC","caleb houstan":"RCR","jett howard":"TEX","ben humrichous":"LIN","c.j. huntley":"VAL","graham ike":"SCW","harrison ingram":"SLC","m.j. iraldi":"NOB","andre jackson, jr.":"RAP","joshua jefferson":"LIN","trey jemison":"RAP","basheer jihad":"MCC","chaney johnson":"LIN","jordan johnson":"IWA","meechie johnson, jr.":"CVL","keon johnson":"CPS","keshad johnson":"SXF","kobe johnson":"CPS","logan johnson":"MNE","nate johnson":"OKL","samson johnson":"RCR","jarkel joiner":"GBO","curtis jones":"CLC","dillon jones":"DEL","isaac jones":"MCC","shawn jones, jr.":"LTN","kam jones":"WIS","keonte jones":"GRG","david jones-garcia":"AUS","nick jourdain":"WCB","arthur kaluma":"CVL","james karnik":"RCR","yuki kawamura":"SDC","trevor keels":"CCG","keba keita":"NOB","kylor kelley":"SXF","miles kelly":"SCW","jayson kent":"RCR","tyreke key":"RAP","dalton knecht":"WCB","john knight iii":"RGV","william kyle iii":"CVL","skal labissiere":"CCG","viktor lakhin":"STO","matt lane":"TEX","tobi lawal":"TEX","malevy leons":"SCW","gabe levin":"STO","kira lewis, jr.":"MHU","chris livingston":"CCG","karim lopez":"MHU","caleb love":"DEL","fletcher loyer":"SDC","seth lundy":"TEX","gabe madsen":"SXF","houston mallette":"WES","kyle mangas":"GBO","chris manon":"CVL","chris mantis":"TEX","tyrone marshall, jr.":"STO","cam martin":"IWA","jaylen martin":"RCR","k.j. martin":"IWA","remy martin":"WES","nick martinelli":"SDC","luke martinez":"MXC","mitch mascari":"WCB","jahmai mashack":"MHU","rienk mast":"NOB","cameron matthews":"RGV","zeke mayo":"MXC","bez mbeng":"SXF","caleb mcconnell":"RGV","robert mccray v":"OKL","kevin mccullar, jr.":"RAP","gabe mcglothan":"MNE","khamari mcgriff":"MHU","isaac mckneely":"CPS","chance mcmillian":"SCW","sean mcneil":"CLC","nate mensah":"SDC","duke miles":"DEL","igor milicic, jr.":"WCB","boopie miller":"GRG","emanuel miller":"GRG","terri miller, jr.":"MXC","riley minix":"CLC","jordan minor":"OSC","nate missia-dio":"SXF","dillon mitchell":"MNE","stevie mitchell":"RGV","trhae mitchell":"STO","jonathan mogbo":"STO","jacksen moni":"SCW","damari monsanto":"DEL","jalon moore":"LTN","alex morales":"OSC","hank morgan":"MNE","david muoka":"STO","dwight murray, jr.":"LIN","matthew murrell":"SLC","pete nance":"WIS","grant nelson":"LIN","izaiyah nelson":"OSC","jameer nelson, jr.":"DEL","ryan nembhard":"GRG","grant newell":"WES","tristen newton":"STO","tyler nickel":"WCB","kebba njie":"TEX","aaron nkrumah":"STO","markquis nowell":"LTN","jayden nunn":"AUS","johnny o'neil":"LTN","manny obaseki":"WIS","toby okani":"WCB","ak okereke":"CVL","felix okpara":"CCG","norchad omier":"CLC","miye oni":"SDC","ugonna onyenso":"MCC","abou ousmane":"DEL","cameron parker":"WIS","dink pate":"WCB","micah peavy":"OKL","sean pedulla":"STO","taelon peter":"AUS","drew peterson":"WES","zhuric phelps":"VAL","julian phillips":"RGV","jalen pickett":"SDC","jonathan pierre":"LIN","jaron pierre, jr.":"LTN","jestin porter":"CPS","john poulakidas":"SDC","jason preston":"SDC","nick pringle":"LIN","anthony pritchard":"OKL","kasean pryor":"OSC","zyon pullin":"IWA","lester quinones":"SXF","guy ragland, jr.":"DEL","elias ralph":"SCW","duop reath":"VAL","julian reese":"LTN","kowacie reeves, jr.":"NOB","kadary richmond":"CLC","jordan riley":"MCC","liam robbins":"WCB","josh roberts":"MNE","jax robinson":"CLC","orlando robinson":"WES","d.j. rodman":"LIN","chase ross":"CVL","rayan rupert":"DEL","cormac ryan":"WIS","hunter sallis":"SDC","payton sandfort":"IWA","agapy santos":"MXC","nate santos":"IWA","ben saraf":"LIN","richie saunders":"MHU","jordan schakel":"VAL","ian schieffelin":"SXF","aaron scott":"LIN","raysean seamster":"CVL","mark sears":"RCR","jaylin sellers":"WES","steve settle":"CCG","mike sharavjamts":"OSC","jamarion sharp":"RAP","christian shumate":"LTN","jalen slawson":"NOB","david sloan":"MXC","javon small":"MHU","braden smith":"NOB","deivon smith":"SCW","dennis smith":"SXF","malachi smith":"RAP","tyler smith":"RGV","zhaire smith":"OKL","jeremy sochan":"TEX","primo spears":"WCB","pat spencer":"VAL","tre'von spillers":"CLC","a.j. staton-mccray":"SXF","jake stephens":"WIS","isaiah stevens":"WES","kobe stewart":"GBO","david stockton":"VAL","caleb stone-carrawell":"RAP","markhi strickland":"CLC","peter suder":"WES","marquel sutton":"WES","cole swider":"MCC","aniwaniwa tait-jones":"CVL","wade taylor iv":"NOB","terry taylor":"AUS","jahmyl telfort":"SDC","lance terry":"MHU","jaehshon thomas":"OKL","saint thomas":"DEL","stevie thompson":"IWA","christoph tilly":"OKL","drew timme":"VAL","au'diese toney":"OSC","john tonje":"RCR","alex toohey":"SCW","nikola topic":"OKL","trey townsend":"GBO","oscar tshiebwe":"RGV","bryson tucker":"RGV","ernest udeh, jr.":"CLC","john ukomadu":"MCC","milos uzan":"MNE","mohamed wague":"SLC","jalen warley":"NOB","bryson warren":"MCC","kam warrens":"OKL","solomon washington":"LTN","reese waters":"GRG","jamir watkins":"CCG","anton watson":"CVL","romeo weems":"MCC","blake wesley":"SDC","phillip wheeler":"VAL","dariq whitehead":"OKL","cam whitmore":"GRG","alondes williams":"CCG","amari williams":"MNE","benny williams":"CCG","brice williams":"MCC","deandre williams":"SDC","malik williams":"AUS","jalen wilson":"CPS","justin wilson":"RAP","isaiah wong":"LIN","latrell wrightsell, jr.":"GBO","noam yaacov":"CLC","jahmir young":"CVL","chris youngblood":"RCR","omer yurtseven":"RGV","rocco zikarsky":"IWA","paul zilinskas":"WCB"}}
+{
+  "players": [
+    {
+      "name": "A.J. Staton-McCray",
+      "team": "SXF"
+    },
+    {
+      "name": "AJ Hoggard",
+      "team": "RAP"
+    },
+    {
+      "name": "AK Okereke",
+      "team": "CVL"
+    },
+    {
+      "name": "Aaron Nkrumah",
+      "team": "STO"
+    },
+    {
+      "name": "Aaron Scott",
+      "team": "LIN"
+    },
+    {
+      "name": "Abou Ousmane",
+      "team": "DEL"
+    },
+    {
+      "name": "Adam Flagler",
+      "team": "TEX"
+    },
+    {
+      "name": "Adama Bal",
+      "team": "WIS"
+    },
+    {
+      "name": "Agapy de Melo Santos",
+      "team": "MXC"
+    },
+    {
+      "name": "Alex Morales",
+      "team": "OSC"
+    },
+    {
+      "name": "Alex Toohey",
+      "team": "SCW"
+    },
+    {
+      "name": "Alondes Williams",
+      "team": "CCG"
+    },
+    {
+      "name": "Aly Khalifa",
+      "team": "WIS"
+    },
+    {
+      "name": "Amari Williams",
+      "team": "MNE"
+    },
+    {
+      "name": "Amir Spears",
+      "team": "WES"
+    },
+    {
+      "name": "Andre Jackson Jr.",
+      "team": "RAP"
+    },
+    {
+      "name": "Andrew Holifield",
+      "team": "OKL"
+    },
+    {
+      "name": "Aniwaniwa Tait-Jones",
+      "team": "CVL"
+    },
+    {
+      "name": "Anthony Pritchard",
+      "team": "OKL"
+    },
+    {
+      "name": "Anton Watson",
+      "team": "CVL"
+    },
+    {
+      "name": "Arthur Kaluma",
+      "team": "CVL"
+    },
+    {
+      "name": "Au'Diese Toney",
+      "team": "OSC"
+    },
+    {
+      "name": "Aziz Bandaogo",
+      "team": "LTN"
+    },
+    {
+      "name": "Barry Dunning",
+      "team": "RCR"
+    },
+    {
+      "name": "Barry Evans",
+      "team": "CCG"
+    },
+    {
+      "name": "Basheer Jihad",
+      "team": "MCC"
+    },
+    {
+      "name": "Ben Humrichous",
+      "team": "LIN"
+    },
+    {
+      "name": "Ben Saraf",
+      "team": "LIN"
+    },
+    {
+      "name": "Benjamin Williams",
+      "team": "CCG"
+    },
+    {
+      "name": "Bez Mbeng",
+      "team": "SXF"
+    },
+    {
+      "name": "Blake Hinson",
+      "team": "STO"
+    },
+    {
+      "name": "Blake Wesley",
+      "team": "SDC"
+    },
+    {
+      "name": "Bogoljub Markovi\u0107",
+      "team": "WIS"
+    },
+    {
+      "name": "Boopie Miller",
+      "team": "GRG"
+    },
+    {
+      "name": "Braden Smith",
+      "team": "NOB"
+    },
+    {
+      "name": "Brendan Hausen",
+      "team": "MHU"
+    },
+    {
+      "name": "Brice Williams",
+      "team": "MCC"
+    },
+    {
+      "name": "Brooks Barnhizer",
+      "team": "OKL"
+    },
+    {
+      "name": "Bryce Harris",
+      "team": "RGV"
+    },
+    {
+      "name": "Bryce Hopkins",
+      "team": "GRG"
+    },
+    {
+      "name": "Bryson Warren",
+      "team": "MCC"
+    },
+    {
+      "name": "Buddy Boeheim",
+      "team": "OKL"
+    },
+    {
+      "name": "CJ Huntley",
+      "team": "VAL"
+    },
+    {
+      "name": "Caleb Grill",
+      "team": "MNE"
+    },
+    {
+      "name": "Caleb Houstan",
+      "team": "RCR"
+    },
+    {
+      "name": "Caleb Love",
+      "team": "DEL"
+    },
+    {
+      "name": "Caleb McConnell",
+      "team": "RGV"
+    },
+    {
+      "name": "Caleb Stone-Carrawell",
+      "team": "RAP"
+    },
+    {
+      "name": "Cam Christie",
+      "team": "SDC"
+    },
+    {
+      "name": "Cam Whitmore",
+      "team": "GRG"
+    },
+    {
+      "name": "Cameron Corhen",
+      "team": "CPS"
+    },
+    {
+      "name": "Cameron Hildreth",
+      "team": "NOB"
+    },
+    {
+      "name": "Cameron Martin",
+      "team": "IWA"
+    },
+    {
+      "name": "Cameron Matthews",
+      "team": "RGV"
+    },
+    {
+      "name": "Cameron Parker",
+      "team": "WIS"
+    },
+    {
+      "name": "Carson Cooper",
+      "team": "CVL"
+    },
+    {
+      "name": "Chad Baker-Mazara",
+      "team": "MXC"
+    },
+    {
+      "name": "Chance McMillian",
+      "team": "SCW"
+    },
+    {
+      "name": "Chaney Johnson",
+      "team": "LIN"
+    },
+    {
+      "name": "Chase Ross",
+      "team": "CVL"
+    },
+    {
+      "name": "Chaz Lanier",
+      "team": "MCC"
+    },
+    {
+      "name": "Chris Bell",
+      "team": "LTN"
+    },
+    {
+      "name": "Chris Mantis",
+      "team": "TEX"
+    },
+    {
+      "name": "Chris Ma\u00f1on",
+      "team": "CVL"
+    },
+    {
+      "name": "Chris Youngblood",
+      "team": "RCR"
+    },
+    {
+      "name": "Christian Shumate",
+      "team": "LTN"
+    },
+    {
+      "name": "Christoph Tilly",
+      "team": "OKL"
+    },
+    {
+      "name": "Chucky Hepburn",
+      "team": "RAP"
+    },
+    {
+      "name": "Cole Swider",
+      "team": "CVL"
+    },
+    {
+      "name": "Coleman Hawkins",
+      "team": "GRG"
+    },
+    {
+      "name": "Colin Castleton",
+      "team": "OSC"
+    },
+    {
+      "name": "Corey Camper",
+      "team": "VAL"
+    },
+    {
+      "name": "Cormac Ryan",
+      "team": "WIS"
+    },
+    {
+      "name": "Cris Carroll",
+      "team": "DEL"
+    },
+    {
+      "name": "Curtis Jones",
+      "team": "CLC"
+    },
+    {
+      "name": "D'Andre Davis",
+      "team": "MNE"
+    },
+    {
+      "name": "DJ Armstrong",
+      "team": "GBO"
+    },
+    {
+      "name": "DJ Patrick",
+      "team": "WCB"
+    },
+    {
+      "name": "DJ Rodman",
+      "team": "LIN"
+    },
+    {
+      "name": "DaJuan Gordon",
+      "team": "GBO"
+    },
+    {
+      "name": "DaRon Holmes II",
+      "team": "GRG"
+    },
+    {
+      "name": "Dailyn Swain",
+      "team": "WCB"
+    },
+    {
+      "name": "Daimion Collins",
+      "team": "AUS"
+    },
+    {
+      "name": "Dain Dainja",
+      "team": "LIN"
+    },
+    {
+      "name": "Dajuan Harris",
+      "team": "RGV"
+    },
+    {
+      "name": "Dalen Terry",
+      "team": "SCW"
+    },
+    {
+      "name": "Dalton Knecht",
+      "team": "WES"
+    },
+    {
+      "name": "Damari Monsanto",
+      "team": "DEL"
+    },
+    {
+      "name": "Dane Goodwin",
+      "team": "GRG"
+    },
+    {
+      "name": "Daniel Rivera",
+      "team": "MXC"
+    },
+    {
+      "name": "Darin Green",
+      "team": "TEX"
+    },
+    {
+      "name": "Dariq Whitehead",
+      "team": "OKL"
+    },
+    {
+      "name": "David Jones Garcia",
+      "team": "AUS"
+    },
+    {
+      "name": "David Muoka",
+      "team": "STO"
+    },
+    {
+      "name": "David Sloan",
+      "team": "MXC"
+    },
+    {
+      "name": "David Stockton",
+      "team": "VAL"
+    },
+    {
+      "name": "Dawson Garcia",
+      "team": "MCC"
+    },
+    {
+      "name": "DeAndre Williams",
+      "team": "SDC"
+    },
+    {
+      "name": "Deivon Smith",
+      "team": "SCW"
+    },
+    {
+      "name": "Dennis Smith Jr.",
+      "team": "SXF"
+    },
+    {
+      "name": "Devin Carter",
+      "team": "MNE"
+    },
+    {
+      "name": "Devon Higgs",
+      "team": "CPS"
+    },
+    {
+      "name": "Dillon Jones",
+      "team": "DEL"
+    },
+    {
+      "name": "Dillon Mitchell",
+      "team": "MNE"
+    },
+    {
+      "name": "Dink Pate",
+      "team": "WES"
+    },
+    {
+      "name": "Dion Brown",
+      "team": "LIN"
+    },
+    {
+      "name": "Dominique Daniels, Jr.",
+      "team": "LTN"
+    },
+    {
+      "name": "Drake Allen",
+      "team": "MCC"
+    },
+    {
+      "name": "Drake Powell",
+      "team": "LIN"
+    },
+    {
+      "name": "Drew Peterson",
+      "team": "WCB"
+    },
+    {
+      "name": "Drew Timme",
+      "team": "VAL"
+    },
+    {
+      "name": "Duke Miles",
+      "team": "DEL"
+    },
+    {
+      "name": "Duop Reath",
+      "team": "VAL"
+    },
+    {
+      "name": "Dwight Murray, Jr.",
+      "team": "LIN"
+    },
+    {
+      "name": "Ebuka Okorie",
+      "team": "MCC"
+    },
+    {
+      "name": "Elias Ralph",
+      "team": "SCW"
+    },
+    {
+      "name": "Elijah Harkless",
+      "team": "MCC"
+    },
+    {
+      "name": "Emanuel Miller",
+      "team": "GRG"
+    },
+    {
+      "name": "Enrique Freeman",
+      "team": "IWA"
+    },
+    {
+      "name": "Eric Dixon",
+      "team": "MHU"
+    },
+    {
+      "name": "Ernest Udeh, Jr.",
+      "team": "CLC"
+    },
+    {
+      "name": "Ethan Taylor",
+      "team": "LTN"
+    },
+    {
+      "name": "Felix Okpara",
+      "team": "CCG"
+    },
+    {
+      "name": "Fletcher Loyer",
+      "team": "SDC"
+    },
+    {
+      "name": "Gabe Levin",
+      "team": "STO"
+    },
+    {
+      "name": "Gabe Madsen",
+      "team": "SXF"
+    },
+    {
+      "name": "Gabe McGlothan",
+      "team": "MNE"
+    },
+    {
+      "name": "Giorgi Bezhanishvili",
+      "team": "CPS"
+    },
+    {
+      "name": "Graham Ike",
+      "team": "SCW"
+    },
+    {
+      "name": "Grant Nelson",
+      "team": "LIN"
+    },
+    {
+      "name": "Grant Newell",
+      "team": "WCB"
+    },
+    {
+      "name": "Guillermo Diaz-Graham",
+      "team": "TEX"
+    },
+    {
+      "name": "Guy Ragland Jr.",
+      "team": "DEL"
+    },
+    {
+      "name": "Hank Morgan",
+      "team": "MNE"
+    },
+    {
+      "name": "Hannes Steinbach",
+      "team": "GBO"
+    },
+    {
+      "name": "Harrison Ingram",
+      "team": "SLC"
+    },
+    {
+      "name": "Hayden Gray",
+      "team": "MNE"
+    },
+    {
+      "name": "Houston Mallette",
+      "team": "WCB"
+    },
+    {
+      "name": "Hunter Dickinson",
+      "team": "LTN"
+    },
+    {
+      "name": "Hunter Sallis",
+      "team": "SDC"
+    },
+    {
+      "name": "Hyunjung Lee",
+      "team": "RCR"
+    },
+    {
+      "name": "Ian Martinez",
+      "team": "CLC"
+    },
+    {
+      "name": "Ian Schieffelin",
+      "team": "SXF"
+    },
+    {
+      "name": "Ibrahima Diallo",
+      "team": "SLC"
+    },
+    {
+      "name": "Igor Mili\u010di\u0107, Jr.",
+      "team": "WES"
+    },
+    {
+      "name": "Ileri Ayo-Faleye",
+      "team": "SDC"
+    },
+    {
+      "name": "Isaac Jones",
+      "team": "MCC"
+    },
+    {
+      "name": "Isaac McKneely",
+      "team": "CPS"
+    },
+    {
+      "name": "Isaiah Carr",
+      "team": "CCG"
+    },
+    {
+      "name": "Isaiah Stevens",
+      "team": "WCB"
+    },
+    {
+      "name": "Isaiah Wong",
+      "team": "LIN"
+    },
+    {
+      "name": "Izaiyah Nelson",
+      "team": "OSC"
+    },
+    {
+      "name": "J'Vonne Hadley",
+      "team": "SXF"
+    },
+    {
+      "name": "JD Davison",
+      "team": "OSC"
+    },
+    {
+      "name": "Ja'Kobi Gillespie",
+      "team": "AUS"
+    },
+    {
+      "name": "Jabri Abdur-Rahim",
+      "team": "CCG"
+    },
+    {
+      "name": "Jace Carter",
+      "team": "CVL"
+    },
+    {
+      "name": "Jacksen Moni",
+      "team": "SCW"
+    },
+    {
+      "name": "Jaden Akins",
+      "team": "WES"
+    },
+    {
+      "name": "Jadin Booth",
+      "team": "RGV"
+    },
+    {
+      "name": "Jaeden Zackery",
+      "team": "GBO"
+    },
+    {
+      "name": "Jaehshon Thomas",
+      "team": "OKL"
+    },
+    {
+      "name": "Jaelen House",
+      "team": "SLC"
+    },
+    {
+      "name": "Jahmai Mashack",
+      "team": "MHU"
+    },
+    {
+      "name": "Jahmir Young",
+      "team": "CVL"
+    },
+    {
+      "name": "Jahmyl Telfort",
+      "team": "SDC"
+    },
+    {
+      "name": "Jake Stephens",
+      "team": "WIS"
+    },
+    {
+      "name": "Jalen Bridges",
+      "team": "WCB"
+    },
+    {
+      "name": "Jalen Crutcher",
+      "team": "IWA"
+    },
+    {
+      "name": "Jalen Pickett",
+      "team": "SDC"
+    },
+    {
+      "name": "Jalen Slawson",
+      "team": "NOB"
+    },
+    {
+      "name": "Jalen Warley",
+      "team": "NOB"
+    },
+    {
+      "name": "Jalen Wilson",
+      "team": "CPS"
+    },
+    {
+      "name": "Jalon Moore",
+      "team": "LTN"
+    },
+    {
+      "name": "Jamarion Sharp",
+      "team": "RAP"
+    },
+    {
+      "name": "Jameer Nelson Jr.",
+      "team": "DEL"
+    },
+    {
+      "name": "James Bouknight",
+      "team": "MXC"
+    },
+    {
+      "name": "James Karnik",
+      "team": "RCR"
+    },
+    {
+      "name": "Jamir Watkins",
+      "team": "CCG"
+    },
+    {
+      "name": "Jarkel Joiner",
+      "team": "GBO"
+    },
+    {
+      "name": "Jaron Pierre Jr.",
+      "team": "LTN"
+    },
+    {
+      "name": "Jarron Cumberland",
+      "team": "OSC"
+    },
+    {
+      "name": "Jason Preston",
+      "team": "SDC"
+    },
+    {
+      "name": "Jasper Floyd",
+      "team": "TEX"
+    },
+    {
+      "name": "Javon Small",
+      "team": "MHU"
+    },
+    {
+      "name": "Jaxson Robinson",
+      "team": "CLC"
+    },
+    {
+      "name": "Jayden Nunn",
+      "team": "AUS"
+    },
+    {
+      "name": "Jaylen Martin",
+      "team": "RCR"
+    },
+    {
+      "name": "Jaylin Sellers",
+      "team": "WCB"
+    },
+    {
+      "name": "Jayson Kent",
+      "team": "RCR"
+    },
+    {
+      "name": "Jazian Gortman",
+      "team": "CCG"
+    },
+    {
+      "name": "Jeremiah Burke",
+      "team": "WIS"
+    },
+    {
+      "name": "Jeremy Sochan",
+      "team": "TEX"
+    },
+    {
+      "name": "Jestin Porter",
+      "team": "CPS"
+    },
+    {
+      "name": "Jett Howard",
+      "team": "TEX"
+    },
+    {
+      "name": "John Butler Jr.",
+      "team": "WIS"
+    },
+    {
+      "name": "John Camden",
+      "team": "VAL"
+    },
+    {
+      "name": "John Knight III",
+      "team": "RGV"
+    },
+    {
+      "name": "John Poulakidas",
+      "team": "SDC"
+    },
+    {
+      "name": "John Tonje",
+      "team": "RCR"
+    },
+    {
+      "name": "John Ukomadu",
+      "team": "MCC"
+    },
+    {
+      "name": "Johnell Davis",
+      "team": "OSC"
+    },
+    {
+      "name": "Johni Broome",
+      "team": "IWA"
+    },
+    {
+      "name": "Johnny O'Neil",
+      "team": "LTN"
+    },
+    {
+      "name": "Jon Elmore",
+      "team": "AUS"
+    },
+    {
+      "name": "Jonas Aidoo",
+      "team": "SLC"
+    },
+    {
+      "name": "Jonathan Mogbo",
+      "team": "STO"
+    },
+    {
+      "name": "Jonathan Pierre",
+      "team": "LIN"
+    },
+    {
+      "name": "Jordan Bowden",
+      "team": "MHU"
+    },
+    {
+      "name": "Jordan Dingle",
+      "team": "LIN"
+    },
+    {
+      "name": "Jordan Hawkins",
+      "team": "WCB"
+    },
+    {
+      "name": "Jordan Johnson",
+      "team": "IWA"
+    },
+    {
+      "name": "Jordan Minor",
+      "team": "OSC"
+    },
+    {
+      "name": "Jordan Riley",
+      "team": "MCC"
+    },
+    {
+      "name": "Jordan Schakel",
+      "team": "VAL"
+    },
+    {
+      "name": "Jorge Diaz-Graham",
+      "team": "TEX"
+    },
+    {
+      "name": "Josh Dix",
+      "team": "OKL"
+    },
+    {
+      "name": "Josh Roberts",
+      "team": "MNE"
+    },
+    {
+      "name": "Joshua Jefferson",
+      "team": "LIN"
+    },
+    {
+      "name": "Josiah Allick",
+      "team": "GBO"
+    },
+    {
+      "name": "Jules Bernard",
+      "team": "IWA"
+    },
+    {
+      "name": "Julian Phillips",
+      "team": "RGV"
+    },
+    {
+      "name": "Julian Reese",
+      "team": "LTN"
+    },
+    {
+      "name": "Justin Harmon",
+      "team": "SLC"
+    },
+    {
+      "name": "KJ Martin",
+      "team": "IWA"
+    },
+    {
+      "name": "Kadary Richmond",
+      "team": "CLC"
+    },
+    {
+      "name": "Kalifa Sakho",
+      "team": "CCG"
+    },
+    {
+      "name": "Kam Jones",
+      "team": "WIS"
+    },
+    {
+      "name": "Kameron Warrens",
+      "team": "OKL"
+    },
+    {
+      "name": "Kasean Pryor",
+      "team": "OSC"
+    },
+    {
+      "name": "Keba Keita",
+      "team": "NOB"
+    },
+    {
+      "name": "Kebba Njie",
+      "team": "TEX"
+    },
+    {
+      "name": "Keenan Fitzmorris",
+      "team": "MCC"
+    },
+    {
+      "name": "Keion Brooks Jr.",
+      "team": "NOB"
+    },
+    {
+      "name": "Kendall Brown",
+      "team": "AUS"
+    },
+    {
+      "name": "Kennedy Chandler",
+      "team": "VAL"
+    },
+    {
+      "name": "Keon Johnson",
+      "team": "CPS"
+    },
+    {
+      "name": "Keonte Jones",
+      "team": "GRG"
+    },
+    {
+      "name": "Keshad Johnson",
+      "team": "SXF"
+    },
+    {
+      "name": "Keshon Gilbert",
+      "team": "CPS"
+    },
+    {
+      "name": "Kevin McCullar Jr.",
+      "team": "RAP"
+    },
+    {
+      "name": "Keylan Boone",
+      "team": "RCR"
+    },
+    {
+      "name": "Keyshawn Bryant",
+      "team": "CPS"
+    },
+    {
+      "name": "Khamari McGriff",
+      "team": "MHU"
+    },
+    {
+      "name": "Kira Lewis Jr.",
+      "team": "MHU"
+    },
+    {
+      "name": "Kobe Brown",
+      "team": "NOB"
+    },
+    {
+      "name": "Kobe Bufkin",
+      "team": "SLC"
+    },
+    {
+      "name": "Kobe Johnson",
+      "team": "CPS"
+    },
+    {
+      "name": "Kobe Stewart",
+      "team": "GBO"
+    },
+    {
+      "name": "Koby Brea",
+      "team": "VAL"
+    },
+    {
+      "name": "Kowacie Reeves Jr.",
+      "team": "NOB"
+    },
+    {
+      "name": "Kylan Boswell",
+      "team": "GBO"
+    },
+    {
+      "name": "Kyle Mangas",
+      "team": "GBO"
+    },
+    {
+      "name": "Kylor Kelley",
+      "team": "SXF"
+    },
+    {
+      "name": "LJ Cryer",
+      "team": "SCW"
+    },
+    {
+      "name": "Lacey James",
+      "team": "WCB"
+    },
+    {
+      "name": "Lamont Butler",
+      "team": "CPS"
+    },
+    {
+      "name": "Lance Terry",
+      "team": "MHU"
+    },
+    {
+      "name": "Lawson Lovering",
+      "team": "MHU"
+    },
+    {
+      "name": "Leaky Black",
+      "team": "STO"
+    },
+    {
+      "name": "Lester Quinones",
+      "team": "SXF"
+    },
+    {
+      "name": "Liam Robbins",
+      "team": "WES"
+    },
+    {
+      "name": "Logan Johnson",
+      "team": "MNE"
+    },
+    {
+      "name": "Luke Martinez",
+      "team": "MXC"
+    },
+    {
+      "name": "M.J. Iraldi",
+      "team": "NOB"
+    },
+    {
+      "name": "Malachi Smith",
+      "team": "RAP"
+    },
+    {
+      "name": "Malaki Branham",
+      "team": "OSC"
+    },
+    {
+      "name": "Maleeck Harden-Hayes",
+      "team": "NOB"
+    },
+    {
+      "name": "Malevy Leons",
+      "team": "SCW"
+    },
+    {
+      "name": "Malik Dia",
+      "team": "LTN"
+    },
+    {
+      "name": "Malik Whitaker",
+      "team": "RGV"
+    },
+    {
+      "name": "Malik Williams",
+      "team": "AUS"
+    },
+    {
+      "name": "Maliq Brown",
+      "team": "AUS"
+    },
+    {
+      "name": "Manny Obaseki",
+      "team": "WIS"
+    },
+    {
+      "name": "Marcus Bagley",
+      "team": "DEL"
+    },
+    {
+      "name": "Marcus Garrett",
+      "team": "WIS"
+    },
+    {
+      "name": "Mark Armstrong",
+      "team": "RCR"
+    },
+    {
+      "name": "Mark Sears",
+      "team": "RCR"
+    },
+    {
+      "name": "Markquis Nowell",
+      "team": "LTN"
+    },
+    {
+      "name": "Marquel Sutton",
+      "team": "WCB"
+    },
+    {
+      "name": "Matt Cross",
+      "team": "TEX"
+    },
+    {
+      "name": "Matthew Murrell",
+      "team": "SLC"
+    },
+    {
+      "name": "Meechie Johnson",
+      "team": "CVL"
+    },
+    {
+      "name": "Micah Peavy",
+      "team": "OKL"
+    },
+    {
+      "name": "Michael Ajayi",
+      "team": "GBO"
+    },
+    {
+      "name": "Mike Sharavjamts",
+      "team": "OSC"
+    },
+    {
+      "name": "Miles Barnstable",
+      "team": "AUS"
+    },
+    {
+      "name": "Miles Kelly",
+      "team": "SCW"
+    },
+    {
+      "name": "Milos Uzan",
+      "team": "MNE"
+    },
+    {
+      "name": "Mitchell Mascari",
+      "team": "WES"
+    },
+    {
+      "name": "Miye Oni",
+      "team": "SDC"
+    },
+    {
+      "name": "Mohamed Wague",
+      "team": "SLC"
+    },
+    {
+      "name": "Myron Amey",
+      "team": "VAL"
+    },
+    {
+      "name": "N'Faly Dante",
+      "team": "WES"
+    },
+    {
+      "name": "Nate Bittle",
+      "team": "RAP"
+    },
+    {
+      "name": "Nate Johnson",
+      "team": "OKL"
+    },
+    {
+      "name": "Nate Santos",
+      "team": "IWA"
+    },
+    {
+      "name": "Nathan Mensah",
+      "team": "SDC"
+    },
+    {
+      "name": "Nathan Missia-Dio",
+      "team": "SXF"
+    },
+    {
+      "name": "Nick Boyd",
+      "team": "SCW"
+    },
+    {
+      "name": "Nick Jourdain",
+      "team": "WES"
+    },
+    {
+      "name": "Nick Martinelli",
+      "team": "SDC"
+    },
+    {
+      "name": "Nick Pringle",
+      "team": "LIN"
+    },
+    {
+      "name": "Nimari Burnett",
+      "team": "RAP"
+    },
+    {
+      "name": "Noam Yaacov",
+      "team": "CLC"
+    },
+    {
+      "name": "Nolan Hickman",
+      "team": "CCG"
+    },
+    {
+      "name": "Norchad Omier",
+      "team": "CLC"
+    },
+    {
+      "name": "Obi Agbim",
+      "team": "SCW"
+    },
+    {
+      "name": "Ochai Agbaji",
+      "team": "AUS"
+    },
+    {
+      "name": "Olumide Adelodun",
+      "team": "RAP"
+    },
+    {
+      "name": "Omer Yurtseven",
+      "team": "RGV"
+    },
+    {
+      "name": "Orlando Robinson",
+      "team": "WCB"
+    },
+    {
+      "name": "Oscar Tshiebwe",
+      "team": "RGV"
+    },
+    {
+      "name": "PJ Hall",
+      "team": "GBO"
+    },
+    {
+      "name": "Pat Spencer",
+      "team": "VAL"
+    },
+    {
+      "name": "Paul Zilinskas",
+      "team": "WES"
+    },
+    {
+      "name": "Payton Sandfort",
+      "team": "IWA"
+    },
+    {
+      "name": "Pedro Bradshaw",
+      "team": "GRG"
+    },
+    {
+      "name": "Pete Nance",
+      "team": "WIS"
+    },
+    {
+      "name": "Peter Suder",
+      "team": "WCB"
+    },
+    {
+      "name": "Phillip Wheeler",
+      "team": "VAL"
+    },
+    {
+      "name": "Pierre Brooks II",
+      "team": "MCC"
+    },
+    {
+      "name": "Quadir Copeland",
+      "team": "RGV"
+    },
+    {
+      "name": "Quinn Denker",
+      "team": "MXC"
+    },
+    {
+      "name": "R.J. Davis",
+      "team": "AUS"
+    },
+    {
+      "name": "RJ Felton",
+      "team": "NOB"
+    },
+    {
+      "name": "Rashaun Agee",
+      "team": "CLC"
+    },
+    {
+      "name": "RayJ Dennis",
+      "team": "CPS"
+    },
+    {
+      "name": "Rayan Rupert",
+      "team": "DEL"
+    },
+    {
+      "name": "Raysean Seamster",
+      "team": "CVL"
+    },
+    {
+      "name": "Reece Beekman",
+      "team": "CCG"
+    },
+    {
+      "name": "Reese Dixon-Waters",
+      "team": "GRG"
+    },
+    {
+      "name": "Remy Martin",
+      "team": "WCB"
+    },
+    {
+      "name": "Richie Saunders",
+      "team": "MHU"
+    },
+    {
+      "name": "Ricky Council IV",
+      "team": "OSC"
+    },
+    {
+      "name": "Rienk Mast",
+      "team": "NOB"
+    },
+    {
+      "name": "Riley Minix",
+      "team": "CLC"
+    },
+    {
+      "name": "Rob Dillingham",
+      "team": "WES"
+    },
+    {
+      "name": "Robert McCray V",
+      "team": "OKL"
+    },
+    {
+      "name": "Rocco Zikarsky",
+      "team": "IWA"
+    },
+    {
+      "name": "Romeo Weems",
+      "team": "MCC"
+    },
+    {
+      "name": "Ryan Nembhard",
+      "team": "GRG"
+    },
+    {
+      "name": "Saint Thomas",
+      "team": "DEL"
+    },
+    {
+      "name": "Samson Johnson",
+      "team": "RCR"
+    },
+    {
+      "name": "Samuel Hoiberg",
+      "team": "VAL"
+    },
+    {
+      "name": "Sean East II",
+      "team": "STO"
+    },
+    {
+      "name": "Sean McNeil",
+      "team": "CLC"
+    },
+    {
+      "name": "Sean Pedulla",
+      "team": "STO"
+    },
+    {
+      "name": "Seth Lundy",
+      "team": "TEX"
+    },
+    {
+      "name": "Shawn Jones, Jr.",
+      "team": "LTN"
+    },
+    {
+      "name": "Skal Labissiere",
+      "team": "CCG"
+    },
+    {
+      "name": "Solomon Washington",
+      "team": "LTN"
+    },
+    {
+      "name": "Stephen Thompson",
+      "team": "IWA"
+    },
+    {
+      "name": "Steve Settle III",
+      "team": "CCG"
+    },
+    {
+      "name": "Steven Crowl",
+      "team": "GRG"
+    },
+    {
+      "name": "Steven Jamerson",
+      "team": "MNE"
+    },
+    {
+      "name": "Stevie Mitchell",
+      "team": "RGV"
+    },
+    {
+      "name": "Tacko Fall",
+      "team": "DEL"
+    },
+    {
+      "name": "Tae Dozier",
+      "team": "MXC"
+    },
+    {
+      "name": "Taelon Peter",
+      "team": "AUS"
+    },
+    {
+      "name": "Tamar Bates",
+      "team": "SLC"
+    },
+    {
+      "name": "Tanner Holden",
+      "team": "SLC"
+    },
+    {
+      "name": "Taye Fields",
+      "team": "DEL"
+    },
+    {
+      "name": "Taylor Funk",
+      "team": "SLC"
+    },
+    {
+      "name": "Tayton Conerway",
+      "team": "STO"
+    },
+    {
+      "name": "Terrell Brown Jr.",
+      "team": "SLC"
+    },
+    {
+      "name": "Terrence Hargrove Jr.",
+      "team": "WIS"
+    },
+    {
+      "name": "Terri Miller, Jr.",
+      "team": "MXC"
+    },
+    {
+      "name": "Terry Anderson",
+      "team": "RCR"
+    },
+    {
+      "name": "Terry Taylor",
+      "team": "AUS"
+    },
+    {
+      "name": "Tobe Awaka",
+      "team": "WCB"
+    },
+    {
+      "name": "Tobi Lawal",
+      "team": "TEX"
+    },
+    {
+      "name": "Toby Harris",
+      "team": "IWA"
+    },
+    {
+      "name": "Toby Okani",
+      "team": "WES"
+    },
+    {
+      "name": "Tomas Chapero",
+      "team": "MXC"
+    },
+    {
+      "name": "Tony Carr",
+      "team": "GRG"
+    },
+    {
+      "name": "Tre Carroll",
+      "team": "GBO"
+    },
+    {
+      "name": "Tre Donaldson",
+      "team": "SXF"
+    },
+    {
+      "name": "Tre'Von Spillers",
+      "team": "CLC"
+    },
+    {
+      "name": "Trevor Keels",
+      "team": "CCG"
+    },
+    {
+      "name": "Trey Alexander",
+      "team": "SLC"
+    },
+    {
+      "name": "Trey Edmonds",
+      "team": "GRG"
+    },
+    {
+      "name": "Trey Jemison III",
+      "team": "RAP"
+    },
+    {
+      "name": "Trey Townsend",
+      "team": "GBO"
+    },
+    {
+      "name": "Trhae Mitchell",
+      "team": "STO"
+    },
+    {
+      "name": "Tristen Newton",
+      "team": "STO"
+    },
+    {
+      "name": "Tucker DeVries",
+      "team": "MNE"
+    },
+    {
+      "name": "Ty Berry",
+      "team": "WIS"
+    },
+    {
+      "name": "Tyler Bilodeau",
+      "team": "LIN"
+    },
+    {
+      "name": "Tyler Burton",
+      "team": "SCW"
+    },
+    {
+      "name": "Tyler Nickel",
+      "team": "WES"
+    },
+    {
+      "name": "Tyler Smith",
+      "team": "RGV"
+    },
+    {
+      "name": "Tyon Grant-Foster",
+      "team": "SXF"
+    },
+    {
+      "name": "Tyreke Key",
+      "team": "RAP"
+    },
+    {
+      "name": "Tyrone Marshall Jr.",
+      "team": "STO"
+    },
+    {
+      "name": "Tyson Degenhart",
+      "team": "RAP"
+    },
+    {
+      "name": "Ugonna Onyenso",
+      "team": "MCC"
+    },
+    {
+      "name": "Viktor Lakhin",
+      "team": "STO"
+    },
+    {
+      "name": "Vladislav Goldin",
+      "team": "SXF"
+    },
+    {
+      "name": "Wade Taylor IV",
+      "team": "NOB"
+    },
+    {
+      "name": "Walter Clayton Jr.",
+      "team": "TEX"
+    },
+    {
+      "name": "Warith Alatishe",
+      "team": "MHU"
+    },
+    {
+      "name": "Will Tschetter",
+      "team": "CLC"
+    },
+    {
+      "name": "William Baker",
+      "team": "CPS"
+    },
+    {
+      "name": "William Kyle",
+      "team": "CVL"
+    },
+    {
+      "name": "Wyatt Fricks",
+      "team": "GBO"
+    },
+    {
+      "name": "Yuki Kawamura",
+      "team": "SDC"
+    },
+    {
+      "name": "Yuri Collins",
+      "team": "MHU"
+    },
+    {
+      "name": "Zach Cleveland",
+      "team": "MHU"
+    },
+    {
+      "name": "Zack Austin",
+      "team": "CLC"
+    },
+    {
+      "name": "Zeke Mayo",
+      "team": "MXC"
+    },
+    {
+      "name": "Zhaire Smith",
+      "team": "OKL"
+    },
+    {
+      "name": "Zhuric Phelps",
+      "team": "VAL"
+    },
+    {
+      "name": "Zyon Pullin",
+      "team": "IWA"
+    }
+  ],
+  "nameToTeam": {
+    "a.j. staton-mccray": "SXF",
+    "aaron nkrumah": "STO",
+    "aaron scott": "LIN",
+    "abou ousmane": "DEL",
+    "adam flagler": "TEX",
+    "adama bal": "WIS",
+    "agapy de melo santos": "MXC",
+    "aj hoggard": "RAP",
+    "ak okereke": "CVL",
+    "alex morales": "OSC",
+    "alex toohey": "SCW",
+    "alondes williams": "CCG",
+    "aly khalifa": "WIS",
+    "amari williams": "MNE",
+    "amir spears": "WES",
+    "andre jackson jr.": "RAP",
+    "andrew holifield": "OKL",
+    "aniwaniwa tait-jones": "CVL",
+    "anthony pritchard": "OKL",
+    "anton watson": "CVL",
+    "arthur kaluma": "CVL",
+    "au'diese toney": "OSC",
+    "aziz bandaogo": "LTN",
+    "barry dunning": "RCR",
+    "barry evans": "CCG",
+    "basheer jihad": "MCC",
+    "ben humrichous": "LIN",
+    "ben saraf": "LIN",
+    "benjamin williams": "CCG",
+    "bez mbeng": "SXF",
+    "blake hinson": "STO",
+    "blake wesley": "SDC",
+    "bogoljub markovi\u0107": "WIS",
+    "boopie miller": "GRG",
+    "braden smith": "NOB",
+    "brendan hausen": "MHU",
+    "brice williams": "MCC",
+    "brooks barnhizer": "OKL",
+    "bryce harris": "RGV",
+    "bryce hopkins": "GRG",
+    "bryson warren": "MCC",
+    "buddy boeheim": "OKL",
+    "caleb grill": "MNE",
+    "caleb houstan": "RCR",
+    "caleb love": "DEL",
+    "caleb mcconnell": "RGV",
+    "caleb stone-carrawell": "RAP",
+    "cam christie": "SDC",
+    "cam whitmore": "GRG",
+    "cameron corhen": "CPS",
+    "cameron hildreth": "NOB",
+    "cameron martin": "IWA",
+    "cameron matthews": "RGV",
+    "cameron parker": "WIS",
+    "carson cooper": "CVL",
+    "chad baker-mazara": "MXC",
+    "chance mcmillian": "SCW",
+    "chaney johnson": "LIN",
+    "chase ross": "CVL",
+    "chaz lanier": "MCC",
+    "chris bell": "LTN",
+    "chris mantis": "TEX",
+    "chris ma\u00f1on": "CVL",
+    "chris youngblood": "RCR",
+    "christian shumate": "LTN",
+    "christoph tilly": "OKL",
+    "chucky hepburn": "RAP",
+    "cj huntley": "VAL",
+    "cole swider": "CVL",
+    "coleman hawkins": "GRG",
+    "colin castleton": "OSC",
+    "corey camper": "VAL",
+    "cormac ryan": "WIS",
+    "cris carroll": "DEL",
+    "curtis jones": "CLC",
+    "d'andre davis": "MNE",
+    "dailyn swain": "WCB",
+    "daimion collins": "AUS",
+    "dain dainja": "LIN",
+    "dajuan gordon": "GBO",
+    "dajuan harris": "RGV",
+    "dalen terry": "SCW",
+    "dalton knecht": "WES",
+    "damari monsanto": "DEL",
+    "dane goodwin": "GRG",
+    "daniel rivera": "MXC",
+    "darin green": "TEX",
+    "dariq whitehead": "OKL",
+    "daron holmes ii": "GRG",
+    "david jones garcia": "AUS",
+    "david muoka": "STO",
+    "david sloan": "MXC",
+    "david stockton": "VAL",
+    "dawson garcia": "MCC",
+    "deandre williams": "SDC",
+    "deivon smith": "SCW",
+    "dennis smith jr.": "SXF",
+    "devin carter": "MNE",
+    "devon higgs": "CPS",
+    "dillon jones": "DEL",
+    "dillon mitchell": "MNE",
+    "dink pate": "WES",
+    "dion brown": "LIN",
+    "dj armstrong": "GBO",
+    "dj patrick": "WCB",
+    "dj rodman": "LIN",
+    "dominique daniels, jr.": "LTN",
+    "drake allen": "MCC",
+    "drake powell": "LIN",
+    "drew peterson": "WCB",
+    "drew timme": "VAL",
+    "duke miles": "DEL",
+    "duop reath": "VAL",
+    "dwight murray, jr.": "LIN",
+    "ebuka okorie": "MCC",
+    "elias ralph": "SCW",
+    "elijah harkless": "MCC",
+    "emanuel miller": "GRG",
+    "enrique freeman": "IWA",
+    "eric dixon": "MHU",
+    "ernest udeh, jr.": "CLC",
+    "ethan taylor": "LTN",
+    "felix okpara": "CCG",
+    "fletcher loyer": "SDC",
+    "gabe levin": "STO",
+    "gabe madsen": "SXF",
+    "gabe mcglothan": "MNE",
+    "giorgi bezhanishvili": "CPS",
+    "graham ike": "SCW",
+    "grant nelson": "LIN",
+    "grant newell": "WCB",
+    "guillermo diaz-graham": "TEX",
+    "guy ragland jr.": "DEL",
+    "hank morgan": "MNE",
+    "hannes steinbach": "GBO",
+    "harrison ingram": "SLC",
+    "hayden gray": "MNE",
+    "houston mallette": "WCB",
+    "hunter dickinson": "LTN",
+    "hunter sallis": "SDC",
+    "hyunjung lee": "RCR",
+    "ian martinez": "CLC",
+    "ian schieffelin": "SXF",
+    "ibrahima diallo": "SLC",
+    "igor mili\u010di\u0107, jr.": "WES",
+    "ileri ayo-faleye": "SDC",
+    "isaac jones": "MCC",
+    "isaac mckneely": "CPS",
+    "isaiah carr": "CCG",
+    "isaiah stevens": "WCB",
+    "isaiah wong": "LIN",
+    "izaiyah nelson": "OSC",
+    "j'vonne hadley": "SXF",
+    "ja'kobi gillespie": "AUS",
+    "jabri abdur-rahim": "CCG",
+    "jace carter": "CVL",
+    "jacksen moni": "SCW",
+    "jaden akins": "WES",
+    "jadin booth": "RGV",
+    "jaeden zackery": "GBO",
+    "jaehshon thomas": "OKL",
+    "jaelen house": "SLC",
+    "jahmai mashack": "MHU",
+    "jahmir young": "CVL",
+    "jahmyl telfort": "SDC",
+    "jake stephens": "WIS",
+    "jalen bridges": "WCB",
+    "jalen crutcher": "IWA",
+    "jalen pickett": "SDC",
+    "jalen slawson": "NOB",
+    "jalen warley": "NOB",
+    "jalen wilson": "CPS",
+    "jalon moore": "LTN",
+    "jamarion sharp": "RAP",
+    "jameer nelson jr.": "DEL",
+    "james bouknight": "MXC",
+    "james karnik": "RCR",
+    "jamir watkins": "CCG",
+    "jarkel joiner": "GBO",
+    "jaron pierre jr.": "LTN",
+    "jarron cumberland": "OSC",
+    "jason preston": "SDC",
+    "jasper floyd": "TEX",
+    "javon small": "MHU",
+    "jaxson robinson": "CLC",
+    "jayden nunn": "AUS",
+    "jaylen martin": "RCR",
+    "jaylin sellers": "WCB",
+    "jayson kent": "RCR",
+    "jazian gortman": "CCG",
+    "jd davison": "OSC",
+    "jeremiah burke": "WIS",
+    "jeremy sochan": "TEX",
+    "jestin porter": "CPS",
+    "jett howard": "TEX",
+    "john butler jr.": "WIS",
+    "john camden": "VAL",
+    "john knight iii": "RGV",
+    "john poulakidas": "SDC",
+    "john tonje": "RCR",
+    "john ukomadu": "MCC",
+    "johnell davis": "OSC",
+    "johni broome": "IWA",
+    "johnny o'neil": "LTN",
+    "jon elmore": "AUS",
+    "jonas aidoo": "SLC",
+    "jonathan mogbo": "STO",
+    "jonathan pierre": "LIN",
+    "jordan bowden": "MHU",
+    "jordan dingle": "LIN",
+    "jordan hawkins": "WCB",
+    "jordan johnson": "IWA",
+    "jordan minor": "OSC",
+    "jordan riley": "MCC",
+    "jordan schakel": "VAL",
+    "jorge diaz-graham": "TEX",
+    "josh dix": "OKL",
+    "josh roberts": "MNE",
+    "joshua jefferson": "LIN",
+    "josiah allick": "GBO",
+    "jules bernard": "IWA",
+    "julian phillips": "RGV",
+    "julian reese": "LTN",
+    "justin harmon": "SLC",
+    "kadary richmond": "CLC",
+    "kalifa sakho": "CCG",
+    "kam jones": "WIS",
+    "kameron warrens": "OKL",
+    "kasean pryor": "OSC",
+    "keba keita": "NOB",
+    "kebba njie": "TEX",
+    "keenan fitzmorris": "MCC",
+    "keion brooks jr.": "NOB",
+    "kendall brown": "AUS",
+    "kennedy chandler": "VAL",
+    "keon johnson": "CPS",
+    "keonte jones": "GRG",
+    "keshad johnson": "SXF",
+    "keshon gilbert": "CPS",
+    "kevin mccullar jr.": "RAP",
+    "keylan boone": "RCR",
+    "keyshawn bryant": "CPS",
+    "khamari mcgriff": "MHU",
+    "kira lewis jr.": "MHU",
+    "kj martin": "IWA",
+    "kobe brown": "NOB",
+    "kobe bufkin": "SLC",
+    "kobe johnson": "CPS",
+    "kobe stewart": "GBO",
+    "koby brea": "VAL",
+    "kowacie reeves jr.": "NOB",
+    "kylan boswell": "GBO",
+    "kyle mangas": "GBO",
+    "kylor kelley": "SXF",
+    "lacey james": "WCB",
+    "lamont butler": "CPS",
+    "lance terry": "MHU",
+    "lawson lovering": "MHU",
+    "leaky black": "STO",
+    "lester quinones": "SXF",
+    "liam robbins": "WES",
+    "lj cryer": "SCW",
+    "logan johnson": "MNE",
+    "luke martinez": "MXC",
+    "m.j. iraldi": "NOB",
+    "malachi smith": "RAP",
+    "malaki branham": "OSC",
+    "maleeck harden-hayes": "NOB",
+    "malevy leons": "SCW",
+    "malik dia": "LTN",
+    "malik whitaker": "RGV",
+    "malik williams": "AUS",
+    "maliq brown": "AUS",
+    "manny obaseki": "WIS",
+    "marcus bagley": "DEL",
+    "marcus garrett": "WIS",
+    "mark armstrong": "RCR",
+    "mark sears": "RCR",
+    "markquis nowell": "LTN",
+    "marquel sutton": "WCB",
+    "matt cross": "TEX",
+    "matthew murrell": "SLC",
+    "meechie johnson": "CVL",
+    "micah peavy": "OKL",
+    "michael ajayi": "GBO",
+    "mike sharavjamts": "OSC",
+    "miles barnstable": "AUS",
+    "miles kelly": "SCW",
+    "milos uzan": "MNE",
+    "mitchell mascari": "WES",
+    "miye oni": "SDC",
+    "mohamed wague": "SLC",
+    "myron amey": "VAL",
+    "n'faly dante": "WES",
+    "nate bittle": "RAP",
+    "nate johnson": "OKL",
+    "nate santos": "IWA",
+    "nathan mensah": "SDC",
+    "nathan missia-dio": "SXF",
+    "nick boyd": "SCW",
+    "nick jourdain": "WES",
+    "nick martinelli": "SDC",
+    "nick pringle": "LIN",
+    "nimari burnett": "RAP",
+    "noam yaacov": "CLC",
+    "nolan hickman": "CCG",
+    "norchad omier": "CLC",
+    "obi agbim": "SCW",
+    "ochai agbaji": "AUS",
+    "olumide adelodun": "RAP",
+    "omer yurtseven": "RGV",
+    "orlando robinson": "WCB",
+    "oscar tshiebwe": "RGV",
+    "pat spencer": "VAL",
+    "paul zilinskas": "WES",
+    "payton sandfort": "IWA",
+    "pedro bradshaw": "GRG",
+    "pete nance": "WIS",
+    "peter suder": "WCB",
+    "phillip wheeler": "VAL",
+    "pierre brooks ii": "MCC",
+    "pj hall": "GBO",
+    "quadir copeland": "RGV",
+    "quinn denker": "MXC",
+    "r.j. davis": "AUS",
+    "rashaun agee": "CLC",
+    "rayan rupert": "DEL",
+    "rayj dennis": "CPS",
+    "raysean seamster": "CVL",
+    "reece beekman": "CCG",
+    "reese dixon-waters": "GRG",
+    "remy martin": "WCB",
+    "richie saunders": "MHU",
+    "ricky council iv": "OSC",
+    "rienk mast": "NOB",
+    "riley minix": "CLC",
+    "rj felton": "NOB",
+    "rob dillingham": "WES",
+    "robert mccray v": "OKL",
+    "rocco zikarsky": "IWA",
+    "romeo weems": "MCC",
+    "ryan nembhard": "GRG",
+    "saint thomas": "DEL",
+    "samson johnson": "RCR",
+    "samuel hoiberg": "VAL",
+    "sean east ii": "STO",
+    "sean mcneil": "CLC",
+    "sean pedulla": "STO",
+    "seth lundy": "TEX",
+    "shawn jones, jr.": "LTN",
+    "skal labissiere": "CCG",
+    "solomon washington": "LTN",
+    "stephen thompson": "IWA",
+    "steve settle iii": "CCG",
+    "steven crowl": "GRG",
+    "steven jamerson": "MNE",
+    "stevie mitchell": "RGV",
+    "tacko fall": "DEL",
+    "tae dozier": "MXC",
+    "taelon peter": "AUS",
+    "tamar bates": "SLC",
+    "tanner holden": "SLC",
+    "taye fields": "DEL",
+    "taylor funk": "SLC",
+    "tayton conerway": "STO",
+    "terrell brown jr.": "SLC",
+    "terrence hargrove jr.": "WIS",
+    "terri miller, jr.": "MXC",
+    "terry anderson": "RCR",
+    "terry taylor": "AUS",
+    "tobe awaka": "WCB",
+    "tobi lawal": "TEX",
+    "toby harris": "IWA",
+    "toby okani": "WES",
+    "tomas chapero": "MXC",
+    "tony carr": "GRG",
+    "tre carroll": "GBO",
+    "tre donaldson": "SXF",
+    "tre'von spillers": "CLC",
+    "trevor keels": "CCG",
+    "trey alexander": "SLC",
+    "trey edmonds": "GRG",
+    "trey jemison iii": "RAP",
+    "trey townsend": "GBO",
+    "trhae mitchell": "STO",
+    "tristen newton": "STO",
+    "tucker devries": "MNE",
+    "ty berry": "WIS",
+    "tyler bilodeau": "LIN",
+    "tyler burton": "SCW",
+    "tyler nickel": "WES",
+    "tyler smith": "RGV",
+    "tyon grant-foster": "SXF",
+    "tyreke key": "RAP",
+    "tyrone marshall jr.": "STO",
+    "tyson degenhart": "RAP",
+    "ugonna onyenso": "MCC",
+    "viktor lakhin": "STO",
+    "vladislav goldin": "SXF",
+    "wade taylor iv": "NOB",
+    "walter clayton jr.": "TEX",
+    "warith alatishe": "MHU",
+    "will tschetter": "CLC",
+    "william baker": "CPS",
+    "william kyle": "CVL",
+    "wyatt fricks": "GBO",
+    "yuki kawamura": "SDC",
+    "yuri collins": "MHU",
+    "zach cleveland": "MHU",
+    "zack austin": "CLC",
+    "zeke mayo": "MXC",
+    "zhaire smith": "OKL",
+    "zhuric phelps": "VAL",
+    "zyon pullin": "IWA"
+  }
+}

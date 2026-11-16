@@ -1355,13 +1355,55 @@ document.querySelectorAll('#availToggle button').forEach(btn => {
 function setupSearch(players) {
   const input = document.getElementById('searchInput');
   const results = document.getElementById('searchResults');
+  let searchPool = [...players];
+
+  Promise.all([
+    fetch('data/league_lite_shots_2026-27.json').then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('data/gleague_roster_2026-27.json').then(r => r.ok ? r.json() : null).catch(() => null)
+  ]).then(([lite, ros]) => {
+    const existingNames = new Set(searchPool.map(p => (p.name || '').toLowerCase()));
+    if (lite && lite.teams) {
+      lite.teams.forEach(t => {
+        searchPool.unshift({
+          isTeam: true,
+          id: t.abbrev || t.id,
+          name: `${t.name} (${t.abbrev || 'G League'})`,
+          position: 'TEAM LITE SHOT CHART',
+          team: ''
+        });
+      });
+    }
+    if (ros && ros.players) {
+      ros.players.forEach(rp => {
+        if (rp.name && !existingNames.has(rp.name.toLowerCase())) {
+          existingNames.add(rp.name.toLowerCase());
+          searchPool.push({
+            id: rp.name,
+            name: rp.name,
+            position: 'G League',
+            team: rp.team || '',
+            liteOnly: true
+          });
+        }
+      });
+    }
+  });
+
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
     if (!q) { results.innerHTML = ''; return; }
-    const matches = players.filter(p => p.name.toLowerCase().includes(q)).slice(0, 8);
-    results.innerHTML = matches.map(p =>
-      `<a href="player.html?id=${p.id}">${nameHtml(p)}<span class="pos">${p.position || ''}${p.team ? ' · ' + p.team : ''}</span></a>`
-    ).join('') || `<div class="board-empty">No matches.</div>`;
+    const matches = searchPool.filter(p =>
+      p.name.toLowerCase().includes(q) || (p.team || '').toLowerCase().includes(q)
+    ).slice(0, 10);
+    results.innerHTML = matches.map(p => {
+      if (p.isTeam) {
+        return `<a href="team.html?team=${encodeURIComponent(p.id)}" style="font-weight:700;color:var(--blue);">${p.name}<span class="pos">${p.position}</span></a>`;
+      }
+      if (p.liteOnly) {
+        return `<a href="player.html?name=${encodeURIComponent(p.name)}">${p.name}<span class="pos">${p.position}${p.team ? ' · ' + p.team : ''}</span></a>`;
+      }
+      return `<a href="player.html?id=${p.id}">${nameHtml(p)}<span class="pos">${p.position || ''}${p.team ? ' · ' + p.team : ''}</span></a>`;
+    }).join('') || `<div class="board-empty">No matches.</div>`;
   });
 }
 

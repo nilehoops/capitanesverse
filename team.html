@@ -95,31 +95,136 @@ function buildCourtCard(title, zonesObj, lgZones, statsObj, isDef) {
     rows += `<tr><td style="padding:2px 4px;border-bottom:1px solid var(--border);font-weight:600;">${z}</td><td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:right;">${m}-${a}</td><td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${a ? pct.toFixed(1)+'%' : '—'}</td><td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:right;">${share.toFixed(1)}%</td><td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:right;color:${dCol};font-weight:700;">${a ? (diff>=0?'+':'')+diff.toFixed(1)+'%' : '—'}</td></tr>`;
   });
   const court = `<g fill="none" stroke="#222" stroke-width="1.5"><rect x="-250" y="-47.5" width="500" height="470"/><rect x="-80" y="-47.5" width="160" height="190"/><circle cx="0" cy="142.5" r="60"/><path d="M -220 -47.5 L -220 92.5 A 237.5 237.5 0 0 0 220 92.5 L 220 -47.5"/><circle cx="0" cy="0" r="7.5" stroke="#D81F2A" stroke-width="2"/></g>`;
-  return `<div class="tm-card"><div class="tm-card-title">${title}</div><div class="tm-card-sub">${subLine}</div><div class="tm-shot-wrap"><div class="tm-svg-box"><svg viewBox="-250 -47.5 500 470" style="width:100%;height:auto;display:block;border:1px solid var(--border);background:#FAFAFA;">${poly}${court}${lbl}</svg></div><div class="tm-tbl-box"><table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:2px 4px;text-align:left;border-bottom:1px solid var(--border);">Zone</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">FGM-FGA</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">FG%</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">Share%</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">vs LG</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+  return `<div class="tm-card"><div class="tm-card-title">${title}</div><div class="tm-card-sub">${subLine}</div><div class="tm-shot-wrap"><div class="tm-svg-box"><svg viewBox="-250 -47.5 500 470" style="width:100%;height:auto;display:block;border:1px solid var(--border);background:#FAFAFA;">${poly}${court}${lbl}</svg></div><div class="tm-tbl-box"><table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:2px 4px;text-align:left;border-bottom:1px solid var(--border);">Zone</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">FGM-FGA</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">2P%</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">Share%</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">vs LG</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
 }
 
-function buildInsightsAndTov(active, lgZ) {
+function buildInsightsAndTov(active, lgZ, allTeams) {
   const bullets = new Array(), o = active.offStats || {}, d = active.defStats || {};
-  if (o.threePar >= 44) bullets.push(`<b>HIGH-VOLUME 3PT ATTACK:</b> Launches <b>${o.threePar}%</b> of shots from three (${o.fg3Pct}% 3PT).`);
-  if (o.threePar && o.threePar <= 33) bullets.push(`<b>PAINT-HEAVY SHOT DIET:</b> Only <b>${o.threePar}%</b> 3PAr; attacks the interior (${o.fg2Pct}% 2PT, ${o.ftr}% FTr).`);
-  if (o.tovPct >= 16.5) bullets.push(`<b>TURNOVER VULNERABILITY:</b> Commits turnovers on <b>${o.tovPct}%</b> of offensive possessions.`);
-  if (d.tovPct >= 16.5) bullets.push(`<b>BALL-PRESSURE DEFENSE:</b> Forces opponent turnovers on <b>${d.tovPct}%</b> of defensive possessions.`);
+  const ord = (n) => {
+    if (n == null || isNaN(n)) return '';
+    const v = Math.round(n) % 100;
+    const sfx = (v >= 11 && v <= 13) ? 'th' : (v % 10 === 1 ? 'st' : (v % 10 === 2 ? 'nd' : (v % 10 === 3 ? 'rd' : 'th')));
+    return Math.round(n) + sfx;
+  };
+  const pctileOf = (val, arr, invert) => {
+    const clean = arr.filter(x => x != null && !isNaN(x));
+    if (val == null || clean.length < 2) return null;
+    const better = clean.filter(x => invert ? x > val : x < val).length;
+    return Math.round((better / (clean.length - 1)) * 100);
+  };
+
+  const teamsArr = allTeams || new Array();
+
+  // 1. Shot Diet (3PAr)
+  if (o.threePar != null) {
+    const p3 = o.threeParPctile ?? pctileOf(o.threePar, teamsArr.map(t => t.offStats?.threePar), false);
+    const pTxt = p3 != null ? ` (${ord(p3)} percentile)` : '';
+    if (o.threePar >= 44) bullets.push(`<b>HIGH-VOLUME 3PT ATTACK:</b> Launches <b>${o.threePar}%</b> of shots from three (${o.fg3Pct}% 3PT)${pTxt}.`);
+    else if (o.threePar <= 33) bullets.push(`<b>PAINT-HEAVY SHOT DIET:</b> Only <b>${o.threePar}%</b> 3PAr; attacks the interior (${o.fg2Pct}% 2PT, ${o.ftr}% FTr)${pTxt}.`);
+  }
+
+  // 2. Offensive Ball Security / Turnovers
+  if (o.tovPct != null) {
+    const pTov = o.tovPctile ?? pctileOf(o.tovPct, teamsArr.map(t => t.offStats?.tovPct), true);
+    const pTxt = pTov != null ? ` (${ord(pTov)} percentile)` : '';
+    const lbl = o.tovPct >= 16.5 ? 'TURNOVER VULNERABILITY:' : (o.tovPct <= 13.5 ? 'BALL SECURITY STRENGTH:' : 'BALL SECURITY:');
+    bullets.push(`<b>${lbl}</b> Commits turnovers on <b>${o.tovPct}%</b> of offensive possessions${pTxt}.`);
+  }
+
+  // 3. Defensive Turnover Pressure
+  if (d.tovPct != null) {
+    const pDefTov = d.forcedTovPctile ?? pctileOf(d.tovPct, teamsArr.map(t => t.defStats?.tovPct), false);
+    const pTxt = pDefTov != null ? ` (${ord(pDefTov)} percentile)` : '';
+    if (d.tovPct >= 16.0) bullets.push(`<b>BALL-PRESSURE DEFENSE:</b> Forces opponent turnovers on <b>${d.tovPct}%</b> of defensive possessions${pTxt}.`);
+  }
+
+  // 4. Offensive Hot Zone & Defensive Vulnerability with exact 31-team zone percentiles
   let bestOff = null, worstDef = null;
   Object.entries(ZONES_CFG).forEach(([z]) => {
-    const op = (active.zones && active.zones[z]) ? active.zones[z] : new Array(0, 0), dp = (active.defZones && active.defZones[z]) ? active.defZones[z] : new Array(0, 0), lp = (lgZ && lgZ[z]) ? lgZ[z] : new Array(0, 0);
-    const om = op.slice(0,1).pop()||0, oa = op.slice(1,2).pop()||0, dm = dp.slice(0,1).pop()||0, da = dp.slice(1,2).pop()||0, lm = lp.slice(0,1).pop()||0, la = lp.slice(1,2).pop()||0;
+    const op = (active.zones && active.zones[z]) ? active.zones[z] : new Array(0, 0);
+    const dp = (active.defZones && active.defZones[z]) ? active.defZones[z] : new Array(0, 0);
+    const lp = (lgZ && lgZ[z]) ? lgZ[z] : new Array(0, 0);
+    const om = op.slice(0,1).pop()||0, oa = op.slice(1,2).pop()||0;
+    const dm = dp.slice(0,1).pop()||0, da = dp.slice(1,2).pop()||0;
+    const lm = lp.slice(0,1).pop()||0, la = lp.slice(1,2).pop()||0;
     const lgPct = la ? (lm/la)*100 : 40;
-    if (oa >= 15) { const diff = (om/oa)*100 - lgPct; if (!bestOff || diff > bestOff.diff) bestOff = { z, pct: (om/oa)*100, diff }; }
-    if (da >= 15) { const diff = (dm/da)*100 - lgPct; if (!worstDef || diff > worstDef.diff) worstDef = { z, pct: (dm/da)*100, diff }; }
+    if (oa >= 15) {
+      const pct = (om/oa)*100, diff = pct - lgPct;
+      if (!bestOff || diff > bestOff.diff) bestOff = { z, pct, diff };
+    }
+    if (da >= 15) {
+      const pct = (dm/da)*100, diff = pct - lgPct;
+      if (!worstDef || diff > worstDef.diff) worstDef = { z, pct, diff };
+    }
   });
-  if (bestOff && bestOff.diff >= 3.5) bullets.push(`<span style="color:var(--green);font-weight:700;">OFFENSIVE HOT ZONE:</span> Shoots <b>${bestOff.pct.toFixed(1)}%</b> in <b>${bestOff.z}</b> (<b>+${bestOff.diff.toFixed(1)}%</b> vs. LG).`);
-  if (worstDef && worstDef.diff >= 3.5) bullets.push(`<span style="color:var(--red);font-weight:700;">DEFENSIVE VULNERABILITY:</span> Allows <b>${worstDef.pct.toFixed(1)}%</b> in <b>${worstDef.z}</b> (<b>+${worstDef.diff.toFixed(1)}%</b> vs. LG).`);
-  if (active.heightPctile != null && active.heightPctile >= 75) bullets.push(`<b>SIZE ADVANTAGE:</b> Weighted roster height (<b>${active.avgHeight}</b>) ranks in the <b>${active.heightPctile}th percentile</b> league-wide.`);
+
+  if (bestOff && bestOff.diff >= 3.0) {
+    const zoneVals = teamsArr.map(t => {
+      const pr = t.zones?.[bestOff.z] || new Array(0, 0);
+      const m = pr.slice(0,1).pop()||0, a = pr.slice(1,2).pop()||0;
+      return a >= 10 ? (m/a)*100 : null;
+    });
+    const zp = pctileOf(bestOff.pct, zoneVals, false);
+    const pTxt = zp != null ? ` (${ord(zp)} percentile)` : '';
+    bullets.push(`<span style="color:var(--green);font-weight:700;">OFFENSIVE HOT ZONE:</span> Shoots <b>${bestOff.pct.toFixed(1)}%</b> in <b>${bestOff.z}</b> (<b>+${bestOff.diff.toFixed(1)}%</b> vs. LG)${pTxt}.`);
+  }
+
+  if (worstDef && worstDef.diff >= 3.0) {
+    const defVals = teamsArr.map(t => {
+      const pr = t.defZones?.[worstDef.z] || new Array(0, 0);
+      const m = pr.slice(0,1).pop()||0, a = pr.slice(1,2).pop()||0;
+      return a >= 10 ? (m/a)*100 : null;
+    });
+    const zp = pctileOf(worstDef.pct, defVals, true);
+    const pTxt = zp != null ? ` (${ord(zp)} percentile)` : '';
+    bullets.push(`<span style="color:var(--red);font-weight:700;">DEFENSIVE VULNERABILITY:</span> Allows <b>${worstDef.pct.toFixed(1)}%</b> in <b>${worstDef.z}</b> (<b>+${worstDef.diff.toFixed(1)}%</b> vs. LG)${pTxt}.`);
+  }
+
+  // 5. Lineup Strengths & Weaknesses to Exploit with league-wide lineup NetRtg percentiles
+  const luAll = active.lineups || {};
+  const use5 = (luAll.fiveman || new Array()).filter(x => x.poss >= 25).length >= 2;
+  const luKey = use5 ? 'fiveman' : 'trios';
+  const minPoss = use5 ? 25 : 45;
+  const targetLu = (luAll[luKey] || new Array()).filter(x => x.poss >= minPoss);
+  const allLeagueLuNets = teamsArr.flatMap(t => (t.lineups?.[luKey] || new Array()).filter(x => x.poss >= minPoss).map(x => x.netRtg));
+
+  if (targetLu.length) {
+    const bestLu = targetLu.slice().sort((a, b) => b.netRtg - a.netRtg).slice(0, 1).pop();
+    const worstLu = targetLu.slice().sort((a, b) => a.netRtg - b.netRtg).slice(0, 1).pop();
+    if (bestLu && bestLu.netRtg >= 4) {
+      const lp = pctileOf(bestLu.netRtg, allLeagueLuNets, false);
+      const pTxt = lp != null ? ` (${ord(lp)} percentile)` : '';
+      bullets.push(`<span style="color:var(--green);font-weight:700;">LINEUP STRENGTH TO PLAN FOR:</span> <b>${bestLu.players}</b> (${bestLu.poss} poss) posts a <b>+${bestLu.netRtg} NetRtg</b> (${bestLu.ortg} ORtg / ${bestLu.drtg} DRtg)${pTxt}.`);
+    }
+    if (worstLu && worstLu.netRtg <= -4 && worstLu.players !== bestLu?.players) {
+      const lp = pctileOf(worstLu.netRtg, allLeagueLuNets, false);
+      const pTxt = lp != null ? ` (${ord(lp)} percentile)` : '';
+      bullets.push(`<span style="color:var(--red);font-weight:700;">LINEUP WEAKNESS TO EXPLOIT:</span> <b>${worstLu.players}</b> (${worstLu.poss} poss) bleeds <b>${worstLu.netRtg} NetRtg</b> (${worstLu.ortg} ORtg / ${worstLu.drtg} DRtg)${pTxt}.`);
+    }
+  }
+
+  // 6. Roster Physical Size
+  if (active.heightPctile != null && active.heightPctile >= 75) {
+    bullets.push(`<b>SIZE ADVANTAGE:</b> Weighted roster height (<b>${active.avgHeight}</b>) ranks in the <b>${ord(active.heightPctile)} percentile</b>.`);
+  }
+
   const roster = (active.rosterStats || new Array()).slice().sort((a, b) => (b.tov || 0) - (a.tov || 0));
   const totTov = roster.reduce((s, p) => s + (p.tov || 0), 0) || 1;
   const tovRows = roster.slice(0, 6).map(p => `<tr><td style="padding:2px 4px;border-bottom:1px solid var(--border);font-weight:600;">${p.name}</td><td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:right;">${p.tov || 0}</td><td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:right;">${p.tov75 ?? '—'}</td><td style="padding:2px 4px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${((p.tov || 0) / totTov * 100).toFixed(1)}%</td></tr>`).join('');
-  return `<div class="tm-grid-2"><div class="tm-card" style="border-left:4px solid var(--blue);background:var(--surface);"><div class="tm-card-title">Insights</div><ul style="margin:4px 0 0 16px;padding:0;font-size:11px;line-height:1.45;">${(bullets.length ? bullets : new Array('Balanced shot distribution and efficiency across zones.')).map(b => `<li style="margin-bottom:3px;">${b}</li>`).join('')}</ul></div><div class="tm-card"><div class="tm-card-title">Turnover Breakdown &amp; Ball-Handler Share</div><div class="tm-card-sub">Team TOV%: <b>${o.tovPct ?? '—'}%</b> · Opponent Forced TOV%: <b>${d.tovPct ?? '—'}%</b></div><table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:2px 4px;text-align:left;border-bottom:1px solid var(--border);">Player</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">TOV</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">TOV/75</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">Team TOV%</th></tr></thead><tbody>${tovRows}</tbody></table></div></div>`;
+  return `<div class="tm-grid-2"><div class="tm-card" style="border-left:4px solid var(--blue);background:var(--surface);"><div class="tm-card-title">Insights</div><ul style="margin:4px 0 0 16px;padding:0;font-size:11px;line-height:1.45;">${(bullets.length ? bullets : new Array('Balanced shot distribution and efficiency across zones (50th percentile).')).map(b => `<li style="margin-bottom:3px;">${b}</li>`).join('')}</ul></div><div class="tm-card"><div class="tm-card-title">Turnover Breakdown &amp; Ball-Handler Share</div><div class="tm-card-sub">Team TOV%: <b>${o.tovPct ?? '—'}%</b> · Opponent Forced TOV%: <b>${d.tovPct ?? '—'}%</b></div><table style="width:100%;border-collapse:collapse;font-size:10px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:2px 4px;text-align:left;border-bottom:1px solid var(--border);">Player</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">TOV</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">TOV/75</th><th style="padding:2px 4px;text-align:right;border-bottom:1px solid var(--border);">Team TOV%</th></tr></thead><tbody>${tovRows}</tbody></table></div></div>`;
 }
+
+function buildFrequentLineupsCard(active) {
+  const lu = active.lineups || {};
+  const renderRows = (type) => {
+    const list = (lu[type] || new Array()).slice(0, 3);
+    if (!list.length) return '<tr><td colspan="6" style="padding:6px;color:var(--muted);">No lineup combinations logged yet for this group size.</td></tr>';
+    return list.map((l, i) => `<tr><td style="padding:4px 6px;border-bottom:1px solid var(--border);font-weight:700;">#${i + 1} · ${l.players}</td><td style="padding:4px 6px;border-bottom:1px solid var(--border);text-align:right;">${l.min}</td><td style="padding:4px 6px;border-bottom:1px solid var(--border);text-align:right;">${l.poss}</td><td style="padding:4px 6px;border-bottom:1px solid var(--border);text-align:right;">${l.ortg}</td><td style="padding:4px 6px;border-bottom:1px solid var(--border);text-align:right;">${l.drtg}</td><td style="padding:4px 6px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:${l.netRtg >= 0 ? 'var(--green)' : 'var(--red)'};">${l.netRtg >= 0 ? '+' : ''}${l.netRtg}</td></tr>`).join('');
+  };
+  window._switchTeamLuType = (val) => { const tb = document.getElementById('tmFreqLuBody'); if (tb) tb.innerHTML = renderRows(val); };
+  return `<div class="tm-card" style="margin-bottom:8px;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><div class="tm-card-title" style="margin:0;">Most Frequent Lineups (Top 3 by Possessions)</div><select onchange="window._switchTeamLuType(this.value)" style="font-family:'Lora',serif;font-size:11px;padding:2px 6px;border:1px solid var(--border);"><option value="fiveman" selected>5-Man Units</option><option value="quads">Quads (4-Man)</option><option value="trios">Trios (3-Man)</option><option value="duos">Duos (2-Man)</option></select></div><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:3px 6px;text-align:left;border-bottom:1px solid var(--border);">Lineup Combination</th><th style="padding:3px 6px;text-align:right;border-bottom:1px solid var(--border);">MIN</th><th style="padding:3px 6px;text-align:right;border-bottom:1px solid var(--border);">POSS</th><th style="padding:3px 6px;text-align:right;border-bottom:1px solid var(--border);">ORtg</th><th style="padding:3px 6px;text-align:right;border-bottom:1px solid var(--border);">DRtg</th><th style="padding:3px 6px;text-align:right;border-bottom:1px solid var(--border);">NetRtg</th></tr></thead><tbody id="tmFreqLuBody">${renderRows('fiveman')}</tbody></table></div>`;
+}
+
 function buildRotationsCard(active) {
   const games = active.last5Rotations || new Array();
   if (!games.length) return '';
@@ -141,9 +246,9 @@ function buildRosterTable(active, nameToId) {
     const pid = nameToId[normName(p.name)];
     const href = pid ? `player.html?id=${encodeURIComponent(pid)}` : `player.html?name=${encodeURIComponent(p.name)}`;
     const netCol = (p.netRtg || 0) >= 0 ? 'var(--green)' : 'var(--red)', ooCol = (p.onOff || 0) >= 0 ? 'var(--green)' : 'var(--red)';
-    return `<tr><td style="padding:3px 5px;border-bottom:1px solid var(--border);font-weight:700;"><a href="${href}" style="color:var(--blue);text-decoration:none;">${p.name}</a></td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.age ?? '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.height || '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.weight ? Math.round(p.weight) : '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.gp ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.mpg ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${p.pts75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.reb75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.ast75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.tov75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.stl75 ?? 0}/${p.blk75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.fgPct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.fg3Pct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${p.tsPct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.usg ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:${netCol};">${(p.netRtg>=0?'+':'')}${p.netRtg ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:${ooCol};">${(p.onOff>=0?'+':'')}${p.onOff ?? 0}</td></tr>`;
+    return `<tr><td style="padding:3px 5px;border-bottom:1px solid var(--border);font-weight:700;"><a href="${href}" style="color:var(--blue);text-decoration:none;">${p.name}</a></td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.age ?? '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.height || '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.weight ? Math.round(p.weight) : '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.gp ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.mpg ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${p.pts75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.reb75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.ast75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.tov75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.stl75 ?? 0}/${p.blk75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.fg2Pct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.fg3Pct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${p.tsPct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.threePar ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.ftr ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.usg ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:${netCol};">${(p.netRtg>=0?'+':'')}${p.netRtg ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:${ooCol};">${(p.onOff>=0?'+':'')}${p.onOff ?? 0}</td></tr>`;
   }).join('');
-  return `<div class="tm-card"><div class="tm-card-title">Roster Physicals, Per-75 Production, Shooting &amp; On/Off Impact</div><div class="tm-card-sub">Minute-Weighted Team Physicals: <b>Age ${active.avgAge ?? '—'}</b> (${active.agePctile ?? '—'}%ile) · <b>Height ${active.avgHeight ?? '—'}</b> (${active.heightPctile ?? '—'}%ile) · <b>Weight ${active.avgWeight ? active.avgWeight + ' lbs' : '—'}</b> (${active.weightPctile ?? '—'}%ile)</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10.5px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:3px 5px;text-align:left;border-bottom:1px solid var(--border);">Player</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">Age</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">Ht</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">Wt</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">GP</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">MPG</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">PTS/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">REB/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">AST/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">TOV/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">STL/BLK</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">FG%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">3P%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">TS%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">USG%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">NetRtg</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">On-Off</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return `<div class="tm-card"><div class="tm-card-title">Roster Physicals, Per-75 Production, Shooting &amp; On/Off Impact</div><div class="tm-card-sub">Minute-Weighted Team Physicals: <b>Age ${active.avgAge ?? '—'}</b> (${active.agePctile ?? '—'}%ile) · <b>Height ${active.avgHeight ?? '—'}</b> (${active.heightPctile ?? '—'}%ile) · <b>Weight ${active.avgWeight ? active.avgWeight + ' lbs' : '—'}</b> (${active.weightPctile ?? '—'}%ile)</div><div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:10.5px;"><thead><tr style="background:var(--surface);color:var(--muted);font-family:'Oswald',sans-serif;"><th style="padding:3px 5px;text-align:left;border-bottom:1px solid var(--border);">Player</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">Age</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">Ht</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">Wt</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">GP</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">MPG</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">PTS/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">REB/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">AST/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">TOV/75</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">STL/BLK</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">2P%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">3P%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">TS%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">3PAr</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">FTr</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">USG%</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">NetRtg</th><th style="padding:3px 5px;text-align:right;border-bottom:1px solid var(--border);">On-Off</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 
 async function loadTeamProfile() {
@@ -165,7 +270,8 @@ async function loadTeamProfile() {
   document.getElementById('tmName').textContent = `${active.name} (${active.abbrev || ''}) — Team Scouting Profile`;
   document.getElementById('tmSub').textContent = `${szn} Season · Record: ${o.w ?? 0}-${o.l ?? 0} (${o.gp ?? 0} GP) · ORtg: ${o.rtg ?? '—'} · DRtg: ${d.rtg ?? '—'} · NetRtg: ${net >= 0 ? '+' : ''}${net}`;
   document.getElementById('tmMacro').innerHTML = `<div><b>Weighted Roster Age:</b> ${active.avgAge ?? '—'} <span style="color:var(--blue);font-weight:700;">(${active.agePctile ?? '—'}%ile)</span></div><div><b>Weighted Roster Height:</b> ${active.avgHeight ?? '—'} <span style="color:var(--blue);font-weight:700;">(${active.heightPctile ?? '—'}%ile)</span></div><div><b>Weighted Roster Weight:</b> ${active.avgWeight ? active.avgWeight + ' lbs' : '—'} <span style="color:var(--blue);font-weight:700;">(${active.weightPctile ?? '—'}%ile)</span></div>`;
-  document.getElementById('tmBody').innerHTML = `<div class="tm-grid-2">${buildCourtCard('Offensive Shot Chart & Shooting Profile', active.zones, lite.leagueZones, o, false)}${buildCourtCard('Defensive Shot Chart & Opponent Allowed', active.defZones, lite.leagueZones, d, true)}</div>` + buildInsightsAndTov(active, lite.leagueZones) + buildRotationsCard(active) + buildRosterTable(active, nameToId);
+  document.getElementById('tmBody').innerHTML = `<div class="tm-grid-2">${buildCourtCard('Offensive Shot Chart & Shooting Profile', active.zones, lite.leagueZones, o, false)}${buildCourtCard('Defensive Shot Chart & Opponent Allowed', active.defZones, lite.leagueZones, d, true)}</div>` + buildInsightsAndTov(active, lite.leagueZones, teams) + buildFrequentLineupsCard(active) +
+    buildRotationsCard(active) + buildRosterTable(active, nameToId);
 }
 loadTeamProfile();
 </script>

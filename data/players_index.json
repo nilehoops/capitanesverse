@@ -3590,7 +3590,7 @@
     "latino": true,
     "availabilitySimple": "yes",
     "availabilityNote": "Verbal agreement with Mexico City Capitanes 7/1",
-    "onRoster": false,
+    "onRoster": true,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5175976.png"
   },
   {

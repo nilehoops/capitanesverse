@@ -148,7 +148,8 @@ for p_file in ["data/players_index.json", "data/players.json"]:
             if not isinstance(obj, dict) or not obj.get("name"):
                 continue
             low = norm_name(obj["name"])
-            in_gl = (name_to_team.get(low) == 'MXC')
+            mxc_norm_set = {norm_name(k) for k, v in name_to_team.items() if v == 'MXC'}
+            in_gl = norm_name(obj['name']) in mxc_norm_set
             if "onRoster" in obj and obj["onRoster"] != in_gl:
                 obj["onRoster"] = in_gl
                 changed = True

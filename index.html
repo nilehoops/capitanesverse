@@ -3349,5 +3349,34 @@ Promise.all([
   document.body.appendChild(layer);
 })();
 </script>
+<script>
+(async function addTeamSearchToIndex() {
+  const inp = document.getElementById('searchInput');
+  const res = document.getElementById('searchResults');
+  if (!inp || !res) return;
+
+  const d27 = await fetch('data/league_lite_shots_2026-27.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
+  const teams = (d27 && Array.isArray(d27.teams)) ? d27.teams : new Array();
+  if (!teams.length) return;
+
+  inp.addEventListener('input', () => {
+    res.querySelectorAll('.team-search-hit').forEach(el => el.remove());
+    const q = inp.value.trim().toLowerCase();
+    if (!q) return;
+    const tHits = teams.filter(t =>
+      (t.name || '').toLowerCase().includes(q) || (t.abbrev || '').toLowerCase().includes(q)
+    ).slice(0, 4);
+    if (!tHits.length) return;
+    const tHtml = tHits.map(t =>
+      `<a class="team-search-hit" href="team.html?team=${encodeURIComponent(t.abbrev || t.id)}" style="font-weight:700;color:#FFD400;">${t.name} (${t.abbrev || 'GL'})<span class="pos">TEAM PROFILE</span></a>`
+    ).join('');
+    if (res.innerHTML.includes('No matches.')) {
+      res.innerHTML = tHtml;
+    } else {
+      res.insertAdjacentHTML('afterbegin', tHtml);
+    }
+  });
+})();
+</script>
 </body>
 </html>

@@ -1,3 +1,13 @@
+function normName(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[.,'’\-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w))
+    .join(' ');
+}
+
 ﻿(async function buildInseasonSearch() {
   const inp = document.getElementById('mainSearch');
   if (!inp) return;
@@ -50,7 +60,7 @@
   const idxList = Array.isArray(idx) ? idx : Object.values(idx || {});
   idxList.forEach(p => {
     if (!p || !p.name) return;
-    seenNames.add(p.name.trim().toLowerCase());
+    seenNames.add(normName(p.name));
     items.push({
       kind: p.onRoster ? 'mxc' : 'player',
       name: p.name,
@@ -64,7 +74,7 @@
   if (ros && Array.isArray(ros.players)) {
     ros.players.forEach(rp => {
       if (!rp || !rp.name) return;
-      const low = rp.name.trim().toLowerCase();
+      const low = rnormName(p.name);
       if (seenNames.has(low)) return;
       seenNames.add(low);
       items.push({
@@ -114,7 +124,7 @@
       return;
     }
     currentHits = items.filter(it =>
-      it.name.toLowerCase().includes(q) || it.code.toLowerCase().includes(q)
+      (it.name.toLowerCase().includes(q) || normName(it.name).includes(normName(q))) || it.code.toLowerCase().includes(q)
     ).slice(0, 12);
     positionBox();
     box.style.display = 'block';

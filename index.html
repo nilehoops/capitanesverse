@@ -388,6 +388,11 @@
     <svg class="wordmark-svg" viewBox="0 0 900 122" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMinYMin meet">
       <text x="0" y="92" font-family="Lora, serif" font-weight="700" font-size="106" fill="#ECECEC">Capitanesverse</text>
     </svg>
+    <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
+      <a href="inseason.html" style="background:#FFD400;color:#1631FF;font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;padding:5px 12px;text-decoration:none;letter-spacing:0.4px;border:1px solid #1631FF;">IN-SEASON ANALYTICS →</a>
+      <a href="shotcharts.html" style="background:#1631FF;color:#FFFFFF;font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;padding:5px 12px;text-decoration:none;letter-spacing:0.4px;">SHOT CHARTS</a>
+      <a href="team.html?team=MXC" style="background:transparent;color:#1631FF;font-family:'Oswald',sans-serif;font-weight:700;font-size:12px;padding:4px 10px;text-decoration:none;letter-spacing:0.4px;border:1px solid #1631FF;">TEAM PROFILES</a>
+    </div>
     <div class="search-line">
       <input id="searchInput" type="text" placeholder="Search:" autocomplete="off">
       <div class="search-results" id="searchResults"></div>
@@ -713,17 +718,6 @@ function renderRoster(players) {
       nameSlots.push(r.id ? `<a href="player.html?id=${r.id}">${inner}</a>` : `<span>${inner}</span>`);
     } else {
       photoSlots.push(`<div class="placeholder">${placeholderSvg}</div>`);
-      nameSlots.push('');
-    }
-  }
-  
-    const c = camp[i];
-    if (c) {
-      photoSlots.push(c.photoUrl ? `<img class="camp-slot" src="${c.photoUrl}" alt="${c.name}">` : `<div class="noimg camp-slot">${getInitials(c.name)}</div>`);
-      const inner = `<span class="roster-tag camp-tag">${c.name.split(' ')[0]}</span>`;
-      nameSlots.push(c.id ? `<a href="player.html?id=${c.id}">${inner}</a>` : `<span>${inner}</span>`);
-    } else {
-      photoSlots.push(`<div class="placeholder camp-slot">${placeholderSvg}</div>`);
       nameSlots.push('');
     }
   }

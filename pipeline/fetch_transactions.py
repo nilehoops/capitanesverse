@@ -1,3 +1,12 @@
+import re, unicodedata
+
+def norm_name(s):
+    if not s: return ""
+    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode("ascii")
+    s = re.sub(r"[.,'’\-]", " ", s.lower())
+    parts = [w for w in s.split() if w not in {"jr", "sr", "ii", "iii", "iv", "v"}]
+    return " ".join(parts)
+
 ﻿import json
 import time
 import requests
@@ -138,8 +147,9 @@ for p_file in ["data/players_index.json", "data/players.json"]:
         for obj in items:
             if not isinstance(obj, dict) or not obj.get("name"):
                 continue
-            low = obj["name"].strip().lower()
-            in_gl = (name_to_team.get(low) == 'MXC')
+            low = norm_name(obj["name"])
+            mxc_norm_set = {norm_name(k) for k, v in name_to_team.items() if v == 'MXC'}
+            in_gl = norm_name(obj['name']) in mxc_norm_set
             if "onRoster" in obj and obj["onRoster"] != in_gl:
                 obj["onRoster"] = in_gl
                 changed = True

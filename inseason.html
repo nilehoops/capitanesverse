@@ -2,380 +2,181 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>2027 Capitanes In-Season Analytics &amp; Research</title>
-<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
-<link rel='stylesheet' href='css/inseason.css'>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capitanes In-Season Analytics &amp; Research</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://googleapis.com">
+<link rel="preconnect" href="https://gstatic.com" crossorigin>
+<link href="https://googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;0,700;1,400&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/inseason.css?v=202">
+<style>
+  .dashboard-row-1 {
+    display: grid !important;
+    grid-template-columns: 272px minmax(370px, 1.12fr) minmax(430px, 1.35fr);
+    align-items: stretch;
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+  }
+  .dashboard-row-2 {
+    display: grid !important;
+    grid-template-columns: 195px 158px minmax(370px, 1.15fr) minmax(350px, 1.1fr);
+    align-items: stretch;
+    width: 100%;
+  }
+  .dashboard-row-1 > div, .dashboard-row-2 > div {
+    width: auto !important; min-width: 0 !important; max-width: none !important;
+    box-sizing: border-box; overflow: hidden;
+  }
+  #bapBoards {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 8px !important; max-height: 315px; overflow-y: auto;
+    font-family: 'Lora', serif; font-size: 10.5px; line-height: 1.35;
+  }
+  #bapBoards > div { min-width: 0; border-right: 1px solid var(--border); padding-right: 6px; }
+  #bapBoards > div:last-child { border-right: none; padding-right: 0; }
+  .bap-cat-btn {
+    font-family: 'Oswald', sans-serif; font-size: 9.5px; font-weight: 700;
+    padding: 1px 6px; border: 1px solid var(--border); background: #fff; color: var(--muted); cursor: pointer;
+  }
+  .bap-cat-btn.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  .sc-svg-lbl { paint-order: stroke; stroke: #ffffff; stroke-width: 2.5px; stroke-linejoin: round; }
+  .rot-vert-strip { display: flex !important; flex-direction: row !important; align-items: stretch !important; border-right: 1px solid var(--border); background: #fff; }
+  .rot-vert-label {
+    writing-mode: vertical-rl; transform: rotate(180deg); text-align: center;
+    font-family: 'Oswald', sans-serif; font-weight: 700; font-size: 10.5px; line-height: 1.15;
+    color: var(--blue); padding: 6px 3px; border-right: 1px solid var(--border); white-space: nowrap; flex-shrink: 0;
+  }
+  @media (max-width: 1180px) {
+    .dashboard-row-1, .dashboard-row-2 { grid-template-columns: 1fr !important; }
+    #bapBoards { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+  }
+</style>
 </head>
 <body>
-
 <header class="page-header">
   <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
-    <div class="page-title">Capitanes In-Season Analytics &amp; Research â€” <span id="seasonLabel"></span></div>
+    <div class="page-title">Capitanes In-Season Analytics &amp; Research &mdash; <span id="seasonLabel"></span></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <div style="display:flex;border:1px solid var(--border);overflow:hidden;">
-        <button class="season-btn" data-season="2026-27" onclick="switchSeason('2026-27')"
-          style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);">2026-27</button>
-        <button class="season-btn" data-season="2025-26" onclick="switchSeason('2025-26')"
-          style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
+        <button class="season-btn" data-season="2026-27" onclick="switchSeason('2026-27')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);">2026-27</button>
+        <button class="season-btn" data-season="2025-26" onclick="switchSeason('2025-26')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
       </div>
-      <a href="index.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">â‡„ Offseason Tool</a>
-      <a href=shotcharts.html style=background:var(--yellow);color:var(--blue);font-family:Oswald,sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;>&#8982; Shot Charts</a>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+        <div style="display:flex;gap:6px;">
+          <a href="index.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">&#8644; Offseason Tool</a>
+          <a href="shotcharts.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">&#8982; Shot Charts (and more)</a>
+        </div>
+        <a href="playerstats.html" style="background:var(--blue);color:var(--yellow);font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:4px 14px;white-space:nowrap;letter-spacing:0.3px;">Leaguewide Player Stats</a>
+      </div>
     </div>
   </div>
-  <div class="page-search">
-    <span>Search:</span>
-    <input id="mainSearch" type="text" placeholder="(players or teams)" autocomplete="off">
-  </div>
+  <div class="page-search"><span>Search:</span><input id="mainSearch" type="text" placeholder="(players or teams)" autocomplete="off"></div>
 </header>
-
 <div class="main">
-
-  <!-- â•â•â• ROW 1: Staff Notes | Best Available Players | Player Stats â•â•â• -->
-  <!-- â•â•â• ROW 1: Staff Notes | Best Available Players | Player Stats + Rotation â•â•â• -->
-  <div class="main-row">
-
-    <!-- Staff Notes -->
-    <div class="left-section" id="staffNotesSection" style="width:var(--staff-notes-width);min-width:var(--staff-notes-width);max-width:var(--staff-notes-width);">
-      <div class="staff-notes-block">
-        <div class="big-label">Staff<br>Notes</div>
-        <div class="staff-feed" id="staffFeed">
-          <div style="color:var(--muted);font-size:11px;">Loading...</div>
-        </div>
-      </div>
+  <div class="main-row dashboard-row-1">
+    <div class="left-section" style="padding:6px 10px;border-right:1px solid var(--border);">
+      <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:20px;color:#000;line-height:1.05;margin-bottom:6px;text-align:center;">Last Game Recap</div>
+      <div id="lastGameRecapContent" style="font-size:11px;color:var(--muted);">Loading last game...</div>
     </div>
 
-    <!-- Best Available Players -->
-    <div class="mid-col" style="padding-bottom:0;border-right:none;">
-      <div style="padding:6px 14px 8px;display:grid;grid-template-columns:auto 1fr;gap:0 10px;align-items:start;">
-        <div>
-          <div class="big-label" style="color:var(--blue);font-size:clamp(22px,3vw,36px);">Best<br>Avaliable<br>Players</div>
-          <div style="font-size:11px;margin-top:6px;">
-            <div style="color:var(--muted);margin-bottom:3px;">Show:</div>
-            <button class="bap-btn active" data-tab="gleague" onclick="switchBapTab('gleague',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--blue);font-weight:700;">Low-minute<br>G Leaguers</button>
-            <button class="bap-btn" data-tab="lnbp" onclick="switchBapTab('lnbp',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">LNBP<br>Players</button>
-            <button class="bap-btn" data-tab="unsigned" onclick="switchBapTab('unsigned',this)" style="display:block;border:none;background:none;cursor:pointer;font-size:11px;text-align:left;padding:0;color:var(--text);margin-top:6px;">Unsigned<br>Players</button>
-          </div>
+    <div class="mid-col" style="padding:0 10px 6px !important;border-right:1px solid var(--border);">
+      <div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;padding-top:4px;margin-bottom:5px;">
+        <div style="display:flex;gap:3px;">
+          <button class="isc-span active" data-span="full" onclick="setInlineScSpan('full',this)" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 6px;border:1px solid var(--border);background:var(--blue);color:#fff;cursor:pointer;">Full Season</button>
+          <button class="isc-span" data-span="last3" onclick="setInlineScSpan('last3',this)" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 6px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;">Last Three</button>
+          <button class="isc-span" data-span="last1" onclick="setInlineScSpan('last1',this)" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 6px;border:1px solid var(--border);background:#fff;color:var(--text);cursor:pointer;">Last Game</button>
         </div>
-        <div id="bapBoards" style="display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px;font-size:12px;background:#f4f4f4;padding:4px 6px;">
-          <div style="color:var(--muted);font-size:11px;">Loadingâ€¦</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Current Rotation: full right side, 2 rows Ã— 5 players, label on far right edge -->
-    <div class="rotation-strip" style="border-left:1px solid var(--border);flex-direction:row;align-items:stretch;">
-      <div class="rotation-players-wrap" style="flex:1;">
-        <div class="rotation-row" id="rotationRow1"></div>
-        <div class="rotation-row" id="rotationRow2"></div>
-      </div>
-      <div class="rotation-label-vert" style="border-left:1px solid var(--border);padding:4px 2px;">Current Rotation<br>(Last Five Games)</div>
-    </div>
-
-  </div><!-- /row 1 -->
-
-  <!-- â•â•â• ROW 2: Season Splits | Lineup Data | WOWY â•â•â• -->
-  <div class="main-row">
-
-    <!-- Season Splits -->
-    <div class="left-section" style="padding:4px 8px;">
-      <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:13px;color:var(--blue);text-align:center;margin-bottom:3px;white-space:nowrap;">Season Splits</div>
-      <div id="trajectoryContent">
-        <div style="font-size:11px;color:var(--muted);">Loadingâ€¦</div>
-      </div>
-    </div>
-
-    <!-- Lineup Data -->
-    <div class="mid-col">
-      <div class="lineup-block">
-        <div class="lineup-data-header">
-          <span class="lineup-data-title">Lineup Data</span>
-          <button class="lineup-lab-btn" onclick="openLineupLab()">Lineup Lab<br>Tool</button>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:4px;font-size:11px;">
-          <div style="display:flex;align-items:center;gap:4px;">
-            <span style="color:var(--muted);">with</span>
-            <select id="lineupWithFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
-              <option value="">anyone</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;">
-            <span style="color:var(--muted);">without</span>
-            <select id="lineupWithoutFilter" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);max-width:120px;">
-              <option value="">anyone</option>
-            </select>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;margin-left:auto;">
-            <span style="color:var(--muted);">min poss</span>
-            <select id="lineupFloorMode" onchange="applyLineupFilters()" style="font-size:11px;padding:2px 4px;border:1px solid var(--border);">
-              <option value="dynamic">dynamic</option>
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="0">all</option>
-            </select>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
-          <span id="lineupFetchStatus" style="font-style:italic;"></span>
-        </div>
-        <div id="lineupContent">
-          <div style="color:var(--muted);font-size:12px;padding:12px 0;">Loading lineup data...</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Player Stats + WOWY stacked -->
-    <div class="right-col" style="display:flex;flex-direction:column;">
-
-      <!-- Player Stats -->
-      <div style="padding:6px 10px 8px;border-bottom:1px solid var(--border);">
-        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:2px;">
-          <div class="big-label" style="color:#000;white-space:nowrap;">Player<br>Stats</div>
-          <div style="padding-top:4px;">
-            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:10px;white-space:nowrap;margin-bottom:2px;">
-              <button class="pstab active" data-tab="inseason" id="pstab-inseason" onclick="switchPsTab('inseason')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 5px 0 0;">2026-27</button><button class="pstab" data-tab="gleague" onclick="switchPsTab('gleague')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">G League Career</button><button class="pstab" data-tab="pro" onclick="switchPsTab('pro')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">All Pro Career</button><button class="pstab" data-tab="ncaa" onclick="switchPsTab('ncaa')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 5px;">NCAA</button>
-            </div>
-            <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;white-space:nowrap;">
-              <button class="psview active" data-view="overall" onclick="switchPsView('overall')" style="border:none;background:none;cursor:pointer;color:var(--blue);padding:0 6px 0 0;">Overall</button><button class="psview" data-view="offense" onclick="switchPsView('offense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Offense</button><button class="psview" data-view="defense" onclick="switchPsView('defense')" style="border:none;background:none;cursor:pointer;color:var(--muted);padding:0 6px;">Defense</button>
-            </div>
-          </div>
-        </div>
-        <div id="psContent"><div style="color:var(--muted);font-size:11px;">Loadingâ€¦</div></div>
-      </div>
-
-      <!-- WOWY -->
-      <div style="padding:6px 10px;">
-        <div class="big-label" style="color:#000;margin-bottom:4px;">WOWY</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:6px;">Select up to 5 players to compare on/off impact.</div>
-        <div id="wowySlots" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:8px;">
-          <!-- 5 player slots rendered by JS -->
-        </div>
-        <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <button onclick="runWowy()" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:none;border-radius:3px;cursor:pointer;font-family:'Oswald',sans-serif;font-weight:700;">Run</button>
-          <button onclick="clearWowy()" style="font-size:11px;padding:3px 8px;background:none;border:1px solid var(--border);border-radius:3px;cursor:pointer;">Clear</button>
-          <button onclick="toggleWowyDiag()" style="font-size:10px;padding:3px 6px;background:none;border:1px solid #ccc;border-radius:3px;cursor:pointer;color:var(--muted);">diag</button>
-        </div>
-        <div id="wowyDiag" style="display:none;font-size:10px;font-family:monospace;background:#f4f4f4;padding:6px 8px;margin-bottom:6px;border-radius:3px;white-space:pre-wrap;max-height:200px;overflow-y:auto;"></div>
-        <div id="wowyContent"></div>
-      </div>
-
-    </div>
-
-  </div><!-- /row 2 -->
-
-</div><!-- /main -->
-
-<!-- Lineup Lab Modal -->
-<div id="lineupLabModal" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,.95);z-index:200;align-items:flex-start;justify-content:center;overflow-y:auto;padding:16px 10px;">
-  <div style="background:#fff;border:1px solid var(--border);max-width:960px;width:100%;position:relative;">
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:2px solid #000;">
-      <div style="font-family:'Oswald',sans-serif;font-size:22px;font-weight:700;">Lineup Lab Tool</div>
-      <button onclick="document.getElementById('lineupLabModal').style.display='none'" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);line-height:1;">Ã—</button>
-    </div>
-
-    <!-- Tabs -->
-    <div style="display:flex;border-bottom:1px solid var(--border);">
-      <button class="lab-tab active" data-tab="lineups" onclick="switchLabTab('lineups')">Lineup Data</button>
-      <button class="lab-tab" data-tab="players" onclick="switchLabTab('players')">Player Stats</button>
-      <button class="lab-tab" data-tab="wowy" onclick="switchLabTab('wowy')">WOWY</button>
-    </div>
-
-    <div style="padding:16px 20px;">
-
-      <!-- â”€â”€ LINEUP DATA TAB â”€â”€ -->
-      <div id="labTab-lineups">
-        <div style="display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;font-size:12px;padding:8px 10px;background:var(--surface);border:1px solid var(--border);margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:6px;">
-            <label>Min. min:</label>
-            <input type="range" id="labMinsSlider" min="0" max="150" value="0" step="5" style="width:90px;accent-color:var(--blue);">
-            <span id="labMinsLabel" style="font-weight:700;min-width:28px;">0</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;"><label>Location:</label>
-            <select id="labLocation" class="lab-filter"><option value="">All</option><option value="Home">Home</option><option value="Road">Away</option></select>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;"><label>Period:</label>
-            <select id="labPeriod" class="lab-filter"><option value="0">Full game</option><option value="1">Q1</option><option value="2">Q2</option><option value="3">Q3</option><option value="4">Q4</option></select>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;"><label>Half:</label>
-            <select id="labHalf" class="lab-filter"><option value="">Full game</option><option value="First Half">1st half</option><option value="Second Half">2nd half</option><option value="Overtime">OT</option></select>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;"><label>Last N:</label>
-            <select id="labLastN" class="lab-filter"><option value="0">All</option><option value="3">3</option><option value="5">5</option><option value="7">7</option><option value="10">10</option><option value="15">15</option></select>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;"><label>Outcome:</label>
-            <select id="labOutcome" class="lab-filter"><option value="">All</option><option value="W">Wins</option><option value="L">Losses</option></select>
-          </div>
-          <div id="labStatus" style="color:var(--muted);font-style:italic;font-size:11px;"></div>
-        </div>
-        <div id="lineupLabInner"><div style="color:var(--muted);font-size:12px;">Adjust filters to explore lineup combinations.</div></div>
-      </div>
-
-      <!-- â”€â”€ PLAYER STATS TAB â”€â”€ -->
-      <div id="labTab-players" style="display:none;">
-        <div id="playerStatsContent"><div style="color:var(--muted);font-size:12px;">Loadingâ€¦</div></div>
-      </div>
-
-      <!-- â”€â”€ WOWY TAB â”€â”€ -->
-      <div id="labTab-wowy" style="display:none;">
-        <div style="font-size:12px;color:var(--muted);margin-bottom:12px;">
-          With Or Without You â€” compares weighted-average team net rating across all duo combinations
-          when each player is on or off the floor. Minutes-weighted using actual lineup data.
-        </div>
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;font-size:12px;">
-          <label style="font-weight:600;">Select player:</label>
-          <select id="wowyPlayerSelect" style="font-size:12px;padding:3px 6px;border:1px solid var(--border);" onchange="renderWowy()">
-            <option value="">â€” choose a player â€”</option>
+        <a href="shotcharts.html" title="Open Full Shot Charts Page" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:22px;line-height:0.95;color:var(--blue);text-decoration:none;text-align:center;display:block;white-space:nowrap;">Shot Charts</a>
+        <div style="display:flex;align-items:center;justify-content:flex-end;gap:4px;font-size:10.5px;">
+          <span style="font-weight:700;">By Player:</span>
+          <select id="inlineScPlayer" onchange="renderInlineShotCharts()" style="font-size:10.5px;padding:2px 4px;border:1px solid var(--border);font-family:'Lora',serif;max-width:125px;">
+            <option value="ALL">Team (All MXC)</option>
           </select>
         </div>
-        <div id="wowyContent"></div>
+      </div>
+      <div id="inlineShotChartsGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div style="color:var(--muted);font-size:11px;">Loading shot courts...</div>
+      </div>
+    </div>
+
+    <div class="bap-panel" style="padding:6px 10px;">
+      <div class="bap-header" style="display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:4px;margin-bottom:5px;">
+        <div class="bap-title" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:18px;color:var(--blue);">Best Available Players</div>
+        <div class="bap-filter-bar" style="font-size:10px;display:flex;align-items:center;gap:3px;flex-wrap:wrap;">
+          <span>Show/Hide:</span>
+          <button class="bap-cat-btn active" onclick="toggleBapCat('twoway',this)">2W/E10</button>
+          <button class="bap-cat-btn active" onclick="toggleBapCat('gleague',this)">GL</button>
+          <button class="bap-cat-btn active" onclick="toggleBapCat('notes',this)">Notes</button>
+          <button class="bap-cat-btn active" onclick="toggleBapCat('unsigned',this)">Unsigned</button>
+          <button class="bap-cat-btn active" onclick="toggleBapCat('lnbp',this)">LNBP</button>
+        </div>
+      </div>
+      <div id="bapBoards"></div>
+    </div>
+  </div>
+  <div class="main-row dashboard-row-2">
+    <div style="padding:6px 8px;border-right:1px solid var(--border);">
+      <div id="splitsTitle" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:16px;color:var(--blue);margin-bottom:4px;text-align:center;">Season Splits</div>
+      <div style="font-size:10px;margin-bottom:4px;display:flex;align-items:center;gap:4px;">
+        <span>Filter:</span>
+        <select id="splitsFilter" onchange="loadTeamStats(this.value)" style="font-size:10px;padding:1px 4px;border:1px solid var(--border);font-family:'Lora',serif;flex:1;">
+          <option value="all">Full Season</option>
+          <option value="wins">Wins</option>
+          <option value="losses">Losses</option>
+          <option value="home">Home</option>
+          <option value="away">Away</option>
+          <option value="last5">Last 5</option>
+        </select>
+      </div>
+      <table style="width:100%;border-collapse:collapse;font-size:10.5px;"><tbody id="splitsBody"></tbody></table>
+      <div id="splitsNote" style="font-size:9px;color:var(--muted);margin-top:3px;"></div>
+    </div>
+
+    <div class="rot-vert-strip">
+      <div class="rot-vert-label">Current Rotation<br>(Last Five Games)</div>
+      <div style="flex:1;padding:6px 4px;display:grid;grid-template-columns:1fr 1fr;gap:4px;align-items:start;min-width:0;">
+        <div id="rotationRow1" style="display:flex;flex-direction:column;gap:5px;min-width:0;"></div>
+        <div id="rotationRow2" style="display:flex;flex-direction:column;gap:5px;min-width:0;"></div>
+      </div>
+    </div>
+
+    <div class="lineup-block" style="padding:6px 10px;border-right:1px solid var(--border);">
+      <div class="lineup-data-header" style="margin-bottom:4px;">
+        <div class="lineup-data-title" style="font-family:'Oswald',sans-serif;font-size:18px;color:var(--blue);">Lineup Data</div>
+        <div style="display:flex;align-items:center;gap:6px;font-size:10px;">
+          <span id="lineupFetchStatus" style="color:var(--muted);font-size:9.5px;"></span>
+          <label style="display:flex;align-items:center;gap:3px;">Min Poss: <input id="minMinsSlider" type="range" min="0" max="150" value="0" style="width:65px;"></label>
+        </div>
+      </div>
+      <div id="lineupContent" style="max-height:290px;overflow-y:auto;font-size:10.5px;"></div>
+    </div>
+
+    <div style="padding:6px 10px;display:flex;flex-direction:column;gap:8px;">
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:17px;color:var(--blue);">Staff Notes</div>
+          <button onclick="toggleNoteForm()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 8px;background:var(--blue);color:#fff;border:none;cursor:pointer;">+ New Note</button>
+        </div>
+        <div id="noteForm" style="display:none;background:var(--surface);border:1px solid var(--border);padding:6px;margin-bottom:6px;font-size:11px;">
+          <input id="noteAuthor" type="text" placeholder="Author (e.g. Coach)" style="width:100%;margin-bottom:4px;padding:3px 5px;border:1px solid var(--border);font-family:'Lora',serif;font-size:11px;">
+          <textarea id="noteText" rows="2" placeholder="Write scouting or lineup note..." style="width:100%;margin-bottom:4px;padding:3px 5px;border:1px solid var(--border);font-family:'Lora',serif;font-size:11px;"></textarea>
+          <button onclick="submitStaffNote()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 10px;background:var(--green);color:#fff;border:none;cursor:pointer;">Save Note</button>
+        </div>
+        <div id="staffFeed" class="staff-feed" style="max-height:140px;overflow-y:auto;font-size:11px;"></div>
       </div>
 
+      <div style="border-top:1px solid var(--border);padding-top:6px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:17px;color:var(--blue);">WOWY</div>
+          <button onclick="clearWowySlots()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:1px 7px;background:#fff;color:var(--muted);border:1px solid var(--border);cursor:pointer;">Reset</button>
+        </div>
+        <div id="wowySlots" style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:5px;"></div>
+        <div id="wowyResults" style="font-size:10.5px;"></div>
+      </div>
     </div>
   </div>
 </div>
-
-
-<!-- â•â•â• VISUAL EDITOR â•â•â• -->
-<div id="editorToggle" onclick="toggleEditor()" style="
-  position:fixed;bottom:20px;left:20px;z-index:999;
-  width:36px;height:36px;border-radius:50%;
-  background:var(--blue);color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  cursor:pointer;font-size:18px;box-shadow:0 2px 8px rgba(0,0,0,.3);
-  user-select:none;" title="Open Design Editor">âš™</div>
-
-<div id="editorPanel" style="
-  display:none;position:fixed;left:20px;bottom:64px;z-index:998;
-  width:300px;background:#fff;border:1px solid var(--border);
-  border-radius:6px;box-shadow:0 4px 20px rgba(0,0,0,.15);
-  font-family:sans-serif;font-size:12px;overflow:hidden;">
-
-  <div style="background:var(--blue);color:#fff;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
-    <span style="font-weight:700;font-size:13px;">Design Editor</span>
-    <div style="display:flex;gap:8px;">
-      <button onclick="resetEditor()" style="background:rgba(255,255,255,.2);border:none;color:#fff;cursor:pointer;border-radius:3px;padding:2px 8px;font-size:11px;">Reset</button>
-      <button onclick="toggleEditor()" style="background:none;border:none;color:#fff;cursor:pointer;font-size:16px;line-height:1;">Ã—</button>
-    </div>
-  </div>
-
-  <div style="padding:12px 14px;max-height:70vh;overflow-y:auto;">
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;">Row 1 Widths</div>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Staff Notes</span><span id="lbl-staff-notes-width" style="color:var(--blue);font-weight:700;">42%</span>
-      </div>
-      <input type="range" min="10" max="60" value="42" step="1" id="ctrl-staff-notes-width"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Rotation Strip</span><span id="lbl-rotation-width" style="color:var(--blue);font-weight:700;">23.9%</span>
-      </div>
-      <input type="range" min="10" max="40" value="23.9" step="0.1" id="ctrl-rotation-width"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Row 2 Widths</div>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Season Splits</span><span id="lbl-season-splits-width" style="color:var(--blue);font-weight:700;">12.2%</span>
-      </div>
-      <input type="range" min="6" max="30" value="12.2" step="0.1" id="ctrl-season-splits-width"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Player Stats / WOWY</span><span id="lbl-player-stats-width" style="color:var(--blue);font-weight:700;">27.8%</span>
-      </div>
-      <input type="range" min="15" max="45" value="27.8" step="0.1" id="ctrl-player-stats-width"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Typography</div>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Section Labels</span><span id="lbl-big-label-size" style="color:var(--blue);font-weight:700;">40px</span>
-      </div>
-      <input type="range" min="18" max="60" value="40" step="1" id="ctrl-big-label-size"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Staff Notes Feed</div>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Feed Height</span><span id="lbl-feed-max-height" style="color:var(--blue);font-weight:700;">200px</span>
-      </div>
-      <input type="range" min="80" max="400" value="200" step="10" id="ctrl-feed-max-height"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Text</div>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Base Font Size</span><span id="lbl-base-font" style="color:var(--blue);font-weight:700;">14px</span>
-      </div>
-      <input type="range" min="10" max="20" value="14" step="1" id="ctrl-base-font"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Lineup Data</div>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Cards Per Row</span><span id="lbl-lineup-cards-per-row" style="color:var(--blue);font-weight:700;">5</span>
-      </div>
-      <input type="range" min="3" max="10" value="5" step="1" id="ctrl-lineup-cards-per-row"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">BAP Boards</div>
-
-    <label style="display:block;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
-        <span>Board Scroll Height</span><span id="lbl-board-row-height" style="color:var(--blue);font-weight:700;">160px</span>
-      </div>
-      <input type="range" min="60" max="400" value="160" step="10" id="ctrl-board-row-height"
-        oninput="applyEditor()" style="width:100%;">
-    </label>
-
-    <div style="font-weight:700;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em;margin:12px 0 8px;">Colors</div>
-
-    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <span>Accent Blue</span>
-      <input type="color" value="#1631FF" id="ctrl-blue" oninput="applyEditor()" style="width:40px;height:24px;border:none;cursor:pointer;">
-    </label>
-    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <span>Best (Green)</span>
-      <input type="color" value="#18AF4A" id="ctrl-green" oninput="applyEditor()" style="width:40px;height:24px;border:none;cursor:pointer;">
-    </label>
-    <label style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-      <span>Worst (Red)</span>
-      <input type="color" value="#D81F2A" id="ctrl-red" oninput="applyEditor()" style="width:40px;height:24px;border:none;cursor:pointer;">
-    </label>
-
-    <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
-      <button onclick="exportEditorCSS()" style="width:100%;padding:8px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:700;font-size:12px;">
-        Copy CSS Variables
-      </button>
-      <div id="exportOutput" style="display:none;margin-top:8px;background:#f4f4f4;padding:8px;border-radius:4px;font-size:10px;font-family:monospace;word-break:break-all;"></div>
-    </div>
-
-  </div>
-</div>
-
-
-<script src='js/app.js?v=2028'></script>
-
-<script src="js/inseason-search.js?v=1"></script>
+<script src="js/app.js?v=2090"></script>
 </body>
 </html>
-

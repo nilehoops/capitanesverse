@@ -1,0 +1,202 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Player Stats — Capitanes In-Season Analytics</title>
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="css/inseason.css">
+<style>
+  .ps-wrap { max-width: 1280px; margin: 0 auto; padding: 14px 18px 40px; }
+  .ps-toolbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding-bottom:10px; border-bottom:2px solid #000; margin-bottom:12px; }
+  .ps-pill { font-family:'Oswald',sans-serif; font-size:12px; font-weight:700; padding:5px 12px; border:1px solid var(--border); background:#fff; color:var(--text); cursor:pointer; }
+  .ps-pill.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+  table.ps-table { width:100%; border-collapse:collapse; font-size:12px; }
+  table.ps-table th { font-family:'Oswald',sans-serif; font-size:11px; color:var(--muted); padding:6px 8px; border-bottom:2px solid #000; text-align:right; cursor:pointer; user-select:none; white-space:nowrap; }
+  table.ps-table th:first-child, table.ps-table th:nth-child(2) { text-align:left; }
+  table.ps-table td { padding:6px 8px; border-bottom:1px solid var(--border); text-align:right; white-space:nowrap; }
+  table.ps-table td:first-child, table.ps-table td:nth-child(2) { text-align:left; }
+  table.ps-table tr:hover td { background:#f8f9fc; }
+</style>
+</head>
+<body>
+<header class="page-header">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div class="page-title">Leaguewide &amp; Capitanes Player Stats — <span id="psSeasonLbl">2026-27</span></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div style="display:flex;border:1px solid var(--border);overflow:hidden;">
+        <button class="ps-sbtn" data-s="2026-27" onclick="setPsSeason('2026-27')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:var(--blue);color:#fff;">2026-27</button>
+        <button class="ps-sbtn" data-s="2025-26" onclick="setPsSeason('2025-26')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
+      </div>
+      <a href="inseason.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">← In-Season Dashboard</a>
+      <a href="shotcharts.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">⌖ Shot Charts (and more)</a>
+    </div>
+  </div>
+</header>
+
+<div class="ps-wrap">
+  <div class="ps-toolbar">
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="ps-pill active" data-scope="mxc" onclick="setPsScope('mxc',this)">Capitanes (MXC) Roster</button>
+      <button class="ps-pill" data-scope="league" onclick="setPsScope('league',this)">All 31 G League Teams</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <input id="psFilterInput" type="text" placeholder="Filter player or team..." oninput="renderPsPageTable()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);font-family:'Lora',serif;">
+    </div>
+  </div>
+  <div style="overflow-x:auto;" id="psTableContainer">
+    <div style="color:var(--muted);font-size:12px;">Loading player stats...</div>
+  </div>
+</div>
+<script>
+let _psSeason = new URLSearchParams(location.search).get('season') || '2026-27';
+let _psScope = 'mxc';
+let _psSortCol = 'MIN';
+let _psSortAsc = false;
+let _psRows = [];
+
+function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function setPsSeason(s) {
+  _psSeason = s;
+  document.getElementById('psSeasonLbl').textContent = s;
+  document.querySelectorAll('.ps-sbtn').forEach(b => {
+    const active = b.dataset.s === s;
+    b.style.background = active ? 'var(--blue)' : '#fff';
+    b.style.color = active ? '#fff' : 'var(--muted)';
+  });
+  loadPsPageData();
+}
+
+function setPsScope(sc, btn) {
+  _psScope = sc;
+  document.querySelectorAll('.ps-pill').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadPsPageData();
+}
+
+function sortPsBy(col) {
+  if (_psSortCol === col) _psSortAsc = !_psSortAsc;
+  else { _psSortCol = col; _psSortAsc = false; }
+  renderPsPageTable();
+}
+
+async function loadPsPageData() {
+  const box = document.getElementById('psTableContainer');
+  box.innerHTML = '<div style="color:var(--muted);font-size:12px;">Loading...</div>';
+  try {
+    const [mexR, idxR, scR] = await Promise.all([
+      fetch(`data/mex_data_${_psSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+      fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(() => []),
+      fetch(`data/shot_charts_${_psSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]);
+
+    const nameToId = {};
+    (Array.isArray(idxR) ? idxR : []).forEach(p => { if (p.name) nameToId[p.name.toLowerCase()] = p.id; });
+
+    const pbpExtra = {};
+    if (scR && Array.isArray(scR.poss) && Array.isArray(scR.shots)) {
+      const pList = Array.isArray(scR.players) ? scR.players : Object.values(scR.players || {});
+      pList.forEach(pe => {
+        const pid = Number(pe.id);
+        const offP = scR.poss.filter(x => x.side === 'off' && (x.on || []).includes(pid));
+        const defP = scR.poss.filter(x => x.side === 'def' && (x.on || []).includes(pid));
+        if (!offP.length) return;
+        const pSh = scR.shots.filter(s => s.side === 'off' && Number(s.pid) === pid);
+        const pFt = (scR.fts || []).filter(f => f.side === 'off' && Number(f.pid) === pid);
+        const pTov = (scR.turnovers || []).filter(t => t.side === 'off' && Number(t.pid) === pid);
+        const ftTrips = pFt.filter(f => /2 of 2|3 of 3/.test(String(f.sub || ''))).length;
+        const usg = ((pSh.length + pTov.length + ftTrips) / offP.length) * 100;
+        const offPts = scR.shots.filter(s => s.side === 'off' && s.made === 1 && (s.on || []).includes(pid)).reduce((a,s) => a + (s.val||2), 0)
+                     + (scR.fts || []).filter(f => f.side === 'off' && f.made === 1 && (f.on || []).includes(pid)).length;
+        const defPts = scR.shots.filter(s => s.side === 'def' && s.made === 1 && (s.on || []).includes(pid)).reduce((a,s) => a + (s.val||2), 0)
+                     + (scR.fts || []).filter(f => f.side === 'def' && f.made === 1 && (f.on || []).includes(pid)).length;
+        const net = (offPts / offP.length * 100) - (defPts / Math.max(1, defP.length) * 100);
+        pbpExtra[String(pe.name || '').toLowerCase()] = { usg, net, poss: Math.round((offP.length + defP.length) / 2) };
+      });
+    }
+
+    if (_psScope === 'mxc') {
+      const nl = mexR.nameLookup || {};
+      _psRows = (mexR.players || []).map(p => {
+        const rawNm = p.Player || p.PLAYER_NAME || '';
+        const nm = nl[rawNm] || rawNm;
+        const ex = pbpExtra[nm.toLowerCase()] || pbpExtra[rawNm.toLowerCase()] || {};
+        const gp = Number(p.GP || 0);
+        const min = Number(p.MIN || 0);
+        const pts = Number(p.PTS || 0);
+        const reb = Number(p.REB || 0);
+        const ast = Number(p.AST || 0);
+        const stl = Number(p.STL || 0);
+        const blk = Number(p.BLK || 0);
+        const tov = Number(p.TOV || 0);
+        const fga = Number(p.FGA || 0);
+        const fta = Number(p.FTA || 0);
+        const oreb = Number(p.OREB || 0);
+        const dreb = Number(p.DREB || 0);
+        const pf = Number(p.PF || 0);
+        const poss = ex.poss || Math.max(1, min * 2.08);
+        const dre = (100 / poss) * (0.792*pts - 0.719*fga - 0.299*fta + 0.132*oreb + 0.395*dreb + 0.544*ast + 1.662*stl + 0.764*blk - 0.844*tov - 0.156*pf);
+        return {
+          name: nm, id: nameToId[nm.toLowerCase()], team: 'MXC',
+          GP: gp, MIN: min, PPG: gp ? pts/gp : 0, RPG: gp ? reb/gp : 0, APG: gp ? ast/gp : 0,
+          FG_PCT: (p.FG_PCT || 0) * 100, FG3_PCT: (p.FG3_PCT || 0) * 100, FT_PCT: (p.FT_PCT || 0) * 100,
+          TS_PCT: (fga + 0.44*fta) ? (pts / (2*(fga + 0.44*fta))) * 100 : 0,
+          USG: ex.usg ?? ((p.USG_PCT || 0) * 100),
+          DRE: dre,
+          NET: ex.net ?? (p.NET_RATING ?? 0)
+        };
+      });
+    } else {
+      const ros = await fetch('data/gleague_roster_2026-27.json?v=' + Date.now()).then(r => r.ok ? r.json() : { players: [] }).catch(() => ({ players: [] }));
+      const n2t = ros.nameToTeam || {};
+      _psRows = (Array.isArray(idxR) ? idxR : []).filter(p => p.name && (n2t[p.name.toLowerCase()] || p.onRoster)).map(p => ({
+        name: p.name, id: p.id, team: p.onRoster ? 'MXC' : (n2t[p.name.toLowerCase()] || '—'),
+        GP: p.gp || 0, MIN: p.min || 0, PPG: p.ppg || 0, RPG: p.rpg || 0, APG: p.apg || 0,
+        FG_PCT: (p.fgPct || 0) * 100, FG3_PCT: (p.fg3Pct || 0) * 100, FT_PCT: (p.ftPct || 0) * 100,
+        TS_PCT: (p.tsPct || 0) * 100, USG: (p.usgPct || 0) * 100, DRE: p.dre || 0, NET: p.netRtg || 0
+      }));
+    }
+    renderPsPageTable();
+  } catch (e) {
+    box.innerHTML = `<div style="color:var(--red);font-size:12px;">Error loading stats: ${esc(e.message)}</div>`;
+  }
+}
+
+function renderPsPageTable() {
+  const q = (document.getElementById('psFilterInput')?.value || '').trim().toLowerCase();
+  let rows = _psRows.filter(r => !q || r.name.toLowerCase().includes(q) || r.team.toLowerCase().includes(q));
+  rows.sort((a, b) => {
+    const va = a[_psSortCol] ?? -999, vb = b[_psSortCol] ?? -999;
+    if (typeof va === 'string') return _psSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+    return _psSortAsc ? va - vb : vb - va;
+  });
+
+  const cols = [
+    ['name','PLAYER'],['team','TEAM'],['GP','GP'],['MIN','MIN'],['PPG','PPG'],['RPG','RPG'],['APG','APG'],
+    ['FG_PCT','FG%'],['FG3_PCT','3P%'],['FT_PCT','FT%'],['TS_PCT','TS%'],['USG','USG%'],['DRE','DRE'],['NET','NetRtg']
+  ];
+  const thead = `<tr>${cols.map(([k, lbl]) => `<th onclick="sortPsBy('${k}')">${lbl}${_psSortCol===k ? (_psSortAsc?' ▲':' ▼') : ''}</th>`).join('')}</tr>`;
+  const tbody = rows.map(r => {
+    const href = r.id ? `player.html?id=${encodeURIComponent(r.id)}` : `player.html?name=${encodeURIComponent(r.name)}`;
+    const netCol = r.NET > 0 ? 'var(--green)' : (r.NET < 0 ? 'var(--red)' : 'inherit');
+    const dreCol = r.DRE > 0 ? 'var(--green)' : (r.DRE < 0 ? 'var(--red)' : 'inherit');
+    return `<tr>
+      <td><a href="${href}" style="font-weight:700;color:var(--blue);text-decoration:none;">${esc(r.name)}</a></td>
+      <td style="font-weight:700;color:var(--muted);">${esc(r.team)}</td>
+      <td>${r.GP}</td><td>${r.MIN.toFixed(0)}</td>
+      <td style="font-weight:700;">${r.PPG.toFixed(1)}</td><td>${r.RPG.toFixed(1)}</td><td>${r.APG.toFixed(1)}</td>
+      <td>${r.FG_PCT.toFixed(1)}%</td><td>${r.FG3_PCT.toFixed(1)}%</td><td>${r.FT_PCT.toFixed(1)}%</td>
+      <td>${r.TS_PCT.toFixed(1)}%</td><td>${r.USG.toFixed(1)}%</td>
+      <td style="font-weight:700;color:${dreCol};">${r.DRE >= 0 ? '+' : ''}${r.DRE.toFixed(1)}</td>
+      <td style="font-weight:700;color:${netCol};">${r.NET >= 0 ? '+' : ''}${r.NET.toFixed(1)}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('psTableContainer').innerHTML = `<table class="ps-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+}
+
+setPsSeason(_psSeason);
+</script>
+</body>
+</html>

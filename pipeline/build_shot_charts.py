@@ -358,3 +358,156 @@ with open(OUT_FILE, "w", encoding="utf-8") as f:
     json.dump(payload, f)
 
 print(f"Done! Saved {len(all_poss)} exact possessions, {len(all_shots)} shots, {len(all_fts)} FTs & {len(all_tovs)} TOVs to {OUT_FILE}")
+
+
+# ── Compute exact 1-player & multi-player WOWY directly from shot_charts arrays ──
+def _build_wowy_from_sc(sc_path, mex_path):
+    sc = json.load(open(sc_path, encoding="utf-8"))
+    try:
+        mex = json.load(open(mex_path, encoding="utf-8"))
+    except Exception:
+        return
+
+    # Map pid -> canonical player name & abbrev used in mex_data
+    id_to_ab = {}
+    id_to_full = {}
+    name_to_ab = {}
+    for w in mex.get("wowy", []):
+        ab = w.get("abbrev") or w.get("player")
+        pl = w.get("player") or ab
+        if ab:
+            name_to_ab[pl.lower()] = ab
+            name_to_ab[ab.lower()] = ab
+            pts = pl.split()
+            if len(pts) >= 2:
+                name_to_ab[f"{pts.pop(0)}. {pts.pop()}".lower()] = ab
+
+    sc_players = sc.get("players", {})
+    if isinstance(sc_players, dict):
+        p_items = [(int(k), v.get("name") if isinstance(v, dict) else str(v)) for k, v in sc_players.items()]
+    else:
+        p_items = [(int(p["id"]), p["name"]) for p in sc_players if "id" in p]
+
+    for pid, nm in p_items:
+        id_to_full[pid] = nm
+        ab = name_to_ab.get(nm.lower())
+        if not ab:
+            pts = nm.split()
+            ab = f"{pts.pop(0)}. {pts.pop()}" if len(pts) >= 2 else nm
+        id_to_ab[pid] = ab
+
+    # Pre-index events by tuple(sorted(on))
+    buckets = {}
+    def get_b(on_list):
+        k = tuple(sorted(int(x) for x in (on_list or [])))
+        if k not in buckets:
+            buckets[k] = {
+                "off_poss": 0, "def_poss": 0, "off_pts": 0, "def_pts": 0,
+                "off_fgm": 0, "off_fg3m": 0, "off_fga": 0, "off_miss": 0,
+                "def_fgm": 0, "def_fg3m": 0, "def_fga": 0, "def_miss": 0,
+                "off_tov": 0, "def_tov": 0, "off_oreb": 0, "def_opp_oreb": 0
+            }
+        return buckets[k]
+
+    for p in sc.get("poss", []):
+        b = get_b(p.get("on"))
+        if p.get("side") == "off":
+            b["off_poss"] += 1
+            b["off_pts"] += int(p.get("pts", 0) or 0)
+            b["off_oreb"] += int(p.get("oreb", 0) or 0)
+        else:
+            b["def_poss"] += 1
+            b["def_pts"] += int(p.get("pts", 0) or 0)
+            b["def_opp_oreb"] += int(p.get("oreb", 0) or 0)
+
+    for s in sc.get("shots", []):
+        b = get_b(s.get("on"))
+        made = int(s.get("made", 0) or 0)
+        is3 = 1 if int(s.get("val", 2) or 2) == 3 else 0
+        if s.get("side") == "off":
+            b["off_fga"] += 1
+            b["off_fgm"] += made
+            b["off_fg3m"] += (made * is3)
+            if not made: b["off_miss"] += 1
+        else:
+            b["def_fga"] += 1
+            b["def_fgm"] += made
+            b["def_fg3m"] += (made * is3)
+            if not made: b["def_miss"] += 1
+
+    for ft in sc.get("fts", []):
+        if int(ft.get("made", 0) or 0) == 0:
+            sub = str(ft.get("sub", ""))
+            if any(tag in sub for tag in ["1 of 1", "2 of 2", "3 of 3"]):
+                b = get_b(ft.get("on"))
+                if ft.get("side") == "off": b["off_miss"] += 1
+                else: b["def_miss"] += 1
+
+    for t in sc.get("turnovers", []):
+        b = get_b(t.get("on"))
+        if t.get("side") == "off": b["off_tov"] += 1
+        else: b["def_tov"] += 1
+
+    def calc(b_list):
+        tot = {k: sum(x[k] for x in b_list) for k in [
+            "off_poss", "def_poss", "off_pts", "def_pts",
+            "off_fgm", "off_fg3m", "off_fga", "off_miss",
+            "def_fgm", "def_fg3m", "def_fga", "def_miss",
+            "off_tov", "def_tov", "off_oreb", "def_opp_oreb"
+        ]}
+        poss = round((tot["off_poss"] + tot["def_poss"]) / 2.0)
+        if poss < 1: return None
+        off_rtg = round(tot["off_pts"] / max(1, tot["off_poss"]) * 100, 1)
+        def_rtg = round(tot["def_pts"] / max(1, tot["def_poss"]) * 100, 1)
+        off_orb = round(tot["off_oreb"] / max(1, tot["off_miss"]), 4) if tot["off_miss"] else 0.0
+        def_orb = round(1.0 - (tot["def_opp_oreb"] / max(1, tot["def_miss"])), 4) if tot["def_miss"] else 0.0
+        return {
+            "POSS": int(poss),
+            "OffRtg": off_rtg,
+            "DefRtg": def_rtg,
+            "NetRtg": round(off_rtg - def_rtg, 1),
+            "OFF_EFG_PCT": round((tot["off_fgm"] + 0.5 * tot["off_fg3m"]) / max(1, tot["off_fga"]), 4),
+            "DEF_EFG_PCT": round((tot["def_fgm"] + 0.5 * tot["def_fg3m"]) / max(1, tot["def_fga"]), 4),
+            "OFF_TOV_PCT": round(tot["off_tov"] / max(1, tot["off_poss"]), 4),
+            "DEF_TOV_PCT": round(tot["def_tov"] / max(1, tot["def_poss"]), 4),
+            "OFF_ORB_PCT": min(1.0, max(0.0, off_orb)),
+            "DEF_ORB_PCT": min(1.0, max(0.0, def_orb)),
+        }
+
+    all_pids = sorted({pid for k in buckets for pid in k if pid in id_to_ab})
+    new_wowy = []
+    for pid in all_pids:
+        on_b = [b for k, b in buckets.items() if pid in k]
+        off_b = [b for k, b in buckets.items() if pid not in k]
+        wm, wom = calc(on_b), calc(off_b)
+        if wm:
+            new_wowy.append({
+                "player": id_to_full.get(pid, id_to_ab[pid]),
+                "abbrev": id_to_ab[pid],
+                "rating_source": "shot_chart_pbp",
+                "with": wm,
+                "without": wom or wm
+            })
+
+    from itertools import combinations
+    combo_list = []
+    for r_sz in range(1, 6):
+        for grp in combinations(all_pids, r_sz):
+            if not any(all(p in k for p in grp) for k in buckets):
+                continue
+            ab_grp = [id_to_ab[p] for p in grp]
+            states = {}
+            for mask in range(1 << r_sz):
+                matching = [b for k, b in buckets.items() if all(((p in k) == bool((mask >> i) & 1)) for i, p in enumerate(grp))]
+                res = calc(matching)
+                if res:
+                    states[str(mask)] = res
+            combo_list.append({"players": ab_grp, "states": states})
+
+    mex["wowy"] = new_wowy
+    mex["combo_wowy"] = combo_list
+    with open(mex_path, "w", encoding="utf-8") as f:
+        json.dump(mex, f)
+    print(f"Updated {mex_path} with exact shot-chart WOWY ({len(new_wowy)} players, {len(combo_list)} combos)!")
+
+_build_wowy_from_sc(f"data/shot_charts_{SEASON}.json", f"data/mex_data_{SEASON}.json")

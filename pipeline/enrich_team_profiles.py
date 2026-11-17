@@ -1,3 +1,12 @@
+import re, unicodedata
+
+def norm_name(s):
+    if not s: return ""
+    s = unicodedata.normalize("NFKD", str(s)).encode("ascii", "ignore").decode("ascii")
+    s = re.sub(r"[.,'’\-]", " ", s.lower())
+    parts = [w for w in s.split() if w not in {"jr", "sr", "ii", "iii", "iv", "v"}]
+    return " ".join(parts)
+
 ﻿import json, time
 import pandas as pd
 from nba_api.stats.endpoints import leaguedashteamstats, leaguedashplayerstats, commonteamroster
@@ -23,7 +32,7 @@ try:
     for item in (p_idx if isinstance(p_idx, list) else list(p_idx.values())):
         if not isinstance(item, dict) or not item.get("name"): continue
         bio = (p_det.get(str(item.get("id", "")), {}) if isinstance(p_det, dict) else {}).get("biography", {})
-        bio_lookup[item["name"].strip().lower()] = {"age": bio.get("age") or item.get("age"), "height": bio.get("height") or item.get("height"), "weight": bio.get("weight") or item.get("weight")}
+        bio_lookup[norm_name(item["name"])] = {"age": bio.get("age") or item.get("age"), "height": bio.get("height") or item.get("height"), "weight": bio.get("weight") or item.get("weight")}
 except Exception: pass
 
 for szn in ["2026-27", "2025-26"]:
@@ -38,7 +47,7 @@ for szn in ["2026-27", "2025-26"]:
         try:
             rdf = commonteamroster.CommonTeamRoster(team_id=int(t["id"]), season=szn, league_id_nullable=LEAGUE_ID).get_data_frames().pop(0)
             for _, r in rdf.iterrows():
-                nm = str(r.get("PLAYER", "")).strip().lower()
+                nm = norm_name(r.get("PLAYER", ""))
                 if not nm: continue
                 b = bio_lookup.setdefault(nm, {})
                 if r.get("AGE"): b["age"] = float(r["AGE"])
@@ -129,7 +138,7 @@ for szn in ["2026-27", "2025-26"]:
         rec["drtg"] = round(rec["drtg_w"] / poss, 1) if rec["poss"] else 0
         rec["netRtg"] = round(rec["ortg"] - rec["drtg"], 1)
         rec["usg"] = round(rec["usg_w"] / poss, 1) if rec["poss"] else 0
-        b = bio_lookup.get(rec["name"].lower(), {})
+        b = bio_lookup.get(norm_name(rec["name"]), {})
         rec["age"] = b.get("age"); rec["height"] = b.get("height") or "—"; rec["heightIn"] = parse_height_in(rec["height"]); rec["weight"] = b.get("weight")
         by_team.setdefault(rec["team"], []).append(rec)
 

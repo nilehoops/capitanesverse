@@ -41,6 +41,16 @@
 <div id="tmMacro" class="tm-macro"></div>
 <div id="tmBody"></div>
 <script>
+function normName(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[.,'’\-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w))
+    .join(' ');
+}
+
 const ZONES_CFG = {
   "Restricted Area":        { lx: 0,    ly: 18,  path: "M -40 -47.5 L -40 0 A 40 40 0 0 0 40 0 L 40 -47.5 Z" },
   "Paint (Non-RA)":         { lx: 0,    ly: 98,  path: "M -80 -47.5 L -80 142.5 L 80 142.5 L 80 -47.5 L 40 -47.5 L 40 0 A 40 40 0 0 1 -40 0 L -40 -47.5 Z" },
@@ -128,7 +138,7 @@ function buildRotationsCard(active) {
 
 function buildRosterTable(active, nameToId) {
   const rows = (active.rosterStats || new Array()).map(p => {
-    const pid = nameToId[p.name.toLowerCase()];
+    const pid = nameToId[normName(p.name)];
     const href = pid ? `player.html?id=${encodeURIComponent(pid)}` : `player.html?name=${encodeURIComponent(p.name)}`;
     const netCol = (p.netRtg || 0) >= 0 ? 'var(--green)' : 'var(--red)', ooCol = (p.onOff || 0) >= 0 ? 'var(--green)' : 'var(--red)';
     return `<tr><td style="padding:3px 5px;border-bottom:1px solid var(--border);font-weight:700;"><a href="${href}" style="color:var(--blue);text-decoration:none;">${p.name}</a></td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.age ?? '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.height || '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.weight ? Math.round(p.weight) : '—'}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.gp ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.mpg ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${p.pts75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.reb75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.ast75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.tov75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.stl75 ?? 0}/${p.blk75 ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.fgPct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.fg3Pct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;">${p.tsPct ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;">${p.usg ?? 0}%</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:${netCol};">${(p.netRtg>=0?'+':'')}${p.netRtg ?? 0}</td><td style="padding:3px 5px;border-bottom:1px solid var(--border);text-align:right;font-weight:700;color:${ooCol};">${(p.onOff>=0?'+':'')}${p.onOff ?? 0}</td></tr>`;
@@ -143,7 +153,7 @@ async function loadTeamProfile() {
   const liteResp = resps.shift(), idxResp = resps.shift();
   if (!liteResp.ok) { document.getElementById('tmName').textContent = `No ${szn} team profile data available yet`; return; }
   const lite = await liteResp.json(), idx = idxResp.ok ? await idxResp.json() : new Array(), nameToId = {};
-  (Array.isArray(idx) ? idx : Object.values(idx || {})).forEach(p => { if (p && p.name && p.id) nameToId[p.name.toLowerCase()] = p.id; });
+  (Array.isArray(idx) ? idx : Object.values(idx || {})).forEach(p => { if (p && p.name && p.id) nameToId[normName(p.name)] = p.id; });
   const teams = (lite.teams || new Array()).slice().sort((a, b) => a.name.localeCompare(b.name));
   const picker = document.getElementById('tmPicker');
   picker.innerHTML = teams.map(t => `<option value="${t.abbrev || t.id}">${t.name}</option>`).join('');

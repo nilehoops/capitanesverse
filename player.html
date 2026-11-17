@@ -882,6 +882,16 @@ Promise.all([
 </style>
 <div class="site-credit">Capitanesverse<span class="sc-sub">presented by Nile G.</span></div>
 <script>
+function normName(s) {
+  return String(s || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[.,'’\-]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w))
+    .join(' ');
+}
+
 (async function initPlayerLiteShotChart() {
   const ZONES_CFG = {
     "Restricted Area":        { lx: 0,    ly: 18,  path: "M -40 -47.5 L -40 0 A 40 40 0 0 0 40 0 L 40 -47.5 Z" },
@@ -928,7 +938,7 @@ Promise.all([
   }
   if (!targetName) return;
 
-  const findIn = (ds) => ds?.players?.find(p => p.name.toLowerCase() === targetName.toLowerCase());
+  const findIn = (ds) => ds?.players?.find(p => normName(p.name) === normName(targetName));
   const p27 = findIn(d27);
   const p26 = findIn(d26);
   if (!p27 && !p26) return;

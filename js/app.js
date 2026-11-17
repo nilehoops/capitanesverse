@@ -2521,8 +2521,197 @@ async function renderInlineShotCharts() {
   }
 }
 
+async function renderSeasonSplits() {
+  const el = document.getElementById('seasonSplitsContainer');
+  if (!el) return;
+  try {
+    if (!cachedTeamStats) {
+      const r = await fetch(TEAM_STATS_PATH() + '?v=' + Date.now());
+      if (r.ok) cachedTeamStats = await r.json();
+    }
+    const slices = cachedTeamStats?.slices || {};
+    const MXC_TID = 1612709931;
+
+    const getCell = (sliceKeys, statKey, isPct, isNet, lowerBetter) => {
+      const keys = Array.isArray(sliceKeys) ? sliceKeys : [sliceKeys];
+      let teams = null;
+      for (const k of keys) {
+        if (Array.isArray(slices[k]) && slices[k].length) { teams = slices[k]; break; }
+      }
+      if (!teams) return '—';
+      const mxc = teams.find(t => Number(t.TEAM_ID) === MXC_TID || String(t.TEAM_ABBREVIATION || '').toUpperCase() === 'MXC');
+      if (!mxc || mxc[statKey] == null || Number(mxc.GP || 0) === 0) return '—';
+      const val = Number(mxc[statKey]);
+      const valid = teams.filter(t => t[statKey] != null && Number(t.GP || 0) > 0).map(t => Number(t[statKey]));
+      valid.sort((a, b) => lowerBetter ? (a - b) : (b - a));
+      const rk = valid.findIndex(v => Math.abs(v - val) < 1e-6) + 1;
+      const disp = isPct ? ((val * 100).toFixed(1) + '%') : val.toFixed(1);
+      const col = isNet ? (val > 0 ? 'color:var(--green);' : (val < 0 ? 'color:var(--red);' : 'color:var(--text);')) : 'color:var(--text);';
+      return '<span style="font-weight:700;' + col + '">' + disp + '</span>' + (rk > 0 ? '<sup style="font-size:7.5px;color:var(--muted);font-weight:400;margin-left:0.5px;">' + rk + '</sup>' : '');
+    };
+
+    const buildSection = (title, cols, rows) => {
+      let html = '<div style="margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">';
+      html += '<div style="font-family:Oswald,sans-serif;font-size:9.5px;font-weight:700;color:var(--muted);letter-spacing:0.3px;margin-bottom:2px;">' + title + '</div>';
+      html += '<table style="width:100%;border-collapse:collapse;table-layout:fixed;"><thead><tr><th style="width:30%;text-align:left;"></th>';
+      cols.forEach(c => { html += '<th style="text-align:right;font-family:Lora,serif;font-size:9px;font-weight:600;color:var(--muted);padding:0 1px 2px;white-space:nowrap;">' + c.lbl + '</th>'; });
+      html += '</tr></thead><tbody>';
+      rows.forEach(r => {
+        html += '<tr><td style="text-align:left;color:var(--muted);font-size:9.5px;padding:1px 0;line-height:1.15;">' + r.lbl + '</td>';
+        cols.forEach(c => { html += '<td style="text-align:right;font-size:10px;padding:1px 1px;white-space:nowrap;">' + getCell(c.keys, r.key, r.pct, r.net, r.lb) + '</td>'; });
+        html += '</tr>';
+      });
+      return html + '</tbody></table></div>';
+    };
+
+    const r5 = [
+      { lbl: 'NetRtg', key: 'NET_RATING', pct: false, net: true,  lb: false },
+      { lbl: 'OffRtg', key: 'OFF_RATING', pct: false, net: false, lb: false },
+      { lbl: 'DefRtg', key: 'DEF_RATING', pct: false, net: false, lb: true  },
+      { lbl: 'eFG%',   key: 'EFG_PCT',    pct: true,  net: false, lb: false },
+      { lbl: 'TOV%',   key: 'TM_TOV_PCT', pct: true,  net: false, lb: true  }
+    ];
+    el.innerHTML =
+      buildSection('HOME VS AWAY', [{ lbl: 'Home', keys: ['home', 'Home'] }, { lbl: 'Away', keys: ['away', 'road', 'Away', 'Road'] }], r5) +
+      buildSection('BY HALF', [{ lbl: '1st Half', keys: ['h1', 'half1', '1st_half', 'first_half'] }, { lbl: '2nd Half', keys: ['h2', 'half2', '2nd_half', 'second_half'] }], r5) +
+      buildSection('BY QUARTER', [{ lbl: 'Q1', keys: ['q1', 'Q1', 'period_1'] }, { lbl: 'Q2', keys: ['q2', 'Q2', 'period_2'] }, { lbl: 'Q3', keys: ['q3', 'Q3', 'period_3'] }, { lbl: 'Q4', keys: ['q4', 'Q4', 'period_4'] }], r5.slice(0, 3)) +
+      buildSection('OPPONENT STRENGTH', [{ lbl: 'vs Elite', keys: ['vs_elite', 'elite', 'top'] }, { lbl: 'vs Mid', keys: ['vs_mid', 'mid', 'middle'] }, { lbl: 'vs Weak', keys: ['vs_weak', 'weak', 'bottom'] }], r5.concat([{ lbl: 'Opp<br>eFG%', key: 'OPP_EFG_PCT', pct: true, net: false, lb: true }]));
+  } catch (e) { el.textContent = 'Splits unavailable.'; }
+}
+
+async function initWowySlots() {
+  const wrap = document.getElementById('wowySlots');
+  if (!wrap) return;
+  try {
+    const [sc, ld] = await Promise.all([
+      fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+      (window._wowyLineupData ? Promise.resolve(window._wowyLineupData) : fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null))
+    ]);
+    if (sc) window._wowyShotData = sc;
+    if (ld) window._wowyLineupData = ld;
+
+    const normKey = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[.,'’\-]/g, ' ').split(/\s+/).filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w)).join(' ');
+    const initLast = (s) => { const p = normKey(s).split(' '); return p.length >= 2 ? (p + '_' + p[p.length - 1]) : normKey(s); };
+
+    const rosterMap = new Map();
+    const scPlayers = Array.isArray(sc?.players) ? sc.players : Object.values(sc?.players || {});
+    scPlayers.forEach(p => {
+      if (!p || !p.name) return;
+      const k = normKey(p.name);
+      if (!rosterMap.has(k)) rosterMap.set(k, { key: k, name: p.name, scIds: new Set() });
+      rosterMap.get(k).scIds.add(Number(p.id));
+    });
+    Object.entries(ld?.playerXref || {}).forEach(([ab, info]) => {
+      const full = info?.name || ab;
+      const k = normKey(full), il = initLast(full);
+      let entry = rosterMap.get(k);
+      if (!entry) { for (const v of rosterMap.values()) { if (initLast(v.name) === il) { entry = v; break; } } }
+      if (!entry) { entry = { key: k, name: full, scIds: new Set() }; rosterMap.set(k, entry); }
+      if (info?.id != null) entry.scIds.add(Number(info.id));
+    });
+
+    window._wowyRosterList = Array.from(rosterMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+    wrap.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const col = document.createElement('div');
+      col.style.cssText = 'min-width:0;';
+      const lbl = document.createElement('div');
+      lbl.style.cssText = 'font-family:Lora,serif;font-size:9.5px;color:var(--muted);text-align:center;margin-bottom:2px;';
+      lbl.textContent = 'Player ' + i;
+      const sel = document.createElement('select');
+      sel.id = 'wowySlot' + i;
+      sel.style.cssText = 'width:100%;font-family:Lora,serif;font-size:10px;padding:2px 2px;border:1px solid var(--border);background:#fff;';
+      const blank = document.createElement('option'); blank.value = ''; sel.appendChild(blank);
+      window._wowyRosterList.forEach(p => { const o = document.createElement('option'); o.value = p.key; o.textContent = p.name; sel.appendChild(o); });
+      sel.addEventListener('change', () => { if (typeof runWowy === 'function') runWowy(); });
+      col.appendChild(lbl); col.appendChild(sel); wrap.appendChild(col);
+    }
+  } catch (e) {}
+}
+
+function clearWowySlots() {
+  for (let i = 1; i <= 5; i++) { const s = document.getElementById('wowySlot' + i); if (s) s.value = ''; }
+  const res = document.getElementById('wowyResults');
+  if (res) res.innerHTML = '<div style="padding:10px;border:1px dashed var(--border);color:var(--muted);text-align:center;font-family:Lora,serif;font-size:11px;">Select at least one player above to generate visual on/off splits.</div>';
+}
+
+async function runWowy() {
+  const res = document.getElementById('wowyResults');
+  if (!res) return;
+  const selectedKeys = [];
+  for (let i = 1; i <= 5; i++) {
+    const v = document.getElementById('wowySlot' + i)?.value;
+    if (v && !selectedKeys.includes(v)) selectedKeys.push(v);
+  }
+  if (!selectedKeys.length) { clearWowySlots(); return; }
+
+  let sc = window._wowyShotData;
+  if (!sc) {
+    sc = await fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
+    if (sc) window._wowyShotData = sc;
+  }
+  if (!sc || !Array.isArray(sc.poss)) { res.innerHTML = '<span style="color:var(--muted);">Play-by-play lineup data unavailable.</span>'; return; }
+
+  const roster = window._wowyRosterList || [];
+  const selectedObjs = selectedKeys.map(k => roster.find(r => r.key === k) || { key: k, name: k, scIds: new Set() });
+  const targetGroups = selectedObjs.map(o => Array.from(o.scIds));
+  const isOnFloor = (onArr) => { const ids = (onArr || []).map(Number); return targetGroups.every(idSet => idSet.some(id => ids.includes(id))); };
+
+  const calcSplit = (wantOn) => {
+    const pOff = sc.poss.filter(p => p.side === 'off' && isOnFloor(p.on) === wantOn);
+    const pDef = sc.poss.filter(p => p.side === 'def' && isOnFloor(p.on) === wantOn);
+    const sOff = (sc.shots || []).filter(s => s.side === 'off' && isOnFloor(s.on) === wantOn);
+    const sDef = (sc.shots || []).filter(s => s.side === 'def' && isOnFloor(s.on) === wantOn);
+    const fOff = (sc.fts || []).filter(f => f.side === 'off' && isOnFloor(f.on) === wantOn);
+    const fDef = (sc.fts || []).filter(f => f.side === 'def' && isOnFloor(f.on) === wantOn);
+    const tOff = (sc.turnovers || []).filter(t => t.side === 'off' && isOnFloor(t.on) === wantOn);
+    const ptsFor = sOff.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fOff.filter(f => Number(f.made) === 1).length;
+    const ptsAg  = sDef.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fDef.filter(f => Number(f.made) === 1).length;
+    const offPoss = pOff.length, defPoss = pDef.length;
+    const offRtg = offPoss ? (ptsFor / offPoss) * 100 : 0, defRtg = defPoss ? (ptsAg / defPoss) * 100 : 0;
+    const fgm = sOff.filter(s => Number(s.made) === 1).length, fg3m = sOff.filter(s => Number(s.made) === 1 && Number(s.val) === 3).length;
+    const efg = sOff.length ? ((fgm + 0.5 * fg3m) / sOff.length) * 100 : 0;
+    const tov = offPoss ? (tOff.length / offPoss) * 100 : 0;
+    const rebOpps = (sOff.length - fgm) + fOff.filter(f => Number(f.made) === 0 && /1 of 1|2 of 2|3 of 3/.test(String(f.sub || ''))).length;
+    const orb = rebOpps ? (pOff.reduce((a, p) => a + (Number(p.oreb) || 0), 0) / rebOpps) * 100 : 0;
+    const ftr = sOff.length ? (fOff.length / sOff.length) * 100 : 0;
+    return { poss: Math.round((offPoss + defPoss) / 2), netRtg: offRtg - defRtg, offRtg, defRtg, efg, tov, orb, ftr };
+  };
+
+  const onSt = calcSplit(true), offSt = calcSplit(false);
+  const avatarsHtml = selectedObjs.map(o => {
+    const icon = typeof playerIcon === 'function' ? playerIcon(o.name, 34, false) : '';
+    return `<div style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);padding:3px 7px;border-radius:3px;">${icon}<span style="font-family:Oswald,sans-serif;font-size:11.5px;font-weight:700;color:var(--text);">${o.name}</span></div>`;
+  }).join('<span style="font-family:Oswald,sans-serif;font-weight:700;color:var(--blue);font-size:13px;">+</span>');
+
+  const metrics = [
+    { lbl: 'NET RTG', on: onSt.netRtg, off: offSt.netRtg, pct: false, inv: false, signed: true },
+    { lbl: 'OFF RTG', on: onSt.offRtg, off: offSt.offRtg, pct: false, inv: false, signed: false },
+    { lbl: 'DEF RTG', on: onSt.defRtg, off: offSt.defRtg, pct: false, inv: true,  signed: false },
+    { lbl: 'EFG%',    on: onSt.efg,    off: offSt.efg,    pct: true,  inv: false, signed: false },
+    { lbl: 'TOV%',    on: onSt.tov,    off: offSt.tov,    pct: true,  inv: true,  signed: false },
+    { lbl: 'OR%',     on: onSt.orb,    off: offSt.orb,    pct: true,  inv: false, signed: false },
+    { lbl: 'FTR%',    on: onSt.ftr,    off: offSt.ftr,    pct: true,  inv: false, signed: false }
+  ];
+
+  const cardsHtml = metrics.map(m => {
+    const rawDiff = m.on - m.off, goodDiff = m.inv ? -rawDiff : rawDiff;
+    const isPos = goodDiff > 0.05, isNeg = goodDiff < -0.05;
+    const bg = isPos ? '#dcfce7' : (isNeg ? '#fee2e2' : 'var(--surface)');
+    const bdr = isPos ? '#86efac' : (isNeg ? '#fca5a5' : 'var(--border)');
+    const dCol = isPos ? 'var(--green)' : (isNeg ? 'var(--red)' : 'var(--muted)');
+    const fmtVal = (v) => (m.signed && v > 0 ? '+' : '') + v.toFixed(1) + (m.pct ? '%' : '');
+    const fmtDiff = (rawDiff >= 0 ? '+' : '') + rawDiff.toFixed(1) + (m.pct ? '%' : '');
+    return `<div style="background:${bg};border:1px solid ${bdr};padding:4px 5px;text-align:center;"><div style="font-family:Oswald,sans-serif;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:0.3px;">${m.lbl}</div><div style="font-family:Oswald,sans-serif;font-size:15px;font-weight:700;color:${dCol};line-height:1.15;">${fmtDiff}</div><div style="font-family:Lora,serif;font-size:9px;color:var(--dim);margin-top:2px;line-height:1.2;"><b>ON:</b> ${fmtVal(m.on)}<br><b>OFF:</b> ${fmtVal(m.off)}</div></div>`;
+  }).join('');
+
+  res.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);padding:6px 8px;"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border);"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${avatarsHtml}</div><div style="display:flex;gap:8px;font-family:Oswald,sans-serif;font-size:11px;"><span style="background:var(--blue);color:#fff;padding:2px 7px;font-weight:700;">ON: ${onSt.poss} POSS</span><span style="background:#fff;color:var(--dim);border:1px solid var(--border);padding:2px 7px;font-weight:700;">OFF: ${offSt.poss} POSS</span></div></div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;">${cardsHtml}</div></div>`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof renderLastGameRecap === 'function') renderLastGameRecap();
   if (typeof renderInlineShotCharts === 'function') renderInlineShotCharts();
   if (typeof renderBap === 'function') renderBap();
+  if (typeof renderSeasonSplits === 'function') renderSeasonSplits();
+  if (typeof initWowySlots === 'function') initWowySlots();
 });

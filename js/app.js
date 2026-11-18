@@ -2111,14 +2111,32 @@ async function renderLastGameRecap() {
   const el = document.getElementById('lastGameRecapContent');
   if (!el) return;
   try {
-    const [sc, idx, ld] = await Promise.all([
+    const [sc, idx, ld, sched] = await Promise.all([
       fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null),
       fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
-      (window._wowyLineupData ? Promise.resolve(window._wowyLineupData) : fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null))
+      (window._wowyLineupData ? Promise.resolve(window._wowyLineupData) : fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)),
+      fetch('data/schedule_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
 
     if (!sc || !Array.isArray(sc.games) || !sc.games.length) {
       el.innerHTML = '';
+    el.appendChild(navBar);
+    if (!g._played) {
+      const oppU = String(g.opp || 'OPP').toUpperCase();
+      const dtU = String(g.date || '');
+      const locU = String(g.loc || (String(g.label || '').includes('@') ? 'Away' : 'Home'));
+      const boxU = h('div', 'background:var(--surface);border:1px solid var(--border);padding:8px;text-align:center;');
+      boxU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0.4px;margin-bottom:4px;', 'UPCOMING MATCHUP · ' + locU.toUpperCase()));
+      const rowU = h('div', 'display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0;');
+      rowU.appendChild(logoNode('MXC'));
+      rowU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:15px;font-weight:700;color:var(--dim);', locU === 'Away' ? '@' : 'VS'));
+      rowU.appendChild(logoNode(oppU));
+      boxU.appendChild(rowU);
+      if (dtU) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:10.5px;font-weight:700;color:var(--text);margin-top:3px;', dtU));
+      if (g.time || g.note) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:9.5px;color:var(--muted);margin-top:2px;', String(g.time || g.note)));
+      el.appendChild(boxU);
+      return;
+    }
       el.textContent = 'No game data available yet.';
       return;
     }
@@ -2185,7 +2203,44 @@ async function renderLastGameRecap() {
       return img;
     };
 
-    const g = sc.games.at(0);
+    const playedList = sc.games.map((gm, i) => ({ ...gm, _played: true, _pIdx: i }));
+    const playedIds = new Set(playedList.map(gm => String(gm.id || gm.gid)));
+    const rawSched = Array.isArray(sched) ? sched : (sched?.games || sched?.upcoming || []);
+    const futureList = rawSched
+      .filter(ug => !playedIds.has(String(ug.id || ug.gid || '')) && (ug.future || ug.upcoming || !ug.wl))
+      .map(ug => ({ ...ug, _played: false }));
+    const allGames = [...futureList, ...playedList];
+
+    if (window._recapSeason !== SEASON) {
+      window._recapSeason = SEASON;
+      window._recapIdx = futureList.length; // Default to most recent completed game
+    }
+    const curIdx = Math.max(0, Math.min(allGames.length - 1, Number(window._recapIdx ?? futureList.length)));
+    window._recapIdx = curIdx;
+    const g = allGames[curIdx];
+
+    const navBar = h('div', 'display:flex;align-items:center;justify-content:space-between;gap:3px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border);');
+    const prevBtn = h('button', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border:1px solid var(--border);background:' + (curIdx < allGames.length - 1 ? '#fff' : 'var(--surface)') + ';color:' + (curIdx < allGames.length - 1 ? 'var(--blue)' : 'var(--muted)') + ';cursor:' + (curIdx < allGames.length - 1 ? 'pointer' : 'default') + ';', '◀');
+    prevBtn.title = 'Older Game';
+    if (curIdx < allGames.length - 1) prevBtn.onclick = () => { window._recapIdx = curIdx + 1; renderLastGameRecap(); };
+
+    const nextBtn = h('button', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border:1px solid var(--border);background:' + (curIdx > 0 ? '#fff' : 'var(--surface)') + ';color:' + (curIdx > 0 ? 'var(--blue)' : 'var(--muted)') + ';cursor:' + (curIdx > 0 ? 'pointer' : 'default') + ';', '▶');
+    nextBtn.title = 'Newer / Upcoming Game';
+    if (curIdx > 0) nextBtn.onclick = () => { window._recapIdx = curIdx - 1; renderLastGameRecap(); };
+
+    const gSel = h('select', 'flex:1;min-width:0;font-family:Lora,serif;font-size:9.5px;padding:1px 3px;border:1px solid var(--border);background:#fff;color:var(--text);');
+    allGames.forEach((gm, idxOpt) => {
+      const opt = document.createElement('option');
+      opt.value = String(idxOpt);
+      const tag = gm._played ? '' : ' [UPCOMING]';
+      opt.textContent = (gm.label || ((gm.date || '') + ' vs ' + (gm.opp || 'OPP'))) + tag;
+      if (idxOpt === curIdx) opt.selected = true;
+      gSel.appendChild(opt);
+    });
+    gSel.onchange = () => { window._recapIdx = Number(gSel.value); renderLastGameRecap(); };
+    navBar.appendChild(prevBtn);
+    navBar.appendChild(gSel);
+    navBar.appendChild(nextBtn);
     const gid = g.id || g.gid;
     const lblStr = String(g.label || '');
     const lblMatch = lblStr.match(/MXC\s+(?:vs\.?|@)\s+([A-Z]{2,4})/i);
@@ -2331,6 +2386,23 @@ async function renderLastGameRecap() {
 
     const thCss = 'padding:3px 4px;border:1px solid #d4d4d4;';
     el.innerHTML = '';
+    el.appendChild(navBar);
+    if (!g._played) {
+      const oppU = String(g.opp || 'OPP').toUpperCase();
+      const dtU = String(g.date || '');
+      const locU = String(g.loc || (String(g.label || '').includes('@') ? 'Away' : 'Home'));
+      const boxU = h('div', 'background:var(--surface);border:1px solid var(--border);padding:8px;text-align:center;');
+      boxU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0.4px;margin-bottom:4px;', 'UPCOMING MATCHUP · ' + locU.toUpperCase()));
+      const rowU = h('div', 'display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0;');
+      rowU.appendChild(logoNode('MXC'));
+      rowU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:15px;font-weight:700;color:var(--dim);', locU === 'Away' ? '@' : 'VS'));
+      rowU.appendChild(logoNode(oppU));
+      boxU.appendChild(rowU);
+      if (dtU) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:10.5px;font-weight:700;color:var(--text);margin-top:3px;', dtU));
+      if (g.time || g.note) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:9.5px;color:var(--muted);margin-top:2px;', String(g.time || g.note)));
+      el.appendChild(boxU);
+      return;
+    }
     if (gameDate) el.appendChild(h('div', 'font-size:9px;color:var(--muted);text-align:center;margin-bottom:2px;', gameDate));
     el.appendChild(h('div', 'display:flex;align-items:center;justify-content:space-around;padding:2px 0 6px;border-bottom:1px solid var(--border);margin-bottom:5px;',
       logoNode('MXC'),

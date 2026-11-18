@@ -1,0 +1,122 @@
+{
+  "24-22": {
+    "2024-25": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2025-26": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2026-27": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    }
+  },
+  "22-18 Very Early": {
+    "2024-25": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2025-26": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2026-27": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    }
+  },
+  "18-15 Early": {
+    "2024-25": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2025-26": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2026-27": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    }
+  },
+  "15-7 Average": {
+    "2024-25": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2025-26": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2026-27": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    }
+  },
+  "7-4 Late": {
+    "2024-25": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2025-26": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2026-27": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    }
+  },
+  "4-0 Very Late": {
+    "2024-25": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2025-26": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    },
+    "2026-27": {
+      "3pm": 0,
+      "3pa": 0,
+      "3p_pct": null,
+      "err": "HTTP Error 403: Forbidden"
+    }
+  }
+}

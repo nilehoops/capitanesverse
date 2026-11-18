@@ -8,7 +8,7 @@ function normName(s) {
     .join(' ');
 }
 
-﻿(async function buildInseasonSearch() {
+(async function buildInseasonSearch() {
   const inp = document.getElementById('mainSearch');
   if (!inp) return;
 
@@ -74,7 +74,7 @@ function normName(s) {
   if (ros && Array.isArray(ros.players)) {
     ros.players.forEach(rp => {
       if (!rp || !rp.name) return;
-      const low = rnormName(p.name);
+      const low = normName(rp.name);
       if (seenNames.has(low)) return;
       seenNames.add(low);
       items.push({

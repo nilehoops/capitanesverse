@@ -1126,7 +1126,7 @@ function buildLineupCard(combo, n) {
   const iconSize = n <= 2 ? 26 : n === 3 ? 22 : n === 4 ? 19 : 16;
   return `<div class="lineup-card" onclick="openLineupLab(${esc(JSON.stringify(combo))})" style="cursor:pointer;">
     ${groupIcons(names, iconSize)}
-    <span class="lc-net ${net >= 0 ? 'pos' : 'neg'}">${fmt(net)} net rtg,<br>${mins} poss</span>
+    <span class="lc-net ${net >= 0 ? 'pos' : 'neg'}">${fmt(net)} net,<br>${mins} poss</span>
     <span class="lc-names">${names.map(esc).join('<br>')}</span>
   </div>`;
 }
@@ -1351,7 +1351,7 @@ async function buildRotationPlaceholders() {
           : `<svg width="36" height="36" viewBox="0 0 36 36" style="display:block;margin:0 auto 1px;"><circle cx="18" cy="13" r="8" fill="#999"/><ellipse cx="18" cy="32" rx="13" ry="9" fill="#999"/></svg>`;
         return `<div class="rot-player">${photo}<span class="rot-player-mins">${mins}</span><span class="rot-player-name">${esc(shortName)}</span></div>`;
       }
-      r1.innerHTML = players.slice(0, 5).map(rotCard).join('');
+      r1.innerHTML = players.slice(0, 4).map(rotCard).join('');
       r2.innerHTML = players.slice(5, 10).map(rotCard).join('');
       return;
     }
@@ -2405,48 +2405,73 @@ async function renderInlineShotCharts() {
     const shots = (sc.shots || new Array()).filter(s =>
       gidSet.has(s.gid) && (pidFilter === 'ALL' || s.side !== 'off' || String(s.pid) === pidFilter)
     );
+    const fts = (sc.fts || new Array()).filter(f =>
+      gidSet.has(f.gid) && (pidFilter === 'ALL' || f.side !== 'off' || String(f.pid) === pidFilter)
+    );
+    const tovs = (sc.turnovers || new Array()).filter(t =>
+      gidSet.has(t.gid) && (pidFilter === 'ALL' || t.side !== 'off' || String(t.pid) === pidFilter)
+    );
+    const poss = (sc.poss || new Array()).filter(p => gidSet.has(p.gid));
 
     const ZONE_POLYS = new Array(
-      { k: 'c3_l',  d: 'M 0 0 L 30 0 L 30 140 L 0 140 Z', lx: 15, ly: 76, avg: 0.375 },
-      { k: 'c3_r',  d: 'M 470 0 L 500 0 L 500 140 L 470 140 Z', lx: 485, ly: 76, avg: 0.375 },
-      { k: 'w3_l',  d: 'M 0 140 L 30 140 A 237.5 237.5 0 0 0 128 256 L 0 385 Z', lx: 56, ly: 255, avg: 0.355 },
-      { k: 'w3_r',  d: 'M 470 140 L 500 140 L 500 385 L 372 256 A 237.5 237.5 0 0 0 470 140 Z', lx: 444, ly: 255, avg: 0.355 },
-      { k: 'ab3_l', d: 'M 128 256 A 237.5 237.5 0 0 0 202 285 L 185 385 L 0 385 Z', lx: 145, ly: 326, avg: 0.355 },
-      { k: 'ab3_c', d: 'M 202 285 A 237.5 237.5 0 0 0 298 285 L 315 385 L 185 385 Z', lx: 250, ly: 336, avg: 0.355 },
-      { k: 'ab3_r', d: 'M 298 285 A 237.5 237.5 0 0 0 372 256 L 500 385 L 315 385 Z', lx: 355, ly: 326, avg: 0.355 },
-      { k: 'mid_l', d: 'M 30 0 L 170 0 L 170 190 L 128 256 A 237.5 237.5 0 0 1 30 140 Z', lx: 102, ly: 138, avg: 0.395 },
-      { k: 'mid_r', d: 'M 330 0 L 470 0 L 470 140 A 237.5 237.5 0 0 1 372 256 L 330 190 Z', lx: 398, ly: 138, avg: 0.395 },
-      { k: 'mid_c', d: 'M 170 190 L 330 190 L 372 256 A 237.5 237.5 0 0 1 128 256 Z', lx: 250, ly: 238, avg: 0.405 },
-      { k: 'paint', d: 'M 170 0 L 330 0 L 330 190 L 170 190 Z', lx: 250, ly: 146, avg: 0.425 },
-      { k: 'rim',   d: 'M 198 0 L 302 0 L 302 52 A 52 52 0 0 1 198 52 Z', lx: 250, ly: 76, avg: 0.635 }
+      { k: 'c3_l',   d: 'M 0 0 L 30 0 L 30 140 L 0 140 Z', lx: 15, ly: 76, avg: 0.375 },
+      { k: 'c3_r',   d: 'M 470 0 L 500 0 L 500 140 L 470 140 Z', lx: 485, ly: 76, avg: 0.375 },
+      { k: 'w3_l',   d: 'M 0 140 L 30 140 A 237.5 237.5 0 0 0 185 280 L 90 385 L 0 385 Z', lx: 82, ly: 292, avg: 0.355 },
+      { k: 'ab3_c',  d: 'M 185 280 A 237.5 237.5 0 0 0 315 280 L 410 385 L 90 385 Z', lx: 250, ly: 334, avg: 0.355 },
+      { k: 'w3_r',   d: 'M 470 140 L 500 140 L 500 385 L 410 385 L 315 280 A 237.5 237.5 0 0 0 470 140 Z', lx: 418, ly: 292, avg: 0.355 },
+      { k: 'mid_l',  d: 'M 30 0 L 170 0 L 170 140 L 30 140 Z', lx: 100, ly: 76, avg: 0.395 },
+      { k: 'mid_r',  d: 'M 330 0 L 470 0 L 470 140 L 330 140 Z', lx: 400, ly: 76, avg: 0.395 },
+      { k: 'mid_bl', d: 'M 30 140 L 170 140 L 170 190 L 198 228 L 185 280 A 237.5 237.5 0 0 1 30 140 Z', lx: 118, ly: 205, avg: 0.395 },
+      { k: 'mid_bc', d: 'M 198 228 L 302 228 L 315 280 A 237.5 237.5 0 0 1 185 280 Z', lx: 250, ly: 256, avg: 0.405 },
+      { k: 'mid_br', d: 'M 330 140 L 470 140 A 237.5 237.5 0 0 1 315 280 L 302 228 L 330 190 Z', lx: 382, ly: 205, avg: 0.395 },
+      { k: 'paint',  d: 'M 170 0 L 330 0 L 330 190 L 302 228 L 198 228 L 170 190 Z', lx: 250, ly: 158, avg: 0.425 },
+      { k: 'rim',    d: 'M 205 0 L 295 0 L 295 52 A 45 45 0 0 1 205 52 Z', lx: 250, ly: 52, avg: 0.635 }
     );
 
-    const classifyZone = (s) => {
-      if (s.zone) return String(s.zone);
-      const x = Number(s.x ?? 250), y = Number(s.y ?? 80);
+    const mapZoneKey = (s) => {
+      let x = Number(s.x ?? 250);
+      let y = Number(s.y ?? 80);
+      if (x < 0 || (Math.abs(x) <= 250 && s.x != null && Number(s.x) < 0)) x = x + 250;
+      if (y < 0) y = y + 52;
       const dx = x - 250, dy = y - 52, dist = Math.hypot(dx, dy);
-      const is3 = Number(s.val) === 3 || dist >= 225 || x <= 48 || x >= 452;
+      const is3 = Number(s.val) === 3 || dist >= 225 || x <= 42 || x >= 458;
       if (!is3) {
-        if (dist <= 52) return 'rim';
-        if (x >= 170 && x <= 330 && y <= 190) return 'paint';
-        if (x < 185) return 'mid_l';
-        if (x > 315) return 'mid_r';
-        return 'mid_c';
+        if (dist <= 48) return 'rim';
+        if (x >= 170 && x <= 330 && y <= 215) return 'paint';
+        if (y <= 140) return x < 250 ? 'mid_l' : 'mid_r';
+        if (x < 198) return 'mid_bl';
+        if (x > 302) return 'mid_br';
+        return 'mid_bc';
       }
-      if (y <= 135) return x < 250 ? 'c3_l' : 'c3_r';
-      if (x < 135) return 'w3_l';
-      if (x > 365) return 'w3_r';
-      if (x < 215) return 'ab3_l';
-      if (x > 285) return 'ab3_r';
+      if (y <= 140) return x < 250 ? 'c3_l' : 'c3_r';
+      if (x < 185) return 'w3_l';
+      if (x > 315) return 'w3_r';
       return 'ab3_c';
     };
 
     const buildCourtCard = (side, title) => {
       const sSide = shots.filter(s => s.side === side);
+      const fSide = fts.filter(f => f.side === side);
+      const tSide = tovs.filter(t => t.side === side);
+      const pSide = poss.filter(p => p.side === side);
+
+      const totA = sSide.length;
+      const s2 = sSide.filter(s => Number(s.val) !== 3);
+      const s3 = sSide.filter(s => Number(s.val) === 3);
+      const m2 = s2.filter(s => Number(s.made) === 1).length, a2 = s2.length;
+      const m3 = s3.filter(s => Number(s.made) === 1).length, a3 = s3.length;
+
+      const ts2Pct = a2 ? ((m2 / a2) * 100).toFixed(1) : '0.0';
+      const ts3Pct = a3 ? (((1.5 * m3) / a3) * 100).toFixed(1) : '0.0';
+      const ftrPct = totA ? ((fSide.length / totA) * 100).toFixed(1) : '0.0';
+      const par3Pct = totA ? ((a3 / totA) * 100).toFixed(1) : '0.0';
+      const possDen = pSide.length || (totA + 0.44 * fSide.length + tSide.length);
+      const tovPct = possDen ? ((tSide.length / possDen) * 100).toFixed(1) : '0.0';
+
       const byZ = {};
       ZONE_POLYS.forEach(z => { byZ[z.k] = { m: 0, a: 0 }; });
       sSide.forEach(s => {
-        const zk = classifyZone(s);
+        const zk = mapZoneKey(s);
         if (!byZ[zk]) byZ[zk] = { m: 0, a: 0 };
         byZ[zk].a++;
         if (Number(s.made) === 1) byZ[zk].m++;
@@ -2455,7 +2480,7 @@ async function renderInlineShotCharts() {
       const ns = ['http:/', 'www.w3.org', '2000', 'svg'].join('/');
       const svg = document.createElementNS(ns, 'svg');
       svg.setAttribute('viewBox', '0 0 500 385');
-      svg.style.cssText = 'width:100%;height:auto;border:1px solid var(--border);background:#f4f4f4;display:block;';
+      svg.style.cssText = 'width:100%;height:auto;border:1px solid #94a3b8;background:#f4f4f4;display:block;';
 
       const addEl = (tag, attrs) => {
         const node = document.createElementNS(ns, tag);
@@ -2464,62 +2489,88 @@ async function renderInlineShotCharts() {
         return node;
       };
 
+      const zoneStyle = (st, avg) => {
+        if (!st.a) return { fill: '#f1f5f9', dark: false };
+        const diff = (st.m / st.a) - avg;
+        const rel = side === 'def' ? -diff : diff;
+        if (rel >= 0.06) return { fill: '#22a559', dark: true };
+        if (rel >= 0.02) return { fill: '#86efac', dark: false };
+        if (rel > -0.025) return { fill: '#fef08a', dark: false };
+        if (rel > -0.065) return { fill: '#fca5a5', dark: false };
+        return { fill: '#dc3545', dark: true };
+      };
+
       ZONE_POLYS.forEach(z => {
         const st = byZ[z.k] || { m: 0, a: 0 };
-        const pct = st.a ? (st.m / st.a) : 0;
-        const diff = pct - z.avg;
-        const isDef = side === 'def';
-        const good = isDef ? (diff <= -0.04) : (diff >= 0.04);
-        const slightGood = isDef ? (diff <= 0) : (diff >= 0);
-        const slightBad = isDef ? (diff <= 0.04) : (diff >= -0.04);
-        const fill = !st.a ? '#f4f4f4' : (good ? '#86efac' : (slightGood ? '#dcfce7' : (slightBad ? '#fee2e2' : '#fca5a5')));
-        addEl('path', { d: z.d, fill, stroke: '#cbd5e1', 'stroke-width': 1 });
+        const sty = zoneStyle(st, z.avg);
+        addEl('path', { d: z.d, fill: sty.fill, stroke: '#ffffff', 'stroke-width': 1.5 });
       });
 
-      addEl('rect', { x: 0, y: 0, width: 500, height: 385, fill: 'none', stroke: '#94a3b8', 'stroke-width': 2 });
-      addEl('rect', { x: 170, y: 0, width: 160, height: 190, fill: 'none', stroke: '#475569', 'stroke-width': 1.5 });
-      addEl('rect', { x: 190, y: 0, width: 120, height: 190, fill: 'none', stroke: '#94a3b8', 'stroke-width': 1 });
-      addEl('circle', { cx: 250, cy: 190, r: 60, fill: 'none', stroke: '#475569', 'stroke-width': 1.5 });
-      addEl('path', { d: 'M 210 52 A 40 40 0 0 0 290 52', fill: 'none', stroke: '#475569', 'stroke-width': 1.2 });
-      addEl('path', { d: 'M 30 0 L 30 140 A 237.5 237.5 0 0 0 470 140 L 470 0', fill: 'none', stroke: '#334155', 'stroke-width': 2 });
-      addEl('line', { x1: 220, y1: 40, x2: 280, y2: 40, stroke: '#1e293b', 'stroke-width': 3 });
-      addEl('circle', { cx: 250, cy: 52, r: 8, fill: 'none', stroke: '#ea580c', 'stroke-width': 2 });
+      addEl('rect', { x: 0, y: 0, width: 500, height: 385, fill: 'none', stroke: '#334155', 'stroke-width': 2 });
+      addEl('rect', { x: 170, y: 0, width: 160, height: 190, fill: 'none', stroke: '#ffffff', 'stroke-width': 1.6 });
+      addEl('circle', { cx: 250, cy: 190, r: 60, fill: 'none', stroke: '#334155', 'stroke-width': 1.4 });
+      addEl('path', { d: 'M 210 52 A 40 40 0 0 0 290 52', fill: 'none', stroke: '#ffffff', 'stroke-width': 1.4 });
+      addEl('path', { d: 'M 30 0 L 30 140 A 237.5 237.5 0 0 0 470 140 L 470 0', fill: 'none', stroke: '#ffffff', 'stroke-width': 2.5 });
+      addEl('path', { d: 'M 30 0 L 30 140 A 237.5 237.5 0 0 0 470 140 L 470 0', fill: 'none', stroke: '#1e293b', 'stroke-width': 1.2 });
+      addEl('line', { x1: 220, y1: 40, x2: 280, y2: 40, stroke: '#ffffff', 'stroke-width': 3 });
+      addEl('circle', { cx: 250, cy: 52, r: 8, fill: 'none', stroke: '#ffffff', 'stroke-width': 2 });
 
       ZONE_POLYS.forEach(z => {
         const st = byZ[z.k] || { m: 0, a: 0 };
-        const pct = st.a ? (st.m / st.a) : 0;
+        const sty = zoneStyle(st, z.avg);
+        const pct = st.a ? Math.round((st.m / st.a) * 100) : 0;
+        const freq = totA ? Math.round((st.a / totA) * 100) : 0;
         const isCorner = z.k === 'c3_l' || z.k === 'c3_r';
+        const txtCol = sty.dark ? '#ffffff' : '#0A0A0A';
+        const strokeCol = sty.dark ? '#111827' : '#ffffff';
+
         const t1 = addEl('text', {
-          x: z.lx, y: z.ly - 3, 'text-anchor': 'middle', class: 'sc-svg-lbl',
-          'font-family': 'Oswald,sans-serif', 'font-size': isCorner ? '10' : '12.5', 'font-weight': '700', fill: '#0A0A0A'
+          x: z.lx, y: z.ly - 2, 'text-anchor': 'middle',
+          'font-family': 'Oswald,sans-serif', 'font-size': isCorner ? '11' : '15', 'font-weight': '700',
+          fill: txtCol, stroke: strokeCol, 'stroke-width': '2.4px', 'paint-order': 'stroke', 'stroke-linejoin': 'round'
         });
-        t1.textContent = st.a ? ((pct * 100).toFixed(0) + '%') : '—';
+        t1.textContent = st.a ? (pct + '%') : '0%';
+
         const t2 = addEl('text', {
-          x: z.lx, y: z.ly + 10, 'text-anchor': 'middle', class: 'sc-svg-lbl',
-          'font-family': 'Lora,serif', 'font-size': isCorner ? '8.5' : '9.5', 'font-weight': '600', fill: '#333'
+          x: z.lx, y: z.ly + 11, 'text-anchor': 'middle',
+          'font-family': 'Oswald,sans-serif', 'font-size': isCorner ? '8' : '9.8', 'font-weight': '600',
+          fill: txtCol, stroke: strokeCol, 'stroke-width': '2px', 'paint-order': 'stroke', 'stroke-linejoin': 'round'
         });
-        t2.textContent = st.m + '/' + st.a;
+        t2.textContent = st.m + '/' + st.a + ' (' + freq + '%)';
       });
 
-      const madeTot = sSide.filter(s => Number(s.made) === 1).length;
-      const pctTot = sSide.length ? ((madeTot / sSide.length) * 100).toFixed(1) : '0.0';
-      const box = document.createElement('div');
+      const card = document.createElement('div');
+      card.style.cssText = 'border:1px solid var(--border);background:#fff;padding:6px 8px 6px;';
+
       const hdr = document.createElement('div');
-      hdr.style.cssText = 'font-family:Oswald,sans-serif;font-size:11.5px;font-weight:700;text-align:center;color:var(--blue);margin-bottom:2px;';
-      hdr.textContent = title + ' · ' + madeTot + '/' + sSide.length + ' (' + pctTot + '%)';
-      box.appendChild(hdr);
-      box.appendChild(svg);
-      return box;
+      hdr.style.cssText = 'font-family:Oswald,sans-serif;font-size:14px;font-weight:700;color:var(--blue);line-height:1.1;text-transform:uppercase;margin-bottom:2px;';
+      hdr.textContent = title;
+      card.appendChild(hdr);
+
+      const sub = document.createElement('div');
+      sub.style.cssText = 'font-family:Lora,serif;font-size:10px;color:var(--dim);margin-bottom:5px;line-height:1.3;';
+      sub.innerHTML = '2PM-2PA: <b style="color:var(--blue);">' + m2 + '-' + a2 + '</b> &middot; '
+                    + '2PT TS%: <b style="color:var(--blue);">' + ts2Pct + '%</b> &middot; '
+                    + '3PM-3PA: <b style="color:var(--blue);">' + m3 + '-' + a3 + '</b> &middot; '
+                    + '3PT TS%: <b style="color:var(--blue);">' + ts3Pct + '%</b> &middot; '
+                    + 'FTr: <b style="color:var(--blue);">' + ftrPct + '%</b> &middot; '
+                    + '3PAr: <b style="color:var(--blue);">' + par3Pct + '%</b> &middot; '
+                    + 'TOV%: <b style="color:var(--blue);">' + tovPct + '%</b>';
+      card.appendChild(sub);
+
+      card.appendChild(svg);
+      return card;
     };
 
     grid.innerHTML = '';
-    const offTitle = pidFilter === 'ALL' ? 'MXC Offense' : (sel.options[sel.selectedIndex]?.textContent || 'Player') + ' Offense';
+    const offTitle = pidFilter === 'ALL' ? 'MXC OFFENSE' : ((sel.options[sel.selectedIndex]?.textContent || 'PLAYER').toUpperCase() + ' OFFENSE');
     grid.appendChild(buildCourtCard('off', offTitle));
-    grid.appendChild(buildCourtCard('def', 'Opponent Defense'));
+    grid.appendChild(buildCourtCard('def', 'MXC DEFENSE'));
   } catch (e) {
     grid.innerHTML = '<div style="color:var(--red);font-size:11px;">Shot charts unavailable.</div>';
   }
 }
+
 
 async function renderSeasonSplits() {
   const el = document.getElementById('seasonSplitsContainer');
@@ -2645,67 +2696,184 @@ async function runWowy() {
   }
   if (!selectedKeys.length) { clearWowySlots(); return; }
 
-  let sc = window._wowyShotData;
+  let [sc, idx, ld] = [
+    window._wowyShotData,
+    window._wowyPlayersIdx,
+    window._wowyLineupData
+  ];
   if (!sc) {
     sc = await fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
     if (sc) window._wowyShotData = sc;
   }
-  if (!sc || !Array.isArray(sc.poss)) { res.innerHTML = '<span style="color:var(--muted);">Play-by-play lineup data unavailable.</span>'; return; }
+  if (!idx) {
+    idx = await fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(() => []);
+    window._wowyPlayersIdx = idx;
+  }
+  if (!ld) {
+    ld = await fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
+    if (ld) window._wowyLineupData = ld;
+  }
+  if (!sc || !Array.isArray(sc.poss)) {
+    res.innerHTML = '<span style="color:var(--muted);">Play-by-play lineup data unavailable.</span>';
+    return;
+  }
 
-  const roster = window._wowyRosterList || [];
-  const selectedObjs = selectedKeys.map(k => roster.find(r => r.key === k) || { key: k, name: k, scIds: new Set() });
-  const targetGroups = selectedObjs.map(o => Array.from(o.scIds));
-  const isOnFloor = (onArr) => { const ids = (onArr || []).map(Number); return targetGroups.every(idSet => idSet.some(id => ids.includes(id))); };
-
-  const calcSplit = (wantOn) => {
-    const pOff = sc.poss.filter(p => p.side === 'off' && isOnFloor(p.on) === wantOn);
-    const pDef = sc.poss.filter(p => p.side === 'def' && isOnFloor(p.on) === wantOn);
-    const sOff = (sc.shots || []).filter(s => s.side === 'off' && isOnFloor(s.on) === wantOn);
-    const sDef = (sc.shots || []).filter(s => s.side === 'def' && isOnFloor(s.on) === wantOn);
-    const fOff = (sc.fts || []).filter(f => f.side === 'off' && isOnFloor(f.on) === wantOn);
-    const fDef = (sc.fts || []).filter(f => f.side === 'def' && isOnFloor(f.on) === wantOn);
-    const tOff = (sc.turnovers || []).filter(t => t.side === 'off' && isOnFloor(t.on) === wantOn);
-    const ptsFor = sOff.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fOff.filter(f => Number(f.made) === 1).length;
-    const ptsAg  = sDef.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fDef.filter(f => Number(f.made) === 1).length;
-    const offPoss = pOff.length, defPoss = pDef.length;
-    const offRtg = offPoss ? (ptsFor / offPoss) * 100 : 0, defRtg = defPoss ? (ptsAg / defPoss) * 100 : 0;
-    const fgm = sOff.filter(s => Number(s.made) === 1).length, fg3m = sOff.filter(s => Number(s.made) === 1 && Number(s.val) === 3).length;
-    const efg = sOff.length ? ((fgm + 0.5 * fg3m) / sOff.length) * 100 : 0;
-    const tov = offPoss ? (tOff.length / offPoss) * 100 : 0;
-    const rebOpps = (sOff.length - fgm) + fOff.filter(f => Number(f.made) === 0 && /1 of 1|2 of 2|3 of 3/.test(String(f.sub || ''))).length;
-    const orb = rebOpps ? (pOff.reduce((a, p) => a + (Number(p.oreb) || 0), 0) / rebOpps) * 100 : 0;
-    const ftr = sOff.length ? (fOff.length / sOff.length) * 100 : 0;
-    return { poss: Math.round((offPoss + defPoss) / 2), netRtg: offRtg - defRtg, offRtg, defRtg, efg, tov, orb, ftr };
+  const normN = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[.,'’\-]/g, ' ').split(/\s+/).filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w)).join(' ');
+  const photoMap = {};
+  const addPhoto = (nm, u) => {
+    if (!nm || !u) return;
+    photoMap[normN(nm)] = u;
+    const pts = normN(nm).split(' ');
+    if (pts.length >= 2) photoMap[pts[0] + '_' + pts[pts.length - 1]] = u;
+  };
+  Object.entries(ld?.playerXref || {}).forEach(([ab, info]) => { if (info?.photoUrl) { addPhoto(ab, info.photoUrl); addPhoto(info.name, info.photoUrl); } });
+  (Array.isArray(idx) ? idx : Object.values(idx || {})).forEach(p => { if (p?.name && p?.photoUrl) addPhoto(p.name, p.photoUrl); });
+  const getPhoto = (nm) => {
+    const c = normN(nm), pts = c.split(' ');
+    return photoMap[c] || (pts.length >= 2 ? photoMap[pts[0] + '_' + pts[pts.length - 1]] : null);
   };
 
-  const onSt = calcSplit(true), offSt = calcSplit(false);
-  const avatarsHtml = selectedObjs.map(o => {
-    const icon = typeof playerIcon === 'function' ? playerIcon(o.name, 34, false) : '';
-    return `<div style="display:flex;align-items:center;gap:5px;background:#fff;border:1px solid var(--border);padding:3px 7px;border-radius:3px;">${icon}<span style="font-family:Oswald,sans-serif;font-size:11.5px;font-weight:700;color:var(--text);">${o.name}</span></div>`;
-  }).join('<span style="font-family:Oswald,sans-serif;font-weight:700;color:var(--blue);font-size:13px;">+</span>');
+  const roster = window._wowyRosterList || [];
+  const selectedObjs = selectedKeys.map(k => {
+    const found = roster.find(r => r.key === k) || { key: k, name: k, scIds: new Set() };
+    const last = String(found.name || '').replace(/,\s*(jr|sr|ii|iii|iv|v)\.?$/i, '').split(' ').pop();
+    return { ...found, last, photo: getPhoto(found.name), ids: Array.from(found.scIds) };
+  });
 
-  const metrics = [
-    { lbl: 'NET RTG', on: onSt.netRtg, off: offSt.netRtg, pct: false, inv: false, signed: true },
-    { lbl: 'OFF RTG', on: onSt.offRtg, off: offSt.offRtg, pct: false, inv: false, signed: false },
-    { lbl: 'DEF RTG', on: onSt.defRtg, off: offSt.defRtg, pct: false, inv: true,  signed: false },
-    { lbl: 'EFG%',    on: onSt.efg,    off: offSt.efg,    pct: true,  inv: false, signed: false },
-    { lbl: 'TOV%',    on: onSt.tov,    off: offSt.tov,    pct: true,  inv: true,  signed: false },
-    { lbl: 'OR%',     on: onSt.orb,    off: offSt.orb,    pct: true,  inv: false, signed: false },
-    { lbl: 'FTR%',    on: onSt.ftr,    off: offSt.ftr,    pct: true,  inv: false, signed: false }
-  ];
+  const tms = cachedTeamStats?.slices?.all || [];
+  const lgAvg = (k, fb) => {
+    const vals = tms.map(t => t[k]).filter(v => v != null).map(Number);
+    return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : fb;
+  };
+  const lgOff  = lgAvg('OFF_RATING', 110.5);
+  const lgDef  = lgAvg('DEF_RATING', 110.5);
+  const lgNet  = lgOff - lgDef;
+  const lgTs   = lgAvg('TS_PCT', 0.568) * 100;
+  const lgTov  = lgAvg('TM_TOV_PCT', 0.155) * 100;
+  const lgOrb  = lgAvg('OREB_PCT', 0.285) * 100;
+  const lgDrb  = lgAvg('DREB_PCT', 0.715) * 100;
 
-  const cardsHtml = metrics.map(m => {
-    const rawDiff = m.on - m.off, goodDiff = m.inv ? -rawDiff : rawDiff;
-    const isPos = goodDiff > 0.05, isNeg = goodDiff < -0.05;
-    const bg = isPos ? '#dcfce7' : (isNeg ? '#fee2e2' : 'var(--surface)');
-    const bdr = isPos ? '#86efac' : (isNeg ? '#fca5a5' : 'var(--border)');
-    const dCol = isPos ? 'var(--green)' : (isNeg ? 'var(--red)' : 'var(--muted)');
-    const fmtVal = (v) => (m.signed && v > 0 ? '+' : '') + v.toFixed(1) + (m.pct ? '%' : '');
-    const fmtDiff = (rawDiff >= 0 ? '+' : '') + rawDiff.toFixed(1) + (m.pct ? '%' : '');
-    return `<div style="background:${bg};border:1px solid ${bdr};padding:4px 5px;text-align:center;"><div style="font-family:Oswald,sans-serif;font-size:9px;font-weight:700;color:var(--muted);letter-spacing:0.3px;">${m.lbl}</div><div style="font-family:Oswald,sans-serif;font-size:15px;font-weight:700;color:${dCol};line-height:1.15;">${fmtDiff}</div><div style="font-family:Lora,serif;font-size:9px;color:var(--dim);margin-top:2px;line-height:1.2;"><b>ON:</b> ${fmtVal(m.on)}<br><b>OFF:</b> ${fmtVal(m.off)}</div></div>`;
+  const calcCombo = (mask) => {
+    const matches = (onArr) => {
+      const floorIds = (onArr || []).map(Number);
+      for (let i = 0; i < selectedObjs.length; i++) {
+        const wantOn = ((mask >> i) & 1) === 1;
+        const isOn = selectedObjs[i].ids.some(id => floorIds.includes(id));
+        if (isOn !== wantOn) return false;
+      }
+      return true;
+    };
+
+    const pOff = sc.poss.filter(p => p.side === 'off' && matches(p.on));
+    const pDef = sc.poss.filter(p => p.side === 'def' && matches(p.on));
+    const sOff = (sc.shots || []).filter(s => s.side === 'off' && matches(s.on));
+    const sDef = (sc.shots || []).filter(s => s.side === 'def' && matches(s.on));
+    const fOff = (sc.fts || []).filter(f => f.side === 'off' && matches(f.on));
+    const fDef = (sc.fts || []).filter(f => f.side === 'def' && matches(f.on));
+    const tOff = (sc.turnovers || []).filter(t => t.side === 'off' && matches(t.on));
+    const tDef = (sc.turnovers || []).filter(t => t.side === 'def' && matches(t.on));
+
+    const ptsFor = sOff.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fOff.filter(f => Number(f.made) === 1).length;
+    const ptsAg  = sDef.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fDef.filter(f => Number(f.made) === 1).length;
+
+    const offPoss = pOff.length, defPoss = pDef.length;
+    const offRtg = offPoss ? (ptsFor / offPoss) * 100 : 0;
+    const defRtg = defPoss ? (ptsAg / defPoss) * 100 : 0;
+    const netRtg = offRtg - defRtg;
+
+    const offTsa = sOff.length + 0.44 * fOff.length;
+    const defTsa = sDef.length + 0.44 * fDef.length;
+    const offTs  = offTsa ? (ptsFor / (2 * offTsa)) * 100 : 0;
+    const defTs  = defTsa ? (ptsAg  / (2 * defTsa)) * 100 : 0;
+
+    const offTov = offPoss ? (tOff.length / offPoss) * 100 : 0;
+    const defTov = defPoss ? (tDef.length / defPoss) * 100 : 0;
+
+    const offFgm = sOff.filter(s => Number(s.made) === 1).length;
+    const defFgm = sDef.filter(s => Number(s.made) === 1).length;
+    const offRebOpps = (sOff.length - offFgm) + fOff.filter(f => Number(f.made) === 0 && /1 of 1|2 of 2|3 of 3/.test(String(f.sub || ''))).length;
+    const defRebOpps = (sDef.length - defFgm) + fDef.filter(f => Number(f.made) === 0 && /1 of 1|2 of 2|3 of 3/.test(String(f.sub || ''))).length;
+
+    const offOreb = pOff.reduce((a, p) => a + (Number(p.oreb) || 0), 0);
+    const defOreb = pDef.reduce((a, p) => a + (Number(p.oreb) || 0), 0);
+    const offOrb = offRebOpps ? (offOreb / offRebOpps) * 100 : 0;
+    const defOrb = defRebOpps ? ((defRebOpps - defOreb) / defRebOpps) * 100 : 0;
+
+    return { poss: Math.round((offPoss + defPoss) / 2), offRtg, defRtg, netRtg, offTs, offTov, offOrb, defTs, defTov, defOrb };
+  };
+
+  const n = selectedObjs.length;
+  const totalCombos = 1 << n;
+  const rows = [];
+  for (let idxM = 0; idxM < totalCombos; idxM++) {
+    let mask = 0;
+    for (let i = 0; i < n; i++) {
+      const bit = ((idxM >> i) & 1) === 0 ? 1 : 0;
+      mask |= (bit << i);
+    }
+    rows.push({ mask, st: calcCombo(mask) });
+  }
+
+  const statCell = (val, avg, isPct, inv, colorMain) => {
+    const d = val - avg;
+    const good = inv ? (d <= 0) : (d >= 0);
+    const dCol = good ? 'var(--green)' : 'var(--red)';
+    const mainCol = colorMain ? (val >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--text)';
+    return `<td style="padding:5px 3px;text-align:right;vertical-align:middle;">
+      <div style="font-family:Lora,serif;font-weight:700;font-size:11px;color:${mainCol};line-height:1.1;">${val.toFixed(1)}</div>
+      <div style="font-family:Lora,serif;font-size:8.5px;color:${dCol};line-height:1.1;margin-top:1px;">${d >= 0 ? '+' : ''}${d.toFixed(1)}${isPct ? '%' : ''}</div>
+    </td>`;
+  };
+
+  const bodyHtml = rows.map(r => {
+    const avatars = selectedObjs.map((p, i) => {
+      const isOn = ((r.mask >> i) & 1) === 1;
+      const circle = isOn
+        ? (p.photo
+            ? `<img src="${p.photo}" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--blue);display:block;margin:0 auto;">`
+            : `<div style="width:32px;height:32px;border-radius:50%;background:var(--surface);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:10px;font-weight:700;margin:0 auto;">${p.last.slice(0,2)}</div>`)
+        : `<div style="width:32px;height:32px;border-radius:50%;background:#666;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:9px;font-weight:700;margin:0 auto;letter-spacing:0.3px;">OFF</div>`;
+      return `<div style="text-align:center;width:40px;">${circle}<div style="font-family:Lora,serif;font-size:9px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.last}</div></div>`;
+    }).join('');
+
+    const s = r.st;
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:5px 4px 5px 0;text-align:left;vertical-align:middle;"><div style="display:flex;align-items:center;gap:4px;">${avatars}</div></td>
+      <td style="padding:5px 4px;text-align:right;vertical-align:top;font-family:Lora,serif;font-weight:700;font-size:11px;color:var(--text);">${s.poss}</td>
+      ${statCell(s.offRtg, lgOff, false, false, false)}
+      ${statCell(s.defRtg, lgDef, false, true,  false)}
+      ${statCell(s.netRtg, lgNet, false, false, true)}
+      ${statCell(s.offTs,  lgTs,  true,  false, false)}
+      ${statCell(s.offTov, lgTov, true,  true,  false)}
+      ${statCell(s.offOrb, lgOrb, true,  false, false)}
+      ${statCell(s.defTs,  lgTs,  true,  true,  false)}
+      ${statCell(s.defTov, lgTov, true,  false, false)}
+      ${statCell(s.defOrb, lgDrb, true,  false, false)}
+    </tr>`;
   }).join('');
 
-  res.innerHTML = `<div style="background:var(--surface);border:1px solid var(--border);padding:6px 8px;"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px;padding-bottom:5px;border-bottom:1px solid var(--border);"><div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px;">${avatarsHtml}</div><div style="display:flex;gap:8px;font-family:Oswald,sans-serif;font-size:11px;"><span style="background:var(--blue);color:#fff;padding:2px 7px;font-weight:700;">ON: ${onSt.poss} POSS</span><span style="background:#fff;color:var(--dim);border:1px solid var(--border);padding:2px 7px;font-weight:700;">OFF: ${offSt.poss} POSS</span></div></div><div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;">${cardsHtml}</div></div>`;
+  res.innerHTML =
+    `<div style="font-family:Lora,serif;font-size:9.5px;color:var(--muted);margin-bottom:4px;">Lineup combo weighted avg &middot; &Delta; vs. league avg</div>
+     <div style="overflow-x:auto;">
+       <table style="width:100%;border-collapse:collapse;table-layout:auto;">
+         <thead>
+           <tr style="border-bottom:1px solid var(--border);font-family:Oswald,sans-serif;font-size:9.5px;font-weight:700;color:var(--muted);">
+             <th style="text-align:left;padding:2px 4px 3px 0;">LINEUP</th>
+             <th style="text-align:right;padding:2px 4px 3px;">POSS</th>
+             <th style="text-align:right;padding:2px 3px 3px;">OFF</th>
+             <th style="text-align:right;padding:2px 3px 3px;">DEF</th>
+             <th style="text-align:right;padding:2px 3px 3px;">NET</th>
+             <th style="text-align:right;padding:2px 3px 3px;">OFF TS%</th>
+             <th style="text-align:right;padding:2px 3px 3px;">OFF TOV%</th>
+             <th style="text-align:right;padding:2px 3px 3px;">OFF ORB%</th>
+             <th style="text-align:right;padding:2px 3px 3px;">DEF TS%</th>
+             <th style="text-align:right;padding:2px 3px 3px;">DEF TOV%</th>
+             <th style="text-align:right;padding:2px 2px 3px;">DEF ORB%</th>
+           </tr>
+         </thead>
+         <tbody>${bodyHtml}</tbody>
+       </table>
+     </div>`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

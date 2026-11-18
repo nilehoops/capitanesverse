@@ -1,0 +1,437 @@
+{
+  "season": "2026-27",
+  "games": [
+    {
+      "id": "2022600557",
+      "date": "2027-03-27",
+      "opp": "IWA",
+      "loc": "Home",
+      "label": "2027-03-27 \u00b7 MXC vs. IWA",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600545",
+      "date": "2027-03-26",
+      "opp": "IWA",
+      "loc": "Home",
+      "label": "2027-03-26 \u00b7 MXC vs. IWA",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600527",
+      "date": "2027-03-23",
+      "opp": "SXF",
+      "loc": "Home",
+      "label": "2027-03-23 \u00b7 MXC vs. SXF",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600513",
+      "date": "2027-03-21",
+      "opp": "SXF",
+      "loc": "Home",
+      "label": "2027-03-21 \u00b7 MXC vs. SXF",
+      "time": "6:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600496",
+      "date": "2027-03-19",
+      "opp": "IWA",
+      "loc": "Away",
+      "label": "2027-03-19 \u00b7 MXC @ IWA",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600490",
+      "date": "2027-03-18",
+      "opp": "IWA",
+      "loc": "Away",
+      "label": "2027-03-18 \u00b7 MXC @ IWA",
+      "time": "7:30 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600474",
+      "date": "2027-03-15",
+      "opp": "SDC",
+      "loc": "Home",
+      "label": "2027-03-15 \u00b7 MXC vs. SDC",
+      "time": "6:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600472",
+      "date": "2027-03-14",
+      "opp": "SDC",
+      "loc": "Home",
+      "label": "2027-03-14 \u00b7 MXC vs. SDC",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600424",
+      "date": "2027-03-05",
+      "opp": "STO",
+      "loc": "Away",
+      "label": "2027-03-05 \u00b7 MXC @ STO",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600410",
+      "date": "2027-03-03",
+      "opp": "SLC",
+      "loc": "Away",
+      "label": "2027-03-03 \u00b7 MXC @ SLC",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600398",
+      "date": "2027-03-01",
+      "opp": "SLC",
+      "loc": "Away",
+      "label": "2027-03-01 \u00b7 MXC @ SLC",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600379",
+      "date": "2027-02-26",
+      "opp": "CVL",
+      "loc": "Away",
+      "label": "2027-02-26 \u00b7 MXC @ CVL",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600370",
+      "date": "2027-02-25",
+      "opp": "CVL",
+      "loc": "Away",
+      "label": "2027-02-25 \u00b7 MXC @ CVL",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600356",
+      "date": "2027-02-17",
+      "opp": "RGV",
+      "loc": "Away",
+      "label": "2027-02-17 \u00b7 MXC @ RGV",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600344",
+      "date": "2027-02-16",
+      "opp": "RGV",
+      "loc": "Away",
+      "label": "2027-02-16 \u00b7 MXC @ RGV",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600334",
+      "date": "2027-02-14",
+      "opp": "MHU",
+      "loc": "Home",
+      "label": "2027-02-14 \u00b7 MXC vs. MHU",
+      "time": "5:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600313",
+      "date": "2027-02-11",
+      "opp": "STO",
+      "loc": "Away",
+      "label": "2027-02-11 \u00b7 MXC @ STO",
+      "time": "2:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600290",
+      "date": "2027-02-06",
+      "opp": "SDC",
+      "loc": "Away",
+      "label": "2027-02-06 \u00b7 MXC @ SDC",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600277",
+      "date": "2027-02-04",
+      "opp": "SDC",
+      "loc": "Away",
+      "label": "2027-02-04 \u00b7 MXC @ SDC",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600252",
+      "date": "2027-01-31",
+      "opp": "TEX",
+      "loc": "Away",
+      "label": "2027-01-31 \u00b7 MXC @ TEX",
+      "time": "4:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600247",
+      "date": "2027-01-30",
+      "opp": "TEX",
+      "loc": "Away",
+      "label": "2027-01-30 \u00b7 MXC @ TEX",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600232",
+      "date": "2027-01-28",
+      "opp": "AUS",
+      "loc": "Away",
+      "label": "2027-01-28 \u00b7 MXC @ AUS",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600217",
+      "date": "2027-01-25",
+      "opp": "OKL",
+      "loc": "Home",
+      "label": "2027-01-25 \u00b7 MXC vs. OKL",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600213",
+      "date": "2027-01-24",
+      "opp": "OKL",
+      "loc": "Home",
+      "label": "2027-01-24 \u00b7 MXC vs. OKL",
+      "time": "5:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600174",
+      "date": "2027-01-18",
+      "opp": "SCW",
+      "loc": "Away",
+      "label": "2027-01-18 \u00b7 MXC @ SCW",
+      "time": "5:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600165",
+      "date": "2027-01-16",
+      "opp": "SCW",
+      "loc": "Away",
+      "label": "2027-01-16 \u00b7 MXC @ SCW",
+      "time": "10:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600136",
+      "date": "2027-01-12",
+      "opp": "STO",
+      "loc": "Home",
+      "label": "2027-01-12 \u00b7 MXC vs. STO",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600128",
+      "date": "2027-01-10",
+      "opp": "STO",
+      "loc": "Home",
+      "label": "2027-01-10 \u00b7 MXC vs. STO",
+      "time": "5:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600114",
+      "date": "2027-01-08",
+      "opp": "RCR",
+      "loc": "Home",
+      "label": "2027-01-08 \u00b7 MXC vs. RCR",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600100",
+      "date": "2027-01-06",
+      "opp": "RCR",
+      "loc": "Home",
+      "label": "2027-01-06 \u00b7 MXC vs. RCR",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600091",
+      "date": "2027-01-05",
+      "opp": "CVL",
+      "loc": "Home",
+      "label": "2027-01-05 \u00b7 MXC vs. CVL",
+      "time": "7:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600085",
+      "date": "2027-01-03",
+      "opp": "CVL",
+      "loc": "Home",
+      "label": "2027-01-03 \u00b7 MXC vs. CVL",
+      "time": "5:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600054",
+      "date": "2026-12-29",
+      "opp": "VAL",
+      "loc": "Home",
+      "label": "2026-12-29 \u00b7 MXC vs. VAL",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2022600039",
+      "date": "2026-12-27",
+      "opp": "VAL",
+      "loc": "Home",
+      "label": "2026-12-27 \u00b7 MXC vs. VAL",
+      "time": "5:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600211",
+      "date": "2026-12-15",
+      "opp": "MHU",
+      "loc": "Home",
+      "label": "2026-12-15 \u00b7 MXC vs. MHU",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600203",
+      "date": "2026-12-14",
+      "opp": "MHU",
+      "loc": "Home",
+      "label": "2026-12-14 \u00b7 MXC vs. MHU",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600172",
+      "date": "2026-12-08",
+      "opp": "RGV",
+      "loc": "Home",
+      "label": "2026-12-08 \u00b7 MXC vs. RGV",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600167",
+      "date": "2026-12-07",
+      "opp": "RGV",
+      "loc": "Home",
+      "label": "2026-12-07 \u00b7 MXC vs. RGV",
+      "time": "9:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600138",
+      "date": "2026-12-02",
+      "opp": "LTN",
+      "loc": "Away",
+      "label": "2026-12-02 \u00b7 MXC @ LTN",
+      "time": "12:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600126",
+      "date": "2026-11-29",
+      "opp": "AUS",
+      "loc": "Away",
+      "label": "2026-11-29 \u00b7 MXC @ AUS",
+      "time": "4:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600115",
+      "date": "2026-11-28",
+      "opp": "AUS",
+      "loc": "Away",
+      "label": "2026-11-28 \u00b7 MXC @ AUS",
+      "time": "2:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600077",
+      "date": "2026-11-19",
+      "opp": "OKL",
+      "loc": "Away",
+      "label": "2026-11-19 \u00b7 MXC @ OKL",
+      "time": "8:00 pm ET",
+      "future": true
+    },
+    {
+      "id": "2052600062",
+      "date": "2026-11-16",
+      "opp": "OSC",
+      "loc": "Home",
+      "label": "2026-11-16 \u00b7 MXC vs. OSC",
+      "time": "Final",
+      "future": false
+    },
+    {
+      "id": "2052600048",
+      "date": "2026-11-14",
+      "opp": "LTN",
+      "loc": "Away",
+      "label": "2026-11-14 \u00b7 MXC @ LTN",
+      "time": "Final",
+      "future": false
+    },
+    {
+      "id": "2052600036",
+      "date": "2026-11-12",
+      "opp": "OSC",
+      "loc": "Away",
+      "label": "2026-11-12 \u00b7 MXC @ OSC",
+      "time": "Final",
+      "future": false
+    },
+    {
+      "id": "2052600030",
+      "date": "2026-11-10",
+      "opp": "TEX",
+      "loc": "Home",
+      "label": "2026-11-10 \u00b7 MXC vs. TEX",
+      "time": "Final",
+      "future": false
+    },
+    {
+      "id": "2052600022",
+      "date": "2026-11-08",
+      "opp": "TEX",
+      "loc": "Home",
+      "label": "2026-11-08 \u00b7 MXC vs. TEX",
+      "time": "Final",
+      "future": false
+    },
+    {
+      "id": "2052600006",
+      "date": "2026-11-06",
+      "opp": "OKL",
+      "loc": "Away",
+      "label": "2026-11-06 \u00b7 MXC @ OKL",
+      "time": "Final",
+      "future": false
+    }
+  ]
+}

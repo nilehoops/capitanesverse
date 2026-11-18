@@ -2111,35 +2111,40 @@ async function renderLastGameRecap() {
   const el = document.getElementById('lastGameRecapContent');
   if (!el) return;
   try {
-    const [sc, idx, ld, sched] = await Promise.all([
+    const [sc, idx, ld, sched, lite] = await Promise.all([
       fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null),
       fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
       (window._wowyLineupData ? Promise.resolve(window._wowyLineupData) : fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)),
-      fetch('data/schedule_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
+      fetch('data/schedule_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('data/league_lite_shots_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
 
-    if (!sc || !Array.isArray(sc.games) || !sc.games.length) {
-      el.innerHTML = '';
-    el.appendChild(navBar);
-    if (!g._played) {
-      const oppU = String(g.opp || 'OPP').toUpperCase();
-      const dtU = String(g.date || '');
-      const locU = String(g.loc || (String(g.label || '').includes('@') ? 'Away' : 'Home'));
-      const boxU = h('div', 'background:var(--surface);border:1px solid var(--border);padding:8px;text-align:center;');
-      boxU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0.4px;margin-bottom:4px;', 'UPCOMING MATCHUP · ' + locU.toUpperCase()));
-      const rowU = h('div', 'display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0;');
-      rowU.appendChild(logoNode('MXC'));
-      rowU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:15px;font-weight:700;color:var(--dim);', locU === 'Away' ? '@' : 'VS'));
-      rowU.appendChild(logoNode(oppU));
-      boxU.appendChild(rowU);
-      if (dtU) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:10.5px;font-weight:700;color:var(--text);margin-top:3px;', dtU));
-      if (g.time || g.note) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:9.5px;color:var(--muted);margin-top:2px;', String(g.time || g.note)));
-      el.appendChild(boxU);
-      return;
+    if (!cachedTeamStats) {
+      const rTs = await fetch(TEAM_STATS_PATH() + '?v=' + Date.now()).catch(() => null);
+      if (rTs && rTs.ok) cachedTeamStats = await rTs.json();
     }
+
+    const playedList = (sc && Array.isArray(sc.games) ? sc.games : new Array()).map((gm, i) => ({ ...gm, _played: true, _pIdx: i }));
+    const playedIds = new Set(playedList.map(gm => String(gm.id || gm.gid)));
+    const rawSched = Array.isArray(sched) ? sched : (sched?.games || sched?.upcoming || new Array());
+    const futureList = rawSched
+      .filter(ug => !playedIds.has(String(ug.id || ug.gid || '')) && (ug.future || ug.upcoming || !ug.wl))
+      .map(ug => ({ ...ug, _played: false }));
+    const allGames = new Array(...futureList, ...playedList);
+
+    if (!allGames.length) {
+      el.innerHTML = '';
       el.textContent = 'No game data available yet.';
       return;
     }
+
+    if (window._recapSeason !== SEASON) {
+      window._recapSeason = SEASON;
+      window._recapIdx = futureList.length < allGames.length ? futureList.length : 0;
+    }
+    const curIdx = Math.max(0, Math.min(allGames.length - 1, Number(window._recapIdx ?? 0)));
+    window._recapIdx = curIdx;
+    const g = allGames.at(curIdx);
 
     const normN = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[.,'’\-]/g, ' ').split(/\s+/).filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w)).join(' ');
     const pPhoto = {};
@@ -2152,6 +2157,14 @@ async function renderLastGameRecap() {
     };
     Object.entries(ld?.playerXref || {}).forEach(([ab, info]) => { if (info?.photoUrl) { regP(ab, info.photoUrl); regP(info.name, info.photoUrl); } });
     (Array.isArray(idx) ? idx : Object.values(idx || {})).forEach(p => { if (p?.name && p?.photoUrl) regP(p.name, p.photoUrl); });
+    (lite?.teams || new Array()).forEach(tm => {
+      (tm.rosterStats || new Array()).forEach(rp => {
+        if (rp?.id && rp?.name && !pPhoto[normN(rp.name)]) {
+          regP(rp.name, 'https://nba.com' + rp.id + '.png');
+        }
+      });
+    });
+
     const getPhoto = (nm) => {
       const c = normN(nm), pts = c.split(' ');
       return pPhoto[String(nm || '').toLowerCase()] || pPhoto[c] || (pts.length >= 2 ? pPhoto[pts.at(0).at(0) + '_' + pts.at(-1)] : null);
@@ -2203,147 +2216,6 @@ async function renderLastGameRecap() {
       return img;
     };
 
-    const playedList = sc.games.map((gm, i) => ({ ...gm, _played: true, _pIdx: i }));
-    const playedIds = new Set(playedList.map(gm => String(gm.id || gm.gid)));
-    const rawSched = Array.isArray(sched) ? sched : (sched?.games || sched?.upcoming || []);
-    const futureList = rawSched
-      .filter(ug => !playedIds.has(String(ug.id || ug.gid || '')) && (ug.future || ug.upcoming || !ug.wl))
-      .map(ug => ({ ...ug, _played: false }));
-    const allGames = [...futureList, ...playedList];
-
-    if (window._recapSeason !== SEASON) {
-      window._recapSeason = SEASON;
-      window._recapIdx = futureList.length; // Default to most recent completed game
-    }
-    const curIdx = Math.max(0, Math.min(allGames.length - 1, Number(window._recapIdx ?? futureList.length)));
-    window._recapIdx = curIdx;
-    const g = allGames[curIdx];
-
-    const navBar = h('div', 'display:flex;align-items:center;justify-content:space-between;gap:3px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border);');
-    const prevBtn = h('button', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border:1px solid var(--border);background:' + (curIdx < allGames.length - 1 ? '#fff' : 'var(--surface)') + ';color:' + (curIdx < allGames.length - 1 ? 'var(--blue)' : 'var(--muted)') + ';cursor:' + (curIdx < allGames.length - 1 ? 'pointer' : 'default') + ';', '◀');
-    prevBtn.title = 'Older Game';
-    if (curIdx < allGames.length - 1) prevBtn.onclick = () => { window._recapIdx = curIdx + 1; renderLastGameRecap(); };
-
-    const nextBtn = h('button', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border:1px solid var(--border);background:' + (curIdx > 0 ? '#fff' : 'var(--surface)') + ';color:' + (curIdx > 0 ? 'var(--blue)' : 'var(--muted)') + ';cursor:' + (curIdx > 0 ? 'pointer' : 'default') + ';', '▶');
-    nextBtn.title = 'Newer / Upcoming Game';
-    if (curIdx > 0) nextBtn.onclick = () => { window._recapIdx = curIdx - 1; renderLastGameRecap(); };
-
-    const gSel = h('select', 'flex:1;min-width:0;font-family:Lora,serif;font-size:9.5px;padding:1px 3px;border:1px solid var(--border);background:#fff;color:var(--text);');
-    allGames.forEach((gm, idxOpt) => {
-      const opt = document.createElement('option');
-      opt.value = String(idxOpt);
-      const tag = gm._played ? '' : ' [UPCOMING]';
-      opt.textContent = (gm.label || ((gm.date || '') + ' vs ' + (gm.opp || 'OPP'))) + tag;
-      if (idxOpt === curIdx) opt.selected = true;
-      gSel.appendChild(opt);
-    });
-    gSel.onchange = () => { window._recapIdx = Number(gSel.value); renderLastGameRecap(); };
-    navBar.appendChild(prevBtn);
-    navBar.appendChild(gSel);
-    navBar.appendChild(nextBtn);
-    const gid = g.id || g.gid;
-    const lblStr = String(g.label || '');
-    const lblMatch = lblStr.match(/MXC\s+(?:vs\.?|@)\s+([A-Z]{2,4})/i);
-    const dateMatch = lblStr.match(/^(\d{4}-\d{2}-\d{2})/);
-    const oppAb = (g.opp || (lblMatch ? lblMatch.at(1) : 'OPP')).toUpperCase();
-    const gameDate = g.date || (dateMatch ? dateMatch.at(1) : '');
-
-    const gPoss = (sc.poss || new Array()).filter(p => p.gid === gid);
-    const gShots = (sc.shots || new Array()).filter(s => s.gid === gid);
-    const gFts = (sc.fts || new Array()).filter(f => f.gid === gid);
-    const gTovs = (sc.turnovers || new Array()).filter(t => t.gid === gid);
-
-    const periods = Array.from(new Set(gPoss.map(p => Number(p.p || 1)))).sort((a, b) => a - b);
-    let mxcTot = 0, oppTot = 0;
-    const qCols = periods.map(pNum => {
-      const mPts = gShots.filter(s => Number(s.p) === pNum && s.side === 'off' && Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0)
-                 + gFts.filter(f => Number(f.p) === pNum && f.side === 'off' && Number(f.made) === 1).length;
-      const oPts = gShots.filter(s => Number(s.p) === pNum && s.side === 'def' && Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0)
-                 + gFts.filter(f => Number(f.p) === pNum && f.side === 'def' && Number(f.made) === 1).length;
-      mxcTot += mPts; oppTot += oPts;
-      return { lbl: pNum <= 4 ? ('Q' + pNum) : ('OT' + (pNum - 4)), mPts, oPts };
-    });
-
-    const calc4F = (side) => {
-      const pA = gPoss.filter(p => p.side === side);
-      const sA = gShots.filter(s => s.side === side);
-      const fA = gFts.filter(f => f.side === side);
-      const tA = gTovs.filter(t => t.side === side);
-      const fgm = sA.filter(s => Number(s.made) === 1).length;
-      const fg3m = sA.filter(s => Number(s.made) === 1 && Number(s.val) === 3).length;
-      const efg = sA.length ? (fgm + 0.5 * fg3m) / sA.length : 0;
-      const tov = pA.length ? tA.length / pA.length : 0;
-      const rebOpps = (sA.length - fgm) + fA.filter(f => Number(f.made) === 0 && /1 of 1|2 of 2|3 of 3/.test(String(f.sub || ''))).length;
-      const orb = rebOpps ? pA.reduce((a, p) => a + (Number(p.oreb) || 0), 0) / rebOpps : 0;
-      const ftr = sA.length ? fA.length / sA.length : 0;
-      return { efg, tov, orb, ftr };
-    };
-    const tm4 = calc4F('off');
-    const op4 = calc4F('def');
-
-    const tms = cachedTeamStats?.slices?.all || new Array();
-    const lgMean = (key, fallback) => {
-      const arr = tms.map(t => t[key]).filter(v => v != null);
-      return arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length) : fallback;
-    };
-    const normCdfPct = (z) => {
-      const t = 1 / (1 + 0.2316419 * Math.abs(z));
-      const d = 0.3989423 * Math.exp(-z * z / 2);
-      const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
-      const cdf = z > 0 ? (1 - p) : p;
-      return Math.max(1, Math.min(99, Math.round(cdf * 100)));
-    };
-    const singleGamePct = (val, mean, sd, lb) => normCdfPct(lb ? -((val - mean) / sd) : ((val - mean) / sd));
-    const cellBg = (pct) => pct >= 75 ? 'background:#b7ebbf;' : (pct >= 55 ? 'background:#dcfce7;' : (pct >= 45 ? 'background:#ffffff;' : (pct >= 25 ? 'background:#fee2e2;' : 'background:#f5a3a3;')));
-    const snapTd = (val, pct) => h('td', 'padding:11px 3px 4px;border:1px solid #d4d4d4;position:relative;text-align:center;' + cellBg(pct),
-      h('div', 'position:absolute;top:1px;right:2px;font-size:7.5px;line-height:1;color:#444;font-weight:600;', pct + '%'),
-      h('div', 'font-size:11px;font-weight:700;color:#000;line-height:1.1;', (val * 100).toFixed(1) + '%')
-    );
-
-    const mEfg = lgMean('EFG_PCT', 0.535), mTov = lgMean('TM_TOV_PCT', 0.155), mOrb = lgMean('OREB_PCT', 0.285), mFtr = 0.265;
-    const tmCells = new Array(
-      snapTd(tm4.efg, singleGamePct(tm4.efg, mEfg, 0.055, false)),
-      snapTd(tm4.tov, singleGamePct(tm4.tov, mTov, 0.038, true)),
-      snapTd(tm4.orb, singleGamePct(tm4.orb, mOrb, 0.065, false)),
-      snapTd(tm4.ftr, singleGamePct(tm4.ftr, mFtr, 0.085, false))
-    );
-    const opCells = new Array(
-      snapTd(op4.efg, singleGamePct(op4.efg, mEfg, 0.055, true)),
-      snapTd(op4.tov, singleGamePct(op4.tov, mTov, 0.038, false)),
-      snapTd(op4.orb, singleGamePct(op4.orb, mOrb, 0.065, true)),
-      snapTd(op4.ftr, singleGamePct(op4.ftr, mFtr, 0.085, true))
-    );
-
-    const duoMap = {};
-    gPoss.forEach(p => {
-      const on = (p.on || new Array()).map(Number).sort((a, b) => a - b);
-      if (on.length < 2) return;
-      for (let i = 0; i < on.length; i++) {
-        for (let j = i + 1; j < on.length; j++) {
-          const dk = on[i] + '-' + on[j];
-          if (!duoMap[dk]) duoMap[dk] = { ids: new Array(on[i], on[j]), off: 0, def: 0 };
-          if (p.side === 'off') duoMap[dk].off++; else duoMap[dk].def++;
-        }
-      }
-    });
-    const pList = Array.isArray(sc.players) ? sc.players : Object.values(sc.players || {});
-    const idFull = {}; pList.forEach(p => { idFull[Number(p.id)] = p.name || String(p.id); });
-
-    const allDuos = Object.values(duoMap).map(d => ({ ...d, totPoss: Math.round((d.off + d.def) / 2) }));
-    const minDuoPoss = new Array(45, 38, 32, 26).find(t => allDuos.filter(d => d.totPoss >= t).length >= 2) || 24;
-
-    const duoScores = allDuos
-      .filter(d => d.totPoss >= minDuoPoss)
-      .map(d => {
-        const hasAll = (arr) => d.ids.every(id => (arr || new Array()).map(Number).includes(id));
-        const ptsFor = gShots.filter(s => s.side === 'off' && Number(s.made) === 1 && hasAll(s.on)).reduce((a, s) => a + (Number(s.val) || 2), 0)
-                     + gFts.filter(f => f.side === 'off' && Number(f.made) === 1 && hasAll(f.on)).length;
-        const ptsAg = gShots.filter(s => s.side === 'def' && Number(s.made) === 1 && hasAll(s.on)).reduce((a, s) => a + (Number(s.val) || 2), 0)
-                    + gFts.filter(f => f.side === 'def' && Number(f.made) === 1 && hasAll(f.on)).length;
-        const net = (ptsFor / Math.max(1, d.off) * 100) - (ptsAg / Math.max(1, d.def) * 100);
-        return { poss: d.totPoss, net, avatars: d.ids.map(id => avatarNode(idFull[id] || id, 24)) };
-      }).sort((a, b) => b.net - a.net);
-
     const buildDuoCard = (title, dObj, isGood) => {
       if (!dObj) return h('div', '');
       const col = isGood ? 'var(--green)' : 'var(--red)';
@@ -2355,21 +2227,6 @@ async function renderLastGameRecap() {
         h('div', 'display:grid;grid-template-columns:repeat(2,1fr);gap:2px;', ...dObj.avatars)
       );
     };
-
-    const pDres = pList.map(pe => {
-      const pid = Number(pe.id);
-      const pOff = gPoss.filter(p => p.side === 'off' && (p.on || new Array()).map(Number).includes(pid)).length;
-      const pDef = gPoss.filter(p => p.side === 'def' && (p.on || new Array()).map(Number).includes(pid)).length;
-      const poss = Math.round((pOff + pDef) / 2);
-      if (poss < 30) return null;
-      const sh = gShots.filter(s => s.side === 'off' && Number(s.pid) === pid);
-      const ft = gFts.filter(f => f.side === 'off' && Number(f.pid) === pid);
-      const tv = gTovs.filter(t => t.side === 'off' && Number(t.pid) === pid).length;
-      const st = gTovs.filter(t => t.side === 'def' && Number(t.spid) === pid).length;
-      const pts = sh.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + ft.filter(f => Number(f.made) === 1).length;
-      const dre = (100 / poss) * (0.792 * pts - 0.719 * sh.length - 0.299 * ft.length + 1.662 * st - 0.844 * tv);
-      return { name: pe.name, dre, poss };
-    }).filter(Boolean).sort((a, b) => b.dre - a.dre);
 
     const buildDreCard = (labelPrefix, obj, isGood) => {
       if (!obj) return null;
@@ -2384,64 +2241,373 @@ async function renderLastGameRecap() {
       );
     };
 
+    const renderOutliersBox = (titleTxt, items) => {
+      if (!items || !items.length) return null;
+      const wrap = h('div', 'margin-top:5px;padding-top:4px;border-top:1px solid var(--border);');
+      wrap.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0.3px;margin-bottom:3px;text-align:center;', titleTxt));
+      items.slice(0, 2).forEach(it => {
+        const bg = it.tone === 'pos' ? '#f0fdf4' : (it.tone === 'neg' ? '#fef2f2' : '#eff6ff');
+        const bdr = it.tone === 'pos' ? '#86efac' : (it.tone === 'neg' ? '#fca5a5' : '#93c5fd');
+        const tagCol = it.tone === 'pos' ? 'var(--green)' : (it.tone === 'neg' ? 'var(--red)' : 'var(--blue)');
+        wrap.appendChild(h('div', 'background:' + bg + ';border:1px solid ' + bdr + ';padding:3px 5px;margin-bottom:3px;font-family:Lora,serif;font-size:9px;line-height:1.25;color:var(--text);',
+          h('span', 'font-family:Oswald,sans-serif;font-weight:700;font-size:8.5px;color:' + tagCol + ';margin-right:4px;', '[' + it.tag + ']'),
+          it.text
+        ));
+      });
+      return wrap;
+    };
+
+    const cellBg = (pct) => pct >= 75 ? 'background:#b7ebbf;' : (pct >= 55 ? 'background:#dcfce7;' : (pct >= 45 ? 'background:#ffffff;' : (pct >= 25 ? 'background:#fee2e2;' : 'background:#f5a3a3;')));
+    const snapTd = (valStr, pct) => h('td', 'padding:11px 3px 4px;border:1px solid #d4d4d4;position:relative;text-align:center;' + cellBg(pct),
+      h('div', 'position:absolute;top:1px;right:2px;font-size:7.5px;line-height:1;color:#444;font-weight:600;', pct + '%'),
+      h('div', 'font-size:11px;font-weight:700;color:#000;line-height:1.1;', valStr)
+    );
+
+    const navBar = h('div', 'display:flex;align-items:center;justify-content:space-between;gap:3px;margin-bottom:5px;padding-bottom:4px;border-bottom:1px solid var(--border);');
+    const prevBtn = h('button', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border:1px solid var(--border);background:' + (curIdx < allGames.length - 1 ? '#fff' : 'var(--surface)') + ';color:' + (curIdx < allGames.length - 1 ? 'var(--blue)' : 'var(--muted)') + ';cursor:' + (curIdx < allGames.length - 1 ? 'pointer' : 'default') + ';', '\u25C0');
+    prevBtn.title = 'Older Game';
+    if (curIdx < allGames.length - 1) prevBtn.onclick = () => { window._recapIdx = curIdx + 1; renderLastGameRecap(); };
+
+    const nextBtn = h('button', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;padding:1px 6px;border:1px solid var(--border);background:' + (curIdx > 0 ? '#fff' : 'var(--surface)') + ';color:' + (curIdx > 0 ? 'var(--blue)' : 'var(--muted)') + ';cursor:' + (curIdx > 0 ? 'pointer' : 'default') + ';', '\u25B6');
+    nextBtn.title = 'Newer / Upcoming Game';
+    if (curIdx > 0) nextBtn.onclick = () => { window._recapIdx = curIdx - 1; renderLastGameRecap(); };
+
+    const gSel = h('select', 'flex:1;min-width:0;font-family:Lora,serif;font-size:9.5px;padding:1px 3px;border:1px solid var(--border);background:#fff;color:var(--text);');
+    allGames.forEach((gm, idxOpt) => {
+      const opt = document.createElement('option');
+      opt.value = String(idxOpt);
+      opt.textContent = (gm.label || ((gm.date || '') + ' vs ' + (gm.opp || 'OPP'))) + (gm._played ? '' : ' [PREVIEW]');
+      if (idxOpt === curIdx) opt.selected = true;
+      gSel.appendChild(opt);
+    });
+    gSel.onchange = () => { window._recapIdx = Number(gSel.value); renderLastGameRecap(); };
+    navBar.appendChild(prevBtn);
+    navBar.appendChild(gSel);
+    navBar.appendChild(nextBtn);
+
     const thCss = 'padding:3px 4px;border:1px solid #d4d4d4;';
     el.innerHTML = '';
     el.appendChild(navBar);
+
+    const tms = cachedTeamStats?.slices?.all || new Array();
+    const lgMean = (key, fallback) => {
+      const arr = tms.map(t => t[key]).filter(v => v != null);
+      return arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length) : fallback;
+    };
+    const rankPct = (val, arr, lb) => {
+      if (!arr.length || val == null) return 50;
+      const sorted = arr.slice().sort((a, b) => lb ? (b - a) : (a - b));
+      const idxR = sorted.findIndex(v => lb ? (v <= val) : (v >= val));
+      const pos = idxR === -1 ? sorted.length - 1 : idxR;
+      return Math.max(1, Math.min(99, Math.round((pos / Math.max(1, sorted.length - 1)) * 100)));
+    };
+
     if (!g._played) {
       const oppU = String(g.opp || 'OPP').toUpperCase();
       const dtU = String(g.date || '');
       const locU = String(g.loc || (String(g.label || '').includes('@') ? 'Away' : 'Home'));
-      const boxU = h('div', 'background:var(--surface);border:1px solid var(--border);padding:8px;text-align:center;');
-      boxU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:10px;font-weight:700;color:var(--blue);letter-spacing:0.4px;margin-bottom:4px;', 'UPCOMING MATCHUP · ' + locU.toUpperCase()));
-      const rowU = h('div', 'display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0;');
-      rowU.appendChild(logoNode('MXC'));
-      rowU.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:15px;font-weight:700;color:var(--dim);', locU === 'Away' ? '@' : 'VS'));
-      rowU.appendChild(logoNode(oppU));
-      boxU.appendChild(rowU);
-      if (dtU) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:10.5px;font-weight:700;color:var(--text);margin-top:3px;', dtU));
-      if (g.time || g.note) boxU.appendChild(h('div', 'font-family:Lora,serif;font-size:9.5px;color:var(--muted);margin-top:2px;', String(g.time || g.note)));
-      el.appendChild(boxU);
-      return;
-    }
-    if (gameDate) el.appendChild(h('div', 'font-size:9px;color:var(--muted);text-align:center;margin-bottom:2px;', gameDate));
-    el.appendChild(h('div', 'display:flex;align-items:center;justify-content:space-around;padding:2px 0 6px;border-bottom:1px solid var(--border);margin-bottom:5px;',
-      logoNode('MXC'),
-      h('div', 'font-family:Oswald,sans-serif;font-weight:700;font-size:22px;color:#000;', mxcTot + ' – ' + oppTot),
-      logoNode(oppAb)
-    ));
-    el.appendChild(h('table', 'width:100%;border-collapse:collapse;font-size:9.5px;text-align:right;margin-bottom:6px;',
-      h('thead', '', h('tr', 'border-bottom:1px solid var(--border);color:var(--muted);',
-        h('th', 'text-align:left;', 'QTR'), ...qCols.map(q => h('th', '', q.lbl)), h('th', '', 'TOT')
-      )),
-      h('tbody', '',
-        h('tr', '', h('td', 'text-align:left;font-weight:700;color:var(--blue);', 'MXC'), ...qCols.map(q => h('td', '', q.mPts)), h('td', 'font-weight:700;', mxcTot)),
-        h('tr', 'border-bottom:1px solid var(--border);', h('td', 'text-align:left;font-weight:700;', oppAb), ...qCols.map(q => h('td', '', q.oPts)), h('td', 'font-weight:700;', oppTot))
-      )
-    ));
-    el.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:11px;font-weight:700;text-align:center;color:#000;margin-bottom:3px;', 'Four Factors Team Snapshot'));
-    el.appendChild(h('table', 'width:100%;border-collapse:collapse;margin-bottom:4px;',
-      h('thead', '', h('tr', 'background:#f1f5f9;font-family:Oswald,sans-serif;font-size:9.5px;color:#000;',
-        h('th', thCss, ''), h('th', thCss, 'EFG%'), h('th', thCss, 'TOV%'), h('th', thCss, 'OR%'), h('th', thCss, 'FTR%')
-      )),
-      h('tbody', '',
-        h('tr', '', h('td', 'padding:4px 5px;border:1px solid #d4d4d4;font-weight:700;font-size:10px;text-align:center;', 'Team'), ...tmCells),
-        h('tr', '', h('td', 'padding:4px 5px;border:1px solid #d4d4d4;font-weight:700;font-size:10px;text-align:center;', 'Opponent'), ...opCells)
-      )
-    ));
-    el.appendChild(h('div', 'margin-top:4px;padding-top:4px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4px;',
-      buildDuoCard('Best Duo', duoScores.at(0), true),
-      buildDuoCard('Worst Duo', duoScores.length > 1 ? duoScores.at(-1) : null, false)
-    ));
-    if (pDres.length) {
-      el.appendChild(h('div', 'margin-top:5px;padding-top:4px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4px;',
-        buildDreCard('High', pDres.at(0), true),
-        pDres.length > 1 ? buildDreCard('Low', pDres.at(-1), false) : null
+      const allLite = lite?.teams || new Array();
+      const oppLite = allLite.find(t => String(t.abbrev || '').toUpperCase() === oppU);
+      const oppTs = tms.find(t => String(t.TEAM_ABBREVIATION || '').toUpperCase() === oppU);
+
+      if (dtU || g.time) {
+        el.appendChild(h('div', 'font-size:9px;color:var(--muted);text-align:center;margin-bottom:2px;', [dtU, g.time, locU].filter(Boolean).join(' · ')));
+      }
+      el.appendChild(h('div', 'display:flex;align-items:center;justify-content:space-around;padding:2px 0 6px;border-bottom:1px solid var(--border);margin-bottom:5px;',
+        logoNode('MXC'),
+        h('div', 'font-family:Oswald,sans-serif;font-weight:700;font-size:18px;color:var(--blue);', locU === 'Away' ? '@' : 'VS'),
+        logoNode(oppU)
       ));
-    }
-  } catch (e) {
-    el.textContent = 'Recap unavailable.';
-  }
+
+      // 1. Opposing Team's 8 Factors
+      const oEfg = oppTs?.EFG_PCT != null ? Number(oppTs.EFG_PCT) : ((oppLite?.offStats?.tsPct || 56) / 105);
+      const oTov = oppTs?.TM_TOV_PCT != null ? Number(oppTs.TM_TOV_PCT) : ((oppLite?.offStats?.tovPct || 15.5) / 100);
+      const oOrb = oppTs?.OREB_PCT != null ? Number(oppTs.OREB_PCT) : 0.285;
+      const oFtr = oppLite?.offStats?.ftr != null ? (Number(oppLite.offStats.ftr) / 100) : 0.265;
+
+      const dEfg = oppTs?.OPP_EFG_PCT != null ? Number(oppTs.OPP_EFG_PCT) : ((oppLite?.defStats?.tsPct || 56) / 105);
+      const dTov = oppTs?.OPP_TOV_PCT != null ? Number(oppTs.OPP_TOV_PCT) : ((oppLite?.defStats?.tovPct || 15.5) / 100);
+      const dOrb = oppTs?.DREB_PCT != null ? (1 - Number(oppTs.DREB_PCT)) : 0.285;
+      const dFtr = oppLite?.defStats?.ftr != null ? (Number(oppLite.defStats.ftr) / 100) : 0.265;
+
+      const offCells = new Array(
+        snapTd((oEfg * 100).toFixed(1) + '%', rankPct(oEfg, tms.map(t => t.EFG_PCT).filter(v => v != null), false)),
+        snapTd((oTov * 100).toFixed(1) + '%', rankPct(oTov, tms.map(t => t.TM_TOV_PCT).filter(v => v != null), true)),
+        snapTd((oOrb * 100).toFixed(1) + '%', rankPct(oOrb, tms.map(t => t.OREB_PCT).filter(v => v != null), false)),
+        snapTd((oFtr * 100).toFixed(1) + '%', rankPct(oFtr * 100, allLite.map(t => t.offStats?.ftr).filter(v => v != null), false))
+      );
+      const defCells = new Array(
+        snapTd((dEfg * 100).toFixed(1) + '%', rankPct(dEfg, tms.map(t => t.OPP_EFG_PCT).filter(v => v != null), true)),
+        snapTd((dTov * 100).toFixed(1) + '%', rankPct(dTov, tms.map(t => t.OPP_TOV_PCT).filter(v => v != null), false)),
+        snapTd((dOrb * 100).toFixed(1) + '%', rankPct(dOrb, tms.map(t => t.DREB_PCT != null ? (1 - t.DREB_PCT) : null).filter(v => v != null), true)),
+        snapTd((dFtr * 100).toFixed(1) + '%', rankPct(dFtr * 100, allLite.map(t => t.defStats?.ftr).filter(v => v != null), true))
+      );
+
+      el.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:11px;font-weight:700;text-align:center;color:#000;margin-bottom:3px;', oppU + ' Eight Factors Snapshot'));
+      el.appendChild(h('table', 'width:100%;border-collapse:collapse;margin-bottom:4px;',
+        h('thead', '', h('tr', 'background:#f1f5f9;font-family:Oswald,sans-serif;font-size:9.5px;color:#000;',
+          h('th', thCss, ''), h('th', thCss, 'EFG%'), h('th', thCss, 'TOV%'), h('th', thCss, 'OR%'), h('th', thCss, 'FTR%')
+        )),
+        h('tbody', '',
+          h('tr', '', h('td', 'padding:4px 5px;border:1px solid #d4d4d4;font-weight:700;font-size:10px;text-align:center;', oppU + ' Off'), ...offCells),
+          h('tr', '', h('td', 'padding:4px 5px;border:1px solid #d4d4d4;font-weight:700;font-size:10px;text-align:center;', oppU + ' Def'), ...defCells)
+        )
+      ));
+
+      // 2. Opposing Team's Best & Worst Duos
+      const oppDuos = (oppLite?.lineups?.duos || new Array())
+        .filter(d => Number(d.poss || 0) >= 25)
+        .map(d => ({
+          poss: Number(d.poss || 0),
+          net: Number(d.netRtg || 0),
+          avatars: String(d.players || '').split(' - ').map(nm => avatarNode(nm.trim(), 24))
+        }))
+        .sort((a, b) => b.net - a.net);
+
+      if (oppDuos.length) {
+        el.appendChild(h('div', 'margin-top:4px;padding-top:4px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4px;',
+          buildDuoCard('Best Duo', oppDuos.at(0), true),
+          buildDuoCard('Worst Duo', oppDuos.length > 1 ? oppDuos.at(-1) : null, false)
+        ));
+      }
+
+      // 3. Opposing Team's High & Low DRE Players
+      const oppDres = (oppLite?.rosterStats || new Array())
+        .filter(p => Number(p.poss || 0) >= 35)
+        .map(p => {
+          const poss = Number(p.poss || 1);
+          const dre = (100 / poss) * (0.792 * Number(p.pts || 0) - 0.719 * Number(p.fga || 0) - 0.299 * Number(p.fta || 0) + 0.145 * Number(p.reb || 0) + 0.369 * Number(p.ast || 0) + 1.662 * Number(p.stl || 0) + 0.696 * Number(p.blk || 0) - 0.844 * Number(p.tov || 0));
+          return { name: p.name, dre, poss: Math.round(poss) };
+        })
+        .sort((a, b) => b.dre - a.dre);
+
+      if (oppDres.length) {
+        el.appendChild(h('div', 'margin-top:5px;padding-top:4px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4px;',
+          buildDreCard('High', oppDres.at(0), true),
+          oppDres.length > 1 ? buildDreCard('Low', oppDres.at(-1), false) : null
+        ));
+      }
+
+      // 4. Top 2 Most Drastic League-Wide Outlier Insights for Opponent
+      if (oppLite && allLite.length > 3) {
+        const zInfo = (arr, val) => {
+          const clean = arr.filter(v => v != null && !Number.isNaN(v));
+          if (clean.length < 3 || val == null) return null;
+          const mean = clean.reduce((a, b) => a + b, 0) / clean.length;
+          const sd = Math.sqrt(clean.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / clean.length) || 1;
+          const sorted = clean.slice().sort((a, b) => b - a);
+          const rk = sorted.findIndex(v => Math.abs(v - val) < 1e-6) + 1;
+          return { z: (val - mean) / sd, mean, rk, n: clean.length };
+        };
+        const zoneShare = (zObj, keys) => {
+          if (!zObj) return null;
+          const tot = Object.values(zObj).reduce((a, pair) => a + (Array.isArray(pair) ? Number(pair.at(1) || 0) : 0), 0);
+          if (!tot) return null;
+          const sub = keys.reduce((a, k) => a + (Array.isArray(zObj[k]) ? Number(zObj[k].at(1) || 0) : 0), 0);
+          return (sub / tot) * 100;
+        };
+        const rimKeys = new Array('Restricted Area');
+        const midKeys = new Array('Left Baseline Mid', 'Left Elbow / Wing Mid', 'Center Mid-Range', 'Right Elbow / Wing Mid', 'Right Baseline Mid');
+
+        const cands = new Array(
+          { lbl: 'Offensive TS%', val: oppLite.offStats?.tsPct, pool: allLite.map(t => t.offStats?.tsPct), goodHigh: true, fmt: v => v.toFixed(1) + '%' },
+          { lbl: 'Defensive TS% Allowed', val: oppLite.defStats?.tsPct, pool: allLite.map(t => t.defStats?.tsPct), goodHigh: false, fmt: v => v.toFixed(1) + '%' },
+{ lbl: '3PT Attempt Rate', val: oppLite.offStats?.threePar, pool: allLite.map(t => t.offStats?.threePar), style: true, fmt: v => v.toFixed(1) + '%' },
+{ lbl: 'Opp 3PT Attempt Rate', val: oppLite.defStats?.threePar, pool: allLite.map(t => t.defStats?.threePar), style: true, fmt: v => v.toFixed(1) + '%' },
+{ lbl: 'Offensive Turnover Rate', val: oppLite.offStats?.tovPct, pool: allLite.map(t => t.offStats?.tovPct), goodHigh: false, fmt: v => v.toFixed(1) + '%' },
+{ lbl: 'Forced Turnover Rate', val: oppLite.defStats?.tovPct, pool: allLite.map(t => t.defStats?.tovPct), goodHigh: true, fmt: v => v.toFixed(1) + '%' },
+{ lbl: 'Free Throw Rate', val: oppLite.offStats?.ftr, pool: allLite.map(t => t.offStats?.ftr), goodHigh: true, fmt: v => v.toFixed(1) + '%' },
+{ lbl: 'Rim Frequency', val: zoneShare(oppLite.zones, rimKeys), pool: allLite.map(t => zoneShare(t.zones, rimKeys)), style: true, fmt: v => v.toFixed(1) + '%' },
+{ lbl: 'Mid-Range Frequency', val: zoneShare(oppLite.zones, midKeys), pool: allLite.map(t => zoneShare(t.zones, midKeys)), style: true, fmt: v => v.toFixed(1) + '%' }
+).map(c => {
+const zi = zInfo(c.pool, c.val);
+if (!zi) return null;
+const tone = c.style ? 'style' : ((c.goodHigh ? zi.z >= 0 : zi.z <= 0) ? 'pos' : 'neg');
+const tag = c.style ? 'STYLISTIC' : (tone === 'pos' ? 'STRENGTH' : 'WEAKNESS');
+return {
+absZ: Math.abs(zi.z),
+tone,
+tag,
+text: oppU + ' ranks #' + zi.rk + '/' + zi.n + ' in ' + c.lbl + ' at ' + c.fmt(c.val) + ' (lg avg ' + c.fmt(zi.mean) + ').'
+};
+}).filter(Boolean).sort((a, b) => b.absZ - a.absZ);
+const outBox = renderOutliersBox(oppU + ' League-Wide Outliers', cands);
+if (outBox) el.appendChild(outBox);
 }
+return;
+}
+// Completed Game Recap
+const gid = g.id || g.gid;
+const lblStr = String(g.label || '');
+const lblMatch = lblStr.match(/MXC\s+(?:vs.?|@)\s+([A-Z]{2,4})/i);
+const dateMatch = lblStr.match(/^(\d{4}-\d{2}-\d{2})/);
+const oppAb = (g.opp || (lblMatch ? lblMatch.at(1) : 'OPP')).toUpperCase();
+const gameDate = g.date || (dateMatch ? dateMatch.at(1) : '');
+const gPoss = (sc.poss || new Array()).filter(p => p.gid === gid);
+const gShots = (sc.shots || new Array()).filter(s => s.gid === gid);
+const gFts = (sc.fts || new Array()).filter(f => f.gid === gid);
+const gTovs = (sc.turnovers || new Array()).filter(t => t.gid === gid);
+const periods = Array.from(new Set(gPoss.map(p => Number(p.p || 1)))).sort((a, b) => a - b);
+let mxcTot = 0, oppTot = 0;
+const qCols = periods.map(pNum => {
+const mPts = gShots.filter(s => Number(s.p) === pNum && s.side === 'off' && Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0)
++ gFts.filter(f => Number(f.p) === pNum && f.side === 'off' && Number(f.made) === 1).length;
+const oPts = gShots.filter(s => Number(s.p) === pNum && s.side === 'def' && Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0)
++ gFts.filter(f => Number(f.p) === pNum && f.side === 'def' && Number(f.made) === 1).length;
+mxcTot += mPts; oppTot += oPts;
+return { lbl: pNum <= 4 ? ('Q' + pNum) : ('OT' + (pNum - 4)), mPts, oPts };
+});
+const calc4F = (side) => {
+const pA = gPoss.filter(p => p.side === side);
+const sA = gShots.filter(s => s.side === side);
+const fA = gFts.filter(f => f.side === side);
+const tA = gTovs.filter(t => t.side === side);
+const fgm = sA.filter(s => Number(s.made) === 1).length;
+const fg3m = sA.filter(s => Number(s.made) === 1 && Number(s.val) === 3).length;
+const efg = sA.length ? (fgm + 0.5 * fg3m) / sA.length : 0;
+const tov = pA.length ? tA.length / pA.length : 0;
+const rebOpps = (sA.length - fgm) + fA.filter(f => Number(f.made) === 0 && /1 of 1|2 of 2|3 of 3/.test(String(f.sub || ''))).length;
+const orb = rebOpps ? pA.reduce((a, p) => a + (Number(p.oreb) || 0), 0) / rebOpps : 0;
+const ftr = sA.length ? fA.length / sA.length : 0;
+return { efg, tov, orb, ftr, sA, fA, tA, pA, fg3m };
+};
+const tm4 = calc4F('off');
+const op4 = calc4F('def');
+const normCdfPct = (z) => {
+const t = 1 / (1 + 0.2316419 * Math.abs(z));
+const d = 0.3989423 * Math.exp(-z * z / 2);
+const p = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+const cdf = z > 0 ? (1 - p) : p;
+return Math.max(1, Math.min(99, Math.round(cdf * 100)));
+};
+const singleGamePct = (val, mean, sd, lb) => normCdfPct(lb ? -((val - mean) / sd) : ((val - mean) / sd));
+const mEfg = lgMean('EFG_PCT', 0.535), mTov = lgMean('TM_TOV_PCT', 0.155), mOrb = lgMean('OREB_PCT', 0.285), mFtr = 0.265;
+const tmCells = new Array(
+snapTd((tm4.efg * 100).toFixed(1) + '%', singleGamePct(tm4.efg, mEfg, 0.055, false)),
+snapTd((tm4.tov * 100).toFixed(1) + '%', singleGamePct(tm4.tov, mTov, 0.038, true)),
+snapTd((tm4.orb * 100).toFixed(1) + '%', singleGamePct(tm4.orb, mOrb, 0.065, false)),
+snapTd((tm4.ftr * 100).toFixed(1) + '%', singleGamePct(tm4.ftr, mFtr, 0.085, false))
+);
+const opCells = new Array(
+snapTd((op4.efg * 100).toFixed(1) + '%', singleGamePct(op4.efg, mEfg, 0.055, true)),
+snapTd((op4.tov * 100).toFixed(1) + '%', singleGamePct(op4.tov, mTov, 0.038, false)),
+snapTd((op4.orb * 100).toFixed(1) + '%', singleGamePct(op4.orb, mOrb, 0.065, true)),
+snapTd((op4.ftr * 100).toFixed(1) + '%', singleGamePct(op4.ftr, mFtr, 0.085, true))
+);
+const duoMap = {};
+gPoss.forEach(p => {
+const on = (p.on || new Array()).map(Number).sort((a, b) => a - b);
+if (on.length < 2) return;
+for (let i = 0; i < on.length; i++) {
+for (let j = i + 1; j < on.length; j++) {
+const dk = on.at(i) + '-' + on.at(j);
+if (!duoMap[dk]) duoMap[dk] = { ids: new Array(on.at(i), on.at(j)), off: 0, def: 0 };
+if (p.side === 'off') duoMap[dk].off++; else duoMap[dk].def++;
+}
+}
+});
+const pList = Array.isArray(sc.players) ? sc.players : Object.values(sc.players || {});
+const idFull = {}; pList.forEach(p => { idFull[Number(p.id)] = p.name || String(p.id); });
+const allDuos = Object.values(duoMap).map(d => ({ ...d, totPoss: Math.round((d.off + d.def) / 2) }));
+const minDuoPoss = new Array(45, 38, 32, 26).find(t => allDuos.filter(d => d.totPoss >= t).length >= 2) || 24;
+const duoScores = allDuos
+.filter(d => d.totPoss >= minDuoPoss)
+.map(d => {
+const hasAll = (arr) => d.ids.every(id => (arr || new Array()).map(Number).includes(id));
+const ptsFor = gShots.filter(s => s.side === 'off' && Number(s.made) === 1 && hasAll(s.on)).reduce((a, s) => a + (Number(s.val) || 2), 0)
++ gFts.filter(f => f.side === 'off' && Number(f.made) === 1 && hasAll(f.on)).length;
+const ptsAg = gShots.filter(s => s.side === 'def' && Number(s.made) === 1 && hasAll(s.on)).reduce((a, s) => a + (Number(s.val) || 2), 0)
++ gFts.filter(f => f.side === 'def' && Number(f.made) === 1 && hasAll(f.on)).length;
+const net = (ptsFor / Math.max(1, d.off) * 100) - (ptsAg / Math.max(1, d.def) * 100);
+return { poss: d.totPoss, net, avatars: d.ids.map(id => avatarNode(idFull[id] || id, 24)) };
+}).sort((a, b) => b.net - a.net);
+const pDres = pList.map(pe => {
+const pid = Number(pe.id);
+const pOff = gPoss.filter(p => p.side === 'off' && (p.on || new Array()).map(Number).includes(pid)).length;
+const pDef = gPoss.filter(p => p.side === 'def' && (p.on || new Array()).map(Number).includes(pid)).length;
+const poss = Math.round((pOff + pDef) / 2);
+if (poss < 30) return null;
+const sh = gShots.filter(s => s.side === 'off' && Number(s.pid) === pid);
+const ft = gFts.filter(f => f.side === 'off' && Number(f.pid) === pid);
+const tv = gTovs.filter(t => t.side === 'off' && Number(t.pid) === pid).length;
+const st = gTovs.filter(t => t.side === 'def' && Number(t.spid) === pid).length;
+const pts = sh.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + ft.filter(f => Number(f.made) === 1).length;
+const dre = (100 / poss) * (0.792 * pts - 0.719 * sh.length - 0.299 * ft.length + 1.662 * st - 0.844 * tv);
+return { name: pe.name, dre, poss };
+}).filter(Boolean).sort((a, b) => b.dre - a.dre);
+if (gameDate) el.appendChild(h('div', 'font-size:9px;color:var(--muted);text-align:center;margin-bottom:2px;', gameDate));
+el.appendChild(h('div', 'display:flex;align-items:center;justify-content:space-around;padding:2px 0 6px;border-bottom:1px solid var(--border);margin-bottom:5px;',
+logoNode('MXC'),
+h('div', 'font-family:Oswald,sans-serif;font-weight:700;font-size:22px;color:#000;', mxcTot + ' – ' + oppTot),
+logoNode(oppAb)
+));
+el.appendChild(h('table', 'width:100%;border-collapse:collapse;font-size:9.5px;text-align:right;margin-bottom:6px;',
+h('thead', '', h('tr', 'border-bottom:1px solid var(--border);color:var(--muted);',
+h('th', 'text-align:left;', 'QTR'), ...qCols.map(q => h('th', '', q.lbl)), h('th', '', 'TOT')
+)),
+h('tbody', '',
+h('tr', '', h('td', 'text-align:left;font-weight:700;color:var(--blue);', 'MXC'), ...qCols.map(q => h('td', '', q.mPts)), h('td', 'font-weight:700;', mxcTot)),
+h('tr', 'border-bottom:1px solid var(--border);', h('td', 'text-align:left;font-weight:700;', oppAb), ...qCols.map(q => h('td', '', q.oPts)), h('td', 'font-weight:700;', oppTot))
+)
+));
+el.appendChild(h('div', 'font-family:Oswald,sans-serif;font-size:11px;font-weight:700;text-align:center;color:#000;margin-bottom:3px;', 'Four Factors Team Snapshot'));
+el.appendChild(h('table', 'width:100%;border-collapse:collapse;margin-bottom:4px;',
+h('thead', '', h('tr', 'background:#f1f5f9;font-family:Oswald,sans-serif;font-size:9.5px;color:#000;',
+h('th', thCss, ''), h('th', thCss, 'EFG%'), h('th', thCss, 'TOV%'), h('th', thCss, 'OR%'), h('th', thCss, 'FTR%')
+)),
+h('tbody', '',
+h('tr', '', h('td', 'padding:4px 5px;border:1px solid #d4d4d4;font-weight:700;font-size:10px;text-align:center;', 'Team'), ...tmCells),
+h('tr', '', h('td', 'padding:4px 5px;border:1px solid #d4d4d4;font-weight:700;font-size:10px;text-align:center;', 'Opponent'), ...opCells)
+)
+));
+el.appendChild(h('div', 'margin-top:4px;padding-top:4px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4px;',
+buildDuoCard('Best Duo', duoScores.at(0), true),
+buildDuoCard('Worst Duo', duoScores.length > 1 ? duoScores.at(-1) : null, false)
+));
+if (pDres.length) {
+el.appendChild(h('div', 'margin-top:5px;padding-top:4px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:4px;',
+buildDreCard('High', pDres.at(0), true),
+pDres.length > 1 ? buildDreCard('Low', pDres.at(-1), false) : null
+));
+}
+// Top 2 Single-Game Outliers vs. Season Normal
+const allShotsSzn = sc.shots || new Array();
+const mxcOffSzn = allShotsSzn.filter(s => s.side === 'off');
+const oppOffSzn = allShotsSzn.filter(s => s.side === 'def');
+const szn3Rate = (arr) => arr.length ? arr.filter(s => Number(s.val) === 3).length / arr.length : 0.38;
+const sznRimRate = (arr) => arr.length ? arr.filter(s => Math.hypot(Number(s.x || 250) - 250, Number(s.y || 80) - 52) <= 48).length / arr.length : 0.36;
+const szn3Pct = (arr) => {
+const t = arr.filter(s => Number(s.val) === 3);
+return t.length ? t.filter(s => Number(s.made) === 1).length / t.length : 0.35;
+};
+const g3AttMxc = tm4.sA.filter(s => Number(s.val) === 3).length;
+const g3PctMxc = g3AttMxc ? tm4.fg3m / g3AttMxc : 0;
+const g3RateMxc = tm4.sA.length ? g3AttMxc / tm4.sA.length : 0;
+const gRimRateMxc = tm4.sA.length ? tm4.sA.filter(s => Math.hypot(Number(s.x || 250) - 250, Number(s.y || 80) - 52) <= 48).length / tm4.sA.length : 0;
+const g3AttOpp = op4.sA.filter(s => Number(s.val) === 3).length;
+const g3PctOpp = g3AttOpp ? op4.fg3m / g3AttOpp : 0;
+const nMxcEfg = szn3Pct(mxcOffSzn) ? mEfg : 0.535;
+const nMxc3Pct = szn3Pct(mxcOffSzn);
+const nMxc3Rate = szn3Rate(mxcOffSzn);
+const nMxcRim = sznRimRate(mxcOffSzn);
+const nOpp3Pct = szn3Pct(oppOffSzn);
+const gameOutliers = new Array(
+{ z: (tm4.efg - nMxcEfg) / 0.055, tone: tm4.efg >= nMxcEfg ? 'pos' : 'neg', tag: tm4.efg >= nMxcEfg ? 'SURGE' : 'COLD', text: 'MXC posted a ' + (tm4.efg * 100).toFixed(1) + '% eFG vs. ' + (nMxcEfg * 100).toFixed(1) + '% season normal.' },
+{ z: (g3PctMxc - nMxc3Pct) / 0.085, tone: g3PctMxc >= nMxc3Pct ? 'pos' : 'neg', tag: g3PctMxc >= nMxc3Pct ? 'HOT 3PT' : 'COLD 3PT', text: 'MXC shot ' + (g3PctMxc * 100).toFixed(1) + '% from 3 (' + tm4.fg3m + '/' + g3AttMxc + ') vs. ' + (nMxc3Pct * 100).toFixed(1) + '% normal.' },
+{ z: (g3PctOpp - nOpp3Pct) / 0.085, tone: g3PctOpp <= nOpp3Pct ? 'pos' : 'neg', tag: 'OPP 3PT', text: oppAb + ' shot ' + (g3PctOpp * 100).toFixed(1) + '% from 3 (' + op4.fg3m + '/' + g3AttOpp + ') vs. ' + (nOpp3Pct * 100).toFixed(1) + '% allowed normal.' },
+{ z: (tm4.tov - mTov) / 0.038, tone: tm4.tov <= mTov ? 'pos' : 'neg', tag: 'BALL SECURITY', text: 'MXC turnover rate was ' + (tm4.tov * 100).toFixed(1) + '% (' + tm4.tA.length + ' TOV) vs. ' + (mTov * 100).toFixed(1) + '% normal.' },
+{ z: (op4.tov - mTov) / 0.038, tone: op4.tov >= mTov ? 'pos' : 'neg', tag: 'DISRUPTION', text: 'Forced ' + oppAb + ' into a ' + (op4.tov * 100).toFixed(1) + '% TOV rate (' + op4.tA.length + ' TOV) vs. ' + (mTov * 100).toFixed(1) + '% normal.' },
+{ z: (tm4.orb - mOrb) / 0.065, tone: tm4.orb >= mOrb ? 'pos' : 'neg', tag: 'GLASS', text: 'MXC grabbed ' + (tm4.orb * 100).toFixed(1) + '% of offensive boards vs. ' + (mOrb * 100).toFixed(1) + '% normal.' },
+{ z: (g3RateMxc - nMxc3Rate) / 0.075, tone: 'style', tag: 'STYLISTIC', text: (g3RateMxc * 100).toFixed(1) + '% of MXC shots came from 3PT vs. ' + (nMxc3Rate * 100).toFixed(1) + '% normal.' },
+{ z: (gRimRateMxc - nMxcRim) / 0.075, tone: 'style', tag: 'STYLISTIC', text: (gRimRateMxc * 100).toFixed(1) + '% of MXC shots came at the rim vs. ' + (nMxcRim * 100).toFixed(1) + '% normal.' }
+).map(o => ({ ...o, absZ: Math.abs(o.z) })).sort((a, b) => b.absZ - a.absZ);
+const gOutBox = renderOutliersBox('Game Outliers vs. Season Normal', gameOutliers);
+if (gOutBox) el.appendChild(gOutBox);
+} catch (e) {
+el.textContent = 'Recap unavailable.';
+}
+}
+
 
 async function renderInlineShotCharts() {
   const grid = document.getElementById('inlineShotChartsGrid');

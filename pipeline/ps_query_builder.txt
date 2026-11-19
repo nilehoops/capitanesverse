@@ -1,0 +1,279 @@
+﻿const PS_METRIC_DEFS = [
+  { id: 'gp',       lbl: 'GP',      grp: 'Volume',   fn: r => r.gp || '—', num: r => r.gp },
+  { id: 'mpg',      lbl: 'MPG',     grp: 'Volume',   fn: r => r.mpg != null ? r.mpg.toFixed(1) : '—', num: r => r.mpg },
+  { id: 'min',      lbl: 'MIN',     grp: 'Volume',   fn: r => r.min != null ? r.min.toFixed(0) : '—', num: r => r.min },
+  { id: 'poss',     lbl: 'POSS',    grp: 'Volume',   fn: r => r.poss != null ? Math.round(r.poss) : '—', num: r => r.poss },
+  { id: 'pts75',    lbl: 'PTS/75',  grp: 'Per-75',   fn: r => r.pts75 != null ? r.pts75.toFixed(1) : '—', num: r => r.pts75 },
+  { id: 'reb75',    lbl: 'REB/75',  grp: 'Per-75',   fn: r => r.reb75 != null ? r.reb75.toFixed(1) : '—', num: r => r.reb75 },
+  { id: 'ast75',    lbl: 'AST/75',  grp: 'Per-75',   fn: r => r.ast75 != null ? r.ast75.toFixed(1) : '—', num: r => r.ast75 },
+  { id: 'tov75',    lbl: 'TOV/75',  grp: 'Per-75',   fn: r => r.tov75 != null ? r.tov75.toFixed(1) : '—', num: r => r.tov75 },
+  { id: 'stl75',    lbl: 'STL/75',  grp: 'Per-75',   fn: r => r.stl75 != null ? r.stl75.toFixed(1) : '—', num: r => r.stl75 },
+  { id: 'blk75',    lbl: 'BLK/75',  grp: 'Per-75',   fn: r => r.blk75 != null ? r.blk75.toFixed(1) : '—', num: r => r.blk75 },
+  { id: 'tsPct',    lbl: 'TS%',     grp: 'Shooting', fn: r => r.tsPct != null ? r.tsPct.toFixed(1) + '%' : '—', num: r => r.tsPct },
+  { id: 'efg',      lbl: 'eFG%',    grp: 'Shooting', fn: r => r.efg != null ? r.efg.toFixed(1) + '%' : '—', num: r => r.efg },
+  { id: 'fg2Pct',   lbl: '2P%',     grp: 'Shooting', fn: r => r.fg2Pct != null ? r.fg2Pct.toFixed(1) + '%' : '—', num: r => r.fg2Pct },
+  { id: 'fg3Pct',   lbl: '3P%',     grp: 'Shooting', fn: r => r.fg3Pct != null ? r.fg3Pct.toFixed(1) + '%' : '—', num: r => r.fg3Pct },
+  { id: 'threePar', lbl: '3PAr',    grp: 'Shooting', fn: r => r.threePar != null ? r.threePar.toFixed(1) + '%' : '—', num: r => r.threePar },
+  { id: 'ftr',      lbl: 'FTr',     grp: 'Shooting', fn: r => r.ftr != null ? r.ftr.toFixed(1) + '%' : '—', num: r => r.ftr },
+  { id: 'tovPct',   lbl: 'TOV%',    grp: 'Shooting', fn: r => r.tovPct != null ? r.tovPct.toFixed(1) + '%' : '—', num: r => r.tovPct },
+  { id: 'usg',      lbl: 'USG%',    grp: 'Impact',   fn: r => r.usg != null ? r.usg.toFixed(1) + '%' : '—', num: r => r.usg },
+  { id: 'ortg',     lbl: 'ORtg',    grp: 'Impact',   fn: r => r.ortg != null ? r.ortg.toFixed(1) : '—', num: r => r.ortg },
+  { id: 'drtg',     lbl: 'DRtg',    grp: 'Impact',   fn: r => r.drtg != null ? r.drtg.toFixed(1) : '—', num: r => r.drtg },
+  { id: 'netRtg',   lbl: 'NET',     grp: 'Impact',   fn: r => r.netRtg != null ? ((r.netRtg >= 0 ? '+' : '') + r.netRtg.toFixed(1)) : '—', num: r => r.netRtg, signed: true },
+  { id: 'onOff',    lbl: 'ON/OFF',  grp: 'Impact',   fn: r => r.onOff != null ? ((r.onOff >= 0 ? '+' : '') + r.onOff.toFixed(1)) : '—', num: r => r.onOff, signed: true },
+  { id: 'dre',      lbl: 'DRE',     grp: 'Impact',   fn: r => r.dre != null ? ((r.dre >= 0 ? '+' : '') + r.dre.toFixed(1)) : '—', num: r => r.dre, signed: true },
+  { id: 'age',      lbl: 'AGE',     grp: 'Bio',      fn: r => r.age != null ? Number(r.age).toFixed(1) : '—', num: r => r.age },
+  { id: 'height',   lbl: 'HT',      grp: 'Bio',      fn: r => r.height || '—', num: r => r.heightIn },
+  { id: 'weight',   lbl: 'WT',      grp: 'Bio',      fn: r => r.weight != null ? Math.round(r.weight) : '—', num: r => r.weight }
+];
+
+const PS_PRESETS = {
+  overall: ['gp', 'mpg', 'pts75', 'tsPct', 'usg', 'netRtg', 'onOff', 'dre'],
+  offense: ['mpg', 'pts75', 'tsPct', 'efg', 'fg2Pct', 'fg3Pct', 'threePar', 'ftr', 'ast75', 'tovPct', 'ortg'],
+  defense: ['mpg', 'reb75', 'stl75', 'blk75', 'drtg', 'onOff', 'height', 'weight']
+};
+
+let _psSelectedCols = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('capitanes_ps_cols') || 'null');
+    if (Array.isArray(saved) && saved.length) return saved;
+  } catch (e) {}
+  return PS_PRESETS.overall.slice();
+})();
+let _psPickerOpen = false;
+let _psQueryOpen = false;
+let _psScope = 'mxc'; // 'mxc' or 'all'
+let _psConditions = []; // [{ metric: 'tsPct', op: '>=', val: '60' }]
+let _psSortCol = 'mpg';
+let _psSortDir = -1;
+
+function togglePsPicker() {
+  _psPickerOpen = !_psPickerOpen;
+  if (_psPickerOpen) _psQueryOpen = false;
+  renderPsTab();
+}
+
+function togglePsQuery() {
+  _psQueryOpen = !_psQueryOpen;
+  if (_psQueryOpen) {
+    _psPickerOpen = false;
+    if (!_psConditions.length) _psConditions.push({ metric: 'tsPct', op: '>=', val: '' });
+  }
+  renderPsTab();
+}
+
+function setPsScope(sc) {
+  _psScope = sc;
+  renderPsTab();
+}
+
+function addPsCondition() {
+  _psConditions.push({ metric: 'mpg', op: '>=', val: '' });
+  renderPsTab();
+}
+
+function updatePsCondition(idx, key, value) {
+  if (!_psConditions[idx]) return;
+  _psConditions[idx][key] = value;
+  renderPsTab();
+}
+
+function removePsCondition(idx) {
+  _psConditions.splice(idx, 1);
+  renderPsTab();
+}
+
+function clearPsConditions() {
+  _psConditions = [];
+  renderPsTab();
+}
+
+function togglePsCol(id) {
+  const idx = _psSelectedCols.indexOf(id);
+  if (idx >= 0) {
+    if (_psSelectedCols.length > 1) _psSelectedCols.splice(idx, 1);
+  } else {
+    _psSelectedCols.push(id);
+  }
+  try { localStorage.setItem('capitanes_ps_cols', JSON.stringify(_psSelectedCols)); } catch (e) {}
+  renderPsTab();
+}
+
+function sortPsBy(colId) {
+  if (_psSortCol === colId) {
+    _psSortDir *= -1;
+  } else {
+    _psSortCol = colId;
+    _psSortDir = colId === 'nm' ? 1 : -1;
+  }
+  renderPsTab();
+}
+
+async function renderPsTab() {
+  const container = document.getElementById('psContent');
+  if (!container) return;
+  try {
+    const lite = await fetch('data/league_lite_shots_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
+    const teams = lite?.teams || new Array();
+    const targetTeams = _psScope === 'all'
+      ? teams
+      : teams.filter(t => String(t.id) === '1612709931' || String(t.abbrev || '').toUpperCase() === 'MXC');
+
+    const rawPlayers = new Array();
+    targetTeams.forEach(t => {
+      const tmAb = String(t.abbrev || '').toUpperCase();
+      (t.rosterStats || new Array()).forEach(rp => rawPlayers.push({ ...rp, _tm: tmAb }));
+    });
+
+    let rows = rawPlayers.map(rp => {
+      const gp = Number(rp.gp ?? 0);
+      const min = Number(rp.min ?? 0);
+      const mpg = rp.mpg != null ? Number(rp.mpg) : (gp > 0 ? min / gp : 0);
+      const poss = Number(rp.poss ?? 0);
+      const pts = Number(rp.pts ?? 0);
+      const fga = Number(rp.fga ?? 0);
+      const fgm = Number(rp.fgm ?? 0);
+      const fg3m = Number(rp.fg3m ?? 0);
+      const fta = Number(rp.fta ?? 0);
+      const reb = Number(rp.reb ?? 0);
+      const ast = Number(rp.ast ?? 0);
+      const stl = Number(rp.stl ?? 0);
+      const blk = Number(rp.blk ?? 0);
+      const tov = Number(rp.tov ?? 0);
+
+      const efg = fga > 0 ? ((fgm + 0.5 * fg3m) / fga) * 100 : null;
+      const tovPct = (fga + 0.44 * fta + tov) > 0 ? (tov / (fga + 0.44 * fta + tov)) * 100 : null;
+      const dre = poss > 0 ? (100 / poss) * (0.792 * pts - 0.719 * fga - 0.299 * fta + 0.145 * reb + 0.369 * ast + 1.662 * stl + 0.696 * blk - 0.844 * tov) : null;
+
+      return {
+        nm: rp.name || '',
+        tm: rp._tm || '',
+        gp, min, mpg, poss,
+        pts75: rp.pts75 != null ? Number(rp.pts75) : null,
+        reb75: rp.reb75 != null ? Number(rp.reb75) : null,
+        ast75: rp.ast75 != null ? Number(rp.ast75) : null,
+        tov75: rp.tov75 != null ? Number(rp.tov75) : null,
+        stl75: rp.stl75 != null ? Number(rp.stl75) : null,
+        blk75: rp.blk75 != null ? Number(rp.blk75) : null,
+        tsPct: rp.tsPct != null ? Number(rp.tsPct) : null,
+        efg,
+        fg2Pct: rp.fg2Pct != null ? Number(rp.fg2Pct) : null,
+        fg3Pct: rp.fg3Pct != null ? Number(rp.fg3Pct) : null,
+        threePar: rp.threePar != null ? Number(rp.threePar) : null,
+        ftr: rp.ftr != null ? Number(rp.ftr) : null,
+        tovPct,
+        usg: rp.usg != null ? Number(rp.usg) : null,
+        ortg: rp.ortg != null ? Number(rp.ortg) : null,
+        drtg: rp.drtg != null ? Number(rp.drtg) : null,
+        netRtg: rp.netRtg != null ? Number(rp.netRtg) : null,
+        onOff: rp.onOff != null ? Number(rp.onOff) : null,
+        dre,
+        age: rp.age != null ? Number(rp.age) : null,
+        height: rp.height || null,
+        heightIn: rp.heightIn != null ? Number(rp.heightIn) : null,
+        weight: rp.weight != null ? Number(rp.weight) : null
+      };
+    });
+
+    // Apply active AND conditions from Query Builder
+    const activeConds = _psConditions.filter(c => c.val !== '' && !Number.isNaN(Number(c.val)));
+    if (activeConds.length) {
+      rows = rows.filter(r => activeConds.every(c => {
+        const mDef = PS_METRIC_DEFS.find(m => m.id === c.metric);
+        const v = mDef ? mDef.num(r) : null;
+        const t = Number(c.val);
+        if (v == null || Number.isNaN(v)) return false;
+        if (c.op === '>=') return v >= t;
+        if (c.op === '<=') return v <= t;
+        if (c.op === '>')  return v > t;
+        if (c.op === '<')  return v < t;
+        if (c.op === '=')  return Math.abs(v - t) < 0.051;
+        return true;
+      }));
+    }
+
+    const activeDefs = _psSelectedCols.map(id => PS_METRIC_DEFS.find(m => m.id === id)).filter(Boolean);
+    const sortDef = PS_METRIC_DEFS.find(m => m.id === _psSortCol);
+    rows.sort((a, b) => {
+      if (_psSortCol === 'nm') return a.nm.localeCompare(b.nm) * _psSortDir;
+      const va = sortDef ? sortDef.num(a) : a.mpg;
+      const vb = sortDef ? sortDef.num(b) : b.mpg;
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      return (va - vb) * _psSortDir;
+    });
+
+    const toolbarHtml = `<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;gap:4px;flex-wrap:wrap;">
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button onclick="setPsScope('mxc')" style="font-family:'Oswald',sans-serif;font-size:9.5px;font-weight:700;padding:1px 6px;background:${_psScope === 'mxc' ? 'var(--blue)' : '#fff'};color:${_psScope === 'mxc' ? '#fff' : 'var(--dim)'};border:1px solid var(--border);cursor:pointer;">MXC</button>
+        <button onclick="setPsScope('all')" style="font-family:'Oswald',sans-serif;font-size:9.5px;font-weight:700;padding:1px 6px;background:${_psScope === 'all' ? 'var(--blue)' : '#fff'};color:${_psScope === 'all' ? '#fff' : 'var(--dim)'};border:1px solid var(--border);cursor:pointer;">All G League</button>
+        <span style="font-family:'Lora',serif;font-size:9.5px;color:var(--muted);margin-left:2px;">${rows.length} players${activeConds.length ? ' matching' : ''}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        <button onclick="togglePsQuery()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:1px 7px;background:${(_psQueryOpen || activeConds.length) ? 'var(--blue)' : '#fff'};color:${(_psQueryOpen || activeConds.length) ? '#fff' : 'var(--blue)'};border:1.5px solid #000;cursor:pointer;">+ Query Players${activeConds.length ? ' (' + activeConds.length + ')' : ''}</button>
+        <button onclick="togglePsPicker()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:1px 7px;background:${_psPickerOpen ? 'var(--blue)' : '#fff'};color:${_psPickerOpen ? '#fff' : 'var(--blue)'};border:1.5px solid #000;cursor:pointer;">${_psPickerOpen ? 'Done' : '+ Metrics'}</button>
+      </div>
+    </div>`;
+
+    let queryHtml = '';
+    if (_psQueryOpen) {
+      const condRows = _psConditions.map((c, idx) => {
+        const opts = PS_METRIC_DEFS.map(m => `<option value="${m.id}" ${c.metric === m.id ? 'selected' : ''}>${m.lbl}</option>`).join('');
+        const ops = ['>=', '<=', '>', '<', '='].map(op => `<option value="${op}" ${c.op === op ? 'selected' : ''}>${op}</option>`).join('');
+        return `<div style="display:flex;align-items:center;gap:4px;margin-bottom:3px;">
+          <select onchange="updatePsCondition(${idx},'metric',this.value)" style="font-family:'Lora',serif;font-size:10px;padding:1px 4px;border:1px solid var(--border);background:#fff;">${opts}</select>
+          <select onchange="updatePsCondition(${idx},'op',this.value)" style="font-family:'Oswald',sans-serif;font-size:10px;padding:1px 4px;border:1px solid var(--border);background:#fff;">${ops}</select>
+          <input type="number" step="any" value="${esc(c.val)}" placeholder="value" oninput="updatePsCondition(${idx},'val',this.value)" style="width:68px;font-family:'Lora',serif;font-size:10px;padding:1px 4px;border:1px solid var(--border);background:#fff;">
+          <button onclick="removePsCondition(${idx})" style="font-family:'Oswald',sans-serif;font-size:10px;padding:0 5px;background:#fff;color:var(--red);border:1px solid var(--border);cursor:pointer;">×</button>
+        </div>`;
+      }).join('');
+      queryHtml = `<div style="background:var(--surface);border:1px solid var(--border);padding:5px 6px;margin-bottom:5px;">
+        ${condRows}
+        <div style="display:flex;align-items:center;gap:5px;margin-top:3px;">
+          <button onclick="addPsCondition()" style="font-family:'Oswald',sans-serif;font-size:9.5px;font-weight:700;padding:1px 7px;background:#fff;color:var(--blue);border:1px solid #000;cursor:pointer;">+ Add Condition (AND)</button>
+          ${_psConditions.length ? `<button onclick="clearPsConditions()" style="font-family:'Oswald',sans-serif;font-size:9.5px;font-weight:700;padding:1px 7px;background:#fff;color:var(--muted);border:1px solid var(--border);cursor:pointer;">Clear</button>` : ''}
+        </div>
+      </div>`;
+    }
+
+    let pickerHtml = '';
+    if (_psPickerOpen) {
+      const groups = ['Volume', 'Per-75', 'Shooting', 'Impact', 'Bio'];
+      pickerHtml = `<div style="background:var(--surface);border:1px solid var(--border);padding:5px 6px;margin-bottom:5px;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;font-size:9.5px;">` +
+        groups.map(g => {
+          const items = PS_METRIC_DEFS.filter(m => m.grp === g).map(m => {
+            const chk = _psSelectedCols.includes(m.id) ? 'checked' : '';
+            return `<label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-family:'Lora',serif;color:var(--text);"><input type="checkbox" ${chk} onchange="togglePsCol('${m.id}')" style="margin:0;">${m.lbl}</label>`;
+          }).join('');
+          return `<div><div style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--blue);font-size:9.5px;margin-bottom:2px;">${g.toUpperCase()}</div>${items}</div>`;
+        }).join('') +
+      `</div>`;
+    }
+
+    const thPlayer = `<th onclick="sortPsBy('nm')" style="text-align:left;padding:3px 4px;border-bottom:1.5px solid var(--border);font-family:'Oswald',sans-serif;font-size:10px;color:${_psSortCol === 'nm' ? 'var(--blue)' : 'var(--muted)'};cursor:pointer;white-space:nowrap;">Player${_psSortCol === 'nm' ? (_psSortDir > 0 ? ' ▲' : ' ▼') : ''}</th>`;
+    const thRest = activeDefs.map(m => {
+      const isS = _psSortCol === m.id;
+      const arr = isS ? (_psSortDir > 0 ? ' ▲' : ' ▼') : '';
+return <th onclick="sortPsBy('${m.id}')" style="text-align:right;padding:3px 4px;border-bottom:1.5px solid var(--border);font-family:'Oswald',sans-serif;font-size:10px;color:${isS ? 'var(--blue)' : 'var(--muted)'};cursor:pointer;white-space:nowrap;">${m.lbl}${arr}</th>;
+}).join('');
+const showRows = rows.slice(0, _psScope === 'all' ? 60 : 30);
+const tbHtml = showRows.map(r => {
+const tds = activeDefs.map(m => {
+const val = m.fn(r);
+const colStyle = m.signed && typeof val === 'string' && (val.startsWith('+') || val.startsWith('-'))
+? (val.startsWith('+') ? 'color:var(--green);font-weight:700;' : 'color:var(--red);font-weight:700;')
+: 'color:var(--dim);';
+return <td style="text-align:right;padding:3px 4px;border-bottom:1px solid var(--border);font-family:'Lora',serif;font-size:10.5px;white-space:nowrap;${colStyle}">${val}</td>;
+}).join('');
+const tmBadge = _psScope === 'all' && r.tm ?  <span style="font-size:8.5px;color:var(--muted);font-weight:400;">(${esc(r.tm)})</span> : '';
+return <tr><td style="text-align:left;padding:3px 4px;border-bottom:1px solid var(--border);font-family:'Lora',serif;font-size:10.5px;font-weight:700;color:var(--text);white-space:nowrap;">${esc(r.nm)}${tmBadge}</td>${tds}</tr>;
+}).join('');
+container.innerHTML = toolbarHtml + queryHtml + pickerHtml +
+(showRows.length
+? <div style="overflow-x:auto;max-height:290px;overflow-y:auto;"><table style="width:100%;border-collapse:collapse;"><thead><tr>${thPlayer}${thRest}</tr></thead><tbody>${tbHtml}</tbody></table></div>
+: <div style="color:var(--muted);font-size:11px;padding:6px 0;">No players match your query conditions.</div>);
+} catch (e) {
+container.innerHTML = 'Player stats unavailable.';
+}
+}

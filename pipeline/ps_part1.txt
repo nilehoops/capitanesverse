@@ -1,0 +1,92 @@
+﻿const PS_METRIC_DEFS = [
+  { id: 'gp',       lbl: 'GP',      grp: 'Volume',   fn: r => r.gp || '—', num: r => r.gp },
+  { id: 'mpg',      lbl: 'MPG',     grp: 'Volume',   fn: r => r.mpg != null ? r.mpg.toFixed(1) : '—', num: r => r.mpg },
+  { id: 'min',      lbl: 'MIN',     grp: 'Volume',   fn: r => r.min != null ? r.min.toFixed(0) : '—', num: r => r.min },
+  { id: 'poss',     lbl: 'POSS',    grp: 'Volume',   fn: r => r.poss != null ? Math.round(r.poss) : '—', num: r => r.poss },
+  { id: 'pts75',    lbl: 'PTS/75',  grp: 'Per-75',   fn: r => r.pts75 != null ? r.pts75.toFixed(1) : '—', num: r => r.pts75 },
+  { id: 'reb75',    lbl: 'REB/75',  grp: 'Per-75',   fn: r => r.reb75 != null ? r.reb75.toFixed(1) : '—', num: r => r.reb75 },
+  { id: 'ast75',    lbl: 'AST/75',  grp: 'Per-75',   fn: r => r.ast75 != null ? r.ast75.toFixed(1) : '—', num: r => r.ast75 },
+  { id: 'tov75',    lbl: 'TOV/75',  grp: 'Per-75',   fn: r => r.tov75 != null ? r.tov75.toFixed(1) : '—', num: r => r.tov75 },
+  { id: 'stl75',    lbl: 'STL/75',  grp: 'Per-75',   fn: r => r.stl75 != null ? r.stl75.toFixed(1) : '—', num: r => r.stl75 },
+  { id: 'blk75',    lbl: 'BLK/75',  grp: 'Per-75',   fn: r => r.blk75 != null ? r.blk75.toFixed(1) : '—', num: r => r.blk75 },
+  { id: 'tsPct',    lbl: 'TS%',     grp: 'Shooting', fn: r => r.tsPct != null ? r.tsPct.toFixed(1) + '%' : '—', num: r => r.tsPct },
+  { id: 'efg',      lbl: 'eFG%',    grp: 'Shooting', fn: r => r.efg != null ? r.efg.toFixed(1) + '%' : '—', num: r => r.efg },
+  { id: 'fg2Pct',   lbl: '2P%',     grp: 'Shooting', fn: r => r.fg2Pct != null ? r.fg2Pct.toFixed(1) + '%' : '—', num: r => r.fg2Pct },
+  { id: 'fg3Pct',   lbl: '3P%',     grp: 'Shooting', fn: r => r.fg3Pct != null ? r.fg3Pct.toFixed(1) + '%' : '—', num: r => r.fg3Pct },
+  { id: 'threePar', lbl: '3PAr',    grp: 'Shooting', fn: r => r.threePar != null ? r.threePar.toFixed(1) + '%' : '—', num: r => r.threePar },
+  { id: 'ftr',      lbl: 'FTr',     grp: 'Shooting', fn: r => r.ftr != null ? r.ftr.toFixed(1) + '%' : '—', num: r => r.ftr },
+  { id: 'tovPct',   lbl: 'TOV%',    grp: 'Shooting', fn: r => r.tovPct != null ? r.tovPct.toFixed(1) + '%' : '—', num: r => r.tovPct },
+  { id: 'usg',      lbl: 'USG%',    grp: 'Impact',   fn: r => r.usg != null ? r.usg.toFixed(1) + '%' : '—', num: r => r.usg },
+  { id: 'ortg',     lbl: 'ORtg',    grp: 'Impact',   fn: r => r.ortg != null ? r.ortg.toFixed(1) : '—', num: r => r.ortg },
+  { id: 'drtg',     lbl: 'DRtg',    grp: 'Impact',   fn: r => r.drtg != null ? r.drtg.toFixed(1) : '—', num: r => r.drtg },
+  { id: 'netRtg',   lbl: 'NET',     grp: 'Impact',   fn: r => r.netRtg != null ? ((r.netRtg >= 0 ? '+' : '') + r.netRtg.toFixed(1)) : '—', num: r => r.netRtg, signed: true },
+  { id: 'onOff',    lbl: 'ON/OFF',  grp: 'Impact',   fn: r => r.onOff != null ? ((r.onOff >= 0 ? '+' : '') + r.onOff.toFixed(1)) : '—', num: r => r.onOff, signed: true },
+  { id: 'dre',      lbl: 'DRE',     grp: 'Impact',   fn: r => r.dre != null ? ((r.dre >= 0 ? '+' : '') + r.dre.toFixed(1)) : '—', num: r => r.dre, signed: true },
+  { id: 'age',      lbl: 'AGE',     grp: 'Bio',      fn: r => r.age != null ? Number(r.age).toFixed(1) : '—', num: r => r.age },
+  { id: 'height',   lbl: 'HT',      grp: 'Bio',      fn: r => r.height || '—', num: r => r.heightIn },
+  { id: 'weight',   lbl: 'WT',      grp: 'Bio',      fn: r => r.weight != null ? Math.round(r.weight) : '—', num: r => r.weight }
+];
+
+const PS_PRESETS = {
+  overall: ['gp', 'mpg', 'pts75', 'tsPct', 'usg', 'netRtg', 'onOff', 'dre'],
+  offense: ['mpg', 'pts75', 'tsPct', 'efg', 'fg2Pct', 'fg3Pct', 'threePar', 'ftr', 'ast75', 'tovPct', 'ortg'],
+  defense: ['mpg', 'reb75', 'stl75', 'blk75', 'drtg', 'onOff', 'height', 'weight']
+};
+
+let _psSelectedCols = (() => {
+  try {
+    const saved = JSON.parse(localStorage.getItem('capitanes_ps_cols') || 'null');
+    if (Array.isArray(saved) && saved.length) return saved;
+  } catch (e) {}
+  return PS_PRESETS.overall.slice();
+})();
+let _psPickerOpen = false;
+let _psQueryOpen = false;
+let _psScope = 'MXC'; // 'MXC' or 'ALL'
+let _psConditions = new Array({ metric: 'tsPct', op: '>=', val: '' });
+let _psActiveConditions = new Array();
+let _psSortCol = 'mpg';
+let _psSortDir = -1;
+
+function togglePsPicker() { _psPickerOpen = !_psPickerOpen; if (_psPickerOpen) _psQueryOpen = false; renderPsTab(); }
+function togglePsQuery()  { _psQueryOpen = !_psQueryOpen;   if (_psQueryOpen) _psPickerOpen = false; renderPsTab(); }
+function setPsScope(sc)   { _psScope = sc; renderPsTab(); }
+
+function addPsCondition() {
+  _psConditions.push({ metric: 'mpg', op: '>=', val: '' });
+  renderPsTab();
+}
+function removePsCondition(i) {
+  _psConditions.splice(i, 1);
+  if (!_psConditions.length) _psConditions.push({ metric: 'tsPct', op: '>=', val: '' });
+  renderPsTab();
+}
+function updatePsCondition(i, key, value) {
+  if (_psConditions[i]) _psConditions[i][key] = value;
+}
+function runPsQuery() {
+  _psActiveConditions = _psConditions
+    .filter(c => c.val !== '' && !Number.isNaN(Number(c.val)))
+    .map(c => ({ metric: c.metric, op: c.op, val: Number(c.val) }));
+  _psActiveConditions.forEach(c => {
+    if (!_psSelectedCols.includes(c.metric)) _psSelectedCols.push(c.metric);
+  });
+  renderPsTab();
+}
+function clearPsQuery() {
+  _psConditions = new Array({ metric: 'tsPct', op: '>=', val: '' });
+  _psActiveConditions = new Array();
+  renderPsTab();
+}
+function togglePsCol(id) {
+  const idx = _psSelectedCols.indexOf(id);
+  if (idx >= 0) { if (_psSelectedCols.length > 1) _psSelectedCols.splice(idx, 1); }
+  else { _psSelectedCols.push(id); }
+  try { localStorage.setItem('capitanes_ps_cols', JSON.stringify(_psSelectedCols)); } catch (e) {}
+  renderPsTab();
+}
+function sortPsBy(colId) {
+  if (_psSortCol === colId) _psSortDir *= -1;
+  else { _psSortCol = colId; _psSortDir = colId === 'nm' ? 1 : -1; }
+  renderPsTab();
+}

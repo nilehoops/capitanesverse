@@ -62,7 +62,7 @@
   .bap-text-btn:not(.active) { color: var(--muted); font-weight: 400; text-decoration: line-through; }
   #bapBoards {
     display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     gap: 6px !important;
     max-height: 230px;
     overflow-y: auto;
@@ -109,7 +109,7 @@
   .lineup-tier-cols { gap: 0 8px !important; }
   .lineup-cards-row {
     display: grid !important;
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
     grid-auto-flow: column !important;
     gap: 3px !important;
     overflow: hidden !important;
@@ -122,24 +122,53 @@
   @media (max-width: 1180px) {
     .dash-shell, .dash-mid-lower { grid-template-columns: 1fr !important; }
   }
+  #bapSearch::placeholder { color: #f1f5f9; opacity: 1; }
+  .bap-box-btn {
+    background: #fff;
+    border: 1.5px solid #000;
+    padding: 2px 3px;
+    text-align: center;
+    font-family: 'Lora', serif;
+    font-size: 9px;
+    font-weight: 700;
+    color: var(--blue);
+    cursor: pointer;
+    line-height: 1.1;
+  }
+  .bap-box-btn.tier {
+    font-size: 7.5px;
+    padding: 2px 2px;
+    line-height: 1.08;
+  }
+  .bap-box-btn.tier span {
+    font-weight: 400;
+    font-size: 6.8px;
+  }
+  .bap-box-btn.off {
+    color: var(--muted) !important;
+    font-weight: 400 !important;
+    text-decoration: line-through !important;
+    background: #f8fafc !important;
+    border-color: #94a3b8 !important;
+  }
 </style>
 </head>
 <body>
 
 <header class="page-header">
-  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
     <div class="page-title">Capitanes In-Season Analytics &amp; Research &mdash; <span id="seasonLabel"></span></div>
     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
       <div style="display:flex;border:1px solid var(--border);overflow:hidden;">
         <button class="season-btn" data-season="2026-27" onclick="switchSeason('2026-27')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);">2026-27</button>
         <button class="season-btn" data-season="2025-26" onclick="switchSeason('2025-26')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
       </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
         <div style="display:flex;gap:6px;">
           <a href="index.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">&#8644; Offseason Tool</a>
           <a href="shotcharts.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">&#8982; Shot Charts (and more)</a>
         </div>
-        <a href="playerstats.html" style="background:var(--blue);color:var(--yellow);font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:4px 14px;white-space:nowrap;letter-spacing:0.3px;">Leaguewide Player Stats</a>
+        <a href="lineupstudies.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">Lineup Studies</a> <a href="playerstats.html" style="background:var(--blue);color:var(--yellow);font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:4px 14px;white-space:nowrap;letter-spacing:0.3px;">Leaguewide Player Stats</a>
       </div>
     </div>
   </div>
@@ -209,34 +238,51 @@
   <!-- Column 3: Best Available Players stacked directly above Staff Notes stacked directly above WOWY -->
   <div class="dash-col-stack">
     <div class="bap-panel" style="padding:6px 10px;border-bottom:1px solid var(--border);">
-      <div class="bap-layout">
+      <div class="bap-layout" style="grid-template-columns:175px minmax(0,1fr) !important;gap:8px;">
         <div>
-          <div class="bap-big-title">Best<br>Avaliable<br>Players</div>
-          <div style="font-family:'Lora',serif;font-size:10px;font-weight:700;color:var(--text);margin-bottom:3px;">Show/Hide:</div>
-          <div class="bap-filter-grid">
-            <button class="bap-text-btn active" onclick="toggleBapCat('twoway',this)">Two Way/E10</button>
-            <button class="bap-text-btn active" onclick="toggleBapCat('gleague',this)">G Leaguers</button>
-            <button class="bap-text-btn active" onclick="toggleBapCat('gleague',this)">Low-minute<br>G Leaguers</button>
-            <button class="bap-text-btn active" onclick="toggleBapCat('notes',this)">Players w/<br>Staff Notes</button>
-            <button class="bap-text-btn active" onclick="toggleBapCat('unsigned',this)">Unsigned<br>Players</button>
-            <button class="bap-text-btn active" onclick="toggleBapCat('lnbp',this)">LNBP<br>Players</button>
+          <div class="bap-big-title" style="font-size:30px;margin-bottom:4px;">Best<br>Available<br>Players</div>
+          <div style="display:flex;align-items:center;gap:4px;margin-bottom:4px;">
+            <span style="font-family:'Lora',serif;font-size:12px;color:#000;">Search:</span>
+            <input id="bapSearch" type="text" placeholder="players, teams, leagues" oninput="renderBap()" style="flex:1;min-width:0;background:#8e8e8e;color:#fff;border:1.5px solid #000;padding:2px 5px;font-family:'Lora',serif;font-size:9.5px;outline:none;">
+          </div>
+          <div style="font-family:'Lora',serif;font-size:12px;color:#000;text-align:center;margin-bottom:3px;">Show/Hide:</div>
+          <div style="display:grid;grid-template-columns:1.25fr 0.75fr;gap:3px;margin-bottom:3px;">
+            <button class="bap-box-btn active" onclick="toggleBapCat('twoway',this)">Two Way/E10<br>G Leaguers</button>
+            <button class="bap-box-btn active" onclick="toggleBapCat('latino',this)">Latino<br>Players</button>
+            <button class="bap-box-btn active" onclick="toggleBapCat('gleague',this)">Low-minute<br>G Leaguers</button>
+            <button class="bap-box-btn active" onclick="toggleBapCat('notes',this)">Players w/<br>Staff Notes</button>
+            <button class="bap-box-btn active" onclick="toggleBapCat('hidesigned',this)">Hide Signed<br>Players</button>
+            <button class="bap-box-btn active" onclick="toggleBapCat('lnbp',this)">LNBP<br>Players</button>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;">
+            <button class="bap-box-btn tier active" onclick="toggleBapCat('hightier',this)">High-Tier League<br><span>(NBA, ACB, Jeep Elite)</span></button>
+            <button class="bap-box-btn tier active" onclick="toggleBapCat('midtier',this)">Mid-Tier League<br><span>(BBL, BSL, LKL)</span></button>
+            <button class="bap-box-btn tier active" onclick="toggleBapCat('lowtier',this)">Low-Tier League<br><span>(NBB, BNXT)</span></button>
           </div>
         </div>
         <div id="bapBoards"></div>
       </div>
     </div>
 
-    <div style="padding:6px 10px;border-bottom:1px solid var(--border);">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
-        <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;line-height:0.95;color:var(--blue);">Staff<br>Notes</div>
-        <button onclick="toggleNoteForm()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 8px;background:var(--blue);color:#fff;border:none;cursor:pointer;">+ New Note</button>
+    <div id="staffNotesSection" style="padding:6px 10px;border-bottom:1px solid var(--border);">
+      <div style="display:grid;grid-template-columns:92px minmax(0,1fr);gap:8px;align-items:start;">
+        <div>
+          <div style="font-family:'Oswald',sans-serif;font-weight:700;font-size:26px;line-height:0.95;color:var(--blue);margin-bottom:5px;">Staff<br>Notes</div>
+          <button onclick="toggleNoteForm()" style="width:100%;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 6px;background:#fff;color:var(--blue);border:1.5px solid #000;cursor:pointer;">+ New Note</button>
+        </div>
+        <div style="min-width:0;">
+          <div id="noteForm" style="display:none;background:var(--surface);border:1px solid var(--border);padding:5px 6px;margin-bottom:5px;">
+            <div style="display:flex;gap:4px;">
+              <input id="notePlayer" list="notePlayerList" type="text" placeholder="Player name" style="width:130px;padding:2px 5px;border:1px solid var(--border);background:#fff;font-family:'Lora',serif;font-size:10.5px;">
+              <datalist id="notePlayerList"></datalist>
+              <input id="noteAuthor" type="text" placeholder="Author" style="width:95px;padding:2px 5px;border:1px solid var(--border);background:#fff;font-family:'Lora',serif;font-size:10.5px;">
+              <input id="noteText" type="text" placeholder="Write scouting or lineup note..." onkeydown="if(event.key==='Enter')submitStaffNote()" style="flex:1;min-width:0;padding:2px 5px;border:1px solid var(--border);background:#fff;font-family:'Lora',serif;font-size:10.5px;">
+              <button onclick="submitStaffNote()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 10px;background:var(--blue);color:#fff;border:none;cursor:pointer;">Save</button>
+            </div>
+          </div>
+          <div id="staffFeed" class="staff-feed" style="max-height:165px;overflow-y:auto;padding:0;"></div>
+        </div>
       </div>
-      <div id="noteForm" style="display:none;background:var(--surface);border:1px solid var(--border);padding:6px;margin-bottom:6px;font-size:11px;">
-        <input id="noteAuthor" type="text" placeholder="Author (e.g. Coach)" style="width:100%;margin-bottom:4px;padding:3px 5px;border:1px solid var(--border);font-family:'Lora',serif;font-size:11px;">
-        <textarea id="noteText" rows="2" placeholder="Write scouting or lineup note..." style="width:100%;margin-bottom:4px;padding:3px 5px;border:1px solid var(--border);font-family:'Lora',serif;font-size:11px;"></textarea>
-        <button onclick="submitStaffNote()" style="font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:2px 10px;background:var(--green);color:#fff;border:none;cursor:pointer;">Save Note</button>
-      </div>
-      <div id="staffFeed" class="staff-feed" style="max-height:175px;overflow-y:auto;font-size:11px;"></div>
     </div>
 
     <div style="padding:6px 10px;">
@@ -255,7 +301,7 @@
   </div>
 </div>
 
-<script src="js/app.js?v=2119"></script>
+<script src="js/app.js?v=2138"></script>
 <script src="js/inseason-search.js?v=2115"></script>
 </body>
 </html>

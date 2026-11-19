@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<link rel="icon" href="data:,">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lineup Studies &amp; Team Trajectory - Capitanes Analytics</title>
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="css/inseason.css">
+<style>
+  .ls-wrap { max-width: 1280px; margin: 0 auto; padding: 16px 20px 44px; }
+  .ls-grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
+  .ls-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+  @media (max-width: 900px) { .ls-grid-2, .ls-grid-3 { grid-template-columns: 1fr; } }
+  .ls-card { background: #fff; border: 1.5px solid #000; padding: 14px 16px; }
+  .ls-kicker { font-family: 'Oswald', sans-serif; font-size: 10.5px; font-weight: 700; letter-spacing: 0.6px; color: var(--blue); text-transform: uppercase; margin-bottom: 3px; }
+  .ls-h2 { font-family: 'Oswald', sans-serif; font-size: 16px; font-weight: 700; color: var(--text); margin: 0 0 8px; border-bottom: 1.5px solid var(--border); padding-bottom: 5px; }
+  .ls-p { font-family: 'Lora', serif; font-size: 12.5px; line-height: 1.55; color: var(--dim); margin: 0 0 8px; }
+  .ls-stat-pill { display: inline-block; font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 700; padding: 2px 7px; background: var(--surface); border: 1px solid var(--border); color: var(--blue); margin-right: 4px; }
+  .ls-insight-box { background: var(--surface); border-left: 3.5px solid var(--blue); padding: 9px 12px; margin-bottom: 8px; font-family: 'Lora', serif; font-size: 12px; line-height: 1.5; color: var(--text); }
+  .ls-pill { font-family: 'Oswald', sans-serif; font-size: 11.5px; font-weight: 700; padding: 4px 11px; border: 1px solid var(--border); background: #fff; color: var(--text); cursor: pointer; }
+  .ls-pill.active { background: var(--blue); color: #fff; border-color: var(--blue); }
+  canvas.ls-canvas { width: 100%; height: 270px; display: block; }
+  table.ls-tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+  table.ls-tbl th { font-family: 'Oswald', sans-serif; font-size: 10.5px; color: var(--muted); padding: 5px 6px; border-bottom: 1.5px solid #000; text-align: right; }
+  table.ls-tbl th:first-child { text-align: left; }
+  table.ls-tbl td { padding: 5px 6px; border-bottom: 1px solid var(--border); text-align: right; font-family: 'Lora', serif; }
+  table.ls-tbl td:first-child { text-align: left; font-weight: 700; }
+</style>
+</head>
+<body>
+<header class="page-header">
+  <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
+    <div class="page-title">Lineup Studies &amp; Capitanes Trajectory - <span id="lsSeasonLbl">2026-27</span></div>
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <div style="display:flex;border:1px solid var(--border);overflow:hidden;">
+        <button class="ls-sbtn" data-s="2026-27" onclick="setLsSeason('2026-27')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:var(--blue);color:#fff;">2026-27</button>
+        <button class="ls-sbtn" data-s="2025-26" onclick="setLsSeason('2025-26')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
+      <a href="inseason.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">← In-Season Dashboard</a>
+      <a href="playerstats.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">Player Stats</a>
+      <a href="shotcharts.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">⌖ Shot Charts</a>
+    </div>
+  </div>
+</header>
+<div style="background:var(--surface);border-bottom:1px solid var(--border);padding:6px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;max-width:1360px;margin:0 auto;">
+  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+    <span style="font-family:'Oswald',sans-serif;font-size:11.5px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.3px;">Included Leverage (Click to Exclude):</span>
+    <button class="ls-lbtn active" data-lev="low" onclick="toggleLsLev('low')" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:3px 10px;border:1px solid var(--border);background:var(--blue);color:#fff;cursor:pointer;">Low (Blowout / Garbage)</button>
+    <button class="ls-lbtn active" data-lev="med" onclick="toggleLsLev('med')" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:3px 10px;border:1px solid var(--border);background:var(--blue);color:#fff;cursor:pointer;">Medium</button>
+    <button class="ls-lbtn active" data-lev="high" onclick="toggleLsLev('high')" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:3px 10px;border:1px solid var(--border);background:var(--blue);color:#fff;cursor:pointer;">High</button>
+    <button class="ls-lbtn active" data-lev="vhigh" onclick="toggleLsLev('vhigh')" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:3px 10px;border:1px solid var(--border);background:var(--blue);color:#fff;cursor:pointer;">Very High (Clutch)</button>
+    <button onclick="resetLsLev()" style="font-family:'Oswald',sans-serif;font-weight:600;font-size:11px;padding:3px 8px;border:1px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;margin-left:2px;">Reset All</button>
+  </div>
+  <span style="font-family:'Lora',serif;font-size:11px;color:var(--muted);">Filters MXC deployment, quarter splits, trajectory, and lineup timelines by win-probability swing.</span>
+</div>
+
+<div class="ls-wrap">
+  <div class="ls-card" style="margin-bottom:16px;border-left:4px solid var(--blue);">
+    <h2 class="ls-h2" style="margin-bottom:10px;">Why Low-Frequency Lineup Scrambles Bleed Points Before They Ever Stabilize</h2>
+    <div style="display:grid;grid-template-columns:1.55fr 1fr;gap:16px;">
+      <div>
+        <div style="font-family:'Oswald',sans-serif;font-size:11.5px;font-weight:700;color:var(--blue);text-transform:uppercase;margin-bottom:4px;">1 · The League-Wide Sample (All 31 Teams)</div>
+        <p class="ls-p" style="margin-bottom:6px;">Standard lineup tables conveniently truncate small-sample units, letting staffs treat sporadic substitutions as harmless noise. Across <strong>149,952 uncapped G League combinations</strong>, low-rep units bleed points at a statistically undeniable clip (<em>p</em> &lt; 0.0001) until clearing their per-game stabilization floor:</p>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;">
+          <span class="ls-stat-pill" style="color:var(--red);white-space:nowrap;font-size:9.5px;padding:2px 5px;">5-Man &lt;1.5 poss/g: -10.7 NetRtg</span>
+          <span class="ls-stat-pill" style="color:var(--red);white-space:nowrap;font-size:9.5px;padding:2px 5px;">Quads &lt;3.5 poss/g: -9.8 NetRtg</span>
+          <span class="ls-stat-pill" style="color:var(--red);white-space:nowrap;font-size:9.5px;padding:2px 5px;">Trios &lt;6.5 poss/g: -11.6 NetRtg</span>
+          <span class="ls-stat-pill" style="color:var(--red);white-space:nowrap;font-size:9.5px;padding:2px 5px;">Duos &lt;7.5 poss/g: -19.4 NetRtg</span>
+        </div>
+      </div>
+      <div style="border-left:1px solid var(--border);padding-left:16px;">
+        <p class="ls-p" style="margin-bottom:0;">Pontificating about rotation chemistry in the abstract misses the mechanism. Every unpracticed pairing starts in an immediate execution deficit and burns several minutes per game just to reach break-even. When a staff treats bench substitutions like a random number generator (tossing cold five-man units together for three-possession cameos), it spots the opponent free runs before the core rotation gets back on the floor.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="ls-grid-3" onmouseenter="_lsAutoPaused=true" onmouseleave="_lsAutoPaused=false">
+    <div class="ls-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:3px;flex-wrap:wrap;">
+        <div style="display:flex;gap:3px;">
+          <button class="ls-pill active" data-aseg="5" onclick="setAuditSeg(5)">5-Man</button>
+          <button class="ls-pill" data-aseg="4" onclick="setAuditSeg(4)">Quads</button>
+          <button class="ls-pill" data-aseg="3" onclick="setAuditSeg(3)">Trios</button>
+          <button class="ls-pill" data-aseg="2" onclick="setAuditSeg(2)">Duos</button>
+        </div>
+      </div>
+      <h2 class="ls-h2" id="lsCard1Title">Every MXC 5-Man Unit: Reps/G vs. Net Rating</h2>
+      <p class="ls-p" id="lsCard1Text">Loading Capitanes distribution...</p>
+      <canvas id="lsConcept1Canvas" width="380" height="145" style="width:100%;height:145px;display:block;margin:6px 0;"></canvas>
+      <div class="ls-insight-box" id="lsCard1Note" style="border-left-color:var(--red);margin-bottom:0;"></div>
+    </div>
+    <div class="ls-card">
+      <h2 class="ls-h2">MXC Net Rating: Unpracticed vs. Stabilized Units</h2>
+      <p class="ls-p" id="lsCard2Text">Comparing MXC efficiency below vs. above each stabilization threshold...</p>
+      <canvas id="lsConcept2Canvas" width="380" height="145" style="width:100%;height:145px;display:block;margin:6px 0;"></canvas>
+      <div class="ls-insight-box" id="lsCard2Note" style="margin-bottom:0;"></div>
+    </div>
+    <div class="ls-card">
+      <h2 class="ls-h2" id="lsCard3Title">Where Capitanes Are Losing Points (5-Man)</h2>
+      <div id="lsAutoInsights"><div class="ls-p">Auditing unfiltered Capitanes play-by-play stints...</div></div>
+    </div>
+  </div>
+
+  <div class="ls-card" style="margin-bottom:18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+      <h2 class="ls-h2" id="lsQtrTitle" style="border:none;margin:0;padding:0;">Quarter-by-Quarter Deployment: Sustained vs. Unsustained Lineups (Q1-Q4)</h2>
+      <div style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--muted);">Blue/Red = MXC Unsustained Share% · Grey = G League Avg% (All 31 Teams) · Top Label = Delta vs. League</div>
+    </div>
+    <div style="display:grid;grid-template-columns:minmax(320px,1.35fr) minmax(260px,1fr);gap:16px;align-items:center;">
+      <canvas id="lsQtrCanvas" width="680" height="175" style="width:100%;height:175px;display:block;"></canvas>
+      <div id="lsQtrNote" class="ls-insight-box" style="border-left-color:var(--red);margin-bottom:0;">Computing quarter-by-quarter deployment...</div>
+    </div>
+  </div>
+
+  <div class="ls-grid-2">
+    <div class="ls-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:6px;flex-wrap:wrap;">
+        <div>
+          <h2 class="ls-h2" style="border:none;margin:0;padding:0;">Core Continuity vs. Team Net Rating (All 31 Teams)</h2>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="ls-pill active" data-seg="quads" onclick="setLsChartSeg('quads',this)">Quads (4-Man)</button>
+          <button class="ls-pill" data-seg="trios" onclick="setLsChartSeg('trios',this)">Trios (3-Man)</button>
+          <button class="ls-pill" data-seg="fiveman" onclick="setLsChartSeg('fiveman',this)">5-Man</button>
+        </div>
+      </div>
+      <canvas id="lsScatterCanvas" class="ls-canvas" width="600" height="270"></canvas>
+      <div id="lsScatterCaption" class="ls-p" style="font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:0;"></div>
+    </div>
+
+    <div class="ls-card">
+      <h2 class="ls-h2">MXC Cumulative Net Rating &amp; Core Stability Curve</h2>
+      <canvas id="lsTrajCanvas" class="ls-canvas" width="600" height="270"></canvas>
+      <div id="lsTrajCaption" class="ls-p" style="font-size:11px;color:var(--muted);margin-top:4px;margin-bottom:0;"></div>
+    </div>
+  </div>
+
+  <div class="ls-card" style="margin-bottom:18px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px;">
+      <div>
+        <h2 class="ls-h2" style="border:none;margin:0;padding:0;">Lineup Timelines (Cumulative Net Rating vs. Team Baseline)</h2>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <button class="ls-pill active" data-tlseg="5" onclick="setTlSeg(5,this)">5-Man</button>
+        <button class="ls-pill" data-tlseg="4" onclick="setTlSeg(4,this)">4-Man Quads</button>
+        <button class="ls-pill" data-tlseg="3" onclick="setTlSeg(3,this)">3-Man Trios</button>
+        <button class="ls-pill" data-tlseg="2" onclick="setTlSeg(2,this)">2-Man Duos</button>
+        <button class="ls-pill" data-tlseg="onoff" onclick="setTlSeg('onoff',this)">On/Off Combos</button>
+        <select id="lsTlSelect" onchange="renderLineupTimeline()" style="font-family:'Lora',serif;font-size:11.5px;padding:4px 8px;border:1px solid var(--border);background:#fff;max-width:360px;"></select>
+      </div>
+    </div>
+    <div id="lsOnOffBar" style="display:none;background:var(--surface);border:1px solid var(--border);padding:7px 10px;margin-bottom:8px;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.5px;">
+      <strong style="font-family:'Oswald',sans-serif;color:var(--green);">ON:</strong>
+      <select id="lsOnSel1" onchange="evalCustomOnOff()" style="font-family:'Lora',serif;font-size:11.5px;padding:3px 6px;border:1px solid var(--border);background:#fff;"></select>
+      <select id="lsOnSel2" onchange="evalCustomOnOff()" style="font-family:'Lora',serif;font-size:11.5px;padding:3px 6px;border:1px solid var(--border);background:#fff;"></select>
+      <strong style="font-family:'Oswald',sans-serif;color:var(--red);margin-left:4px;">OFF:</strong>
+      <select id="lsOffSel1" onchange="evalCustomOnOff()" style="font-family:'Lora',serif;font-size:11.5px;padding:3px 6px;border:1px solid var(--border);background:#fff;"></select>
+      <select id="lsOffSel2" onchange="evalCustomOnOff()" style="font-family:'Lora',serif;font-size:11.5px;padding:3px 6px;border:1px solid var(--border);background:#fff;"></select>
+    </div>
+    <div style="position:relative;">
+      <canvas id="lsTimelineCanvas" width="1200" height="290" style="width:100%;height:290px;display:block;cursor:crosshair;"></canvas>
+      <div id="lsTlTooltip" style="display:none;position:absolute;pointer-events:none;background:#111;color:#fff;font-family:'Lora',serif;font-size:11px;line-height:1.45;padding:6px 9px;border:1px solid #000;box-shadow:0 2px 6px rgba(0,0,0,0.22);z-index:20;white-space:nowrap;"></div>
+    </div>
+    <div id="lsTimelineCaption" class="ls-p" style="font-size:11.5px;color:var(--muted);margin-top:6px;margin-bottom:0;"></div>
+  </div>
+
+
+</div>
+<script>
+const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+let _lsSeason = new URLSearchParams(location.search).get('season') || localStorage.getItem('capitanes_season') || '2026-27';
+let _lsSeg = 'quads';
+let _lsLiteData = null;
+let _lsMexData = null;
+let _lsScData = null;
+let _lsTlSize = 5;
+let _lsActiveLevs = new Set(['low', 'med', 'high', 'vhigh']);
+
+function isAllLevSelected() {
+  return _lsActiveLevs.size === 4;
+}
+
+function matchLev(item) {
+  if (isAllLevSelected()) return true;
+  const lv = String(item?.lev || 'med');
+  return _lsActiveLevs.has(lv);
+}
+
+function getFilteredScData() {
+  if (!_lsScData) return null;
+  if (isAllLevSelected()) return _lsScData;
+  return {
+    ..._lsScData,
+    poss: (_lsScData.poss || []).filter(matchLev),
+    shots: (_lsScData.shots || []).filter(matchLev),
+    fts: (_lsScData.fts || []).filter(matchLev)
+  };
+}
+
+function syncLevButtons() {
+  document.querySelectorAll('.ls-lbtn').forEach(b => {
+    const act = _lsActiveLevs.has(b.dataset.lev);
+    b.classList.toggle('active', act);
+    b.style.background = act ? 'var(--blue)' : '#fff';
+    b.style.color = act ? '#fff' : '#94a3b8';
+    b.style.textDecoration = act ? 'none' : 'line-through';
+  });
+}
+
+function toggleLsLev(lv) {
+  if (_lsActiveLevs.has(lv)) {
+    if (_lsActiveLevs.size === 1) return; // keep at least 1 tier active
+    _lsActiveLevs.delete(lv);
+  } else {
+    _lsActiveLevs.add(lv);
+  }
+  syncLevButtons();
+  renderLsAll();
+  buildLineupTimelineOptions();
+}
+
+function resetLsLev() {
+  _lsActiveLevs = new Set(['low', 'med', 'high', 'vhigh']);
+  syncLevButtons();
+  renderLsAll();
+  buildLineupTimelineOptions();
+}
+
+function setLsSeason(s) {
+  _lsSeason = s;
+  localStorage.setItem('capitanes_season', s);
+  document.getElementById('lsSeasonLbl').textContent = s;
+  document.querySelectorAll('.ls-sbtn').forEach(b => {
+    const act = b.dataset.s === s;
+    b.style.background = act ? 'var(--blue)' : '#fff';
+    b.style.color = act ? '#fff' : 'var(--muted)';
+  });
+  loadLsPage();
+}
+
+function setLsChartSeg(seg, btn) {
+  _lsSeg = seg;
+  document.querySelectorAll('[data-seg]').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  renderLsAll();
+}
+
+async function loadLsPage() {
+  const [lite, mex, sc, qBase] = await Promise.all([
+    fetch(`data/league_lite_shots_${_lsSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`data/mex_data_${_lsSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch(`data/shot_charts_${_lsSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+    window._lsQtrBaselines ? Promise.resolve(window._lsQtrBaselines) : fetch(`data/league_qtr_baselines.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
+  ]);
+  _lsLiteData = lite;
+  _lsMexData = mex;
+  _lsScData = sc;
+  if (qBase) window._lsQtrBaselines = qBase;
+  renderLsAll();
+  buildLineupTimelineOptions();
+}
+
+function setTlSeg(sz, btn) {
+  _lsTlSize = sz;
+  document.querySelectorAll('[data-tlseg]').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const bar = document.getElementById('lsOnOffBar');
+  if (bar) bar.style.display = sz === 'onoff' ? 'flex' : 'none';
+  buildLineupTimelineOptions();
+}
+
+function evalCustomOnOff() {
+  const sc = getFilteredScData();
+  if (!sc || !Array.isArray(sc.poss)) return;
+  const onIds = [Number(document.getElementById('lsOnSel1')?.value || 0), Number(document.getElementById('lsOnSel2')?.value || 0)].filter(Boolean);
+  const offIds = [Number(document.getElementById('lsOffSel1')?.value || 0), Number(document.getElementById('lsOffSel2')?.value || 0)].filter(Boolean);
+  if (!onIds.length && !offIds.length) return;
+
+  const pMap = _lsScData._pMap || {};
+  const gameOrder = _lsScData._gameOrder || [];
+  const teamByGame = _lsScData._teamByGame || {};
+  const byGame = {};
+  let totP = 0, offP = 0, offPts = 0, defP = 0, defPts = 0;
+
+  const matches = arr => {
+    const s = new Set((arr || []).map(Number));
+    return onIds.every(id => s.has(id)) && offIds.every(id => !s.has(id));
+  };
+
+  sc.poss.forEach(px => {
+    if (!teamByGame[px.gid] || !matches(px.on)) return;
+    totP += 1;
+    if (!byGame[px.gid]) byGame[px.gid] = { offP: 0, offPts: 0, defP: 0, defPts: 0 };
+    if (px.side === 'off') { offP += 1; byGame[px.gid].offP += 1; }
+    else { defP += 1; byGame[px.gid].defP += 1; }
+  });
+  (sc.shots || []).forEach(sh => {
+    if (Number(sh.made) !== 1 || !teamByGame[sh.gid] || !matches(sh.on)) return;
+    const pts = Number(sh.val || 2);
+    if (!byGame[sh.gid]) byGame[sh.gid] = { offP: 0, offPts: 0, defP: 0, defPts: 0 };
+    if (sh.side === 'off') { offPts += pts; byGame[sh.gid].offPts += pts; }
+    else { defPts += pts; byGame[sh.gid].defPts += pts; }
+  });
+  (sc.fts || []).forEach(ft => {
+    if (Number(ft.made) !== 1 || !teamByGame[ft.gid] || !matches(ft.on)) return;
+    if (!byGame[ft.gid]) byGame[ft.gid] = { offP: 0, offPts: 0, defP: 0, defPts: 0 };
+    if (ft.side === 'off') { offPts += 1; byGame[ft.gid].offPts += 1; }
+    else { defPts += 1; byGame[ft.gid].defPts += 1; }
+  });
+
+  const lblParts = [];
+  if (onIds.length) lblParts.push(onIds.map(id => pMap[id] || id).join(' + ') + ' ON');
+  if (offIds.length) lblParts.push(offIds.map(id => pMap[id] || id).join(' + ') + ' OFF');
+  const net = ((offPts / Math.max(1, offP)) - (defPts / Math.max(1, defP))) * 100;
+  _lsTlUnits = [{ key: 'custom', label: lblParts.join(' · '), totP, offP, offPts, defP, defPts, byGame, net, gameOrder, teamByGame }];
+  const sel = document.getElementById('lsTlSelect');
+  sel.innerHTML = `<option value="0">${esc(lblParts.join(' · '))} (${Math.round(totP / 2)} poss · ${net >= 0 ? '+' : ''}${net.toFixed(1)} NetRtg)</option>`;
+  renderLineupTimeline();
+}
+
+function kCombos(arr, k) {
+  if (k === 1) return arr.map(x => [x]);
+  const out = [];
+  for (let i = 0; i <= arr.length - k; i++) {
+    const head = arr.at(i);
+    kCombos(arr.slice(i + 1), k - 1).forEach(tail => out.push([head, ...tail]));
+  }
+  return out;
+}
+
+function calcTeamLineupStats(tm, key, topK, twCut) {
+  const arr = [...(tm.lineups?.[key] || [])].sort((a, b) => Number(b.poss || 0) - Number(a.poss || 0));
+  const totP = arr.reduce((s, x) => s + Number(x.poss || 0), 0);
+  if (!arr.length || totP <= 0) return null;
+  const topShare = (arr.slice(0, topK).reduce((s, x) => s + Number(x.poss || 0), 0) / totP) * 100;
+  const twComboPct = (arr.filter(x => Number(x.poss || 0) < twCut).length / arr.length) * 100;
+  const twPossPct = (arr.filter(x => Number(x.poss || 0) < twCut).reduce((s, x) => s + Number(x.poss || 0), 0) / totP) * 100;
+  const bestUnit = arr.at(0);
+  return { count: arr.length, totP, topShare, twComboPct, twPossPct, bestUnit };
+}
+
+function drawQuarterChart(cur) {
+  const cq = document.getElementById('lsQtrCanvas');
+  const qTitle = document.getElementById('lsQtrTitle');
+  const qNote = document.getElementById('lsQtrNote');
+  if (!cq || !cur || !cur.qList) return;
+  if (qTitle) qTitle.textContent = `Quarter-by-Quarter Deployment vs. G League: Unsustained ${cur.short} (Q1-Q4)`;
+
+  const lgArr = (window._lsQtrBaselines && window._lsQtrBaselines[_lsSeason] && window._lsQtrBaselines[_lsSeason][String(cur.sz)]) || new Array();
+  const merged = cur.qList.map(item => {
+    const lgMatch = lgArr.find(x => Number(x.q) === Number(item.q));
+    const lgShare = lgMatch ? Number(lgMatch.lgShare) : null;
+    const lgNet = lgMatch ? Number(lgMatch.lgNet) : null;
+    const relShare = lgShare != null ? (item.lowShare - lgShare) : null;
+    return { ...item, lgShare, lgNet, relShare };
+  });
+
+  const ctx = cq.getContext('2d');
+  const W = cq.width, H = cq.height;
+  ctx.clearRect(0, 0, W, H);
+  const pad = { l: 42, r: 20, t: 26, b: 28 };
+  const colW = (W - pad.l - pad.r) / 4;
+  const maxShare = Math.max(55, ...merged.flatMap(x => new Array(x.lowShare + 12, (x.lgShare || 0) + 12)));
+  const sy = pct => H - pad.b - (pct / maxShare) * (H - pad.t - pad.b);
+
+  ctx.strokeStyle = '#000'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.lineTo(W - pad.r, H - pad.b); ctx.stroke();
+
+  merged.forEach((item, i) => {
+    const cx = pad.l + i * colW + colW / 2;
+    const bw = Math.min(34, colW * 0.24);
+    const yMxc = sy(item.lowShare);
+    const bhMxc = (H - pad.b) - yMxc;
+
+    if (item.lgShare != null) {
+      ctx.fillStyle = item.lowNet < 0 ? '#b91c1c' : '#1d428a';
+      ctx.fillRect(cx - bw - 2, yMxc, bw, Math.max(3, bhMxc));
+
+      const yLg = sy(item.lgShare);
+      const bhLg = (H - pad.b) - yLg;
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillRect(cx + 2, yLg, bw, Math.max(3, bhLg));
+
+      const topY = Math.min(yMxc, yLg);
+      const dSign = item.relShare >= 0 ? '+' : '';
+      ctx.fillStyle = item.relShare > 3 ? '#b91c1c' : (item.relShare < -3 ? '#15803d' : '#111');
+      ctx.font = 'bold 11px Oswald, sans-serif';
+      ctx.fillText(`${dSign}${item.relShare.toFixed(1)}% vs Lg`, cx - 32, Math.max(pad.t - 6, topY - 15));
+
+      ctx.fillStyle = '#475569';
+      ctx.font = '10px Oswald, sans-serif';
+      ctx.fillText(`MXC ${item.lowShare.toFixed(0)}% | Lg ${item.lgShare.toFixed(0)}%`, cx - 36, Math.max(pad.t + 6, topY - 3));
+    } else {
+      ctx.fillStyle = item.lowNet < 0 ? '#b91c1c' : '#1d428a';
+      ctx.fillRect(cx - bw, yMxc, bw * 2, Math.max(3, bhMxc));
+      ctx.fillStyle = item.lowNet < 0 ? '#b91c1c' : '#15803d';
+      ctx.font = 'bold 11px Oswald, sans-serif';
+      ctx.fillText(`${item.lowShare.toFixed(1)}% share (${item.lowNet >= 0 ? '+' : ''}${item.lowNet.toFixed(1)})`, cx - 44, Math.max(pad.t + 6, yMxc - 6));
+    }
+
+    ctx.fillStyle = '#111'; ctx.font = 'bold 11px Oswald, sans-serif';
+    ctx.fillText(item.lbl, cx - 8, H - 10);
+  });
+
+  if (qNote) {
+    const worstRelQ = merged.filter(x => x.relShare != null).reduce((best, q) => (!best || q.relShare > best.relShare) ? q : best, null);
+    const worstDamageQ = merged.reduce((best, q) => (!best || q.lowDiff < best.lowDiff) ? q : best, null);
+    if (worstRelQ && worstDamageQ) {
+      const dStr = `${worstRelQ.relShare >= 0 ? '+' : ''}${worstRelQ.relShare.toFixed(1)}%`;
+      qNote.innerHTML = `<strong>Relative to G League Baseline (${_lsSeason} ${cur.short}):</strong> Mexico City's sharpest deviation from the 31-team norm lands in <strong>${worstRelQ.lbl}</strong>, where unsustained &lt;${cur.cutPg} poss/g ${cur.short.toLowerCase()} take <strong>${worstRelQ.lowShare.toFixed(1)}%</strong> of quarter possessions against a <strong>${worstRelQ.lgShare.toFixed(1)}%</strong> league average (<strong>${dStr}</strong>). Cumulative damage peaks in <strong>${worstDamageQ.lbl}</strong> at <strong>${worstDamageQ.lowNet >= 0 ? '+' : ''}${worstDamageQ.lowNet.toFixed(1)} NetRtg</strong> (<strong>${(worstDamageQ.lowDiff / cur.tmGp) >= 0 ? '+' : ''}${(worstDamageQ.lowDiff / cur.tmGp).toFixed(1)} pts/game</strong>).`;
+    } else if (worstDamageQ) {
+      qNote.innerHTML = `<strong>Quarter Breakdown (${_lsSeason} ${cur.short}):</strong> Mexico City takes its steepest unsustained &lt;${cur.cutPg} poss/g damage in <strong>${worstDamageQ.lbl}</strong> (<strong>${worstDamageQ.lowShare.toFixed(1)}%</strong> of quarter possessions at <strong>${worstDamageQ.lowNet >= 0 ? '+' : ''}${worstDamageQ.lowNet.toFixed(1)} NetRtg</strong>).`;
+    }
+  }
+}
+
+function renderLsAll() {
+  const sc = getFilteredScData();
+  const teams = (_lsLiteData?.teams || []).filter(t => t.netRtg != null && t.lineups);
+  const segCfg = {
+    quads:   { key: 'quads',   topK: 1, twCut: 50, lbl: 'Top-1 4-Man Quad Possession Share%' },
+    trios:   { key: 'trios',   topK: 5, twCut: 60, lbl: 'Top-5 3-Man Trios Possession Share%' },
+    fiveman: { key: 'fiveman', topK: 3, twCut: 40, lbl: 'Top-3 5-Man Lineups Possession Share%' }
+  }[_lsSeg];
+
+  const pts = [];
+  teams.forEach(t => {
+    const st = calcTeamLineupStats(t, segCfg.key, segCfg.topK, segCfg.twCut);
+    if (st) pts.push({ ab: String(t.abbrev || '').toUpperCase(), x: st.topShare, y: Number(t.netRtg), st });
+  });
+
+  // 1. Draw Scatter Plot
+  const c1 = document.getElementById('lsScatterCanvas');
+  const ctx1 = c1.getContext('2d');
+  const W = c1.width, H = c1.height;
+  ctx1.clearRect(0, 0, W, H);
+  if (pts.length >= 3) {
+    const pad = { l: 44, r: 18, t: 16, b: 32 };
+    const xs = pts.map(p => p.x), ys = pts.map(p => p.y);
+    const minX = Math.max(0, Math.min(...xs) - 2), maxX = Math.max(...xs) + 2;
+    const minY = Math.min(-18, Math.min(...ys) - 2), maxY = Math.max(18, Math.max(...ys) + 2);
+    const sx = v => pad.l + ((v - minX) / Math.max(1e-6, maxX - minX)) * (W - pad.l - pad.r);
+    const sy = v => H - pad.b - ((v - minY) / Math.max(1e-6, maxY - minY)) * (H - pad.t - pad.b);
+
+    ctx1.strokeStyle = '#e2e6ef'; ctx1.lineWidth = 1;
+    ctx1.beginPath(); ctx1.moveTo(pad.l, sy(0)); ctx1.lineTo(W - pad.r, sy(0)); ctx1.stroke();
+    ctx1.strokeStyle = '#000';
+    ctx1.beginPath(); ctx1.moveTo(pad.l, pad.t); ctx1.lineTo(pad.l, H - pad.b); ctx1.lineTo(W - pad.r, H - pad.b); ctx1.stroke();
+
+    // OLS Regression line
+    const mx = xs.reduce((a, b) => a + b, 0) / xs.length;
+    const my = ys.reduce((a, b) => a + b, 0) / ys.length;
+    const num = pts.reduce((s, p) => s + (p.x - mx) * (p.y - my), 0);
+    const den = pts.reduce((s, p) => s + (p.x - mx) ** 2, 0);
+    const slope = den > 0 ? num / den : 0;
+    const inter = my - slope * mx;
+    const r = den > 0 ? num / Math.sqrt(den * pts.reduce((s, p) => s + (p.y - my) ** 2, 0)) : 0;
+
+    ctx1.strokeStyle = '#1d428a'; ctx1.setLineDash([5, 4]); ctx1.lineWidth = 1.8;
+    ctx1.beginPath(); ctx1.moveTo(sx(minX), sy(slope * minX + inter)); ctx1.lineTo(sx(maxX), sy(slope * maxX + inter)); ctx1.stroke();
+    ctx1.setLineDash([]);
+
+    ctx1.font = 'bold 10px Oswald, sans-serif';
+    pts.forEach(p => {
+      const isMxc = p.ab === 'MXC';
+      ctx1.fillStyle = isMxc ? '#fdb927' : 'rgba(29,66,138,0.65)';
+      ctx1.strokeStyle = isMxc ? '#000' : '#1d428a';
+      ctx1.lineWidth = isMxc ? 2 : 1;
+      ctx1.beginPath(); ctx1.arc(sx(p.x), sy(p.y), isMxc ? 6.5 : 4, 0, Math.PI * 2); ctx1.fill(); ctx1.stroke();
+      if (isMxc || Math.abs(p.y) > 9 || p.x === Math.max(...xs)) {
+        ctx1.fillStyle = isMxc ? '#000' : '#555';
+        ctx1.fillText(p.ab, sx(p.x) + 7, sy(p.y) + 3);
+      }
+    });
+    ctx1.fillStyle = '#555'; ctx1.font = '10px Lora, serif';
+    ctx1.fillText(segCfg.lbl, W / 2 - 75, H - 6);
+    ctx1.fillText('NetRtg', 6, pad.t + 8);
+    document.getElementById('lsScatterCaption').textContent = `${_lsSeason} League Correlation: r = ${r >= 0 ? '+' : ''}${r.toFixed(3)} (R² = ${(r * r).toFixed(3)}) across ${pts.length} teams. Gold dot highlights Capitanes (MXC).`;
+  }
+
+  // 2. Draw MXC Trajectory Curve from sc.games + poss/shots/fts
+  const c2 = document.getElementById('lsTrajCanvas');
+  const ctx2 = c2.getContext('2d');
+  ctx2.clearRect(0, 0, W, H);
+  const scGames = (sc?.games || []).slice();
+  if (scGames.length >= 1 && Array.isArray(sc?.poss)) {
+    const gAcc = {};
+    scGames.forEach(g => { gAcc[g.id] = { offP: 0, offPts: 0, defP: 0, defPts: 0, lbl: g.label || g.id }; });
+    sc.poss.forEach(px => { if (gAcc[px.gid]) { if (px.side === 'off') gAcc[px.gid].offP++; else gAcc[px.gid].defP++; } });
+    (sc.shots || []).forEach(sh => { if (Number(sh.made) === 1 && gAcc[sh.gid]) { const v = Number(sh.val || 2); if (sh.side === 'off') gAcc[sh.gid].offPts += v; else gAcc[sh.gid].defPts += v; } });
+    (sc.fts || []).forEach(ft => { if (Number(ft.made) === 1 && gAcc[ft.gid]) { if (ft.side === 'off') gAcc[ft.gid].offPts += 1; else gAcc[ft.gid].defPts += 1; } });
+
+    const officialNet = Number(teams.find(t => String(t.abbrev || '').toUpperCase() === 'MXC')?.netRtg);
+    const rawTotOffP = scGames.reduce((s, g) => s + gAcc[g.id].offP, 0);
+    const rawTotOffPts = scGames.reduce((s, g) => s + gAcc[g.id].offPts, 0);
+    const rawTotDefP = scGames.reduce((s, g) => s + gAcc[g.id].defP, 0);
+    const rawTotDefPts = scGames.reduce((s, g) => s + gAcc[g.id].defPts, 0);
+    const rawFinal = ((rawTotOffPts / Math.max(1, rawTotOffP)) - (rawTotDefPts / Math.max(1, rawTotDefP))) * 100;
+    const calOff = (isAllLevSelected() && !Number.isNaN(officialNet)) ? (officialNet - rawFinal) : 0;
+
+    let cOffP = 0, cOffPts = 0, cDefP = 0, cDefPts = 0;
+    const curve = scGames.map((g, idx) => {
+      const a = gAcc[g.id];
+      cOffP += a.offP; cOffPts += a.offPts; cDefP += a.defP; cDefPts += a.defPts;
+      const net = ((cOffPts / Math.max(1, cOffP)) - (cDefPts / Math.max(1, cDefP))) * 100 + calOff;
+      return { gNum: idx + 1, lbl: a.lbl, net };
+    });
+
+    const pad = { l: 44, r: 24, t: 16, b: 32 };
+    const maxG = Math.max(2, curve.length);
+    const minY = Math.min(-15, Math.min(...curve.map(c => c.net)) - 3);
+    const maxY = Math.max(15, Math.max(...curve.map(c => c.net)) + 3);
+    const sx = g => pad.l + ((g - 1) / Math.max(1, maxG - 1)) * (W - pad.l - pad.r);
+    const sy = v => H - pad.b - ((v - minY) / Math.max(1e-6, maxY - minY)) * (H - pad.t - pad.b);
+
+    ctx2.strokeStyle = '#e2e6ef'; ctx2.beginPath(); ctx2.moveTo(pad.l, sy(0)); ctx2.lineTo(W - pad.r, sy(0)); ctx2.stroke();
+    ctx2.strokeStyle = '#000'; ctx2.beginPath(); ctx2.moveTo(pad.l, pad.t); ctx2.lineTo(pad.l, H - pad.b); ctx2.lineTo(W - pad.r, H - pad.b); ctx2.stroke();
+
+    ctx2.strokeStyle = '#1d428a'; ctx2.lineWidth = 2.5;
+    ctx2.beginPath();
+    curve.forEach((pt, i) => { if (i === 0) ctx2.moveTo(sx(pt.gNum), sy(pt.net)); else ctx2.lineTo(sx(pt.gNum), sy(pt.net)); });
+    ctx2.stroke();
+
+    curve.forEach(pt => {
+      ctx2.fillStyle = pt.net >= 0 ? '#15803d' : '#b91c1c';
+      ctx2.beginPath(); ctx2.arc(sx(pt.gNum), sy(pt.net), 3.8, 0, Math.PI * 2); ctx2.fill();
+    });
+    const last = curve.at(-1);
+    ctx2.fillStyle = '#fdb927'; ctx2.strokeStyle = '#000'; ctx2.lineWidth = 1.5;
+    ctx2.beginPath(); ctx2.arc(sx(last.gNum), sy(last.net), 5.5, 0, Math.PI * 2); ctx2.fill(); ctx2.stroke();
+    ctx2.fillStyle = '#000'; ctx2.font = 'bold 10.5px Oswald, sans-serif';
+    ctx2.fillText('G' + last.gNum + ': ' + (last.net >= 0 ? '+' : '') + last.net.toFixed(1), Math.max(pad.l + 4, sx(last.gNum) - 54), sy(last.net) - 9);
+    document.getElementById('lsTrajCaption').textContent = 'Cumulative Capitanes Net Rating trajectory across ' + curve.length + ' logged games in ' + _lsSeason + '.';
+  } else {
+    ctx2.fillStyle = '#666'; ctx2.font = '12px Lora, serif';
+    ctx2.fillText('Game-by-game log will populate as ' + _lsSeason + ' games are played.', 24, 135);
+    document.getElementById('lsTrajCaption').textContent = 'Awaiting additional ' + _lsSeason + ' game logs.';
+  }
+
+  // 3. Automated JavaScript Insights (Computed from UNFILTERED MXC Play-by-Play) & Benchmark Table
+  const mxcTm = teams.find(t => String(t.abbrev || '').toUpperCase() === 'MXC');
+  const segSpecs = [
+    { key: 'duos',    lbl: 'Duos (2-Man)',   topK: 3, twCut: 35 },
+    { key: 'trios',   lbl: 'Trios (3-Man)',  topK: 5, twCut: 30 },
+    { key: 'quads',   lbl: 'Quads (4-Man)',  topK: 1, twCut: 16 },
+    { key: 'fiveman', lbl: '5-Man Lineups',  topK: 3, twCut: 7 }
+  ];
+  const insights = [];
+  if (sc && Array.isArray(sc.poss)) {
+    const pMap = {};
+    (Array.isArray(sc.players) ? sc.players : Object.values(sc.players || {})).forEach(p => {
+      const pts = String(p.name || '').trim().split(/\s+/);
+      pMap[Number(p.id)] = pts.length > 1 ? (pts.at(0).at(0) + '. ' + pts.slice(1).join(' ')) : String(p.name || '');
+    });
+    const tmGp = Math.max(1, new Set(sc.poss.map(px => px.gid).filter(Boolean)).size);
+    const officialNet = Number(mxcTm?.netRtg);
+    const totOffP = sc.poss.filter(px => px.side === 'off').length;
+    const totDefP = sc.poss.filter(px => px.side !== 'off').length;
+    const totOffPts = (sc.shots || []).filter(sh => Number(sh.made) === 1 && sh.side === 'off').reduce((s, x) => s + Number(x.val || 2), 0)
+                    + (sc.fts || []).filter(ft => Number(ft.made) === 1 && ft.side === 'off').length;
+    const totDefPts = (sc.shots || []).filter(sh => Number(sh.made) === 1 && sh.side !== 'off').reduce((s, x) => s + Number(x.val || 2), 0)
+                    + (sc.fts || []).filter(ft => Number(ft.made) === 1 && ft.side !== 'off').length;
+    const rawSeasonNet = ((totOffPts / Math.max(1, totOffP)) - (totDefPts / Math.max(1, totDefP))) * 100;
+    const calOff = (isAllLevSelected() && !Number.isNaN(officialNet)) ? (officialNet - rawSeasonNet) : 0;
+
+    const auditSeg = (sz, cutPg) => {
+      const acc = {};
+      const addEvt = (onArr, qNum, isOff, addP, addPts) => {
+        const ids = Array.from(new Set((onArr || []).map(Number).filter(id => pMap[id]))).sort((a, b) => a - b);
+        if (ids.length < sz) return;
+        const q = Math.min(4, Math.max(1, Number(qNum || 1)));
+        const cbs = sz === ids.length ? new Array(ids) : kCombos(ids, sz);
+        cbs.forEach(cb => {
+          const k = cb.join('_');
+          if (!acc[k]) acc[k] = { lbl: cb.map(id => pMap[id]).join(' - '), offP: 0, offPts: 0, defP: 0, defPts: 0, byQ: { 1:{oP:0,oPt:0,dP:0,dPt:0}, 2:{oP:0,oPt:0,dP:0,dPt:0}, 3:{oP:0,oPt:0,dP:0,dPt:0}, 4:{oP:0,oPt:0,dP:0,dPt:0} } };
+          if (isOff) { acc[k].offP += addP; acc[k].offPts += addPts; acc[k].byQ[q].oP += addP; acc[k].byQ[q].oPt += addPts; }
+          else { acc[k].defP += addP; acc[k].defPts += addPts; acc[k].byQ[q].dP += addP; acc[k].byQ[q].dPt += addPts; }
+        });
+      };
+      sc.poss.forEach(px => addEvt(px.on, px.p, px.side === 'off', 1, 0));
+      (sc.shots || []).forEach(sh => { if (Number(sh.made) === 1) addEvt(sh.on, sh.p, sh.side === 'off', 0, Number(sh.val || 2)); });
+      (sc.fts || []).forEach(ft => { if (Number(ft.made) === 1) addEvt(ft.on, ft.p, ft.side === 'off', 0, 1); });
+
+      let lowPoss = 0, lowDiff = 0, hiPoss = 0, hiDiff = 0, lowUnits = 0, worst = null;
+      const units = new Array();
+      const qStats = { 1:{lowP:0,lowD:0,hiP:0,hiD:0}, 2:{lowP:0,lowD:0,hiP:0,hiD:0}, 3:{lowP:0,lowD:0,hiP:0,hiD:0}, 4:{lowP:0,lowD:0,hiP:0,hiD:0} };
+
+      Object.values(acc).forEach(u => {
+        const poss = (u.offP + u.defP) / 2;
+        if (poss <= 0) return;
+        const possPg = poss / tmGp;
+        const net = ((u.offPts / Math.max(1, u.offP)) - (u.defPts / Math.max(1, u.defP))) * 100 + calOff;
+        const diff = (net / 100) * poss;
+        const isLow = possPg < cutPg;
+        units.push({ lbl: u.lbl, poss, possPg, net, diff });
+        if (isLow) {
+          lowUnits++; lowPoss += poss; lowDiff += diff;
+          if (poss >= 3 && (!worst || diff < worst.diff)) worst = { lbl: u.lbl, poss: Math.round(poss), possPg, net, diff };
+        } else {
+          hiPoss += poss; hiDiff += diff;
+        }
+        new Array(1, 2, 3, 4).forEach(q => {
+          const qb = u.byQ[q];
+          const qp = (qb.oP + qb.dP) / 2;
+          if (qp <= 0) return;
+          const qNet = ((qb.oPt / Math.max(1, qb.oP)) - (qb.dPt / Math.max(1, qb.dP))) * 100 + calOff;
+          const qDiff = (qNet / 100) * qp;
+          if (isLow) { qStats[q].lowP += qp; qStats[q].lowD += qDiff; }
+          else { qStats[q].hiP += qp; qStats[q].hiD += qDiff; }
+        });
+      });
+      const qList = new Array(1, 2, 3, 4).map(q => {
+        const qs = qStats[q];
+        const totQ = qs.lowP + qs.hiP;
+        const lowShare = totQ > 0 ? (qs.lowP / totQ) * 100 : 0;
+        const lowNet = qs.lowP > 0 ? (qs.lowD / qs.lowP) * 100 : 0;
+        const hiNet = qs.hiP > 0 ? (qs.hiD / qs.hiP) * 100 : 0;
+        return { q, lbl: 'Q' + q, lowShare, lowNet, hiNet, lowDiff: qs.lowD, hiDiff: qs.hiD };
+      });
+      const combMult = sz === 5 ? 1 : (sz === 4 ? 5 : 10);
+      const trueLowPoss = lowPoss / combMult;
+      const trueHiPoss = hiPoss / combMult;
+      const trueLowDiff = lowDiff / combMult;
+      const lowNet = lowPoss > 0 ? (lowDiff / lowPoss) * 100 : 0;
+      const hiNet = hiPoss > 0 ? (hiDiff / hiPoss) * 100 : 0;
+      return { sz, cutPg, tmGp, units, lowUnits, lowPoss: Math.round(trueLowPoss), lowPossPg: trueLowPoss / tmGp, lowNet, lowDiff: trueLowDiff, hiPoss: Math.round(trueHiPoss), hiPossPg: trueHiPoss / tmGp, hiNet, worst, qList };
+    };
+
+    window._lsAuditMap = {
+      5: { lbl: '5-Man Lineups', short: '5-Man', ...auditSeg(5, 1.5) },
+      4: { lbl: '4-Man Quads',   short: 'Quads', ...auditSeg(4, 3.5) },
+      3: { lbl: '3-Man Trios',   short: 'Trios', ...auditSeg(3, 6.5) },
+      2: { lbl: '2-Man Duos',    short: 'Duos',  ...auditSeg(2, 7.5) }
+    };
+    window._lsAuditSeg = window._lsAuditSeg || 5;
+    renderAuditSegment(window._lsAuditSeg);
+  }
+  const mxcGp = Number(mxcTm?.offStats?.gp || mxcTm?.defStats?.gp || (_lsSeason === '2025-26' ? 34 : 6));
+  const tblRows = segSpecs.map(sp => {
+    const lgStats = teams.map(t => calcTeamLineupStats(t, sp.key, sp.topK, sp.twCut)).filter(Boolean);
+    const mxcSt = mxcTm ? calcTeamLineupStats(mxcTm, sp.key, sp.topK, sp.twCut) : null;
+    const avgTop = lgStats.reduce((s, x) => s + x.topShare, 0) / Math.max(1, lgStats.length);
+    const avgTw = lgStats.reduce((s, x) => s + x.twComboPct, 0) / Math.max(1, lgStats.length);
+    if (mxcSt && sp.key === 'quads') {
+      const diff = mxcSt.topShare - avgTop;
+      insights.push(`<strong>4-Man Core Spine:</strong> Capitanes dedicate <strong>${mxcSt.topShare.toFixed(1)}%</strong> of quad possessions to their top 4-man unit (vs. <strong>${avgTop.toFixed(1)}%</strong> league avg, ${diff >= 0 ? '+' : ''}${diff.toFixed(1)}%).`);
+    }
+    if (mxcSt && sp.key === 'fiveman') {
+      insights.push(`<strong>5-Man Noise Rate (&lt;${sp.twCut} POSS, scaled to ${mxcGp} GP):</strong> <strong>${mxcSt.twComboPct.toFixed(1)}%</strong> of MXC's top units sit below the pace-adjusted noise floor (league avg: <strong>${avgTw.toFixed(1)}%</strong>).`);
+      if (mxcSt.bestUnit) {
+        insights.push(`<strong>Anchor 5-Man Unit:</strong> ${Array.isArray(mxcSt.bestUnit.players) ? mxcSt.bestUnit.players.join(' – ') : String(mxcSt.bestUnit.players || '')} has logged <strong>${Math.round(mxcSt.bestUnit.poss)} possessions</strong> at a <strong>${Number(mxcSt.bestUnit.netRtg) >= 0 ? '+' : ''}${Number(mxcSt.bestUnit.netRtg).toFixed(1)} NetRtg</strong>.`);
+      }
+    }
+    return `<tr>
+      <td>${sp.lbl}</td>
+      <td>${mxcSt ? mxcSt.count : '-'}</td>
+      <td>${mxcSt ? mxcSt.topShare.toFixed(1) + '%' : '-'} <span style="color:var(--muted);font-size:10px;">(Top-${sp.topK})</span></td>
+      <td>${avgTop.toFixed(1)}%</td>
+      <td>&lt; ${sp.twCut} POSS</td>
+      <td>${mxcSt ? mxcSt.twComboPct.toFixed(1) + '%' : '-'}</td>
+      <td>${avgTw.toFixed(1)}%</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('lsAutoInsights').innerHTML = insights.length
+    ? insights.map(t => `<div class="ls-insight-box">${t}</div>`).join('')
+    : `<div class="ls-p">Switch to 2025-26 to view full-season Capitanes lineup insights.</div>`;
+
+  if (document.getElementById('lsBenchTable')) document.getElementById('lsBenchTable').innerHTML = `<table class="ls-tbl">
+    <thead><tr>
+      <th>Segment Size</th><th>MXC Units</th><th>MXC Core Share</th><th>League Avg Core</th><th>Empirical Noise Cutoff</th><th>MXC Throwaway%</th><th>League Avg Throwaway%</th>
+    </tr></thead>
+    <tbody>${tblRows}</tbody>
+  </table>`;
+}
+
+
+function buildLineupTimelineOptions() {
+  const sel = document.getElementById('lsTlSelect');
+  if (!sel) return;
+  const sc = getFilteredScData();
+  if (!sc || !Array.isArray(sc.poss)) {
+    sel.innerHTML = '<option>No play-by-play data</option>';
+    renderLineupTimeline();
+    return;
+  }
+  const pMap = {};
+  (Array.isArray(sc.players) ? sc.players : Object.values(sc.players || {})).forEach(p => {
+    const nm = String(p.name || '').trim();
+    const parts = nm.split(/\s+/);
+    pMap[Number(p.id)] = parts.length > 1 ? (parts.at(0).at(0) + '. ' + parts.slice(1).join(' ')) : nm;
+  });
+
+  const gameOrder = [];
+  const gameSeen = new Set();
+  (sc.games || []).forEach(g => { if (g.id && !gameSeen.has(g.id)) { gameSeen.add(g.id); gameOrder.push({ id: g.id, lbl: g.label || g.id }); } });
+  sc.poss.forEach(px => { if (px.gid && !gameSeen.has(px.gid)) { gameSeen.add(px.gid); gameOrder.push({ id: px.gid, lbl: px.gid }); } });
+
+  const teamByGame = {};
+  gameOrder.forEach(g => { teamByGame[g.id] = { offP: 0, offPts: 0, defP: 0, defPts: 0 }; });
+  const unitAcc = {};
+
+  const touchUnit = (cb, gid, isOff, addPoss, addPts) => {
+    const key = cb.join('_');
+    if (!unitAcc[key]) unitAcc[key] = { key, label: cb.map(id => pMap[id]).join(' – '), totP: 0, offP: 0, offPts: 0, defP: 0, defPts: 0, byGame: {} };
+    const u = unitAcc[key];
+    u.totP += addPoss;
+    if (!u.byGame[gid]) u.byGame[gid] = { offP: 0, offPts: 0, defP: 0, defPts: 0 };
+    if (isOff) { u.offP += addPoss; u.offPts += addPts; u.byGame[gid].offP += addPoss; u.byGame[gid].offPts += addPts; }
+    else { u.defP += addPoss; u.defPts += addPts; u.byGame[gid].defP += addPoss; u.byGame[gid].defPts += addPts; }
+  };
+
+  sc.poss.forEach(px => {
+    const gid = px.gid;
+    if (!teamByGame[gid]) return;
+    const isOff = px.side === 'off';
+    if (isOff) teamByGame[gid].offP += 1;
+    else teamByGame[gid].defP += 1;
+
+    const onIds = [...new Set((px.on || []).map(Number).filter(id => pMap[id]))].sort((a, b) => a - b);
+    if (onIds.length < _lsTlSize) return;
+    const combos = _lsTlSize === onIds.length ? [onIds] : kCombos(onIds, _lsTlSize);
+    combos.forEach(cb => touchUnit(cb, gid, isOff, 1, 0));
+  });
+
+  (sc.shots || []).forEach(sh => {
+    if (Number(sh.made) !== 1) return;
+    const gid = sh.gid;
+    if (!teamByGame[gid]) return;
+    const isOff = sh.side === 'off';
+    const pts = Number(sh.val || 2);
+    if (isOff) teamByGame[gid].offPts += pts;
+    else teamByGame[gid].defPts += pts;
+
+    const onIds = [...new Set((sh.on || []).map(Number).filter(id => pMap[id]))].sort((a, b) => a - b);
+    if (onIds.length < _lsTlSize) return;
+    const combos = _lsTlSize === onIds.length ? [onIds] : kCombos(onIds, _lsTlSize);
+    combos.forEach(cb => touchUnit(cb, gid, isOff, 0, pts));
+  });
+
+  (sc.fts || []).forEach(ft => {
+    if (Number(ft.made) !== 1) return;
+    const gid = ft.gid;
+    if (!teamByGame[gid]) return;
+    const isOff = ft.side === 'off';
+    if (isOff) teamByGame[gid].offPts += 1;
+    else teamByGame[gid].defPts += 1;
+
+    const onIds = [...new Set((ft.on || []).map(Number).filter(id => pMap[id]))].sort((a, b) => a - b);
+    if (onIds.length < _lsTlSize) return;
+    const combos = _lsTlSize === onIds.length ? [onIds] : kCombos(onIds, _lsTlSize);
+    combos.forEach(cb => touchUnit(cb, gid, isOff, 0, 1));
+  });
+
+  _lsScData._pMap = pMap;
+  _lsScData._gameOrder = gameOrder;
+  _lsScData._teamByGame = teamByGame;
+
+  if (_lsTlSize === 'onoff') {
+    const pEntries = Object.entries(pMap).sort((a, b) => a[1].localeCompare(b[1]));
+    const optHtml = '<option value="">- None -</option>' + pEntries.map(([id, nm]) => `<option value="${id}">${esc(nm)}</option>`).join('');
+    ['lsOnSel1', 'lsOnSel2', 'lsOffSel1', 'lsOffSel2'].forEach(elId => {
+      const el = document.getElementById(elId);
+      if (el && !el.options.length) el.innerHTML = optHtml;
+    });
+    const s1 = document.getElementById('lsOnSel1');
+    const s3 = document.getElementById('lsOffSel1');
+    if (s1 && !s1.value && pEntries.length >= 2) {
+      s1.value = pEntries[0][0];
+      s3.value = pEntries[1][0];
+    }
+    evalCustomOnOff();
+    return;
+  }
+
+  _lsTlUnits = Object.values(unitAcc)
+    .filter(u => u.totP >= 12)
+    .map(u => {
+      const net = ((u.offPts / Math.max(1, u.offP)) - (u.defPts / Math.max(1, u.defP))) * 100;
+      return { ...u, net, gameOrder, teamByGame };
+    })
+    .sort((a, b) => b.totP - a.totP)
+    .slice(0, 45);
+
+  sel.innerHTML = _lsTlUnits.map((u, idx) =>
+    `<option value="${idx}">${esc(u.label)} (${Math.round(u.totP / 2)} poss · ${u.net >= 0 ? '+' : ''}${u.net.toFixed(1)} NetRtg)</option>`
+  ).join('');
+  renderLineupTimeline();
+}
+
+function renderLineupTimeline() {
+  const c = document.getElementById('lsTimelineCanvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const W = c.width, H = c.height;
+  ctx.clearRect(0, 0, W, H);
+  const idx = Number(document.getElementById('lsTlSelect')?.value || 0);
+  const unit = _lsTlUnits.at(idx);
+  if (!unit) {
+    ctx.fillStyle = '#666'; ctx.font = '12px Lora, serif';
+    ctx.fillText('No play-by-play lineup timeline available for this season.', 24, 140);
+    return;
+  }
+
+  let cumTmOffP = 0, cumTmOffPts = 0, cumTmDefP = 0, cumTmDefPts = 0;
+  let cumUOffP = 0, cumUOffPts = 0, cumUDefP = 0, cumUDefPts = 0;
+  const series = [];
+
+  unit.gameOrder.forEach((g, i) => {
+    const tg = unit.teamByGame[g.id] || { offP: 0, offPts: 0, defP: 0, defPts: 0 };
+    cumTmOffP += tg.offP; cumTmOffPts += tg.offPts; cumTmDefP += tg.defP; cumTmDefPts += tg.defPts;
+    const rawTmNet = ((cumTmOffPts / Math.max(1, cumTmOffP)) - (cumTmDefPts / Math.max(1, cumTmDefP))) * 100;
+    const officialNet = Number((_lsLiteData?.teams || []).find(t => String(t.abbrev || '').toUpperCase() === 'MXC')?.netRtg);
+    const finalRaw = ((unit.gameOrder.reduce((s, x) => s + (unit.teamByGame[x.id]?.offPts || 0), 0) / Math.max(1, unit.gameOrder.reduce((s, x) => s + (unit.teamByGame[x.id]?.offP || 0), 0))) - (unit.gameOrder.reduce((s, x) => s + (unit.teamByGame[x.id]?.defPts || 0), 0) / Math.max(1, unit.gameOrder.reduce((s, x) => s + (unit.teamByGame[x.id]?.defP || 0), 0)))) * 100;
+    const calOffset = (isAllLevSelected() && !Number.isNaN(officialNet)) ? (officialNet - finalRaw) : 0;
+    const tmNet = rawTmNet + calOffset;
+
+    const ug = unit.byGame[g.id];
+    if (ug) { cumUOffP += ug.offP; cumUOffPts += ug.offPts; cumUDefP += ug.defP; cumUDefPts += ug.defPts; }
+    const uNet = (cumUOffP + cumUDefP) >= 6
+      ? (((cumUOffPts / Math.max(1, cumUOffP)) - (cumUDefPts / Math.max(1, cumUDefP))) * 100 + calOffset)
+      : null;
+    const gamePoss = ug ? Math.round((ug.offP + ug.defP) / 2) : 0;
+    const cumPoss = Math.round((cumUOffP + cumUDefP) / 2);
+    series.push({ gNum: i + 1, lbl: g.lbl, tmNet, uNet, active: Boolean(ug), gamePoss, cumPoss });
+  });
+
+  const pad = { l: 48, r: 24, t: 20, b: 34 };
+  const maxX = Math.max(51, series.length);
+  const validVals = series.flatMap(s => s.uNet != null ? [s.tmNet, Math.max(-45, Math.min(45, s.uNet))] : [s.tmNet]);
+  const minY = Math.min(-25, Math.min(...validVals) - 4);
+  const maxY = Math.max(25, Math.max(...validVals) + 4);
+  const sx = g => pad.l + ((g - 1) / Math.max(1, maxX - 1)) * (W - pad.l - pad.r);
+  const sy = v => H - pad.b - ((Math.max(minY, Math.min(maxY, v)) - minY) / Math.max(1e-6, maxY - minY)) * (H - pad.t - pad.b);
+
+  // Zero line & G1..G51 ticks
+  ctx.strokeStyle = '#e2e6ef'; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, sy(0)); ctx.lineTo(W - pad.r, sy(0)); ctx.stroke();
+  ctx.strokeStyle = '#000';
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.lineTo(W - pad.r, H - pad.b); ctx.stroke();
+
+  ctx.fillStyle = '#666'; ctx.font = '10px Oswald, sans-serif';
+  [1, 10, 17, 25, 34, 42, 51].forEach(gTick => {
+    const xPos = sx(gTick);
+    ctx.strokeStyle = '#eef1f6';
+    ctx.beginPath(); ctx.moveTo(xPos, pad.t); ctx.lineTo(xPos, H - pad.b); ctx.stroke();
+    ctx.fillText('G' + gTick, xPos - 8, H - 12);
+  });
+  ctx.fillText('0.0', 14, sy(0) + 3);
+  ctx.fillText('+' + Math.round(maxY), 12, pad.t + 8);
+  ctx.fillText(String(Math.round(minY)), 12, H - pad.b);
+
+  // Team Baseline curve (dashed gold/charcoal)
+  ctx.strokeStyle = '#d99b00'; ctx.lineWidth = 2; ctx.setLineDash([5, 4]);
+  ctx.beginPath();
+  series.forEach((s, i) => { if (i === 0) ctx.moveTo(sx(s.gNum), sy(s.tmNet)); else ctx.lineTo(sx(s.gNum), sy(s.tmNet)); });
+  ctx.stroke();
+  ctx.setLineDash(new Array());
+
+  // Lineup Cumulative NetRtg curve (solid blue)
+  ctx.strokeStyle = '#1d428a'; ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  let started = false;
+  series.forEach(s => {
+    if (s.uNet == null) return;
+    if (!started) { ctx.moveTo(sx(s.gNum), sy(s.uNet)); started = true; }
+    else ctx.lineTo(sx(s.gNum), sy(s.uNet));
+  });
+  ctx.stroke();
+
+  // Plot game dots where lineup played and cache screen coords for hover
+  const hitPts = [];
+  series.forEach(s => {
+    if (!s.active || s.uNet == null) return;
+    const px = sx(s.gNum), py = sy(s.uNet);
+    hitPts.push({ ...s, px, py });
+    ctx.fillStyle = s.uNet >= s.tmNet ? '#15803d' : '#b91c1c';
+    ctx.beginPath(); ctx.arc(px, py, 3.8, 0, Math.PI * 2); ctx.fill();
+  });
+  c._hitPts = hitPts;
+  if (!c._hoverBound) {
+    c._hoverBound = true;
+    c.addEventListener('mousemove', ev => {
+      const tip = document.getElementById('lsTlTooltip');
+      const pts = c._hitPts || [];
+      if (!tip || !pts.length) return;
+      const rect = c.getBoundingClientRect();
+      const mx = (ev.clientX - rect.left) * (c.width / rect.width);
+      const my = (ev.clientY - rect.top) * (c.height / rect.height);
+      let best = null, bestD = 26;
+      pts.forEach(pt => {
+        const d = Math.hypot(pt.px - mx, pt.py - my);
+        if (d < bestD) { bestD = d; best = pt; }
+      });
+      if (!best) { tip.style.display = 'none'; return; }
+      const rel = best.uNet - best.tmNet;
+      const relCol = rel >= 0 ? '#86efac' : '#fca5a5';
+      tip.innerHTML =
+        `<div style="font-family:'Oswald',sans-serif;font-weight:700;color:#fdb927;margin-bottom:2px;">G${best.gNum} · ${esc(best.lbl)}</div>` +
+        `<div>Cumulative Unit NetRtg: <strong>${best.uNet >= 0 ? '+' : ''}${best.uNet.toFixed(1)}</strong></div>` +
+        `<div>Team Baseline: <strong>${best.tmNet >= 0 ? '+' : ''}${best.tmNet.toFixed(1)}</strong> (<span style="color:${relCol};font-weight:700;">${rel >= 0 ? '+' : ''}${rel.toFixed(1)}</span>)</div>` +
+        `<div style="border-top:1px solid rgba(255,255,255,0.2);margin-top:3px;padding-top:3px;">Possessions: <strong>${best.gamePoss}</strong> this game · <strong>${best.cumPoss}</strong> total</div>`;
+      tip.style.display = 'block';
+      const relX = ev.clientX - rect.left;
+      const relY = ev.clientY - rect.top;
+      tip.style.left = Math.min(rect.width - tip.offsetWidth - 8, Math.max(8, relX + 12)) + 'px';
+      tip.style.top = Math.max(8, relY - tip.offsetHeight - 10) + 'px';
+    });
+    c.addEventListener('mouseleave', () => {
+      const tip = document.getElementById('lsTlTooltip');
+      if (tip) tip.style.display = 'none';
+    });
+  }
+
+  const lastS = series.at(-1);
+  const dispUnitNet = (lastS && lastS.uNet != null) ? lastS.uNet : unit.net;
+  const rel = (lastS && lastS.uNet != null) ? (lastS.uNet - lastS.tmNet) : 0;
+  document.getElementById('lsTimelineCaption').innerHTML =
+    `<span style="display:inline-block;width:12px;height:3px;background:#1d428a;vertical-align:middle;margin-right:4px;"></span><strong>Selected Unit Cumulative NetRtg:</strong> ${dispUnitNet >= 0 ? '+' : ''}${dispUnitNet.toFixed(1)} &nbsp;|&nbsp; ` +
+    `<span style="display:inline-block;width:12px;height:3px;background:#d99b00;vertical-align:middle;margin-right:4px;"></span><strong>Team Baseline NetRtg:</strong> ${lastS ? (lastS.tmNet >= 0 ? '+' : '') + lastS.tmNet.toFixed(1) : '-'} &nbsp;|&nbsp; ` +
+    `<strong>Relative to Team Baseline:</strong> <span style="font-weight:700;color:${rel >= 0 ? 'var(--green)' : 'var(--red)'};">${rel >= 0 ? '+' : ''}${rel.toFixed(1)} pts/100</span> (Green dots = games above team baseline, Red dots = games below team baseline; X-axis spans G1-G51).`;
+}
+
+
+window._lsAutoPaused = false;
+window._lsAuditSeg = 5;
+
+function setAuditSeg(sz) {
+  window._lsAuditSeg = sz;
+  document.querySelectorAll('[data-aseg]').forEach(b => b.classList.toggle('active', Number(b.dataset.aseg) === sz));
+  renderAuditSegment(sz);
+}
+
+function renderAuditSegment(sz) {
+  const map = window._lsAuditMap;
+  if (!map || !map[sz]) return;
+  const cur = map[sz];
+  const tmGp = cur.tmGp;
+  new Array('lsCard1Szn', 'lsCard2Szn', 'lsCard3Szn').forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = _lsSeason;
+  });
+
+  const negLow = cur.units.filter(u => u.possPg < cur.cutPg && u.net < 0).length;
+  document.getElementById('lsCard1Title').textContent = `Every MXC ${cur.short} Unit: Reps/G vs. Net Rating`;
+  document.getElementById('lsCard1Text').innerHTML = `Through <strong>${tmGp} games</strong> in <strong>${_lsSeason}</strong>, Mexico City has deployed <strong>${cur.units.length}</strong> distinct ${cur.lbl.toLowerCase()}, and <strong>${cur.lowUnits}</strong> of them never even clear <strong>${cur.cutPg} poss/g</strong> (shaded red).`;
+  document.getElementById('lsCard1Note').innerHTML = `<strong>Case-by-Case Receipt (${tmGp} GP):</strong> ${negLow} of MXC's ${cur.lowUnits} low-rep ${cur.short.toLowerCase()} (&lt;${cur.cutPg} poss/g) are underwater, dragging the roster at <strong>${cur.lowNet >= 0 ? '+' : ''}${cur.lowNet.toFixed(1)} NetRtg</strong> (<strong>${(cur.lowDiff / tmGp) >= 0 ? '+' : ''}${(cur.lowDiff / tmGp).toFixed(1)} pts/game</strong> across ${cur.lowPossPg.toFixed(1)} poss/g).`;
+
+  document.getElementById('lsCard2Text').innerHTML = `Top bar = MXC NetRtg in one-off per-game units; bottom bar = MXC NetRtg once a unit actually gets rotation reps (<strong>${tmGp} GP</strong>):`;
+  document.getElementById('lsCard2Note').innerHTML = `<strong>The Self-Inflicted Gap (${tmGp} GP):</strong> When Mexico City commits to ${cur.short.toLowerCase()} (${cur.cutPg}+ poss/g), they play at <strong>${cur.hiNet >= 0 ? '+' : ''}${cur.hiNet.toFixed(1)} NetRtg</strong>, while the &lt;${cur.cutPg} poss/g scrambles sit at <strong>${cur.lowNet >= 0 ? '+' : ''}${cur.lowNet.toFixed(1)}</strong> (a <strong>${(cur.hiNet - cur.lowNet) >= 0 ? '+' : ''}${(cur.hiNet - cur.lowNet).toFixed(1)}-point</strong> swing).`;
+
+  document.getElementById('lsCard3Title').textContent = `Where Capitanes Are Bleeding Margins (${cur.short})`;
+  const leakCol = cur.lowNet < 0 ? 'var(--red)' : 'var(--green)';
+  const ins = new Array(
+    `<strong>Unpracticed ${cur.short} (&lt;${cur.cutPg} poss/g):</strong> Mexico City is burning <strong>${cur.lowPossPg.toFixed(1)} poss/game</strong> on <strong>${cur.lowUnits}</strong> fragmented units at <strong style="color:${leakCol};">${cur.lowNet >= 0 ? '+' : ''}${cur.lowNet.toFixed(1)} NetRtg</strong> (${(cur.lowDiff / tmGp) >= 0 ? '+' : ''}${(cur.lowDiff / tmGp).toFixed(1)} pts/g).`,
+    `<strong>Core Rotation ${cur.short} (${cur.cutPg}+ poss/g):</strong> Units clearing the per-game floor log <strong>${cur.hiPossPg.toFixed(1)} poss/game</strong> at <strong style="color:${cur.hiNet >= 0 ? 'var(--green)' : 'var(--red)'};">${cur.hiNet >= 0 ? '+' : ''}${cur.hiNet.toFixed(1)} NetRtg</strong>.`
+  );
+  if (cur.worst) {
+    ins.push(`<strong>What Was This Unit Doing on the Floor?:</strong> <em>${esc(cur.worst.lbl)}</em> got outscored by <strong>${Math.abs(cur.worst.diff).toFixed(1)} pts</strong> in just <strong>${cur.worst.poss} possessions</strong> (${cur.worst.possPg.toFixed(1)} poss/g · ${cur.worst.net.toFixed(1)} NetRtg).`);
+  }
+  document.getElementById('lsAutoInsights').innerHTML = ins.map(t => `<div class="ls-insight-box">${t}</div>`).join('');
+
+  drawConceptCharts(cur, map);
+  drawQuarterChart(cur);
+}
+
+if (!window._lsAuditTimer) {
+  const order = new Array(5, 4, 3, 2);
+  window._lsAuditTimer = setInterval(() => {
+    if (window._lsAutoPaused || !window._lsAuditMap) return;
+    const nxt = order.at((order.indexOf(window._lsAuditSeg) + 1) % order.length);
+    setAuditSeg(nxt);
+  }, 5000);
+}
+
+function drawConceptCharts(cur, map) {
+  const c1 = document.getElementById('lsConcept1Canvas');
+  if (c1 && cur && cur.units.length) {
+    const ctx = c1.getContext('2d');
+    const W = c1.width, H = c1.height;
+    ctx.clearRect(0, 0, W, H);
+    const units = cur.units;
+    const maxPg = Math.max(cur.cutPg * 3, ...units.map(u => u.possPg));
+    const pad = { l: 34, r: 16, t: 14, b: 22 };
+    const sx = pg => pad.l + (Math.min(maxPg, pg) / maxPg) * (W - pad.l - pad.r);
+    const sy = n => H - pad.b - ((Math.max(-55, Math.min(55, n)) + 55) / 110) * (H - pad.t - pad.b);
+    const cutX = sx(cur.cutPg);
+
+    ctx.fillStyle = 'rgba(185, 28, 28, 0.10)';
+    ctx.fillRect(pad.l, pad.t, Math.max(4, cutX - pad.l), H - pad.t - pad.b);
+    ctx.strokeStyle = '#b91c1c'; ctx.setLineDash(new Array(3, 3)); ctx.lineWidth = 1.2;
+    ctx.beginPath(); ctx.moveTo(cutX, pad.t); ctx.lineTo(cutX, H - pad.b); ctx.stroke();
+    ctx.setLineDash(new Array());
+
+    ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, sy(0)); ctx.lineTo(W - pad.r, sy(0)); ctx.stroke();
+    ctx.strokeStyle = '#000';
+    ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H - pad.b); ctx.lineTo(W - pad.r, H - pad.b); ctx.stroke();
+
+    units.forEach(u => {
+      const x = sx(u.possPg), y = sy(u.net);
+      const isLow = u.possPg < cur.cutPg;
+      ctx.fillStyle = isLow ? (u.net < 0 ? '#b91c1c' : '#f59e0b') : (u.net >= 0 ? '#15803d' : '#1d428a');
+      ctx.beginPath(); ctx.arc(x, y, isLow ? 3.0 : 4.2, 0, Math.PI * 2); ctx.fill();
+    });
+
+    ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 9px Oswald, sans-serif';
+    ctx.fillText('<' + cur.cutPg + ' Poss/G', pad.l + 4, pad.t + 10);
+    ctx.fillStyle = '#555';
+    ctx.fillText('+50', 6, pad.t + 8);
+    ctx.fillText('0', 16, sy(0) + 3);
+    ctx.fillText('-50', 6, H - pad.b);
+    ctx.fillText('0.0/g', pad.l, H - 7);
+    ctx.fillText(maxPg.toFixed(1) + ' poss/g', W - pad.r - 44, H - 7);
+  }
+
+  const c2 = document.getElementById('lsConcept2Canvas');
+  if (c2 && map) {
+    const ctx = c2.getContext('2d');
+    const W = c2.width, H = c2.height;
+    ctx.clearRect(0, 0, W, H);
+    const rows = new Array(
+{ sz: 5, lbl: '5-Man (<1.5 vs 1.5+/g)', low: map[5].lowNet, hi: map[5].hiNet },
+{ sz: 4, lbl: 'Quads (<3.5 vs 3.5+/g)', low: map[4].lowNet, hi: map[4].hiNet },
+{ sz: 3, lbl: 'Trios (<6.5 vs 6.5+/g)', low: map[3].lowNet, hi: map[3].hiNet },
+{ sz: 2, lbl: 'Duos (<7.5 vs 7.5+/g)',  low: map[2].lowNet, hi: map[2].hiNet }
+);
+const zeroX = 215, padT = 8, padB = 10;
+const maxAbs = Math.max(15, ...rows.flatMap(r => new Array(Math.abs(r.low), Math.abs(r.hi))));
+const scale = 115 / maxAbs;
+const rowH = (H - padT - padB) / rows.length;
+ctx.strokeStyle = '#000'; ctx.lineWidth = 1.2;
+ctx.beginPath(); ctx.moveTo(zeroX, padT); ctx.lineTo(zeroX, H - padB); ctx.stroke();
+rows.forEach((r, i) => {
+const y = padT + i * rowH + 3;
+const bh = (rowH - 8) / 2;
+if (r.sz === cur.sz) {
+ctx.fillStyle = 'rgba(253, 185, 39, 0.16)';
+ctx.fillRect(0, y - 2, W, rowH - 2);
+}
+const wLow = Math.min(115, Math.abs(r.low) * scale);
+ctx.fillStyle = r.low < 0 ? '#b91c1c' : '#64748b';
+if (r.low < 0) ctx.fillRect(zeroX - wLow, y, Math.max(2, wLow), bh);
+else ctx.fillRect(zeroX, y, Math.max(2, wLow), bh);
+const wHi = Math.min(115, Math.abs(r.hi) * scale);
+ctx.fillStyle = r.hi >= 0 ? '#15803d' : '#1d428a';
+if (r.hi >= 0) ctx.fillRect(zeroX, y + bh + 1, Math.max(2, wHi), bh);
+else ctx.fillRect(zeroX - wHi, y + bh + 1, Math.max(2, wHi), bh);
+ctx.fillStyle = '#111'; ctx.font = 'bold 10px Oswald, sans-serif';
+ctx.fillText(r.lbl, 2, y + bh + 3);
+ctx.fillStyle = r.low < 0 ? '#b91c1c' : '#444'; ctx.font = 'bold 9px Oswald, sans-serif';
+ctx.fillText((r.low >= 0 ? '+' : '') + r.low.toFixed(1), r.low < 0 ? zeroX - wLow - 28 : zeroX + wLow + 4, y + bh - 1);
+ctx.fillStyle = r.hi >= 0 ? '#15803d' : '#1d428a';
+ctx.fillText((r.hi >= 0 ? '+' : '') + r.hi.toFixed(1), r.hi >= 0 ? zeroX + wHi + 4 : zeroX - wHi - 28, y + bh * 2 + 1);
+});
+}
+}
+setLsSeason(_lsSeason);
+</script>
+</body>
+</html>

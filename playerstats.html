@@ -1,6 +1,7 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
+<link rel="icon" href="data:,">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Player Stats — Capitanes In-Season Analytics</title>
@@ -29,7 +30,7 @@
         <button class="ps-sbtn" data-s="2025-26" onclick="setPsSeason('2025-26')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
       </div>
       <a href="inseason.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">← In-Season Dashboard</a>
-      <a href="shotcharts.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">⌖ Shot Charts (and more)</a>
+      <a href="lineupstudies.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">Lineup Studies</a> <a href="shotcharts.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">⌖ Shot Charts (and more)</a>
     </div>
   </div>
 </header>
@@ -42,23 +43,97 @@
     </div>
     <div style="display:flex;align-items:center;gap:8px;">
       <input id="psFilterInput" type="text" placeholder="Filter player or team..." oninput="renderPsPageTable()" style="font-size:12px;padding:4px 8px;border:1px solid var(--border);font-family:'Lora',serif;">
+      <button id="psQueryBtn" class="ps-pill" onclick="togglePsQuery()">+ Query Players</button>
+      <button id="psPickerBtn" class="ps-pill" onclick="togglePsPicker()">+ Select Metrics</button>
     </div>
   </div>
+  <div id="psQueryBox" style="display:none;background:var(--surface);border:1px solid var(--border);padding:8px 10px;margin-bottom:10px;"></div>
+  <div id="psPickerBox" style="display:none;background:var(--surface);border:1px solid var(--border);padding:8px 10px;margin-bottom:10px;"></div>
   <div style="overflow-x:auto;" id="psTableContainer">
     <div style="color:var(--muted);font-size:12px;">Loading player stats...</div>
   </div>
 </div>
 <script>
-let _psSeason = new URLSearchParams(location.search).get('season') || '2026-27';
+let _psSeason = new URLSearchParams(location.search).get('season') || localStorage.getItem('capitanes_season') || '2026-27';
 let _psScope = 'mxc';
-let _psSortCol = 'MIN';
+let _psSortCol = 'mpg';
 let _psSortAsc = false;
 let _psRows = [];
+let _psQueryOpen = false;
+let _psPickerOpen = false;
+let _psConditions = [{ metric: 'tsPct', mode: 'raw', op: '>=', val: '' }];
+let _psPctMap = {};
+let _psActiveConditions = [];
+
+const PS_METRICS = [
+  { id: 'gp',       lbl: 'GP',      grp: 'Volume',   fn: r => r.gp || '—' },
+  { id: 'mpg',      lbl: 'MPG',     grp: 'Volume',   fn: r => r.mpg != null ? r.mpg.toFixed(1) : '—' },
+  { id: 'min',      lbl: 'MIN',     grp: 'Volume',   fn: r => r.min != null ? r.min.toFixed(0) : '—' },
+  { id: 'poss',     lbl: 'POSS',    grp: 'Volume',   fn: r => r.poss != null ? Math.round(r.poss) : '—' },
+  { id: 'pts75',    lbl: 'PTS/75',  grp: 'Per-75',   fn: r => r.pts75 != null ? r.pts75.toFixed(1) : '—' },
+  { id: 'reb75',     lbl: 'REB/75',    grp: 'Rebounding', fn: r => r.reb75 != null ? r.reb75.toFixed(1) : '—' },
+  { id: 'pctReb',    lbl: '%REB',      grp: 'Rebounding', fn: r => r.pctReb != null ? r.pctReb.toFixed(1) + '%' : '—' },
+  { id: 'orebPct',   lbl: 'OREB%',     grp: 'Rebounding', fn: r => r.orebPct != null ? r.orebPct.toFixed(1) + '%' : '—' },
+  { id: 'drebPct',   lbl: 'DREB%',     grp: 'Rebounding', fn: r => r.drebPct != null ? r.drebPct.toFixed(1) + '%' : '—' },
+  { id: 'tmRebOnPct',lbl: 'TM REB%',   grp: 'Rebounding', fn: r => r.tmRebOnPct != null ? r.tmRebOnPct.toFixed(1) + '%' : '—' },
+  { id: 'orebOnOff', lbl: 'OREB +/-',  grp: 'Rebounding', fn: r => r.orebOnOff != null ? ((r.orebOnOff >= 0 ? '+' : '') + r.orebOnOff.toFixed(1) + '%') : '—', signed: true },
+  { id: 'drebOnOff', lbl: 'DREB +/-',  grp: 'Rebounding', fn: r => r.drebOnOff != null ? ((r.drebOnOff >= 0 ? '+' : '') + r.drebOnOff.toFixed(1) + '%') : '—', signed: true },
+  { id: 'rebOnOff',  lbl: 'REB +/-',   grp: 'Rebounding', fn: r => r.rebOnOff != null ? ((r.rebOnOff >= 0 ? '+' : '') + r.rebOnOff.toFixed(1) + '%') : '—', signed: true },
+  { id: 'stl75',    lbl: 'STL/75',   grp: 'Defense',  fn: r => r.stl75 != null ? r.stl75.toFixed(1) : '—' },
+  { id: 'blk75',    lbl: 'BLK/75',   grp: 'Defense',  fn: r => r.blk75 != null ? r.blk75.toFixed(1) : '—' },
+  { id: 'stocks75', lbl: 'STKS/75',  grp: 'Defense',  fn: r => r.stocks75 != null ? r.stocks75.toFixed(1) : '—' },
+  { id: 'stlPct',   lbl: 'STL%',     grp: 'Defense',  fn: r => r.stlPct != null ? r.stlPct.toFixed(1) + '%' : '—' },
+  { id: 'blkPct',   lbl: 'BLK%',     grp: 'Defense',  fn: r => r.blkPct != null ? r.blkPct.toFixed(1) + '%' : '—' },
+  { id: 'defOnOff', lbl: 'DEF +/-',  grp: 'Defense',  fn: r => r.defOnOff != null ? ((r.defOnOff >= 0 ? '+' : '') + r.defOnOff.toFixed(1)) : '—', signed: true },
+  { id: 'ast75',    lbl: 'AST/75',  grp: 'Passing',  fn: r => r.ast75 != null ? r.ast75.toFixed(1) : '—' },
+  { id: 'tov75',    lbl: 'TOV/75',  grp: 'Passing',  fn: r => r.tov75 != null ? r.tov75.toFixed(1) : '—' },
+  { id: 'astTo',    lbl: 'AST/TO',  grp: 'Passing',  fn: r => r.astTo != null ? r.astTo.toFixed(2) : '—' },
+  { id: 'astPct',   lbl: 'AST%',    grp: 'Passing',  fn: r => r.astPct != null ? r.astPct.toFixed(1) + '%' : '—' },
+  { id: 'astUsg',   lbl: 'AST/USG', grp: 'Passing',  fn: r => r.astUsg != null ? r.astUsg.toFixed(2) : '—' },
+  { id: 'pctFga',   lbl: '%FGA',    grp: 'Share',    fn: r => r.pctFga != null ? r.pctFga.toFixed(1) + '%' : '—' },
+  { id: 'pct3Pa',   lbl: '%3PA',    grp: 'Share',    fn: r => r.pct3Pa != null ? r.pct3Pa.toFixed(1) + '%' : '—' },
+  { id: 'pctFta',   lbl: '%FTA',    grp: 'Share',    fn: r => r.pctFta != null ? r.pctFta.toFixed(1) + '%' : '—' },
+  { id: 'pctTov',   lbl: '%TOV',    grp: 'Share',    fn: r => r.pctTov != null ? r.pctTov.toFixed(1) + '%' : '—' },
+  { id: 'tsPct',    lbl: 'TS%',     grp: 'Shooting', fn: r => r.tsPct != null ? r.tsPct.toFixed(1) + '%' : '—' },
+  { id: 'efg',      lbl: 'eFG%',    grp: 'Shooting', fn: r => r.efg != null ? r.efg.toFixed(1) + '%' : '—' },
+  { id: 'fg2Pct',   lbl: '2P%',     grp: 'Shooting', fn: r => r.fg2Pct != null ? r.fg2Pct.toFixed(1) + '%' : '—' },
+  { id: 'fg3Pct',   lbl: '3P%',     grp: 'Shooting', fn: r => r.fg3Pct != null ? r.fg3Pct.toFixed(1) + '%' : '—' },
+  { id: 'threePar', lbl: '3PAr',    grp: 'Shooting', fn: r => r.threePar != null ? r.threePar.toFixed(1) + '%' : '—' },
+  { id: 'ftr',      lbl: 'FTr',     grp: 'Shooting', fn: r => r.ftr != null ? r.ftr.toFixed(1) + '%' : '—' },
+  { id: 'tovPct',   lbl: 'TOV%',    grp: 'Shooting', fn: r => r.tovPct != null ? r.tovPct.toFixed(1) + '%' : '—' },
+  { id: 'rimFreq',  lbl: 'RIM Freq', grp: 'Zones',    fn: r => r.rimFreq != null ? r.rimFreq.toFixed(1) + '%' : '—' },
+  { id: 'rimPct',   lbl: 'RIM%',     grp: 'Zones',    fn: r => r.rimPct != null ? r.rimPct.toFixed(1) + '%' : '—' },
+  { id: 'pntFreq',  lbl: 'PNT Freq', grp: 'Zones',    fn: r => r.pntFreq != null ? r.pntFreq.toFixed(1) + '%' : '—' },
+  { id: 'pntPct',   lbl: 'PNT%',     grp: 'Zones',    fn: r => r.pntPct != null ? r.pntPct.toFixed(1) + '%' : '—' },
+  { id: 'midFreq',  lbl: 'MID Freq', grp: 'Zones',    fn: r => r.midFreq != null ? r.midFreq.toFixed(1) + '%' : '—' },
+  { id: 'midPct',   lbl: 'MID%',     grp: 'Zones',    fn: r => r.midPct != null ? r.midPct.toFixed(1) + '%' : '—' },
+  { id: 'c3Freq',   lbl: 'C3 Freq',  grp: 'Zones',    fn: r => r.c3Freq != null ? r.c3Freq.toFixed(1) + '%' : '—' },
+  { id: 'c3Pct',    lbl: 'C3%',      grp: 'Zones',    fn: r => r.c3Pct != null ? r.c3Pct.toFixed(1) + '%' : '—' },
+  { id: 'ab3Freq',  lbl: 'AB3 Freq', grp: 'Zones',    fn: r => r.ab3Freq != null ? r.ab3Freq.toFixed(1) + '%' : '—' },
+  { id: 'ab3Pct',   lbl: 'AB3%',     grp: 'Zones',    fn: r => r.ab3Pct != null ? r.ab3Pct.toFixed(1) + '%' : '—' },
+  { id: 'astdPct',  lbl: "AST'd%",  grp: 'Creation', fn: r => r.astdPct != null ? r.astdPct.toFixed(1) + '%' : '—' },
+  { id: 'unastdPct',lbl: "UNAST'd%",grp: 'Creation', fn: r => r.unastdPct != null ? r.unastdPct.toFixed(1) + '%' : '—' },
+  { id: 'fg2AstdPct',lbl: "2P AST'd%",grp: 'Creation', fn: r => r.fg2AstdPct != null ? r.fg2AstdPct.toFixed(1) + '%' : '—' },
+  { id: 'fg3AstdPct',lbl: "3P AST'd%",grp: 'Creation', fn: r => r.fg3AstdPct != null ? r.fg3AstdPct.toFixed(1) + '%' : '—' },
+  { id: 'unastPts75',lbl: 'UNAST/75',grp: 'Creation', fn: r => r.unastPts75 != null ? r.unastPts75.toFixed(1) : '—' },
+  { id: 'usg',      lbl: 'USG%',    grp: 'Impact',   fn: r => r.usg != null ? r.usg.toFixed(1) + '%' : '—' },
+  { id: 'ortg',     lbl: 'ORtg',    grp: 'Impact',   fn: r => r.ortg != null ? r.ortg.toFixed(1) : '—' },
+  { id: 'drtg',     lbl: 'DRtg',    grp: 'Impact',   fn: r => r.drtg != null ? r.drtg.toFixed(1) : '—' },
+  { id: 'netRtg',   lbl: 'NET',     grp: 'Impact',   fn: r => r.netRtg != null ? ((r.netRtg >= 0 ? '+' : '') + r.netRtg.toFixed(1)) : '—', signed: true },
+  { id: 'onOff',    lbl: 'ON/OFF',  grp: 'Impact',   fn: r => r.onOff != null ? ((r.onOff >= 0 ? '+' : '') + r.onOff.toFixed(1)) : '—', signed: true },
+  { id: 'dre',      lbl: 'DRE',     grp: 'Impact',   fn: r => r.dre != null ? ((r.dre >= 0 ? '+' : '') + r.dre.toFixed(1)) : '—', signed: true },
+  { id: 'offScripts',lbl:'OFF-SCRIPTS',grp:'Impact', url:'https://medium.com/@_Nile_/g-league-advantage-creation-or-off-scripts-offensive-self-creation-relevant-in-providing-team-580fcc01f77c', fn: r => r.offScripts != null ? r.offScripts.toFixed(3) : '—' },
+  { id: 'age',      lbl: 'AGE',     grp: 'Bio',      fn: r => r.age != null ? Number(r.age).toFixed(1) : '—' },
+  { id: 'height',   lbl: 'HT',      grp: 'Bio',      fn: r => r.height || '—', sortKey: 'heightIn' },
+  { id: 'weight',   lbl: 'WT',      grp: 'Bio',      fn: r => r.weight != null ? Math.round(r.weight) : '—' }
+];
+let _psSelectedCols = ['gp', 'mpg', 'offScripts', 'pts75', 'ast75', 'astPct', 'tsPct', 'usg', 'dre', 'netRtg'];
 
 function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function setPsSeason(s) {
   _psSeason = s;
+  localStorage.setItem('capitanes_season', s);
   document.getElementById('psSeasonLbl').textContent = s;
   document.querySelectorAll('.ps-sbtn').forEach(b => {
     const active = b.dataset.s === s;
@@ -70,14 +145,104 @@ function setPsSeason(s) {
 
 function setPsScope(sc, btn) {
   _psScope = sc;
-  document.querySelectorAll('.ps-pill').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('[data-scope]').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
-  loadPsPageData();
+  renderPsPageTable();
 }
 
 function sortPsBy(col) {
   if (_psSortCol === col) _psSortAsc = !_psSortAsc;
-  else { _psSortCol = col; _psSortAsc = false; }
+  else { _psSortCol = col; _psSortAsc = (col === 'name' || col === 'team'); }
+  renderPsPageTable();
+}
+
+function togglePsQuery() {
+  _psQueryOpen = !_psQueryOpen;
+  if (_psQueryOpen) { _psPickerOpen = false; document.getElementById('psPickerBox').style.display = 'none'; document.getElementById('psPickerBtn').classList.remove('active'); }
+  document.getElementById('psQueryBox').style.display = _psQueryOpen ? 'block' : 'none';
+  document.getElementById('psQueryBtn').classList.toggle('active', _psQueryOpen || _psActiveConditions.length > 0);
+  if (_psQueryOpen) renderPsQueryBox();
+}
+
+function togglePsPicker() {
+  _psPickerOpen = !_psPickerOpen;
+  if (_psPickerOpen) { _psQueryOpen = false; document.getElementById('psQueryBox').style.display = 'none'; document.getElementById('psQueryBtn').classList.toggle('active', _psActiveConditions.length > 0); }
+  document.getElementById('psPickerBox').style.display = _psPickerOpen ? 'block' : 'none';
+  document.getElementById('psPickerBtn').classList.toggle('active', _psPickerOpen);
+  if (_psPickerOpen) renderPsPicker();
+}
+
+function computePsPercentiles(rows) {
+  const lowerBetter = new Set(['tov75', 'tovPct', 'pctTov', 'drtg']);
+  _psPctMap = {};
+  PS_METRICS.forEach(m => {
+    const sk = m.sortKey || m.id;
+    const vals = rows.map(r => Number(r[sk])).filter(v => !Number.isNaN(v) && v != null);
+    vals.sort((a, b) => a - b);
+    _psPctMap[m.id] = { sorted: vals, lb: lowerBetter.has(m.id) };
+  });
+}
+
+function getPsPct(row, metricId) {
+  const m = PS_METRICS.find(x => x.id === metricId);
+  const sk = m?.sortKey || metricId;
+  const v = Number(row[sk]);
+  const info = _psPctMap[metricId];
+  if (row[sk] == null || Number.isNaN(v) || !info || !info.sorted.length) return null;
+  const arr = info.sorted;
+  let less = 0, eq = 0;
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i] < v) less++;
+    else if (Math.abs(arr[i] - v) < 1e-6) eq++;
+  }
+  const rawPct = ((less + 0.5 * eq) / arr.length) * 100;
+  return info.lb ? (100 - rawPct) : rawPct;
+}
+
+function renderPsQueryBox() {
+  const box = document.getElementById('psQueryBox');
+  const rowsHtml = _psConditions.map((c, i) => {
+    const opts = PS_METRICS.map(m => `<option value="${m.id}" ${c.metric === m.id ? 'selected' : ''}>${m.lbl}</option>`).join('');
+    const modes = [['raw', 'Raw'], ['pct', '%ile (0–100)']].map(([mv, ml]) => `<option value="${mv}" ${(c.mode || 'raw') === mv ? 'selected' : ''}>${ml}</option>`).join('');
+    const ops = ['>=', '<=', '>', '<', '='].map(op => `<option value="${op}" ${c.op === op ? 'selected' : ''}>${op}</option>`).join('');
+    const ph = (c.mode || 'raw') === 'pct' ? 'e.g. 80' : 'Value';
+    return `<div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;flex-wrap:wrap;">
+      <select onchange="_psConditions[${i}].metric=this.value" style="font-family:'Lora',serif;font-size:12px;padding:3px 6px;border:1px solid var(--border);background:#fff;">${opts}</select>
+      <select onchange="_psConditions[${i}].mode=this.value;renderPsQueryBox()" style="font-family:'Lora',serif;font-size:12px;padding:3px 6px;border:1px solid var(--border);background:#fff;">${modes}</select>
+      <select onchange="_psConditions[${i}].op=this.value" style="font-family:'Lora',serif;font-size:12px;padding:3px 6px;border:1px solid var(--border);background:#fff;">${ops}</select>
+      <input type="number" step="any" value="${esc(c.val)}" placeholder="${ph}" oninput="_psConditions[${i}].val=this.value" onkeydown="if(event.key==='Enter')runPsQuery()" style="width:90px;font-family:'Lora',serif;font-size:12px;padding:3px 6px;border:1px solid var(--border);background:#fff;">
+      <button class="ps-pill" style="padding:2px 8px;color:var(--red);" onclick="_psConditions.splice(${i},1);if(!_psConditions.length)_psConditions.push({metric:'tsPct',mode:'raw',op:'>=',val:''});renderPsQueryBox()">×</button>
+    </div>`;
+  }).join('');
+  box.innerHTML = rowsHtml + `<div style="display:flex;align-items:center;gap:6px;margin-top:6px;">
+    <button class="ps-pill" onclick="_psConditions.push({metric:'tsPct',mode:'pct',op:'>=',val:''});renderPsQueryBox()">+ Add Condition (AND)</button>
+    <button class="ps-pill active" onclick="runPsQuery()">Search</button>
+    <button class="ps-pill" style="color:var(--muted);" onclick="_psConditions=[{metric:'tsPct',mode:'raw',op:'>=',val:''}];_psActiveConditions=[];renderPsQueryBox();runPsQuery()">Clear</button>
+  </div>`;
+}
+
+function runPsQuery() {
+  _psActiveConditions = _psConditions.filter(c => c.val !== '' && !Number.isNaN(Number(c.val))).map(c => ({ metric: c.metric, mode: c.mode || 'raw', op: c.op, val: Number(c.val) }));
+  _psActiveConditions.forEach(c => { if (!_psSelectedCols.includes(c.metric)) _psSelectedCols.push(c.metric); });
+  const btn = document.getElementById('psQueryBtn');
+  btn.textContent = _psActiveConditions.length ? `+ Query Players (${_psActiveConditions.length})` : '+ Query Players';
+  btn.classList.toggle('active', _psQueryOpen || _psActiveConditions.length > 0);
+  renderPsPageTable();
+}
+
+function renderPsPicker() {
+  const box = document.getElementById('psPickerBox');
+  const groups = ['Volume', 'Per-75', 'Passing', 'Share', 'Rebounding', 'Shooting', 'Zones', 'Creation', 'Defense', 'Impact', 'Bio'];
+  box.innerHTML = `<div style="display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:8px;font-size:11.5px;">` +
+    groups.map(g => `<div><div style="font-family:'Oswald',sans-serif;font-weight:700;color:var(--blue);font-size:11px;margin-bottom:3px;">${g.toUpperCase()}</div>` +
+      PS_METRICS.filter(m => m.grp === g).map(m => `<label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-family:'Lora',serif;margin-bottom:2px;"><input type="checkbox" ${_psSelectedCols.includes(m.id) ? 'checked' : ''} onchange="togglePsCol('${m.id}')">${m.lbl}</label>`).join('') +
+    `</div>`).join('') + `</div>`;
+}
+
+function togglePsCol(id) {
+  const i = _psSelectedCols.indexOf(id);
+  if (i >= 0) { if (_psSelectedCols.length > 1) _psSelectedCols.splice(i, 1); }
+  else { _psSelectedCols.push(id); }
   renderPsPageTable();
 }
 
@@ -85,77 +250,246 @@ async function loadPsPageData() {
   const box = document.getElementById('psTableContainer');
   box.innerHTML = '<div style="color:var(--muted);font-size:12px;">Loading...</div>';
   try {
-    const [mexR, idxR, scR] = await Promise.all([
-      fetch(`data/mex_data_${_psSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    const [liteR, idxR, scR] = await Promise.all([
+      fetch(`data/league_lite_shots_${_psSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
       fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(() => []),
-      fetch(`data/shot_charts_${_psSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch(`data/shot_charts_${_psSeason}.json?v=` + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
-
-    const nameToId = {};
-    (Array.isArray(idxR) ? idxR : []).forEach(p => { if (p.name) nameToId[p.name.toLowerCase()] = p.id; });
-
-    const pbpExtra = {};
+    const astdById = {}, astdByName = {}, defOnOffById = {}, defOnOffByName = {}, rebPbpById = {}, rebPbpByName = {};
     if (scR && Array.isArray(scR.poss) && Array.isArray(scR.shots)) {
-      const pList = Array.isArray(scR.players) ? scR.players : Object.values(scR.players || {});
-      pList.forEach(pe => {
+      const allPoss = scR.poss;
+      const defPossAll = allPoss.filter(x => x.side === 'def');
+      const defPtsMap = {};
+      scR.shots.forEach(s => { if (s.side === 'def' && Number(s.made) === 1) { const k = s.gid + '_' + s.gord; defPtsMap[k] = (defPtsMap[k] || 0) + Number(s.val || 2); } });
+      (scR.fts || []).forEach(f => { if (f.side === 'def' && Number(f.made) === 1) { const k = f.gid + '_' + f.gord; defPtsMap[k] = (defPtsMap[k] || 0) + 1; } });
+      (Array.isArray(scR.players) ? scR.players : Object.values(scR.players || {})).forEach(pe => {
         const pid = Number(pe.id);
-        const offP = scR.poss.filter(x => x.side === 'off' && (x.on || []).includes(pid));
-        const defP = scR.poss.filter(x => x.side === 'def' && (x.on || []).includes(pid));
-        if (!offP.length) return;
-        const pSh = scR.shots.filter(s => s.side === 'off' && Number(s.pid) === pid);
-        const pFt = (scR.fts || []).filter(f => f.side === 'off' && Number(f.pid) === pid);
-        const pTov = (scR.turnovers || []).filter(t => t.side === 'off' && Number(t.pid) === pid);
-        const ftTrips = pFt.filter(f => /2 of 2|3 of 3/.test(String(f.sub || ''))).length;
-        const usg = ((pSh.length + pTov.length + ftTrips) / offP.length) * 100;
-        const offPts = scR.shots.filter(s => s.side === 'off' && s.made === 1 && (s.on || []).includes(pid)).reduce((a,s) => a + (s.val||2), 0)
-                     + (scR.fts || []).filter(f => f.side === 'off' && f.made === 1 && (f.on || []).includes(pid)).length;
-        const defPts = scR.shots.filter(s => s.side === 'def' && s.made === 1 && (s.on || []).includes(pid)).reduce((a,s) => a + (s.val||2), 0)
-                     + (scR.fts || []).filter(f => f.side === 'def' && f.made === 1 && (f.on || []).includes(pid)).length;
-        const net = (offPts / offP.length * 100) - (defPts / Math.max(1, defP.length) * 100);
-        pbpExtra[String(pe.name || '').toLowerCase()] = { usg, net, poss: Math.round((offP.length + defP.length) / 2) };
+        let onP = 0, onPts = 0, offP = 0, offPts = 0;
+        let onOffPoss = 0, onOreb = 0, offOffPoss = 0, offOreb = 0;
+        let onDefPoss = 0, onDreb = 0, offDefPoss = 0, offDreb = 0;
+        allPoss.forEach(px => {
+          const isOn = (px.on || []).includes(pid);
+          if (px.side === 'def') {
+            const pts = px.pts != null ? Number(px.pts) : (defPtsMap[px.gid + '_' + px.gord] || 0);
+            if (isOn) { onP++; onPts += pts; onDefPoss++; if (Number(px.dreb) === 1) onDreb++; }
+            else { offP++; offPts += pts; offDefPoss++; if (Number(px.dreb) === 1) offDreb++; }
+          } else if (px.side === 'off') {
+            if (isOn) { onOffPoss++; if (Number(px.oreb) === 1) onOreb++; }
+            else { offOffPoss++; if (Number(px.oreb) === 1) offOreb++; }
+          }
+        });
+        if (onP >= 15 && offP >= 15) {
+          const diff = (offPts / offP * 100) - (onPts / onP * 100);
+          defOnOffById[String(pid)] = diff;
+          defOnOffByName[String(pe.name || '').toLowerCase()] = diff;
+        }
+        if (onOffPoss >= 15 && offOffPoss >= 15 && onDefPoss >= 15 && offDefPoss >= 15) {
+          const onOrebPct = (onOreb / onOffPoss) * 100;
+          const offOrebPct = (offOreb / offOffPoss) * 100;
+          const onDrebPct = (onDreb / onDefPoss) * 100;
+          const offDrebPct = (offDreb / offDefPoss) * 100;
+          const onTotPct = ((onOreb + onDreb) / (onOffPoss + onDefPoss)) * 100;
+          const offTotPct = ((offOreb + offDreb) / (offOffPoss + offDefPoss)) * 100;
+          const rObj = {
+            orebPct: onOrebPct,
+            drebPct: onDrebPct,
+            tmRebOnPct: onTotPct,
+            orebOnOff: onOrebPct - offOrebPct,
+            drebOnOff: onDrebPct - offDrebPct,
+            rebOnOff: onTotPct - offTotPct
+          };
+          rebPbpById[String(pid)] = rObj;
+          rebPbpByName[String(pe.name || '').toLowerCase()] = rObj;
+        }
       });
     }
-
-    if (_psScope === 'mxc') {
-      const nl = mexR.nameLookup || {};
-      _psRows = (mexR.players || []).map(p => {
-        const rawNm = p.Player || p.PLAYER_NAME || '';
-        const nm = nl[rawNm] || rawNm;
-        const ex = pbpExtra[nm.toLowerCase()] || pbpExtra[rawNm.toLowerCase()] || {};
-        const gp = Number(p.GP || 0);
-        const min = Number(p.MIN || 0);
-        const pts = Number(p.PTS || 0);
-        const reb = Number(p.REB || 0);
-        const ast = Number(p.AST || 0);
-        const stl = Number(p.STL || 0);
-        const blk = Number(p.BLK || 0);
-        const tov = Number(p.TOV || 0);
-        const fga = Number(p.FGA || 0);
-        const fta = Number(p.FTA || 0);
-        const oreb = Number(p.OREB || 0);
-        const dreb = Number(p.DREB || 0);
-        const pf = Number(p.PF || 0);
-        const poss = ex.poss || Math.max(1, min * 2.08);
-        const dre = (100 / poss) * (0.792*pts - 0.719*fga - 0.299*fta + 0.132*oreb + 0.395*dreb + 0.544*ast + 1.662*stl + 0.764*blk - 0.844*tov - 0.156*pf);
-        return {
-          name: nm, id: nameToId[nm.toLowerCase()], team: 'MXC',
-          GP: gp, MIN: min, PPG: gp ? pts/gp : 0, RPG: gp ? reb/gp : 0, APG: gp ? ast/gp : 0,
-          FG_PCT: (p.FG_PCT || 0) * 100, FG3_PCT: (p.FG3_PCT || 0) * 100, FT_PCT: (p.FT_PCT || 0) * 100,
-          TS_PCT: (fga + 0.44*fta) ? (pts / (2*(fga + 0.44*fta))) * 100 : 0,
-          USG: ex.usg ?? ((p.USG_PCT || 0) * 100),
-          DRE: dre,
-          NET: ex.net ?? (p.NET_RATING ?? 0)
-        };
+    if (scR && Array.isArray(scR.shots)) {
+      const defPossAll = scR.poss.filter(x => x.side === 'def');
+      const defPtsMap = {};
+      scR.shots.forEach(s => { if (s.side === 'def' && Number(s.made) === 1) { const k = s.gid + '_' + s.gord; defPtsMap[k] = (defPtsMap[k] || 0) + Number(s.val || 2); } });
+      (scR.fts || []).forEach(f => { if (f.side === 'def' && Number(f.made) === 1) { const k = f.gid + '_' + f.gord; defPtsMap[k] = (defPtsMap[k] || 0) + 1; } });
+      (Array.isArray(scR.players) ? scR.players : Object.values(scR.players || {})).forEach(pe => {
+        const pid = Number(pe.id);
+        let onP = 0, onPts = 0, offP = 0, offPts = 0;
+        defPossAll.forEach(px => {
+          const pts = px.pts != null ? Number(px.pts) : (defPtsMap[px.gid + '_' + px.gord] || 0);
+          if ((px.on || []).includes(pid)) { onP++; onPts += pts; } else { offP++; offPts += pts; }
+        });
+        if (onP >= 15 && offP >= 15) {
+          const diff = (offPts / offP * 100) - (onPts / onP * 100);
+          defOnOffById[String(pid)] = diff;
+          defOnOffByName[String(pe.name || '').toLowerCase()] = diff;
+        }
       });
-    } else {
-      const ros = await fetch('data/gleague_roster_2026-27.json?v=' + Date.now()).then(r => r.ok ? r.json() : { players: [] }).catch(() => ({ players: [] }));
-      const n2t = ros.nameToTeam || {};
-      _psRows = (Array.isArray(idxR) ? idxR : []).filter(p => p.name && (n2t[p.name.toLowerCase()] || p.onRoster)).map(p => ({
-        name: p.name, id: p.id, team: p.onRoster ? 'MXC' : (n2t[p.name.toLowerCase()] || '—'),
-        GP: p.gp || 0, MIN: p.min || 0, PPG: p.ppg || 0, RPG: p.rpg || 0, APG: p.apg || 0,
-        FG_PCT: (p.fgPct || 0) * 100, FG3_PCT: (p.fg3Pct || 0) * 100, FT_PCT: (p.ftPct || 0) * 100,
-        TS_PCT: (p.tsPct || 0) * 100, USG: (p.usgPct || 0) * 100, DRE: p.dre || 0, NET: p.netRtg || 0
-      }));
+    }
+    if (scR && Array.isArray(scR.shots)) {
+      const pMap = {};
+      (Array.isArray(scR.players) ? scR.players : Object.values(scR.players || {})).forEach(pe => { pMap[String(pe.id)] = String(pe.name || '').toLowerCase(); });
+      const acc = {};
+      scR.shots.forEach(s => {
+        if (Number(s.made) !== 1) return;
+        const pid = String(s.pid || '');
+        const key = pid || String(s.shooter || '').toLowerCase();
+        if (!key) return;
+        if (!acc[key]) acc[key] = { fgm: 0, astd: 0, fg2m: 0, fg2Astd: 0, fg3m: 0, fg3Astd: 0, unastPts: 0 };
+        const isA = Number(s.astd) === 1;
+        const val = Number(s.val || 2);
+        acc[key].fgm += 1;
+        if (isA) acc[key].astd += 1;
+        else acc[key].unastPts += val;
+        if (val === 3) { acc[key].fg3m += 1; if (isA) acc[key].fg3Astd += 1; }
+        else { acc[key].fg2m += 1; if (isA) acc[key].fg2Astd += 1; }
+      });
+      Object.entries(acc).forEach(([k, v]) => {
+        const res = {
+          astdPct: v.fgm > 0 ? (v.astd / v.fgm) * 100 : null,
+          unastdPct: v.fgm > 0 ? ((v.fgm - v.astd) / v.fgm) * 100 : null,
+          fg2AstdPct: v.fg2m > 0 ? (v.fg2Astd / v.fg2m) * 100 : null,
+          fg3AstdPct: v.fg3m > 0 ? (v.fg3Astd / v.fg3m) * 100 : null,
+          unastPts: v.unastPts
+        };
+        astdById[k] = res;
+        if (pMap[k]) astdByName[pMap[k]] = res;
+      });
+    }
+    const nameToId = {};
+    (Array.isArray(idxR) ? idxR : []).forEach(p => { if (p.name) nameToId[p.name.toLowerCase()] = p.id; });
+    const zonesById = {}, zonesByName = {};
+    (liteR?.players || []).forEach(zp => {
+      if (!zp.zones) return;
+      const z = zp.zones;
+      const sumZ = keys => keys.reduce((acc, k) => {
+        const pair = z[k] || new Array(0, 0);
+        return new Array(acc.at(0) + Number(pair.at(0) || 0), acc.at(1) + Number(pair.at(1) || 0));
+      }, new Array(0, 0));
+      const rim = sumZ(new Array('Restricted Area'));
+      const pnt = sumZ(new Array('Paint (Non-RA)'));
+      const mid = sumZ(new Array('Left Baseline Mid', 'Left Elbow / Wing Mid', 'Center Mid-Range', 'Right Elbow / Wing Mid', 'Right Baseline Mid'));
+      const c3  = sumZ(new Array('Left Corner 3', 'Right Corner 3'));
+      const ab3 = sumZ(new Array('Left Wing 3', 'Center / Top 3', 'Right Wing 3'));
+      const totA = rim.at(1) + pnt.at(1) + mid.at(1) + c3.at(1) + ab3.at(1);
+      const zObj = {
+        rimFreq: totA > 0 ? (rim.at(1) / totA) * 100 : null, rimPct: rim.at(1) > 0 ? (rim.at(0) / rim.at(1)) * 100 : null,
+        pntFreq: totA > 0 ? (pnt.at(1) / totA) * 100 : null, pntPct: pnt.at(1) > 0 ? (pnt.at(0) / pnt.at(1)) * 100 : null,
+        midFreq: totA > 0 ? (mid.at(1) / totA) * 100 : null, midPct: mid.at(1) > 0 ? (mid.at(0) / mid.at(1)) * 100 : null,
+        c3Freq:  totA > 0 ? (c3.at(1)  / totA) * 100 : null, c3Pct:  c3.at(1)  > 0 ? (c3.at(0)  / c3.at(1))  * 100 : null,
+        ab3Freq: totA > 0 ? (ab3.at(1) / totA) * 100 : null, ab3Pct: ab3.at(1) > 0 ? (ab3.at(0) / ab3.at(1)) * 100 : null
+      };
+      if (zp.id != null) zonesById[String(zp.id)] = zObj;
+      if (zp.name) zonesByName[String(zp.name).toLowerCase()] = zObj;
+    });
+    const out = [];
+    (liteR?.teams || []).forEach(tm => {
+      const ab = String(tm.abbrev || '').toUpperCase();
+      const rsList = tm.rosterStats || [];
+      const tmMin = rsList.reduce((s, x) => s + Number(x.min ?? 0), 0);
+      const tmReb = rsList.reduce((s, x) => s + Number(x.reb ?? 0), 0);
+      const tmFgm = rsList.reduce((s, x) => s + Number(x.fgm ?? 0), 0);
+      const tmFga = rsList.reduce((s, x) => s + Number(x.fga ?? 0), 0);
+      const tm3Pa = rsList.reduce((s, x) => s + Number(x.fg3a ?? 0), 0);
+      const tmFta = rsList.reduce((s, x) => s + Number(x.fta ?? 0), 0);
+      const tmTov = rsList.reduce((s, x) => s + Number(x.tov ?? 0), 0);
+      const tmPoss = rsList.reduce((s, x) => s + Number(x.poss ?? 0), 0) / 5;
+      const opp2PaEst = Math.max(1, tmPoss * 0.56);
+      rsList.forEach(rp => {
+        const gp = Number(rp.gp ?? 0), min = Number(rp.min ?? 0);
+        const mpg = rp.mpg != null ? Number(rp.mpg) : (gp > 0 ? min / gp : 0);
+        const poss = Number(rp.poss ?? 0), pts = Number(rp.pts ?? 0);
+        const fga = Number(rp.fga ?? 0), fgm = Number(rp.fgm ?? 0), fg3m = Number(rp.fg3m ?? 0), fta = Number(rp.fta ?? 0);
+        const reb = Number(rp.reb ?? 0), ast = Number(rp.ast ?? 0), stl = Number(rp.stl ?? 0), blk = Number(rp.blk ?? 0), tov = Number(rp.tov ?? 0);
+        const efg = fga > 0 ? ((fgm + 0.5 * fg3m) / fga) * 100 : null;
+        const tovPct = (fga + 0.44 * fta + tov) > 0 ? (tov / (fga + 0.44 * fta + tov)) * 100 : null;
+        const dre = poss > 0 ? (100 / poss) * (0.792 * pts - 0.719 * fga - 0.299 * fta + 0.145 * reb + 0.369 * ast + 1.662 * stl + 0.696 * blk - 0.844 * tov) : null;
+        const ac = astdById[String(rp.id || '')] || astdByName[String(rp.name || '').toLowerCase()] || {};
+        const dDiff = defOnOffById[String(rp.id || '')] ?? defOnOffByName[String(rp.name || '').toLowerCase()] ?? null;
+        const rb = rebPbpById[String(rp.id || '')] || rebPbpByName[String(rp.name || '').toLowerCase()] || {};
+        const zn = zonesById[String(rp.id || '')] || zonesByName[String(rp.name || '').toLowerCase()] || {};
+        const s75 = rp.stl75 != null ? Number(rp.stl75) : null;
+        const b75 = rp.blk75 != null ? Number(rp.blk75) : null;
+        const minShare = (min > 0 && tmMin > 0) ? (min / (tmMin / 5)) : 0;
+        const pctReb = (minShare > 0 && tmReb > 0) ? (100 * reb) / (minShare * tmReb) : null;
+        const pctFga = (minShare > 0 && tmFga > 0) ? (100 * fga) / (minShare * tmFga) : null;
+        const pct3Pa = (minShare > 0 && tm3Pa > 0) ? (100 * Number(rp.fg3a ?? 0)) / (minShare * tm3Pa) : null;
+        const pctFta = (minShare > 0 && tmFta > 0) ? (100 * fta) / (minShare * tmFta) : null;
+        const pctTov = (minShare > 0 && tmTov > 0) ? (100 * tov) / (minShare * tmTov) : null;
+        out.push({
+          rimFreq: zn.rimFreq ?? null, rimPct: zn.rimPct ?? null,
+          pntFreq: zn.pntFreq ?? null, pntPct: zn.pntPct ?? null,
+          midFreq: zn.midFreq ?? null, midPct: zn.midPct ?? null,
+          c3Freq: zn.c3Freq ?? null, c3Pct: zn.c3Pct ?? null,
+          ab3Freq: zn.ab3Freq ?? null, ab3Pct: zn.ab3Pct ?? null,
+          pctReb,
+          orebPct: rb.orebPct ?? null,
+          drebPct: rb.drebPct ?? null,
+          tmRebOnPct: rb.tmRebOnPct ?? null,
+          orebOnOff: rb.orebOnOff ?? null,
+          drebOnOff: rb.drebOnOff ?? null,
+          rebOnOff: rb.rebOnOff ?? null,
+          pctFga, pct3Pa, pctFta, pctTov,
+          offScripts: null,
+          stocks75: (s75 != null && b75 != null) ? (s75 + b75) : null,
+          stlPct: (min > 0 && tmMin > 0 && tmPoss > 0) ? (100 * (stl * (tmMin / 5)) / (min * tmPoss)) : null,
+          blkPct: (min > 0 && tmMin > 0 && opp2PaEst > 0) ? (100 * (blk * (tmMin / 5)) / (min * opp2PaEst)) : null,
+          defOnOff: dDiff,
+          id: nameToId[String(rp.name || '').toLowerCase()] || rp.id || '',
+          astdPct: ac.astdPct ?? null,
+          unastdPct: ac.unastdPct ?? null,
+          fg2AstdPct: ac.fg2AstdPct ?? null,
+          fg3AstdPct: ac.fg3AstdPct ?? null,
+          unastPts75: (ac.unastPts != null && poss > 0) ? (ac.unastPts / poss) * 75 : null,
+          name: rp.name || '', team: ab, gp, min, mpg, poss,
+          efg, tovPct, dre,
+          astTo: tov > 0 ? (ast / tov) : (ast > 0 ? ast : null),
+          astPct: (min > 0 && tmMin > 0 && tmFgm > 0) ? Math.max(0, Math.min(100, (100 * ast) / Math.max(1, ((min / (tmMin / 5)) * tmFgm) - fgm))) : null,
+          astUsg: (rp.ast75 != null && rp.usg != null && Number(rp.usg) > 0) ? (Number(rp.ast75) / Number(rp.usg)) : null,
+          pts75: rp.pts75 != null ? Number(rp.pts75) : null, reb75: rp.reb75 != null ? Number(rp.reb75) : null,
+          ast75: rp.ast75 != null ? Number(rp.ast75) : null, tov75: rp.tov75 != null ? Number(rp.tov75) : null,
+          stl75: rp.stl75 != null ? Number(rp.stl75) : null, blk75: rp.blk75 != null ? Number(rp.blk75) : null,
+          tsPct: rp.tsPct != null ? Number(rp.tsPct) : null, fg2Pct: rp.fg2Pct != null ? Number(rp.fg2Pct) : null,
+          fg3Pct: rp.fg3Pct != null ? Number(rp.fg3Pct) : null, threePar: rp.threePar != null ? Number(rp.threePar) : null,
+          ftr: rp.ftr != null ? Number(rp.ftr) : null, usg: rp.usg != null ? Number(rp.usg) : null,
+          ortg: rp.ortg != null ? Number(rp.ortg) : null, drtg: rp.drtg != null ? Number(rp.drtg) : null,
+          netRtg: rp.netRtg != null ? Number(rp.netRtg) : null, onOff: rp.onOff != null ? Number(rp.onOff) : null,
+          age: rp.age != null ? Number(rp.age) : null, height: rp.height || null,
+          heightIn: rp.heightIn != null ? Number(rp.heightIn) : null, weight: rp.weight != null ? Number(rp.weight) : null
+        });
+      });
+    });
+    const rank01 = (arr, val, inv) => {
+      if (val == null || Number.isNaN(Number(val)) || !arr.length) return null;
+      let less = 0, eq = 0;
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i] < val) less++;
+        else if (Math.abs(arr[i] - val) < 1e-6) eq++;
+      }
+      const p = (less + 0.5 * eq) / arr.length;
+      return inv ? (1 - p) : p;
+    };
+    const mkPool = fn => out.map(fn).filter(v => v != null && !Number.isNaN(Number(v))).sort((a, b) => a - b);
+    const pOrtg = mkPool(r => r.ortg);
+    const pFga  = mkPool(r => r.pctFga);
+    const p3pa  = mkPool(r => r.pct3Pa);
+    const pFta  = mkPool(r => r.pctFta);
+    const pAst  = mkPool(r => r.astPct);
+    const pTov  = mkPool(r => r.pctTov);
+    const pUast = mkPool(r => r.unastdPct);
+    out.forEach(r => {
+      const r1 = rank01(pOrtg, r.ortg, false);
+      const r2 = rank01(pFga,  r.pctFga, false);
+      const r3 = rank01(p3pa,  r.pct3Pa, false);
+      const r4 = rank01(pFta,  r.pctFta, false);
+      const r5 = rank01(pAst,  r.astPct, false);
+      const r6 = rank01(pTov,  r.pctTov, true);
+      const r7 = rank01(pUast, r.unastdPct, false);
+      if (r1 != null && r2 != null && r3 != null && r4 != null && r5 != null && r6 != null && r7 != null) {
+        r.offScripts = 0.25 * r1 + 0.50 * r2 + 0.50 * r3 + 0.50 * r4 + 1.50 * r5 + 1.00 * r6 + 1.50 * r7;
+      }
+    });
+    _psRows = out;
+    computePsPercentiles(out);
+    if (_psScope === 'mxc' && !out.some(r => r.team === 'MXC' && r.gp > 0) && out.length > 0) {
+      _psScope = 'league';
+      document.querySelectorAll('[data-scope]').forEach(b => b.classList.toggle('active', b.dataset.scope === 'league'));
     }
     renderPsPageTable();
   } catch (e) {
@@ -165,37 +499,44 @@ async function loadPsPageData() {
 
 function renderPsPageTable() {
   const q = (document.getElementById('psFilterInput')?.value || '').trim().toLowerCase();
-  let rows = _psRows.filter(r => !q || r.name.toLowerCase().includes(q) || r.team.toLowerCase().includes(q));
+  let rows = _psRows.filter(r => {
+    if (_psScope === 'mxc' && r.team !== 'MXC') return false;
+    if (q && !r.name.toLowerCase().includes(q) && !r.team.toLowerCase().includes(q)) return false;
+    if (_psActiveConditions.length) {
+      return _psActiveConditions.every(c => {
+        const v = c.mode === 'pct' ? getPsPct(r, c.metric) : r[c.metric];
+        if (v == null || Number.isNaN(Number(v))) return false;
+        if (c.op === '>=') return v >= c.val; if (c.op === '<=') return v <= c.val;
+        if (c.op === '>') return v > c.val; if (c.op === '<') return v < c.val;
+        return Math.abs(v - c.val) < 1e-6;
+      });
+    }
+    return true;
+  });
+  const activeDefs = _psSelectedCols.map(id => PS_METRICS.find(m => m.id === id)).filter(Boolean);
+  const sortDef = PS_METRICS.find(m => m.id === _psSortCol);
+  const sk = sortDef?.sortKey || _psSortCol;
   rows.sort((a, b) => {
-    const va = a[_psSortCol] ?? -999, vb = b[_psSortCol] ?? -999;
+    const va = a[sk] ?? -999, vb = b[sk] ?? -999;
     if (typeof va === 'string') return _psSortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
     return _psSortAsc ? va - vb : vb - va;
   });
-
-  const cols = [
-    ['name','PLAYER'],['team','TEAM'],['GP','GP'],['MIN','MIN'],['PPG','PPG'],['RPG','RPG'],['APG','APG'],
-    ['FG_PCT','FG%'],['FG3_PCT','3P%'],['FT_PCT','FT%'],['TS_PCT','TS%'],['USG','USG%'],['DRE','DRE'],['NET','NetRtg']
-  ];
-  const thead = `<tr>${cols.map(([k, lbl]) => `<th onclick="sortPsBy('${k}')">${lbl}${_psSortCol===k ? (_psSortAsc?' ▲':' ▼') : ''}</th>`).join('')}</tr>`;
+  const thead = `<tr><th onclick="sortPsBy('name')">PLAYER${_psSortCol==='name'?(_psSortAsc?' ▲':' ▼'):''}</th><th onclick="sortPsBy('team')">TEAM${_psSortCol==='team'?(_psSortAsc?' ▲':' ▼'):''}</th>${activeDefs.map(m => `<th onclick="sortPsBy('${m.id}')">${m.url ? `<a href="${m.url}" target="_blank" rel="noopener" onclick="event.stopPropagation()" title="Read OFF-SCRIPTS methodology on Medium" style="color:var(--blue);text-decoration:underline;">${m.lbl} ↗</a>` : m.lbl}${_psSortCol===m.id?(_psSortAsc?' ▲':' ▼'):''}</th>`).join('')}</tr>`;
   const tbody = rows.map(r => {
     const href = r.id ? `player.html?id=${encodeURIComponent(r.id)}` : `player.html?name=${encodeURIComponent(r.name)}`;
-    const netCol = r.NET > 0 ? 'var(--green)' : (r.NET < 0 ? 'var(--red)' : 'inherit');
-    const dreCol = r.DRE > 0 ? 'var(--green)' : (r.DRE < 0 ? 'var(--red)' : 'inherit');
-    return `<tr>
-      <td><a href="${href}" style="font-weight:700;color:var(--blue);text-decoration:none;">${esc(r.name)}</a></td>
-      <td style="font-weight:700;color:var(--muted);">${esc(r.team)}</td>
-      <td>${r.GP}</td><td>${r.MIN.toFixed(0)}</td>
-      <td style="font-weight:700;">${r.PPG.toFixed(1)}</td><td>${r.RPG.toFixed(1)}</td><td>${r.APG.toFixed(1)}</td>
-      <td>${r.FG_PCT.toFixed(1)}%</td><td>${r.FG3_PCT.toFixed(1)}%</td><td>${r.FT_PCT.toFixed(1)}%</td>
-      <td>${r.TS_PCT.toFixed(1)}%</td><td>${r.USG.toFixed(1)}%</td>
-      <td style="font-weight:700;color:${dreCol};">${r.DRE >= 0 ? '+' : ''}${r.DRE.toFixed(1)}</td>
-      <td style="font-weight:700;color:${netCol};">${r.NET >= 0 ? '+' : ''}${r.NET.toFixed(1)}</td>
-    </tr>`;
+    const pctQueried = new Set(_psActiveConditions.filter(c => c.mode === 'pct').map(c => c.metric));
+    const tds = activeDefs.map(m => {
+      const val = m.fn(r);
+      const pVal = getPsPct(r, m.id);
+      const pTitle = pVal != null ? `${Math.round(pVal)}th %ile leaguewide` : '';
+      const pSup = pctQueried.has(m.id) && pVal != null ? `<sup style="font-size:8.5px;color:var(--blue);font-weight:700;margin-left:1px;">${Math.round(pVal)}</sup>` : '';
+      const col = m.signed && typeof val === 'string' && (val.startsWith('+') || val.startsWith('-')) ? (val.startsWith('+') ? 'font-weight:700;color:var(--green);' : 'font-weight:700;color:var(--red);') : '';
+      return `<td title="${pTitle}" style="${col}">${val}${pSup}</td>`;
+    }).join('');
+    return `<tr><td><a href="${href}" style="font-weight:700;color:var(--blue);text-decoration:none;">${esc(r.name)}</a></td><td style="font-weight:700;color:var(--muted);">${esc(r.team)}</td>${tds}</tr>`;
   }).join('');
-
-  document.getElementById('psTableContainer').innerHTML = `<table class="ps-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>`;
+  document.getElementById('psTableContainer').innerHTML = rows.length ? `<table class="ps-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>` : `<div style="color:var(--muted);font-size:12px;padding:12px 0;">No players match your filter or query conditions.</div>`;
 }
-
 setPsSeason(_psSeason);
 </script>
 </body>

@@ -28,6 +28,7 @@
       <div style="display:flex;border:1px solid var(--border);overflow:hidden;">
         <button class="ps-sbtn" data-s="2026-27" onclick="setPsSeason('2026-27')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:var(--blue);color:#fff;">2026-27</button>
         <button class="ps-sbtn" data-s="2025-26" onclick="setPsSeason('2025-26')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
+      <button id="psLevBtn" onclick="togglePsLowLev()" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:4px 9px;border:1px solid var(--border);cursor:pointer;"></button>
       </div>
       <a href="inseason.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">← In-Season Dashboard</a>
       <a href="lineupstudies.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;white-space:nowrap;">Lineup Studies</a> <a href="shotcharts.html" style="background:var(--yellow);color:var(--blue);font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;padding:5px 12px;">⌖ Shot Charts (and more)</a>
@@ -54,6 +55,47 @@
   </div>
 </div>
 <script>
+window._psExcludeLowLev = localStorage.getItem('capitanes_exclude_low_lev') !== 'false';
+(function() {
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = async function(input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    const resp = await _origFetch(input, init);
+    if (window._psExcludeLowLev && url.includes('shot_charts_') && resp && resp.ok) {
+      const data = await resp.clone().json().catch(() => null);
+      if (data && Array.isArray(data.poss)) {
+        const keep = x => String(x?.lev || 'med') !== 'low';
+        const filtered = {
+          ...data,
+          poss: data.poss.filter(keep),
+          shots: (data.shots || []).filter(keep),
+          fts: (data.fts || []).filter(keep),
+          turnovers: (data.turnovers || []).filter(keep),
+          events: (data.events || []).filter(keep)
+        };
+        return new Response(JSON.stringify(filtered), {
+          status: resp.status,
+          statusText: resp.statusText,
+          headers: new Headers({ 'Content-Type': 'application/json' })
+        });
+      }
+    }
+    return resp;
+  };
+})();
+function togglePsLowLev() {
+  window._psExcludeLowLev = !window._psExcludeLowLev;
+  localStorage.setItem('capitanes_exclude_low_lev', String(window._psExcludeLowLev));
+  const b = document.getElementById('psLevBtn');
+  if (b) {
+    b.textContent = window._psExcludeLowLev ? 'Low-Lev: Dropped' : 'Low-Lev: Included';
+    b.style.background = window._psExcludeLowLev ? 'var(--blue)' : '#fff';
+    b.style.color = window._psExcludeLowLev ? '#fff' : 'var(--muted)';
+  }
+  loadPsPageData();
+}
+</script>
+<script>
 let _psSeason = new URLSearchParams(location.search).get('season') || localStorage.getItem('capitanes_season') || '2026-27';
 let _psScope = 'mxc';
 let _psSortCol = 'mpg';
@@ -72,6 +114,8 @@ const PS_METRICS = [
   { id: 'poss',     lbl: 'POSS',    grp: 'Volume',   fn: r => r.poss != null ? Math.round(r.poss) : '—' },
   { id: 'pts75',    lbl: 'PTS/75',  grp: 'Per-75',   fn: r => r.pts75 != null ? r.pts75.toFixed(1) : '—' },
   { id: 'reb75',     lbl: 'REB/75',    grp: 'Rebounding', fn: r => r.reb75 != null ? r.reb75.toFixed(1) : '—' },
+  { id: 'oreb75',   lbl: 'OREB/75', grp: 'Rebounding', fn: r => r.oreb75 != null ? r.oreb75.toFixed(1) : '—' },
+  { id: 'dreb75',   lbl: 'DREB/75', grp: 'Rebounding', fn: r => r.dreb75 != null ? r.dreb75.toFixed(1) : '—' },
   { id: 'pctReb',    lbl: '%REB',      grp: 'Rebounding', fn: r => r.pctReb != null ? r.pctReb.toFixed(1) + '%' : '—' },
   { id: 'orebPct',   lbl: 'OREB%',     grp: 'Rebounding', fn: r => r.orebPct != null ? r.orebPct.toFixed(1) + '%' : '—' },
   { id: 'drebPct',   lbl: 'DREB%',     grp: 'Rebounding', fn: r => r.drebPct != null ? r.drebPct.toFixed(1) + '%' : '—' },
@@ -100,6 +144,7 @@ const PS_METRICS = [
   { id: 'fg3Pct',   lbl: '3P%',     grp: 'Shooting', fn: r => r.fg3Pct != null ? r.fg3Pct.toFixed(1) + '%' : '—' },
   { id: 'threePar', lbl: '3PAr',    grp: 'Shooting', fn: r => r.threePar != null ? r.threePar.toFixed(1) + '%' : '—' },
   { id: 'ftr',      lbl: 'FTr',     grp: 'Shooting', fn: r => r.ftr != null ? r.ftr.toFixed(1) + '%' : '—' },
+  { id: 'ftPct',    lbl: 'FT%',     grp: 'Shooting', fn: r => r.ftPct != null ? r.ftPct.toFixed(1) + '%' : '—' },
   { id: 'tovPct',   lbl: 'TOV%',    grp: 'Shooting', fn: r => r.tovPct != null ? r.tovPct.toFixed(1) + '%' : '—' },
   { id: 'rimFreq',  lbl: 'RIM Freq', grp: 'Zones',    fn: r => r.rimFreq != null ? r.rimFreq.toFixed(1) + '%' : '—' },
   { id: 'rimPct',   lbl: 'RIM%',     grp: 'Zones',    fn: r => r.rimPct != null ? r.rimPct.toFixed(1) + '%' : '—' },
@@ -121,13 +166,13 @@ const PS_METRICS = [
   { id: 'drtg',     lbl: 'DRtg',    grp: 'Impact',   fn: r => r.drtg != null ? r.drtg.toFixed(1) : '—' },
   { id: 'netRtg',   lbl: 'NET',     grp: 'Impact',   fn: r => r.netRtg != null ? ((r.netRtg >= 0 ? '+' : '') + r.netRtg.toFixed(1)) : '—', signed: true },
   { id: 'onOff',    lbl: 'ON/OFF',  grp: 'Impact',   fn: r => r.onOff != null ? ((r.onOff >= 0 ? '+' : '') + r.onOff.toFixed(1)) : '—', signed: true },
-  { id: 'dre',      lbl: 'DRE',     grp: 'Impact',   fn: r => r.dre != null ? ((r.dre >= 0 ? '+' : '') + r.dre.toFixed(1)) : '—', signed: true },
+  { id: 'dre',      lbl: 'DRE',     grp: 'Impact',   url: 'https://fansided.com',   fn: r => r.dre != null ? ((r.dre >= 0 ? '+' : '') + r.dre.toFixed(1)) : '—', signed: true },
   { id: 'offScripts',lbl:'OFF-SCRIPTS',grp:'Impact', url:'https://medium.com/@_Nile_/g-league-advantage-creation-or-off-scripts-offensive-self-creation-relevant-in-providing-team-580fcc01f77c', fn: r => r.offScripts != null ? r.offScripts.toFixed(3) : '—' },
   { id: 'age',      lbl: 'AGE',     grp: 'Bio',      fn: r => r.age != null ? Number(r.age).toFixed(1) : '—' },
   { id: 'height',   lbl: 'HT',      grp: 'Bio',      fn: r => r.height || '—', sortKey: 'heightIn' },
   { id: 'weight',   lbl: 'WT',      grp: 'Bio',      fn: r => r.weight != null ? Math.round(r.weight) : '—' }
 ];
-let _psSelectedCols = ['gp', 'mpg', 'offScripts', 'pts75', 'ast75', 'astPct', 'tsPct', 'usg', 'dre', 'netRtg'];
+let _psSelectedCols = ['height', 'weight', 'poss', 'dre', 'offScripts', 'usg', 'pts75', 'ast75', 'tov75', 'astTo', 'oreb75', 'dreb75', 'stl75', 'blk75', 'netRtg', 'onOff', 'ortg', 'drtg'];
 
 function esc(s) { return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
@@ -442,12 +487,12 @@ async function loadPsPageData() {
           astTo: tov > 0 ? (ast / tov) : (ast > 0 ? ast : null),
           astPct: (min > 0 && tmMin > 0 && tmFgm > 0) ? Math.max(0, Math.min(100, (100 * ast) / Math.max(1, ((min / (tmMin / 5)) * tmFgm) - fgm))) : null,
           astUsg: (rp.ast75 != null && rp.usg != null && Number(rp.usg) > 0) ? (Number(rp.ast75) / Number(rp.usg)) : null,
-          pts75: rp.pts75 != null ? Number(rp.pts75) : null, reb75: rp.reb75 != null ? Number(rp.reb75) : null,
+          pts75: rp.pts75 != null ? Number(rp.pts75) : null, reb75: rp.reb75 != null ? Number(rp.reb75) : null, oreb75: (rp.oreb75 != null ? Number(rp.oreb75) : (poss > 0 && rp.oreb != null ? (Number(rp.oreb) / poss) * 75 : null)), dreb75: (rp.dreb75 != null ? Number(rp.dreb75) : (poss > 0 && rp.dreb != null ? (Number(rp.dreb) / poss) * 75 : null)),
           ast75: rp.ast75 != null ? Number(rp.ast75) : null, tov75: rp.tov75 != null ? Number(rp.tov75) : null,
           stl75: rp.stl75 != null ? Number(rp.stl75) : null, blk75: rp.blk75 != null ? Number(rp.blk75) : null,
           tsPct: rp.tsPct != null ? Number(rp.tsPct) : null, fg2Pct: rp.fg2Pct != null ? Number(rp.fg2Pct) : null,
           fg3Pct: rp.fg3Pct != null ? Number(rp.fg3Pct) : null, threePar: rp.threePar != null ? Number(rp.threePar) : null,
-          ftr: rp.ftr != null ? Number(rp.ftr) : null, usg: rp.usg != null ? Number(rp.usg) : null,
+          ftr: rp.ftr != null ? Number(rp.ftr) : null, ftPct: (rp.ftPct != null ? Number(rp.ftPct) : (Number(rp.fta || 0) > 0 ? (Number(rp.ftm || 0) / Number(rp.fta)) * 100 : null)), usg: rp.usg != null ? Number(rp.usg) : null,
           ortg: rp.ortg != null ? Number(rp.ortg) : null, drtg: rp.drtg != null ? Number(rp.drtg) : null,
           netRtg: rp.netRtg != null ? Number(rp.netRtg) : null, onOff: rp.onOff != null ? Number(rp.onOff) : null,
           age: rp.age != null ? Number(rp.age) : null, height: rp.height || null,
@@ -455,6 +500,156 @@ async function loadPsPageData() {
         });
       });
     });
+    if (scR && Array.isArray(scR.poss)) {
+      const normName = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[.,'’\-]/g, ' ').split(/\s+/).filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w)).join(' ');
+      const shortKey = s => {
+        const parts = normName(s).split(' ').filter(Boolean);
+        return parts.length >= 2 ? (parts.at(0) + ' ' + parts.at(-1)) : (parts.at(0) || '');
+      };
+
+      const mxcMap = {};
+      (Array.isArray(scR.players) ? scR.players : Object.values(scR.players || {})).forEach(pe => {
+        mxcMap[Number(pe.id)] = {
+          id: Number(pe.id),
+          name: String(pe.name || ''),
+          offP: 0, offPts: 0, defP: 0, defPts: 0,
+          offOutP: 0, offOutPts: 0, defOutP: 0, defOutPts: 0,
+          pts: 0, fga: 0, fgm: 0, fg3a: 0, fg3m: 0, fta: 0, ftm: 0,
+          reb: 0, oreb: 0, dreb: 0, ast: 0, stl: 0, blk: 0, tov: 0,
+          onFgm: 0,
+          zones: { rim: { m:0, a:0 }, pnt: { m:0, a:0 }, mid: { m:0, a:0 }, c3: { m:0, a:0 }, ab3: { m:0, a:0 } }
+        };
+      });
+      const mxcIds = Object.keys(mxcMap).map(Number);
+
+      scR.poss.forEach(px => {
+        const onSet = new Set((px.on || []).map(Number));
+        const isOff = px.side === 'off';
+        const pts = Number(px.pts || 0);
+        mxcIds.forEach(pid => {
+          const m = mxcMap[pid];
+          if (onSet.has(pid)) {
+            if (isOff) { m.offP++; m.offPts += pts; }
+            else { m.defP++; m.defPts += pts; }
+          } else {
+            if (isOff) { m.offOutP++; m.offOutPts += pts; }
+            else { m.defOutP++; m.defOutPts += pts; }
+          }
+        });
+      });
+
+      const classifyZone = s => {
+        let x = Number(s.x ?? 250), y = Number(s.y ?? 80);
+        if (x < 0 || (Math.abs(x) <= 250 && s.x != null && Number(s.x) < 0)) x += 250;
+        if (y < 0) y += 52;
+        const dist = Math.hypot(x - 250, y - 52);
+        const is3 = Number(s.val) === 3 || dist >= 225 || x <= 42 || x >= 458;
+        if (!is3) {
+          if (dist <= 48) return 'rim';
+          if (x >= 170 && x <= 330 && y <= 215) return 'pnt';
+          return 'mid';
+        }
+        return y <= 140 ? 'c3' : 'ab3';
+      };
+
+      (scR.shots || []).forEach(s => {
+        if (s.side !== 'off') return;
+        const made = Number(s.made) === 1 ? 1 : 0;
+        const val = Number(s.val || 2);
+        if (made === 1 && Array.isArray(s.on)) {
+          new Set(s.on.map(Number)).forEach(onPid => { if (mxcMap[onPid]) mxcMap[onPid].onFgm += 1; });
+        }
+        const m = mxcMap[Number(s.pid)];
+        if (!m) return;
+        m.fga++; m.fgm += made; m.pts += made * val;
+        if (val === 3) { m.fg3a++; m.fg3m += made; }
+        const zk = classifyZone(s);
+        const zObj = m.zones[zk];
+        if (zObj) { zObj.m += made; zObj.a += 1; }
+      });
+
+      (scR.fts || []).forEach(f => {
+        if (f.side !== 'off') return;
+        const m = mxcMap[Number(f.pid)];
+        if (!m) return;
+        const made = Number(f.made) === 1 ? 1 : 0;
+        m.fta++; m.ftm += made; m.pts += made;
+      });
+
+      (scR.turnovers || []).forEach(t => {
+        if (t.side !== 'off') return;
+        const m = mxcMap[Number(t.pid)];
+        if (m) m.tov++;
+      });
+
+      (scR.events || []).forEach(ev => {
+        const m = mxcMap[Number(ev.pid)];
+        if (!m) return;
+        const tp = String(ev.type || '');
+        if (tp === 'OREB') { m.reb++; m.oreb++; }
+        else if (tp === 'DREB') { m.reb++; m.dreb++; }
+        else if (tp === 'AST') m.ast++;
+        else if (tp === 'STL') m.stl++;
+        else if (tp === 'BLK') m.blk++;
+      });
+
+      const byLookup = {};
+      Object.values(mxcMap).forEach(m => {
+        byLookup[String(m.id)] = m;
+        byLookup[normName(m.name)] = m;
+        byLookup[shortKey(m.name)] = m;
+      });
+
+      out.forEach(row => {
+        if (row.team !== 'MXC') return;
+        const m = byLookup[String(row.id || '')] || byLookup[normName(row.name)] || byLookup[shortKey(row.name)];
+        if (!m || m.offP <= 0) return;
+        const totPoss = m.offP + m.defP;
+        const sidePoss = Math.max(1, totPoss);
+        const outSidePoss = Math.max(1, m.offOutP + m.defOutP);
+        const fg2a = m.fga - m.fg3a, fg2m = m.fgm - m.fg3m;
+        const ortg = (m.offPts / sidePoss) * 100;
+        const drtg = (m.defPts / sidePoss) * 100;
+        const netRtg = ortg - drtg;
+        const offNet = ((m.offOutPts - m.defOutPts) / outSidePoss) * 100;
+        const totZoneA = Object.values(m.zones).reduce((s, z) => s + z.a, 0);
+
+        row.poss = Math.round(sidePoss);
+        row.pts75 = (m.pts / sidePoss) * 75;
+        row.reb75 = (m.reb / sidePoss) * 75;
+        row.oreb75 = (m.oreb / sidePoss) * 75;
+        row.dreb75 = (m.dreb / sidePoss) * 75;
+        row.ast75 = (m.ast / sidePoss) * 75;
+        row.tov75 = (m.tov / sidePoss) * 75;
+        row.stl75 = (m.stl / sidePoss) * 75;
+        row.blk75 = (m.blk / sidePoss) * 75;
+        row.stocks75 = row.stl75 + row.blk75;
+        row.tsPct = (m.fga + 0.44 * m.fta) > 0 ? (m.pts / (2 * (m.fga + 0.44 * m.fta))) * 100 : null;
+        row.efg = m.fga > 0 ? ((m.fgm + 0.5 * m.fg3m) / m.fga) * 100 : null;
+        row.fg2Pct = fg2a > 0 ? (fg2m / fg2a) * 100 : null;
+        row.fg3Pct = m.fg3a > 0 ? (m.fg3m / m.fg3a) * 100 : null;
+        row.threePar = m.fga > 0 ? (m.fg3a / m.fga) * 100 : null;
+        row.ftr = m.fga > 0 ? (m.fta / m.fga) * 100 : null;
+        row.ftPct = m.fta > 0 ? (m.ftm / m.fta) * 100 : null;
+        row.usg = ((m.fga + 0.44 * m.fta + m.tov) / sidePoss) * 100;
+        row.ortg = ortg;
+        row.drtg = drtg;
+        row.netRtg = netRtg;
+        row.onOff = ((m.offOutP + m.defOutP) >= 30) ? (netRtg - offNet) : row.onOff;
+        row.tovPct = (m.fga + 0.44 * m.fta + m.tov) > 0 ? (m.tov / (m.fga + 0.44 * m.fta + m.tov)) * 100 : null;
+        row.astTo = m.tov > 0 ? (m.ast / m.tov) : (m.ast > 0 ? m.ast : null);
+        row.astPct = Math.max(0, Math.min(100, (100 * m.ast) / Math.max(1, m.onFgm - m.fgm)));
+        row.astUsg = row.usg > 0 ? (row.ast75 / row.usg) : null;
+        row.dre = (100 / Math.max(1, totPoss)) * (0.792 * m.pts - 0.719 * m.fga - 0.299 * m.fta + 0.145 * m.reb + 0.369 * m.ast + 1.662 * m.stl + 0.696 * m.blk - 0.844 * m.tov);
+        if (totZoneA > 0) {
+          row.rimFreq = (m.zones.rim.a / totZoneA) * 100; row.rimPct = m.zones.rim.a > 0 ? (m.zones.rim.m / m.zones.rim.a) * 100 : null;
+          row.pntFreq = (m.zones.pnt.a / totZoneA) * 100; row.pntPct = m.zones.pnt.a > 0 ? (m.zones.pnt.m / m.zones.pnt.a) * 100 : null;
+          row.midFreq = (m.zones.mid.a / totZoneA) * 100; row.midPct = m.zones.mid.a > 0 ? (m.zones.mid.m / m.zones.mid.a) * 100 : null;
+          row.c3Freq  = (m.zones.c3.a  / totZoneA) * 100; row.c3Pct  = m.zones.c3.a  > 0 ? (m.zones.c3.m  / m.zones.c3.a)  * 100 : null;
+          row.ab3Freq = (m.zones.ab3.a / totZoneA) * 100; row.ab3Pct = m.zones.ab3.a > 0 ? (m.zones.ab3.m / m.zones.ab3.a) * 100 : null;
+        }
+      });
+    }
     const rank01 = (arr, val, inv) => {
       if (val == null || Number.isNaN(Number(val)) || !arr.length) return null;
       let less = 0, eq = 0;
@@ -481,8 +676,9 @@ async function loadPsPageData() {
       const r5 = rank01(pAst,  r.astPct, false);
       const r6 = rank01(pTov,  r.pctTov, true);
       const r7 = rank01(pUast, r.unastdPct, false);
-      if (r1 != null && r2 != null && r3 != null && r4 != null && r5 != null && r6 != null && r7 != null) {
-        r.offScripts = 0.25 * r1 + 0.50 * r2 + 0.50 * r3 + 0.50 * r4 + 1.50 * r5 + 1.00 * r6 + 1.50 * r7;
+      if (r1 != null && r2 != null && r3 != null && r4 != null && r5 != null && r6 != null) {
+        const base6 = 0.25 * r1 + 0.50 * r2 + 0.50 * r3 + 0.50 * r4 + 1.50 * r5 + 1.00 * r6;
+        r.offScripts = r7 != null ? (base6 + 1.50 * r7) : (base6 * (5.75 / 4.25));
       }
     });
     _psRows = out;
@@ -538,6 +734,15 @@ function renderPsPageTable() {
   document.getElementById('psTableContainer').innerHTML = rows.length ? `<table class="ps-table"><thead>${thead}</thead><tbody>${tbody}</tbody></table>` : `<div style="color:var(--muted);font-size:12px;padding:12px 0;">No players match your filter or query conditions.</div>`;
 }
 setPsSeason(_psSeason);
+</script>
+<script>
+(function(){
+  const b = document.getElementById('psLevBtn');
+  if (!b) return;
+  b.textContent = window._psExcludeLowLev ? 'Low-Lev: Dropped' : 'Low-Lev: Included';
+  b.style.background = window._psExcludeLowLev ? 'var(--blue)' : '#fff';
+  b.style.color = window._psExcludeLowLev ? '#fff' : 'var(--muted)';
+})();
 </script>
 </body>
 </html>

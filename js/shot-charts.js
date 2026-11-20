@@ -456,7 +456,7 @@ function resetAllFilters() {
   _excGames.clear();
   _quickSplits.seg = 'ALL'; _quickSplits.loc = 'ALL'; _quickSplits.wl = 'ALL'; _quickSplits.per = 'ALL';
   document.querySelectorAll('.sc-pill').forEach(el => el.classList.remove('active'));
-  ['scLastN','scShotType'].forEach(id => { const el = document.getElementById(id); if (el) el.value = 'ALL'; });
+  ['scLastN','scShotType','scShotClock'].forEach(id => { const el = document.getElementById(id); if (el) el.value = 'ALL'; }); const lvEl = document.getElementById('scLeverage'); if (lvEl) lvEl.value = 'COMP';
   buildGameMenu();
   renderShotPage();
 }
@@ -649,7 +649,7 @@ function buildMacroStrip(label, offShots, defShots, offFts, defFts, offTovs, def
     </div>`;
 }
 
-﻿function computeHeaderMetrics(shots, fts, tovs, exactPossCount) {
+function computeHeaderMetrics(shots, fts, tovs, exactPossCount) {
   const fga = shots.length;
   const fg2a = shots.filter(s => s.val === 2).length;
   const fg2m = shots.filter(s => s.val === 2 && s.made === 1).length;
@@ -791,6 +791,65 @@ async function loadShotSeason() {
 
     _incGames.clear();
     _excGames.clear();
+
+    const _urlParams = new URLSearchParams(window.location.search);
+    if (!window._splitUrlApplied) {
+      window._splitUrlApplied = true;
+      const _reqLoc = _urlParams.get('loc');
+      const _reqPer = _urlParams.get('per');
+      const _reqLastN = _urlParams.get('lastN');
+      if (_reqLoc) {
+        _quickSplits.loc = _reqLoc;
+        const pill = document.querySelector('.sc-pill[data-grp="loc"][data-val="' + _reqLoc + '"]');
+        if (pill) pill.classList.add('active');
+      }
+      if (_reqPer) {
+        _quickSplits.per = _reqPer;
+        const pill = document.querySelector('.sc-pill[data-grp="per"][data-val="' + _reqPer + '"]');
+        if (pill) pill.classList.add('active');
+      }
+      if (_reqLastN) {
+        const lnSel = document.getElementById('scLastN');
+        if (lnSel) lnSel.value = _reqLastN;
+      }
+    }
+    const _reqTier = _urlParams.get('oppTier');
+    if (_reqTier && ['vs_elite', 'vs_mid', 'vs_weak'].includes(_reqTier) && !window._oppTierApplied) {
+      window._oppTierApplied = true;
+      const mPrev = String(season).match(/^(\d{4})-(\d{2})$/);
+      const prevSeason = mPrev ? ((Number(mPrev) - 1) + '-' + String(Number(mPrev)).slice(-2)) : null;
+      const [liteLive, litePrev] = await Promise.all([
+        fetch(`data/league_lite_shots_${season}.json?v=${Date.now()}`).then(r => r.ok ? r.json() : null).catch(() => null),
+        prevSeason ? fetch(`data/league_lite_shots_${prevSeason}.json?v=${Date.now()}`).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null)
+      ]);
+      const prevNetByAb = {};
+      (litePrev?.teams || []).forEach(t => { if (t.abbrev) prevNetByAb[String(t.abbrev).toUpperCase()] = Number(t.netRtg || 0); });
+      const netByAb = {};
+      (liteLive?.teams || []).forEach(t => {
+        if (!t.abbrev) return;
+        const ab = String(t.abbrev).toUpperCase();
+        const currNet = Number(t.netRtg || 0);
+        const gp = Number(t.gp || t.games || 0);
+        if (ab in prevNetByAb && gp > 0 && gp < 15) {
+          const w = gp / 15;
+          netByAb[ab] = w * currNet + (1 - w) * prevNetByAb[ab];
+        } else if (ab in prevNetByAb && gp === 0) {
+          netByAb[ab] = prevNetByAb[ab];
+        } else {
+          netByAb[ab] = currNet;
+        }
+      });
+      (_shotData.games || []).forEach(g => {
+        const lbl = String(g.label || '');
+        const mOpp = lbl.match(/\b(?:vs\.?|@)\s*([A-Z]{2,4})\b/i);
+        const words = lbl.replace(/\([WL]\)\s*$/i, '').trim().split(/[^A-Za-z]+/).filter(Boolean);
+        const ab = String(g.opp || (mOpp ? mOpp : '') || words.at(-1) || '').toUpperCase();
+        const oNet = netByAb[ab] ?? 0;
+        const tier = oNet >= 2.0 ? 'vs_elite' : (oNet <= -2.0 ? 'vs_weak' : 'vs_mid');
+        if (tier === _reqTier) _incGames.add(g.id);
+      });
+    }
+
     buildGameMenu();
 
     _onSet.clear();
@@ -1100,12 +1159,21 @@ function renderShotPage() {
   const lastNVal = document.getElementById('scLastN')?.value || 'ALL';
   const periodVal = _quickSplits.per;
   const shotTypeVal = document.getElementById('scShotType')?.value || 'ALL';
+  const levVal = document.getElementById('scLeverage')?.value || 'COMP';
+  const clkVal = document.getElementById('scShotClock')?.value || 'ALL';
+  const matchLevClk = x => {
+    if (levVal === 'COMP' && String(x?.lev || 'med') === 'low') return false;
+    if (levVal !== 'COMP' && levVal !== 'ALL' && String(x?.lev || 'med') !== levVal) return false;
+    if (clkVal !== 'ALL' && String(x?.clk || 'mid') !== clkVal) return false;
+    return true;
+  };
   const grid = document.getElementById('scGrid');
 
   const maxOrder = _shotData.meta?.total_games || Math.max(..._shotData.shots.map(s => s.gord || 0), 0);
   const minOrder = lastNVal === 'ALL' ? 0 : maxOrder - Number(lastNVal) + 1;
 
   const filteredBase = _shotData.shots.filter(s => {
+    if (!matchLevClk(s)) return false;
     if (gameVal !== 'ALL' && s.gid !== gameVal) return false;
     if (segVal !== 'ALL' && s.st && s.st !== segVal) return false;
     if (locVal !== 'ALL' && s.loc && s.loc !== locVal) return false;
@@ -1401,12 +1469,21 @@ function renderShotPage() {
   const lastNVal = document.getElementById('scLastN')?.value || 'ALL';
   const periodVal = _quickSplits.per;
   const shotTypeVal = document.getElementById('scShotType')?.value || 'ALL';
+  const levVal = document.getElementById('scLeverage')?.value || 'COMP';
+  const clkVal = document.getElementById('scShotClock')?.value || 'ALL';
+  const matchLevClk = x => {
+    if (levVal === 'COMP' && String(x?.lev || 'med') === 'low') return false;
+    if (levVal !== 'COMP' && levVal !== 'ALL' && String(x?.lev || 'med') !== levVal) return false;
+    if (clkVal !== 'ALL' && String(x?.clk || 'mid') !== clkVal) return false;
+    return true;
+  };
   const grid = document.getElementById('scGrid');
 
   const maxOrder = _shotData.meta?.total_games || Math.max(..._shotData.shots.map(s => s.gord || 0), 0);
   const minOrder = lastNVal === 'ALL' ? 0 : maxOrder - Number(lastNVal) + 1;
 
   const filteredBase = _shotData.shots.filter(s => {
+    if (!matchLevClk(s)) return false;
     if (!matchBaseFilters(s, gameVal, segVal, locVal, outVal, minOrder, periodVal)) return false;
     if (shotTypeVal !== 'ALL') {
       const sub = (s.sub || '').toLowerCase();
@@ -1418,10 +1495,10 @@ function renderShotPage() {
     return true;
   });
 
-  const baseFts = (_shotData.fts || []).filter(f => matchBaseFilters(f, gameVal, segVal, locVal, outVal, minOrder, periodVal));
-  const baseTovs = (_shotData.turnovers || []).filter(t => matchBaseFilters(t, gameVal, segVal, locVal, outVal, minOrder, periodVal));
-  const basePoss = (_shotData.poss || []).filter(p => matchBaseFilters(p, gameVal, segVal, locVal, outVal, minOrder, periodVal));
-  const baseEvents = (_shotData.events || []).filter(e => matchBaseFilters(e, gameVal, segVal, locVal, outVal, minOrder, periodVal));
+  const baseFts = (_shotData.fts || []).filter(f => matchLevClk(f) && matchBaseFilters(f, gameVal, segVal, locVal, outVal, minOrder, periodVal));
+  const baseTovs = (_shotData.turnovers || []).filter(t => matchLevClk(t) && matchBaseFilters(t, gameVal, segVal, locVal, outVal, minOrder, periodVal));
+  const basePoss = (_shotData.poss || []).filter(p => matchLevClk(p) && matchBaseFilters(p, gameVal, segVal, locVal, outVal, minOrder, periodVal));
+  const baseEvents = (_shotData.events || []).filter(e => matchLevClk(e) && matchBaseFilters(e, gameVal, segVal, locVal, outVal, minOrder, periodVal));
 
   const hasToggles = _onSet.size > 0 || _offSet.size > 0;
   const idToLast = {};

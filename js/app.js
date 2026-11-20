@@ -17,7 +17,7 @@ const PROXY_BASE = '';
 
 // Route a stats.nba.com URL through the proxy if configured
 function proxyUrl(nbaUrl) {
-  if (!PROXY_BASE) return nbaUrl; // no proxy â€” will likely CORS-fail from browser
+  if (!PROXY_BASE) return nbaUrl; // no proxy — will likely CORS-fail from browser
   return `${PROXY_BASE}?url=${encodeURIComponent(nbaUrl)}`;
 }
 
@@ -44,28 +44,28 @@ let debounceTimer = null;
 function photoForLineupName(n) { return playerXref[n]?.photoUrl || null; }
 function idForLineupName(n)    { return playerXref[n]?.id || null; }
 
-// 30th-percentile minutes threshold â€” computed from actual data so it
+// 30th-percentile minutes threshold — computed from actual data so it
 // adapts to however many combinations exist for each group size.
 function getPoss(row) {
   return row.POSS ?? row.MIN_ACTUAL ?? row.MIN ?? 0;
 }
 
 // Dynamic floor: minimum possessions to show a lineup combination.
-// Scales with season progress â€” early season a 10-poss duo is meaningful,
+// Scales with season progress — early season a 10-poss duo is meaningful,
 // late season the same combo is noise.
 // groupSize: 2=duos, 3=trios, 4=quads, 5=fiveman
 function dynamicFloor(rows, groupSize) {
   if (!rows.length) return 0;
   const totalPoss = rows.reduce((s, r) => s + getPoss(r), 0);
   // Minimum share of total group possessions to be considered meaningful.
-  // Larger groups have fewer combinations and each one is rarer â€” lower threshold.
+  // Larger groups have fewer combinations and each one is rarer — lower threshold.
   const minShare = { 2: 0.015, 3: 0.008, 4: 0.004, 5: 0.002 }[groupSize] || 0.01;
   const absMin   = { 2: 8,     3: 5,     4: 3,     5: 2    }[groupSize] || 5;
   return Math.max(absMin, totalPoss * minShare);
 }
 
 function pct30Threshold(rows, groupSize) {
-  // Legacy name kept for compatibility â€” now delegates to dynamicFloor
+  // Legacy name kept for compatibility — now delegates to dynamicFloor
   return dynamicFloor(rows, groupSize || 2);
 }
 
@@ -120,7 +120,7 @@ let labFetch = null;
 let labDebounce = null;
 
 async function fetchAllGroupsLive() {
-  // Main page â€” no filters, 30th percentile threshold
+  // Main page — no filters, 30th percentile threshold
   const container = document.getElementById('lineupContent');
   const statusEl  = document.getElementById('lineupFetchStatus');
 
@@ -190,7 +190,7 @@ function triggerLabFetch() {
   labDebounce = setTimeout(fetchLabData, 400);
 }
 
-// Data paths are season-aware â€” use dataPath() helper
+// Data paths are season-aware — use dataPath() helper
 let MEX_DATA_PATH    = () => dataPath('mex_data');
 let LINEUP_DATA_PATH = () => dataPath('lineup_data');
 let mexData = null;
@@ -228,7 +228,7 @@ async function renderTrajectory() {
   } catch(e) {}
 
   if (!cachedTeamStats) {
-    container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No data â€” commit team_stats.json.</div>';
+    container.innerHTML = '<div style="font-size:11px;color:var(--muted);">No data — commit team_stats.json.</div>';
     return;
   }
 
@@ -250,7 +250,7 @@ async function renderTrajectory() {
   }
 
   function fmt(key, val) {
-    if (val == null) return 'â€”';
+    if (val == null) return '—';
     const v = Number(val);
     if (pctFields.has(key)) return (v * 100).toFixed(1) + '%';
     return v.toFixed(1);
@@ -313,15 +313,15 @@ async function renderPlayerStats() {
   try {
     const d = await loadMexData();
     const players = d.players;
-    // Key columns to show â€” full set available but we pick the most meaningful
+    // Key columns to show — full set available but we pick the most meaningful
     const cols = ['Player','MIN','TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','TOV%','USG%','ORtg','DRtg','PIE'];
     // Fields stored 0-1 in API that need Ã—100 for display
     const pct01 = new Set(['TS%','eFG%','3P%','FT%','ORB%','DRB%','AST%','USG%','STL%','BLK%']);
-    const getName = p => p['Player'] || p['PLAYER_NAME'] || 'â€”';
+    const getName = p => p['Player'] || p['PLAYER_NAME'] || '—';
     const sorted = [...players].sort((a, b) => (b['MIN'] || 0) - (a['MIN'] || 0));
 
     function fmtStat(col, val) {
-      if (val == null) return 'â€”';
+      if (val == null) return '—';
       const v = Number(val);
       if (pct01.has(col)) return (v * 100).toFixed(1) + '%';
       if (col === 'TOV%') return v.toFixed(1) + '%';
@@ -347,7 +347,7 @@ async function renderPlayerStats() {
   }
 }
 
-// â”€â”€ Multi-player WOWY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -- Multi-player WOWY --
 let _wowyPlayers = [];  // array of wowy entries loaded from mex_data
 
 let _wowyPhotoMap = {};  // abbrev/name -> photoUrl
@@ -356,15 +356,125 @@ async function renderSeasonSplits() {
   const el = document.getElementById('seasonSplitsContainer');
   if (!el) return;
   try {
-    if (!cachedTeamStats) {
-      const r = await fetch(TEAM_STATS_PATH() + '?v=' + Date.now());
-      if (r.ok) cachedTeamStats = await r.json();
-    }
+    const prevSeason = (() => {
+      const m = String(SEASON || '').match(/^(\d{4})-(\d{2})$/);
+      if (!m) return null;
+      const y1 = Number(m) - 1;
+      const y2 = String(y1 + 1).slice(-2);
+      return y1 + '-' + y2;
+    })();
+    const [rTs, scLive, liteLive, litePrev] = await Promise.all([
+      cachedTeamStats ? Promise.resolve(null) : fetch(TEAM_STATS_PATH() + '?v=' + Date.now()).catch(() => null),
+      fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('data/league_lite_shots_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+      prevSeason ? fetch('data/league_lite_shots_' + prevSeason + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null) : Promise.resolve(null)
+    ]);
+    if (rTs && rTs.ok) cachedTeamStats = await rTs.json();
     const slices = cachedTeamStats?.slices || {};
     const MXC_TID = 1612709931;
 
+    // Build live OPPONENT STRENGTH buckets (vs_elite, vs_mid, vs_weak) from active PBP (respects Low-Lev Dropped)
+    const oppLiveMap = {};
+    if (scLive && Array.isArray(scLive.games) && Array.isArray(scLive.poss)) {
+      const prevNetByAb = {};
+      (litePrev?.teams || []).forEach(t => { if (t.abbrev) prevNetByAb[String(t.abbrev).toUpperCase()] = Number(t.netRtg || 0); });
+      const netByAb = {};
+      (liteLive?.teams || []).forEach(t => {
+        if (!t.abbrev) return;
+        const ab = String(t.abbrev).toUpperCase();
+        const currNet = Number(t.netRtg || 0);
+        const gp = Number(t.gp || t.games || 0);
+        if (ab in prevNetByAb && gp > 0 && gp < 15) {
+          const w = gp / 15;
+          netByAb[ab] = w * currNet + (1 - w) * prevNetByAb[ab];
+        } else if (ab in prevNetByAb && gp === 0) {
+          netByAb[ab] = prevNetByAb[ab];
+        } else {
+          netByAb[ab] = currNet;
+        }
+      });
+      const gBucket = {};
+      scLive.games.forEach(g => {
+        const words = String(g.label || g.opp || '').trim().split(/[^A-Za-z]+/).filter(Boolean);
+        const ab = String(g.opp || words.at(-1) || '').toUpperCase();
+        const oNet = netByAb[ab] ?? 0;
+        gBucket[g.id] = oNet >= 2.0 ? 'vs_elite' : (oNet <= -2.0 ? 'vs_weak' : 'vs_mid');
+      });
+      const acc = {
+        vs_elite: { offPts:0, defPts:0, offOreb:0, defOreb:0, fgm:0, fg3m:0, fga:0, fta:0, tov:0, oppFgm:0, oppFg3m:0, oppFga:0, oppFta:0, oppTov:0 },
+        vs_mid:   { offPts:0, defPts:0, offOreb:0, defOreb:0, fgm:0, fg3m:0, fga:0, fta:0, tov:0, oppFgm:0, oppFg3m:0, oppFga:0, oppFta:0, oppTov:0 },
+        vs_weak:  { offPts:0, defPts:0, offOreb:0, defOreb:0, fgm:0, fg3m:0, fga:0, fta:0, tov:0, oppFgm:0, oppFg3m:0, oppFga:0, oppFta:0, oppTov:0 }
+      };
+      scLive.poss.forEach(px => {
+        const bk = acc[gBucket[String(px.gid)]];
+        if (!bk) return;
+        const orb = Number(px.oreb || 0);
+        if (px.side === 'off') bk.offOreb += orb;
+        else bk.defOreb += orb;
+      });
+      (scLive.shots || []).forEach(sh => {
+        const bk = acc[gBucket[String(sh.gid)]];
+        if (!bk) return;
+        const made = Number(sh.made) === 1 ? 1 : 0;
+        const val = Number(sh.val || 2);
+        const is3 = val === 3 ? 1 : 0;
+        if (sh.side === 'off') { bk.fga++; bk.fgm += made; if (is3) bk.fg3m += made; if (made) bk.offPts += val; }
+        else { bk.oppFga++; bk.oppFgm += made; if (is3) bk.oppFg3m += made; if (made) bk.defPts += val; }
+      });
+      (scLive.fts || []).forEach(ft => {
+        const bk = acc[gBucket[String(ft.gid)]];
+        if (!bk) return;
+        const made = Number(ft.made) === 1 ? 1 : 0;
+        const pts = Number(ft.pts != null ? ft.pts : made);
+        if (ft.side === 'off') { bk.fta++; bk.offPts += pts; }
+        else { bk.oppFta++; bk.defPts += pts; }
+      });
+      (scLive.turnovers || []).forEach(tv => {
+        const bk = acc[gBucket[String(tv.gid)]];
+        if (!bk) return;
+        if (tv.side === 'off') bk.tov++;
+        else bk.oppTov++;
+      });
+      Object.entries(acc).forEach(([k, b]) => {
+        const offPoss = Math.max(1, b.fga + 0.44 * b.fta - b.offOreb + b.tov);
+        const defPoss = Math.max(1, b.oppFga + 0.44 * b.oppFta - b.defOreb + b.oppTov);
+        if (b.fga <= 0 && b.oppFga <= 0) return;
+        const ortg = (b.offPts / offPoss) * 100;
+        const drtg = (b.defPts / defPoss) * 100;
+        oppLiveMap[k] = {
+          OFF_RATING: ortg,
+          DEF_RATING: drtg,
+          NET_RATING: ortg - drtg,
+          EFG_PCT: b.fga > 0 ? (b.fgm + 0.5 * b.fg3m) / b.fga : null,
+          TM_TOV_PCT: (b.fga + 0.44 * b.fta + b.tov) > 0 ? b.tov / (b.fga + 0.44 * b.fta + b.tov) : null,
+          OPP_EFG_PCT: b.oppFga > 0 ? (b.oppFgm + 0.5 * b.oppFg3m) / b.oppFga : null
+        };
+      });
+    }
+
     const getCell = (sliceKeys, statKey, isPct, isNet, lowerBetter) => {
-      const keys = Array.isArray(sliceKeys) ? sliceKeys : [sliceKeys];
+      const keys = Array.isArray(sliceKeys) ? sliceKeys : new Array(sliceKeys);
+      const liveKey = keys.find(k => oppLiveMap[k]);
+      if (liveKey && oppLiveMap[liveKey][statKey] != null) {
+        const val = Number(oppLiveMap[liveKey][statKey]);
+        const candKeys = liveKey === 'vs_mid'
+          ? ['vs_mid', 'vs_middle', 'vs_avg', 'vs_med', 'vs_500', 'mid', 'middle']
+          : [liveKey, liveKey.replace('vs_', '')];
+        const foundKey = candKeys.find(ck => Array.isArray(slices[ck]) && slices[ck].length > 0);
+        const lgTeams = foundKey ? slices[foundKey] : [];
+        const others = lgTeams
+          .filter(t => Number(t.TEAM_ID) !== MXC_TID && !/capitanes|mexico city/i.test(String(t.TEAM_NAME || '')) && String(t.TEAM_ABBREVIATION || '').toUpperCase() !== 'MXC' && t[statKey] != null && Number(t.GP || 0) > 0)
+          .map(t => Number(t[statKey]));
+        let rkStr = '';
+        if (others.length >= 10) {
+          const pool = new Array(...others, val).sort((a, b) => lowerBetter ? (a - b) : (b - a));
+          const rk = pool.findIndex(v => Math.abs(v - val) < 1e-6) + 1;
+          if (rk > 0) rkStr = '<sup style="font-size:6.8px;color:var(--muted);font-weight:400;">' + rk + '</sup>';
+        }
+        const disp = isPct ? ((val * 100).toFixed(1) + '%') : val.toFixed(1);
+        const col = isNet ? (val > 0 ? 'color:var(--green);' : (val < 0 ? 'color:var(--red);' : 'color:var(--text);')) : 'color:var(--text);';
+        return '<span style="font-weight:700;' + col + '">' + disp + '</span>' + rkStr;
+      }
       let teams = null;
       for (const k of keys) {
         if (Array.isArray(slices[k]) && slices[k].length) { teams = slices[k]; break; }
@@ -375,7 +485,7 @@ async function renderSeasonSplits() {
       const val = Number(mxc[statKey]);
       const valid = teams.filter(t => t[statKey] != null && Number(t.GP || 0) > 0).map(t => Number(t[statKey]));
       valid.sort((a, b) => lowerBetter ? (a - b) : (b - a));
-      const rk = valid.findIndex(v => Math.abs(v - val) < 1e-6) + 1;
+      const rk = valid.length >= 10 ? (valid.findIndex(v => Math.abs(v - val) < 1e-6) + 1) : 0;
       const disp = isPct ? ((val * 100).toFixed(1) + '%') : val.toFixed(1);
       const col = isNet ? (val > 0 ? 'color:var(--green);' : (val < 0 ? 'color:var(--red);' : 'color:var(--text);')) : 'color:var(--text);';
       return '<span style="font-weight:700;' + col + '">' + disp + '</span>' + (rk > 0 ? '<sup style="font-size:6.8px;color:var(--muted);font-weight:400;">' + rk + '</sup>' : '');
@@ -385,9 +495,30 @@ async function renderSeasonSplits() {
       let html = '<div style="' + (isLast ? '' : 'margin-bottom:3px;padding-bottom:2px;border-bottom:1px solid var(--border);') + '">';
       if (title) html += '<div style="font-family:Oswald,sans-serif;font-size:8.5px;font-weight:700;color:var(--muted);letter-spacing:0.3px;margin-bottom:1px;">' + title + '</div>';
       html += '<table style="width:100%;border-collapse:collapse;table-layout:fixed;"><thead><tr><th style="width:25%;text-align:left;"></th>';
+      const splitUrlFor = (c) => {
+        const keys = Array.isArray(c.keys) ? c.keys : [c.keys];
+        const base = 'shotcharts.html?season=' + encodeURIComponent(SEASON);
+        if (keys.includes('home')) return base + '&loc=Home';
+        if (keys.includes('away')) return base + '&loc=Away';
+        if (keys.includes('first_half')) return base + '&per=H1';
+        if (keys.includes('second_half')) return base + '&per=H2';
+        if (keys.includes('q1')) return base + '&per=1';
+        if (keys.includes('q2')) return base + '&per=2';
+        if (keys.includes('q3')) return base + '&per=3';
+        if (keys.includes('q4')) return base + '&per=4';
+        if (keys.includes('last5')) return base + '&lastN=5';
+        if (keys.includes('last10')) return base + '&lastN=10';
+        const tierKey = keys.find(k => k === 'vs_elite' || k === 'vs_mid' || k === 'vs_weak');
+        if (tierKey) return base + '&oppTier=' + tierKey;
+        return null;
+      };
       cols.forEach(c => {
         const divL = c.sep ? 'border-left:1px solid var(--border);padding-left:2px;' : '';
-        html += '<th style="text-align:right;font-family:Lora,serif;font-size:8px;font-weight:600;color:var(--muted);padding:0 1px 1px;white-space:nowrap;' + divL + '">' + c.lbl + '</th>';
+        const href = splitUrlFor(c);
+        const lblHtml = href
+          ? '<a href="' + href + '" title="Open ' + c.lbl + ' shot chart" style="color:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer;">' + c.lbl + '</a>'
+          : c.lbl;
+        html += '<th style="text-align:right;font-family:Lora,serif;font-size:8px;font-weight:600;color:var(--muted);padding:0 1px 1px;white-space:nowrap;' + divL + '">' + lblHtml + '</th>';
       });
       html += '</tr></thead><tbody>';
       rows.forEach(r => {
@@ -429,6 +560,19 @@ async function renderSeasonSplits() {
   } catch (e) { el.textContent = 'Splits unavailable.'; }
 }
 
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('seasonSplitsContainer')) renderSeasonSplits();
+});
+if (document.readyState !== 'loading' && document.getElementById('seasonSplitsContainer')) {
+  renderSeasonSplits();
+}
+document.addEventListener('click', (e) => {
+  if (e.target && e.target.closest('button') && document.getElementById('seasonSplitsContainer')) {
+    setTimeout(renderSeasonSplits, 120);
+  }
+});
+
+
 async function initWowySlots() {
   const d  = await loadMexData();
   // Load lineup data for playerXref photos
@@ -469,7 +613,7 @@ async function initWowySlots() {
     <div>
       <div style="font-size:9px;color:var(--muted);margin-bottom:2px;text-align:center;">Player ${i+1}</div>
       <select id="wowySlot${i}" style="width:100%;font-size:10px;padding:2px 3px;border:1px solid var(--border);">
-        <option value="">â€”</option>
+        <option value="">—</option>
         ${_wowyPlayers.map(p => `<option value="${esc(p.abbrev||p.player)}">${esc(p.player||p.abbrev)}</option>`).join('')}
       </select>
     </div>`).join('');
@@ -487,7 +631,7 @@ function clearWowy() {
     const sel = document.getElementById(`wowySlot${i}`);
     if (sel) sel.value = '';
   }
-  document.getElementById('wowyContent').innerHTML = '';
+  (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML = '';
   document.getElementById('wowyDiag').innerHTML = '';
 }
 
@@ -507,12 +651,12 @@ function showWowyDiag(selected, d, pbpBuckets) {
     if (!e) { lines.push(`  ${abbrev}: NOT FOUND in wowy`); return; }
     const w = e.with || {};
     lines.push(`  ${e.player} (${abbrev}):`);
-    lines.push(`    with:    POSS=${w.POSS} NetRtg=${w.NetRtg} OFF_EFG=${w.OFF_EFG_PCT} DEF_EFG=${w.DEF_EFG_PCT}`);
+    lines.push(`    with:    POSS=${w.POSS} NetRtg=${w.NetRtg} OFF_EFG=${w.OFF_TS_PCT} DEF_EFG=${w.DEF_TS_PCT}`);
     lines.push(`    without: POSS=${(e.without||{}).POSS} NetRtg=${(e.without||{}).NetRtg}`);
     lines.push(`    source: ${e.rating_source||'none'}`);
   });
   if (pbpBuckets) {
-    lines.push(`PBP bucket: POSS=${pbpBuckets.POSS} OFF_EFG=${pbpBuckets.OFF_EFG_PCT} DEF_EFG=${pbpBuckets.DEF_EFG_PCT} OFF_TOV=${pbpBuckets.OFF_TOV_PCT} DEF_TOV=${pbpBuckets.DEF_TOV_PCT}`);
+    lines.push(`PBP bucket: POSS=${pbpBuckets.POSS} OFF_EFG=${pbpBuckets.OFF_TS_PCT} DEF_EFG=${pbpBuckets.DEF_TS_PCT} OFF_TOV=${pbpBuckets.OFF_TOV_PCT} DEF_TOV=${pbpBuckets.DEF_TOV_PCT}`);
   } else {
     lines.push(`PBP bucket: none (using lineup combo fallback)`);
   }
@@ -522,13 +666,13 @@ function showWowyDiag(selected, d, pbpBuckets) {
 async function runWowy() {
   const selected = getSelectedWowyPlayers();
   if (!selected.length) {
-    document.getElementById('wowyContent').innerHTML = '<div style="color:var(--muted);font-size:11px;">Select at least one player.</div>';
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML = '<div style="color:var(--muted);font-size:11px;">Select at least one player.</div>';
     return;
   }
 
   const d  = await loadMexData();
   const ld = window._wowyLineupData;
-  const container = document.getElementById('wowyContent');
+  const container = (document.getElementById('wowyResults') || document.getElementById('wowyContent'));
   container.innerHTML = '<div style="color:var(--muted);font-size:11px;">Computingâ€¦</div>';
 
   function getPlayers(c) { return (c.GROUP_NAME||'').split(' - ').map(n=>n.trim()); }
@@ -540,19 +684,19 @@ async function runWowy() {
 
   // Available fields: E_OFF_RATING, E_DEF_RATING, E_NET_RATING (smoothed for small samples)
   // EFG_PCT, TM_TOV_PCT, OREB_PCT, DREB_PCT, TS_PCT
-  // No OPP_ fields â€” Four Factors not fetched for lineups yet
+  // No OPP_ fields — Four Factors not fetched for lineups yet
   const API_KEYS = {
     OFF: 'E_OFF_RATING', DEF: 'E_DEF_RATING', NET: 'E_NET_RATING',
-    'OFF eFG%': 'EFG_PCT',    'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
-    'DEF eFG%': 'OPP_EFG_PCT','DEF TOV%': 'OPP_TOV_PCT','DEF ORB%': 'OPP_OREB_PCT',
+    'OFF TS%': 'EFG_PCT',    'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
+    'DEF TS%': 'OPP_EFG_PCT','DEF TOV%': 'OPP_TOV_PCT','DEF ORB%': 'OPP_OREB_PCT',
   };
   // PBP four factor keys in mex_data wowy entries
   const PBP_KEYS = {
-    'OFF eFG%': 'OFF_EFG_PCT', 'OFF TOV%': 'OFF_TOV_PCT', 'OFF ORB%': 'OFF_ORB_PCT',
-    'DEF eFG%': 'DEF_EFG_PCT', 'DEF TOV%': 'DEF_TOV_PCT', 'DEF ORB%': 'DEF_ORB_PCT',
+    'OFF TS%': 'OFF_TS_PCT', 'OFF TOV%': 'OFF_TOV_PCT', 'OFF ORB%': 'OFF_ORB_PCT',
+    'DEF TS%': 'DEF_TS_PCT', 'DEF TOV%': 'DEF_TOV_PCT', 'DEF ORB%': 'DEF_ORB_PCT',
   };
-  const LB  = new Set(['DEF','OFF TOV%','DEF eFG%','DEF ORB%']);
-  const PCT = new Set(['OFF eFG%','OFF TOV%','OFF ORB%','DEF eFG%','DEF TOV%','DEF ORB%']);
+  const LB  = new Set(['DEF','OFF TOV%','DEF TS%','DEF ORB%']);
+  const PCT = new Set(['OFF TS%','OFF TOV%','OFF ORB%','DEF TS%','DEF TOV%','DEF ORB%']);
 
   if (!window._scWowyCache) window._scWowyCache = {};
   if (!window._scWowyCache.hasOwnProperty(SEASON)) {
@@ -574,7 +718,8 @@ async function runWowy() {
         const cSp = normNm(sp.name);
         if (cSp === cleanFull) return true;
         const sPts = cSp.split(' ');
-        return fPts.length >= 2 && sPts.length >= 2 && fPts.at(0).at(0) === sPts.at(0).at(0) && fPts.at(-1) === sPts.at(-1);
+        if (fPts.length >= 2 && sPts.length >= 2 && fPts.at(0).at(0) === sPts.at(0).at(0) && fPts.at(-1) === sPts.at(-1)) return true;
+        return fPts.length >= 1 && sPts.length >= 1 && fPts.at(-1) === sPts.at(-1);
       });
       const cleanLast = fullName.replace(/,\s*(jr|sr|ii|iii|iv|v)\.?$/i, '').split(/\s+/).filter(w => !/^(jr|sr|ii|iii|iv|v)\.?$/i.test(w)).pop() || fullName;
       return { key: selKey, fullName, cleanLast, pid: match ? Number(match.id) : null };
@@ -594,18 +739,23 @@ async function runWowy() {
         const sideStats = (side) => {
           const pArr = scData.poss.filter(x => x.side === side && matchOn(x.on));
           const sArr = scData.shots.filter(x => x.side === side && matchOn(x.on));
-          const tArr = (scData.turnovers || []).filter(x => x.side === side && matchOn(x.on));
-          const fArr = (scData.fts || []).filter(x => x.side === side && matchOn(x.on));
+          const tArr = (scData.turnovers || new Array()).filter(x => x.side === side && matchOn(x.on));
+          const fArr = (scData.fts || new Array()).filter(ft => ft.side === side && matchOn(ft.on));
 
           const nPoss = pArr.length;
           const shotPts = sArr.reduce((acc, s) => acc + (Number(s.made) === 1 ? (Number(s.val) || 2) : 0), 0);
           const ftPts = fArr.reduce((acc, ft) => acc + (Number(ft.made) === 1 ? 1 : 0), 0);
-          const rtg = nPoss ? ((shotPts + ftPts) / nPoss) * 100 : null;
+          const totPts = shotPts + ftPts;
+          const rtg = nPoss ? (totPts / nPoss) * 100 : null;
 
           const fga = sArr.length;
-          const fgm = sArr.reduce((acc, s) => acc + (Number(s.made) === 1 ? 1 : 0), 0);
+          const fta = fArr.length;
+          const fg3a = sArr.reduce((acc, s) => acc + (Number(s.val) === 3 ? 1 : 0), 0);
           const fg3m = sArr.reduce((acc, s) => acc + (Number(s.made) === 1 && Number(s.val) === 3 ? 1 : 0), 0);
-          const efg = fga ? ((fgm + 0.5 * fg3m) / fga) : null;
+          const fgm = sArr.reduce((acc, s) => acc + (Number(s.made) === 1 ? 1 : 0), 0);
+          const tsDen = 2 * (fga + 0.44 * fta);
+          const tsPct = tsDen > 0 ? (totPts / tsDen) : null;
+          const fg3Pct = fg3a > 0 ? (fg3m / fg3a) : null;
           const tovPct = nPoss ? (tArr.length / nPoss) : null;
 
           const missedFga = fga - fgm;
@@ -614,7 +764,7 @@ async function runWowy() {
           const orebs = pArr.reduce((acc, p) => acc + (Number(p.oreb) || 0), 0);
           const orbPct = rebOpps ? (side === 'off' ? (orebs / rebOpps) : (1 - orebs / rebOpps)) : null;
 
-          return { nPoss, rtg, efg, tovPct, orbPct };
+          return { nPoss, rtg, tsPct, fg3Pct, tovPct, orbPct };
         };
 
         const offS = sideStats('off');
@@ -624,14 +774,15 @@ async function runWowy() {
         return {
           POSS: totPoss, OffRtg: offS.rtg, DefRtg: defS.rtg,
           NetRtg: (offS.rtg != null && defS.rtg != null) ? (offS.rtg - defS.rtg) : null,
-          OFF_EFG_PCT: offS.efg, OFF_TOV_PCT: offS.tovPct, OFF_ORB_PCT: offS.orbPct,
-          DEF_EFG_PCT: defS.efg, DEF_TOV_PCT: defS.tovPct, DEF_ORB_PCT: defS.orbPct,
+          OFF_TS_PCT: offS.tsPct, OFF_TOV_PCT: offS.tovPct, OFF_ORB_PCT: offS.orbPct,
+          DEF_TS_PCT: defS.tsPct, DEF_TOV_PCT: defS.tovPct, DEF_ORB_PCT: defS.orbPct,
+          OFF_3P_PCT: offS.fg3Pct, DEF_3P_PCT: defS.fg3Pct
         };
       };
       const lgMap = {
         OffRtg: 'OFF_RATING', DefRtg: 'DEF_RATING', NetRtg: 'NET_RATING',
-        OFF_EFG_PCT: 'EFG_PCT', OFF_TOV_PCT: 'TM_TOV_PCT', OFF_ORB_PCT: 'OREB_PCT',
-        DEF_EFG_PCT: 'OPP_EFG_PCT', DEF_TOV_PCT: 'OPP_TOV_PCT', DEF_ORB_PCT: 'DREB_PCT'
+        OFF_TS_PCT: 'TS_PCT', OFF_TOV_PCT: 'TM_TOV_PCT', OFF_ORB_PCT: 'OREB_PCT',
+        DEF_TS_PCT: 'OPP_TS_PCT', DEF_TOV_PCT: 'OPP_TOV_PCT', DEF_ORB_PCT: 'DREB_PCT'
       };
       const lgAvg = {};
       if (cachedTeamStats?.slices?.all) {
@@ -641,6 +792,14 @@ async function runWowy() {
           if (vals.length) lgAvg[k] = vals.reduce((a, b) => a + b, 0) / vals.length;
         });
       }
+      if (lgAvg.OFF_TS_PCT == null && cachedTeamStats?.slices?.all) {
+        const eVals = cachedTeamStats.slices.all.map(t => t.EFG_PCT).filter(v => v != null);
+        if (eVals.length) lgAvg.OFF_TS_PCT = (eVals.reduce((a, b) => a + b, 0) / eVals.length) + 0.032;
+      }
+      if (lgAvg.DEF_TS_PCT == null && cachedTeamStats?.slices?.all) {
+        const deVals = cachedTeamStats.slices.all.map(t => t.OPP_EFG_PCT).filter(v => v != null);
+        if (deVals.length) lgAvg.DEF_TS_PCT = (deVals.reduce((a, b) => a + b, 0) / deVals.length) + 0.032;
+      }
 
       const rowsData = new Array();
       const totalMasks = 1 << selItems.length;
@@ -648,12 +807,17 @@ async function runWowy() {
         const st = calcState(m);
         if (st) rowsData.push({ mask: m, st });
       }
+      if (selItems.length > 1) {
+        rowsData.sort((a, b) => b.st.POSS - a.st.POSS);
+      }
 
-      const cols = [
+      const cols = new Array(
         { k: 'OffRtg', pct: false, lb: false }, { k: 'DefRtg', pct: false, lb: true }, { k: 'NetRtg', pct: false, lb: false },
-        { k: 'OFF_EFG_PCT', pct: true, lb: false }, { k: 'OFF_TOV_PCT', pct: true, lb: true }, { k: 'OFF_ORB_PCT', pct: true, lb: false },
-        { k: 'DEF_EFG_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false },
-      ];
+        { k: 'OFF_TS_PCT', pct: true, lb: false }, { k: 'OFF_TOV_PCT', pct: true, lb: true }, { k: 'OFF_ORB_PCT', pct: true, lb: false },
+        { k: 'DEF_TS_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false }
+      );
+
+      window._lastWowyRender = { season: SEASON, selItems, rowsData, lgAvg, cols, exclLow: Boolean(window._excludeLowLev) };
 
       const rowsHtml = new Array();
       rowsData.forEach(({ mask: m, st }) => {
@@ -661,38 +825,46 @@ async function runWowy() {
           const isOn = Boolean((m >> idx) & 1);
           const url = _wowyPhotoMap[item.key] || _wowyPhotoMap[item.fullName.toLowerCase()] || _wowyPhotoMap[normNm(item.fullName)];
           const imgTag = url
-            ? `<img src="${esc(url)}" referrerpolicy="no-referrer" style="width:44px;height:44px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid ${isOn ? 'var(--blue)' : '#ccc'};${isOn ? '' : 'filter:grayscale(1);opacity:0.45;'}">`
-            : `<div style="width:44px;height:44px;border-radius:50%;background:#ddd;border:2px solid ${isOn ? 'var(--blue)' : '#ccc'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#666;">${isOn ? 'ON' : 'OFF'}</div>`;
-          return `<div style="text-align:center;margin-right:8px;">
-            <div style="position:relative;display:inline-block;">${imgTag}${isOn ? '' : '<div style="position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;">OFF</div>'}</div>
-            <div style="font-size:9.5px;color:var(--muted);margin-top:2px;">${esc(item.cleanLast)}</div>
+            ? `<img src="${esc(url)}" referrerpolicy="no-referrer" style="width:42px;height:42px;border-radius:50%;object-fit:cover;object-position:top;border:2.5px solid ${isOn ? 'var(--blue)' : '#cbd5e1'};${isOn ? '' : 'filter:grayscale(1);opacity:0.45;'}">`
+            : `<div style="width:42px;height:42px;border-radius:50%;background:#e2e8f0;border:2.5px solid ${isOn ? 'var(--blue)' : '#cbd5e1'};display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#475569;">${isOn ? 'ON' : 'OFF'}</div>`;
+          return `<div style="text-align:center;margin-right:7px;">
+            <div style="position:relative;display:inline-block;">${imgTag}${isOn ? '' : '<div style="position:absolute;inset:0;border-radius:50%;background:rgba(15,23,42,.38);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;letter-spacing:0.3px;">OFF</div>'}</div>
+            <div style="font-size:9.5px;font-weight:600;color:var(--text);margin-top:2px;">${esc(item.cleanLast)}</div>
           </div>`;
         }).join('');
 
         const valsHtml = cols.map(col => {
           const v = st[col.k];
-          const disp = v == null ? 'â€”' : (col.pct ? (v * 100).toFixed(1) + '%' : v.toFixed(1));
+          const disp = v == null ? '—' : (col.pct ? (v * 100).toFixed(1) + '%' : v.toFixed(1));
           const nc = col.k === 'NetRtg' ? (v >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
           let subHtml = '';
           if (v != null && lgAvg[col.k] != null && col.k !== 'NetRtg') {
             const diff = col.pct ? (v - lgAvg[col.k]) * 100 : (v - lgAvg[col.k]);
             const better = col.lb ? diff < 0 : diff > 0;
-            subHtml = `<div style="font-size:9.5px;font-weight:600;color:${better ? 'var(--green)' : 'var(--red)'};margin-top:1px;">${diff >= 0 ? '+' : ''}${diff.toFixed(1)}${col.pct ? '%' : ''}</div>`;
+            subHtml = `<div style="font-size:9px;font-weight:700;color:${better ? 'var(--green)' : 'var(--red)'};margin-top:1px;">${diff >= 0 ? '+' : ''}${diff.toFixed(1)}${col.pct ? '%' : ''}</div>`;
           }
-          return `<td style="padding:7px 8px;text-align:right;vertical-align:middle;"><div style="font-size:12.5px;font-weight:700;${nc}">${disp}</div>${subHtml}</td>`;
+          if (col.k === 'OffRtg' && st.OFF_3P_PCT != null) {
+            subHtml += `<div style="font-size:8.5px;color:var(--muted);margin-top:2px;">${(st.OFF_3P_PCT * 100).toFixed(1)}%</div>`;
+          } else if (col.k === 'DefRtg' && st.DEF_3P_PCT != null) {
+            subHtml += `<div style="font-size:8.5px;color:var(--muted);margin-top:2px;">${(st.DEF_3P_PCT * 100).toFixed(1)}%</div>`;
+          }
+          return `<td style="padding:6px 7px;text-align:right;vertical-align:middle;"><div style="font-size:12.5px;font-weight:700;${nc}">${disp}</div>${subHtml}</td>`;
         }).join('');
 
-        rowsHtml.push(`<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}</td><td style="padding:7px 8px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;">${st.POSS.toLocaleString()}</td>${valsHtml}</tr>`);
+        const possSub = `<div style="font-size:8.5px;color:var(--muted);margin-top:15px;">3P%:</div>`;
+        rowsHtml.push(`<tr style="border-bottom:1px solid var(--border);background:#fff;"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}</td><td style="padding:6px 7px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;"><div>${st.POSS.toLocaleString()}</div>${possSub}</td>${valsHtml}</tr>`);
       });
 
       // Dedicated bottom ON - OFF summary row (All-ON minus All-OFF)
-      if (rowsData.length >= 2) {
-        const onSt = rowsData.at(0).st;
-        const offSt = rowsData.at(-1).st;
+      const allOnRow = rowsData.find(r => r.mask === ((1 << selItems.length) - 1));
+      const allOffRow = rowsData.find(r => r.mask === 0);
+      if (allOnRow && allOffRow) {
+        const onSt = allOnRow.st;
+        const offSt = allOffRow.st;
         const diffCells = cols.map(col => {
           const vOn = onSt[col.k];
           const vOff = offSt[col.k];
-          if (vOn == null || vOff == null) return '<td style="padding:8px;text-align:right;">â€”</td>';
+          if (vOn == null || vOff == null) return '<td style="padding:8px;text-align:right;">—</td>';
           const diff = col.pct ? (vOn - vOff) * 100 : (vOn - vOff);
           const better = col.lb ? diff < 0 : diff > 0;
           const colCss = better ? 'var(--green)' : 'var(--red)';
@@ -700,19 +872,19 @@ async function runWowy() {
         }).join('');
 
         rowsHtml.push(`<tr style="border-top:2px solid #000;background:rgba(0,0,0,0.025);">
-          <td style="padding:8px 4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.4px;">ON âˆ’ OFF</td>
+          <td style="padding:8px 4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.4px;">ON - OFF</td>
           <td style="padding:8px;text-align:right;font-size:10px;color:var(--muted);">diff</td>
           ${diffCells}
         </tr>`);
       }
 
-      container.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Shot-Chart Play-by-Play Splits Â· Subscript: Î” vs. league avg Â· Bottom row: ON âˆ’ OFF</div>
+      container.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Play-by-Play WOWY Splits · Sub-row: Delta vs. G League Avg · Bottom row: ON - OFF</div>
         <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
           <thead><tr style="border-bottom:2px solid #000;font-family:'Oswald',sans-serif;font-size:10.5px;color:var(--muted);">
             <th style="text-align:left;padding:4px;">LINEUP</th><th style="text-align:right;padding:4px 8px;">POSS</th>
             <th style="text-align:right;padding:4px 8px;">OFF</th><th style="text-align:right;padding:4px 8px;">DEF</th><th style="text-align:right;padding:4px 8px;">NET</th>
-            <th style="text-align:right;padding:4px 8px;">OFF eFG%</th><th style="text-align:right;padding:4px 8px;">OFF TOV%</th><th style="text-align:right;padding:4px 8px;">OFF ORB%</th>
-            <th style="text-align:right;padding:4px 8px;">DEF eFG%</th><th style="text-align:right;padding:4px 8px;">DEF TOV%</th><th style="text-align:right;padding:4px 8px;">DEF ORB%</th>
+            <th style="text-align:right;padding:4px 8px;">OFF TS%</th><th style="text-align:right;padding:4px 8px;">OFF TOV%</th><th style="text-align:right;padding:4px 8px;">OFF ORB%</th>
+            <th style="text-align:right;padding:4px 8px;">DEF TS%</th><th style="text-align:right;padding:4px 8px;">DEF TOV%</th><th style="text-align:right;padding:4px 8px;">DEF ORB%</th>
           </tr></thead>
           <tbody>${rowsHtml.join('')}</tbody>
         </table></div>`;
@@ -756,13 +928,13 @@ async function runWowy() {
   }
 
   function fmtStat(key, val) {
-    if (val==null) return 'â€”';
+    if (val==null) return '—';
     if (key==='POSS') return Math.round(val).toLocaleString();
     return PCT.has(key) ? (val*100).toFixed(1) : val.toFixed(1);
   }
   function deltaCell(key, val) {
     const avg = leagueAvgs[key];
-    if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">â€”</div>';
+    if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">—</div>';
     // Both val and avg are raw API decimals (e.g. 0.13 for 13%)
     // Scale both the same way before comparing
     const scale = PCT.has(key) ? 100 : 1;
@@ -772,7 +944,7 @@ async function runWowy() {
     return `<div style="font-size:8px;color:${better?'#E6A817':'#aaa'};">${sign}${diff.toFixed(1)}${PCT.has(key)?'%':''}</div>`;
   }
 
-  // Player photo circle â€” large Databallr style with OFF overlay
+  // Player photo circle — large Databallr style with OFF overlay
   function playerCircle(abbrev, isOn) {
     const entry = _wowyPlayers.find(p=>p.abbrev===abbrev||p.player===abbrev);
     const name  = entry ? (entry.player||abbrev).split(' ').pop() : abbrev;
@@ -855,11 +1027,11 @@ async function runWowy() {
     { key:'DEF',     label:'DEF'  },
     { key:'NET',     label:'NET'  },
     null,
-    { key:'OFF eFG%', label:'OFF eFG%' },
+    { key:'OFF TS%', label:'OFF TS%' },
     { key:'OFF TOV%', label:'OFF TOV%' },
     { key:'OFF ORB%', label:'OFF ORB%' },
     null,
-    { key:'DEF eFG%', label:'DEF eFG%' },
+    { key:'DEF TS%', label:'DEF TS%' },
     { key:'DEF TOV%', label:'DEF TOV%' },
     { key:'DEF ORB%', label:'DEF ORB%' },
   ];
@@ -938,17 +1110,17 @@ async function renderWowyInit() {
         sel.appendChild(opt);
       });
     }
-    document.getElementById('wowyContent').innerHTML =
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML =
       '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>';
   } catch(e) {
-    document.getElementById('wowyContent').innerHTML =
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML =
       `<div style="color:var(--red);font-size:12px;">Could not load WOWY data: ${esc(e.message)}</div>`;
   }
 }
 
 async function renderWowy(abbrev) {
   if (!abbrev) abbrev = document.getElementById('wowyPlayerSelect')?.value || '';
-  const container = document.getElementById('wowyContent');
+  const container = (document.getElementById('wowyResults') || document.getElementById('wowyContent'));
   if (!abbrev) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>'; return; }
 
   const ld = window._wowyLineupData;
@@ -1004,7 +1176,7 @@ async function renderWowy(abbrev) {
   }
 
   function fmt(key, val, pct) {
-    if (val == null) return 'â€”';
+    if (val == null) return '—';
     return pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1);
   }
 
@@ -1034,7 +1206,7 @@ async function renderWowy(abbrev) {
   }
 
   function buildRow(row, active) {
-    const vol = row.MIN != null ? Number(row.MIN).toFixed(0) : 'â€”';
+    const vol = row.MIN != null ? Number(row.MIN).toFixed(0) : '—';
     const volLabel = row._isPoss ? 'poss' : 'min';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px 4px 8px 0;">${photoHtml(active)}</td>
@@ -1045,7 +1217,7 @@ async function renderWowy(abbrev) {
       ${STATS.map(s => {
         const val = row[s.key];
         const netC = s.key === 'NetRtg' ? (val >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
-        const dispVal = val == null ? 'â€”' : (s.pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1));
+        const dispVal = val == null ? '—' : (s.pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1));
         return `<td style="padding:4px 8px;text-align:right;">
           <div style="font-size:12px;font-weight:600;${netC}">${dispVal}</div>
           ${delta(s.key, val, s.pct, s.lowerBetter)}
@@ -1061,7 +1233,7 @@ async function renderWowy(abbrev) {
       ${STATS.map(s => {
         const on  = onRow[s.key];
         const off = offRow[s.key];
-        if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">â€”</td>`;
+        if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">—</td>`;
         const diff = on - off;
         const better = s.lowerBetter ? diff < 0 : diff > 0;
         const sign = diff >= 0 ? '+' : '';
@@ -1102,7 +1274,7 @@ function buildWowyMiniTable(rows) {
     <thead><tr>${cols.map(c=>`<th style="background:var(--surface);padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};color:var(--muted);">${c}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(r=>`<tr>${cols.map(c=>{
       const v=r[c];
-      const disp = v==null?'â€”':typeof v==='number'?v.toFixed(1):v;
+      const disp = v==null?'—':typeof v==='number'?v.toFixed(1):v;
       const color = c==='NetRtg'?(Number(v)>=0?'var(--green)':'var(--red)'):'';
       return `<td style="padding:2px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};${color?'color:'+color+';font-weight:700;':''}">${disp}</td>`;
     }).join('')}</tr>`).join('')}</tbody>
@@ -1143,7 +1315,7 @@ function ordinal(n) {
 }
 
 function fmt(v, dp=1) {
-  if (v == null) return 'â€”';
+  if (v == null) return '—';
   return (v >= 0 ? '+' : '') + Number(v).toFixed(dp);
 }
 
@@ -1186,7 +1358,7 @@ function rotationPersonSvg(size=28) {
 }
 
 function buildRotationPlayer(name, mins) {
-  const icon = name && name !== 'â€”'
+  const icon = name && name !== '—'
     ? playerIcon(name, 32)
     : rotationPersonSvg(32);
   return `<div class="rot-player">
@@ -1427,7 +1599,7 @@ async function loadStaffNotes() {
   }).join('');
 }
 
-// Rotation placeholder â€” 10 silhouettes with XX Minutes
+// Rotation placeholder — 10 silhouettes with XX Minutes
 async function buildRotationPlaceholders() {
   const r1 = document.getElementById('rotationRow1');
   const r2 = document.getElementById('rotationRow2');
@@ -1516,8 +1688,8 @@ async function buildRotationPlaceholders() {
   } catch(e) {}
 
   // Fallback placeholders
-  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('â€”', 'XX Min');
-  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('â€”', 'XX Min');
+  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('—', 'XX Min');
+  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
 }
 
 
@@ -1562,7 +1734,7 @@ async function initWowySlots() {
     <div>
       <div style="font-size:9px;color:var(--muted);margin-bottom:2px;text-align:center;">Player ${i+1}</div>
       <select id="wowySlot${i}" style="width:100%;font-size:10px;padding:2px 3px;border:1px solid var(--border);">
-        <option value="">â€”</option>
+        <option value="">—</option>
         ${_wowyPlayers.map(p => `<option value="${esc(p.abbrev||p.player)}">${esc(p.player||p.abbrev)}</option>`).join('')}
       </select>
     </div>`).join('');
@@ -1580,7 +1752,7 @@ function clearWowy() {
     const sel = document.getElementById(`wowySlot${i}`);
     if (sel) sel.value = '';
   }
-  document.getElementById('wowyContent').innerHTML = '';
+  (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML = '';
   document.getElementById('wowyDiag').innerHTML = '';
 }
 
@@ -1600,12 +1772,12 @@ function showWowyDiag(selected, d, pbpBuckets) {
     if (!e) { lines.push(`  ${abbrev}: NOT FOUND in wowy`); return; }
     const w = e.with || {};
     lines.push(`  ${e.player} (${abbrev}):`);
-    lines.push(`    with:    POSS=${w.POSS} NetRtg=${w.NetRtg} OFF_EFG=${w.OFF_EFG_PCT} DEF_EFG=${w.DEF_EFG_PCT}`);
+    lines.push(`    with:    POSS=${w.POSS} NetRtg=${w.NetRtg} OFF_EFG=${w.OFF_TS_PCT} DEF_EFG=${w.DEF_TS_PCT}`);
     lines.push(`    without: POSS=${(e.without||{}).POSS} NetRtg=${(e.without||{}).NetRtg}`);
     lines.push(`    source: ${e.rating_source||'none'}`);
   });
   if (pbpBuckets) {
-    lines.push(`PBP bucket: POSS=${pbpBuckets.POSS} OFF_EFG=${pbpBuckets.OFF_EFG_PCT} DEF_EFG=${pbpBuckets.DEF_EFG_PCT} OFF_TOV=${pbpBuckets.OFF_TOV_PCT} DEF_TOV=${pbpBuckets.DEF_TOV_PCT}`);
+    lines.push(`PBP bucket: POSS=${pbpBuckets.POSS} OFF_EFG=${pbpBuckets.OFF_TS_PCT} DEF_EFG=${pbpBuckets.DEF_TS_PCT} OFF_TOV=${pbpBuckets.OFF_TOV_PCT} DEF_TOV=${pbpBuckets.DEF_TOV_PCT}`);
   } else {
     lines.push(`PBP bucket: none (using lineup combo fallback)`);
   }
@@ -1615,13 +1787,13 @@ function showWowyDiag(selected, d, pbpBuckets) {
 async function runWowy() {
   const selected = getSelectedWowyPlayers();
   if (!selected.length) {
-    document.getElementById('wowyContent').innerHTML = '<div style="color:var(--muted);font-size:11px;">Select at least one player.</div>';
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML = '<div style="color:var(--muted);font-size:11px;">Select at least one player.</div>';
     return;
   }
 
   const d  = await loadMexData();
   const ld = window._wowyLineupData;
-  const container = document.getElementById('wowyContent');
+  const container = (document.getElementById('wowyResults') || document.getElementById('wowyContent'));
   container.innerHTML = '<div style="color:var(--muted);font-size:11px;">Computingâ€¦</div>';
 
   function getPlayers(c) { return (c.GROUP_NAME||'').split(' - ').map(n=>n.trim()); }
@@ -1633,19 +1805,19 @@ async function runWowy() {
 
   // Available fields: E_OFF_RATING, E_DEF_RATING, E_NET_RATING (smoothed for small samples)
   // EFG_PCT, TM_TOV_PCT, OREB_PCT, DREB_PCT, TS_PCT
-  // No OPP_ fields â€” Four Factors not fetched for lineups yet
+  // No OPP_ fields — Four Factors not fetched for lineups yet
   const API_KEYS = {
     OFF: 'E_OFF_RATING', DEF: 'E_DEF_RATING', NET: 'E_NET_RATING',
-    'OFF eFG%': 'EFG_PCT',    'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
-    'DEF eFG%': 'OPP_EFG_PCT','DEF TOV%': 'OPP_TOV_PCT','DEF ORB%': 'OPP_OREB_PCT',
+    'OFF TS%': 'EFG_PCT',    'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
+    'DEF TS%': 'OPP_EFG_PCT','DEF TOV%': 'OPP_TOV_PCT','DEF ORB%': 'OPP_OREB_PCT',
   };
   // PBP four factor keys in mex_data wowy entries
   const PBP_KEYS = {
-    'OFF eFG%': 'OFF_EFG_PCT', 'OFF TOV%': 'OFF_TOV_PCT', 'OFF ORB%': 'OFF_ORB_PCT',
-    'DEF eFG%': 'DEF_EFG_PCT', 'DEF TOV%': 'DEF_TOV_PCT', 'DEF ORB%': 'DEF_ORB_PCT',
+    'OFF TS%': 'OFF_TS_PCT', 'OFF TOV%': 'OFF_TOV_PCT', 'OFF ORB%': 'OFF_ORB_PCT',
+    'DEF TS%': 'DEF_TS_PCT', 'DEF TOV%': 'DEF_TOV_PCT', 'DEF ORB%': 'DEF_ORB_PCT',
   };
-  const LB  = new Set(['DEF','OFF TOV%','DEF eFG%','DEF ORB%']);
-  const PCT = new Set(['OFF eFG%','OFF TOV%','OFF ORB%','DEF eFG%','DEF TOV%','DEF ORB%']);
+  const LB  = new Set(['DEF','OFF TOV%','DEF TS%','DEF ORB%']);
+  const PCT = new Set(['OFF TS%','OFF TOV%','OFF ORB%','DEF TS%','DEF TOV%','DEF ORB%']);
 
   if (!window._scWowyCache) window._scWowyCache = {};
   if (!window._scWowyCache.hasOwnProperty(SEASON)) {
@@ -1717,14 +1889,14 @@ async function runWowy() {
         return {
           POSS: totPoss, OffRtg: offS.rtg, DefRtg: defS.rtg,
           NetRtg: (offS.rtg != null && defS.rtg != null) ? (offS.rtg - defS.rtg) : null,
-          OFF_EFG_PCT: offS.efg, OFF_TOV_PCT: offS.tovPct, OFF_ORB_PCT: offS.orbPct,
-          DEF_EFG_PCT: defS.efg, DEF_TOV_PCT: defS.tovPct, DEF_ORB_PCT: defS.orbPct,
+          OFF_TS_PCT: offS.efg, OFF_TOV_PCT: offS.tovPct, OFF_ORB_PCT: offS.orbPct,
+          DEF_TS_PCT: defS.efg, DEF_TOV_PCT: defS.tovPct, DEF_ORB_PCT: defS.orbPct,
         };
       };
       const lgMap = {
         OffRtg: 'OFF_RATING', DefRtg: 'DEF_RATING', NetRtg: 'NET_RATING',
-        OFF_EFG_PCT: 'EFG_PCT', OFF_TOV_PCT: 'TM_TOV_PCT', OFF_ORB_PCT: 'OREB_PCT',
-        DEF_EFG_PCT: 'OPP_EFG_PCT', DEF_TOV_PCT: 'OPP_TOV_PCT', DEF_ORB_PCT: 'DREB_PCT'
+        OFF_TS_PCT: 'EFG_PCT', OFF_TOV_PCT: 'TM_TOV_PCT', OFF_ORB_PCT: 'OREB_PCT',
+        DEF_TS_PCT: 'OPP_EFG_PCT', DEF_TOV_PCT: 'OPP_TOV_PCT', DEF_ORB_PCT: 'DREB_PCT'
       };
       const lgAvg = {};
       if (cachedTeamStats?.slices?.all) {
@@ -1744,8 +1916,8 @@ async function runWowy() {
 
       const cols = [
         { k: 'OffRtg', pct: false, lb: false }, { k: 'DefRtg', pct: false, lb: true }, { k: 'NetRtg', pct: false, lb: false },
-        { k: 'OFF_EFG_PCT', pct: true, lb: false }, { k: 'OFF_TOV_PCT', pct: true, lb: true }, { k: 'OFF_ORB_PCT', pct: true, lb: false },
-        { k: 'DEF_EFG_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false },
+        { k: 'OFF_TS_PCT', pct: true, lb: false }, { k: 'OFF_TOV_PCT', pct: true, lb: true }, { k: 'OFF_ORB_PCT', pct: true, lb: false },
+        { k: 'DEF_TS_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false },
       ];
 
       const rowsHtml = new Array();
@@ -1764,7 +1936,7 @@ async function runWowy() {
 
         const valsHtml = cols.map(col => {
           const v = st[col.k];
-          const disp = v == null ? 'â€”' : (col.pct ? (v * 100).toFixed(1) + '%' : v.toFixed(1));
+          const disp = v == null ? '—' : (col.pct ? (v * 100).toFixed(1) + '%' : v.toFixed(1));
           const nc = col.k === 'NetRtg' ? (v >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
           let subHtml = '';
           if (v != null && lgAvg[col.k] != null && col.k !== 'NetRtg') {
@@ -1785,7 +1957,7 @@ async function runWowy() {
         const diffCells = cols.map(col => {
           const vOn = onSt[col.k];
           const vOff = offSt[col.k];
-          if (vOn == null || vOff == null) return '<td style="padding:8px;text-align:right;">â€”</td>';
+          if (vOn == null || vOff == null) return '<td style="padding:8px;text-align:right;">—</td>';
           const diff = col.pct ? (vOn - vOff) * 100 : (vOn - vOff);
           const better = col.lb ? diff < 0 : diff > 0;
           const colCss = better ? 'var(--green)' : 'var(--red)';
@@ -1793,19 +1965,19 @@ async function runWowy() {
         }).join('');
 
         rowsHtml.push(`<tr style="border-top:2px solid #000;background:rgba(0,0,0,0.025);">
-          <td style="padding:8px 4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.4px;">ON âˆ’ OFF</td>
+          <td style="padding:8px 4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.4px;">ON - OFF</td>
           <td style="padding:8px;text-align:right;font-size:10px;color:var(--muted);">diff</td>
           ${diffCells}
         </tr>`);
       }
 
-      container.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Shot-Chart Play-by-Play Splits Â· Subscript: Î” vs. league avg Â· Bottom row: ON âˆ’ OFF</div>
+      container.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Play-by-Play WOWY Splits · Sub-row: Delta vs. G League Avg · Bottom row: ON - OFF</div>
         <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
           <thead><tr style="border-bottom:2px solid #000;font-family:'Oswald',sans-serif;font-size:10.5px;color:var(--muted);">
             <th style="text-align:left;padding:4px;">LINEUP</th><th style="text-align:right;padding:4px 8px;">POSS</th>
             <th style="text-align:right;padding:4px 8px;">OFF</th><th style="text-align:right;padding:4px 8px;">DEF</th><th style="text-align:right;padding:4px 8px;">NET</th>
-            <th style="text-align:right;padding:4px 8px;">OFF eFG%</th><th style="text-align:right;padding:4px 8px;">OFF TOV%</th><th style="text-align:right;padding:4px 8px;">OFF ORB%</th>
-            <th style="text-align:right;padding:4px 8px;">DEF eFG%</th><th style="text-align:right;padding:4px 8px;">DEF TOV%</th><th style="text-align:right;padding:4px 8px;">DEF ORB%</th>
+            <th style="text-align:right;padding:4px 8px;">OFF TS%</th><th style="text-align:right;padding:4px 8px;">OFF TOV%</th><th style="text-align:right;padding:4px 8px;">OFF ORB%</th>
+            <th style="text-align:right;padding:4px 8px;">DEF TS%</th><th style="text-align:right;padding:4px 8px;">DEF TOV%</th><th style="text-align:right;padding:4px 8px;">DEF ORB%</th>
           </tr></thead>
           <tbody>${rowsHtml.join('')}</tbody>
         </table></div>`;
@@ -1849,13 +2021,13 @@ async function runWowy() {
   }
 
   function fmtStat(key, val) {
-    if (val==null) return 'â€”';
+    if (val==null) return '—';
     if (key==='POSS') return Math.round(val).toLocaleString();
     return PCT.has(key) ? (val*100).toFixed(1) : val.toFixed(1);
   }
   function deltaCell(key, val) {
     const avg = leagueAvgs[key];
-    if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">â€”</div>';
+    if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">—</div>';
     // Both val and avg are raw API decimals (e.g. 0.13 for 13%)
     // Scale both the same way before comparing
     const scale = PCT.has(key) ? 100 : 1;
@@ -1865,7 +2037,7 @@ async function runWowy() {
     return `<div style="font-size:8px;color:${better?'#E6A817':'#aaa'};">${sign}${diff.toFixed(1)}${PCT.has(key)?'%':''}</div>`;
   }
 
-  // Player photo circle â€” large Databallr style with OFF overlay
+  // Player photo circle — large Databallr style with OFF overlay
   function playerCircle(abbrev, isOn) {
     const entry = _wowyPlayers.find(p=>p.abbrev===abbrev||p.player===abbrev);
     const name  = entry ? (entry.player||abbrev).split(' ').pop() : abbrev;
@@ -1948,11 +2120,11 @@ async function runWowy() {
     { key:'DEF',     label:'DEF'  },
     { key:'NET',     label:'NET'  },
     null,
-    { key:'OFF eFG%', label:'OFF eFG%' },
+    { key:'OFF TS%', label:'OFF TS%' },
     { key:'OFF TOV%', label:'OFF TOV%' },
     { key:'OFF ORB%', label:'OFF ORB%' },
     null,
-    { key:'DEF eFG%', label:'DEF eFG%' },
+    { key:'DEF TS%', label:'DEF TS%' },
     { key:'DEF TOV%', label:'DEF TOV%' },
     { key:'DEF ORB%', label:'DEF ORB%' },
   ];
@@ -2031,17 +2203,17 @@ async function renderWowyInit() {
         sel.appendChild(opt);
       });
     }
-    document.getElementById('wowyContent').innerHTML =
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML =
       '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>';
   } catch(e) {
-    document.getElementById('wowyContent').innerHTML =
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML =
       `<div style="color:var(--red);font-size:12px;">Could not load WOWY data: ${esc(e.message)}</div>`;
   }
 }
 
 async function renderWowy(abbrev) {
   if (!abbrev) abbrev = document.getElementById('wowyPlayerSelect')?.value || '';
-  const container = document.getElementById('wowyContent');
+  const container = (document.getElementById('wowyResults') || document.getElementById('wowyContent'));
   if (!abbrev) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>'; return; }
 
   const ld = window._wowyLineupData;
@@ -2097,7 +2269,7 @@ async function renderWowy(abbrev) {
   }
 
   function fmt(key, val, pct) {
-    if (val == null) return 'â€”';
+    if (val == null) return '—';
     return pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1);
   }
 
@@ -2127,7 +2299,7 @@ async function renderWowy(abbrev) {
   }
 
   function buildRow(row, active) {
-    const vol = row.MIN != null ? Number(row.MIN).toFixed(0) : 'â€”';
+    const vol = row.MIN != null ? Number(row.MIN).toFixed(0) : '—';
     const volLabel = row._isPoss ? 'poss' : 'min';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px 4px 8px 0;">${photoHtml(active)}</td>
@@ -2138,7 +2310,7 @@ async function renderWowy(abbrev) {
       ${STATS.map(s => {
         const val = row[s.key];
         const netC = s.key === 'NetRtg' ? (val >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
-        const dispVal = val == null ? 'â€”' : (s.pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1));
+        const dispVal = val == null ? '—' : (s.pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1));
         return `<td style="padding:4px 8px;text-align:right;">
           <div style="font-size:12px;font-weight:600;${netC}">${dispVal}</div>
           ${delta(s.key, val, s.pct, s.lowerBetter)}
@@ -2154,7 +2326,7 @@ async function renderWowy(abbrev) {
       ${STATS.map(s => {
         const on  = onRow[s.key];
         const off = offRow[s.key];
-        if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">â€”</td>`;
+        if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">—</td>`;
         const diff = on - off;
         const better = s.lowerBetter ? diff < 0 : diff > 0;
         const sign = diff >= 0 ? '+' : '';
@@ -2195,7 +2367,7 @@ function buildWowyMiniTable(rows) {
     <thead><tr>${cols.map(c=>`<th style="background:var(--surface);padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};color:var(--muted);">${c}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(r=>`<tr>${cols.map(c=>{
       const v=r[c];
-      const disp = v==null?'â€”':typeof v==='number'?v.toFixed(1):v;
+      const disp = v==null?'—':typeof v==='number'?v.toFixed(1):v;
       const color = c==='NetRtg'?(Number(v)>=0?'var(--green)':'var(--red)'):'';
       return `<td style="padding:2px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};${color?'color:'+color+';font-weight:700;':''}">${disp}</td>`;
     }).join('')}</tr>`).join('')}</tbody>
@@ -2236,7 +2408,7 @@ function ordinal(n) {
 }
 
 function fmt(v, dp=1) {
-  if (v == null) return 'â€”';
+  if (v == null) return '—';
   return (v >= 0 ? '+' : '') + Number(v).toFixed(dp);
 }
 
@@ -2279,7 +2451,7 @@ function rotationPersonSvg(size=28) {
 }
 
 function buildRotationPlayer(name, mins) {
-  const icon = name && name !== 'â€”'
+  const icon = name && name !== '—'
     ? playerIcon(name, 32)
     : rotationPersonSvg(32);
   return `<div class="rot-player">
@@ -2520,7 +2692,7 @@ async function loadStaffNotes() {
   }).join('');
 }
 
-// Rotation placeholder â€” 10 silhouettes with XX Minutes
+// Rotation placeholder — 10 silhouettes with XX Minutes
 async function buildRotationPlaceholders() {
   const r1 = document.getElementById('rotationRow1');
   const r2 = document.getElementById('rotationRow2');
@@ -2609,8 +2781,8 @@ async function buildRotationPlaceholders() {
   } catch(e) {}
 
   // Fallback placeholders
-  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('â€”', 'XX Min');
-  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('â€”', 'XX Min');
+  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('—', 'XX Min');
+  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
 }
 
 
@@ -2656,7 +2828,7 @@ async function initWowySlots() {
     <div>
       <div style="font-size:9px;color:var(--muted);margin-bottom:2px;text-align:center;">Player ${i+1}</div>
       <select id="wowySlot${i}" style="width:100%;font-size:10px;padding:2px 3px;border:1px solid var(--border);">
-        <option value="">â€”</option>
+        <option value="">—</option>
         ${_wowyPlayers.map(p => `<option value="${esc(p.abbrev||p.player)}">${esc(p.player||p.abbrev)}</option>`).join('')}
       </select>
     </div>`).join('');
@@ -2674,7 +2846,7 @@ function clearWowy() {
     const sel = document.getElementById(`wowySlot${i}`);
     if (sel) sel.value = '';
   }
-  document.getElementById('wowyContent').innerHTML = '';
+  (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML = '';
   document.getElementById('wowyDiag').innerHTML = '';
 }
 
@@ -2694,12 +2866,12 @@ function showWowyDiag(selected, d, pbpBuckets) {
     if (!e) { lines.push(`  ${abbrev}: NOT FOUND in wowy`); return; }
     const w = e.with || {};
     lines.push(`  ${e.player} (${abbrev}):`);
-    lines.push(`    with:    POSS=${w.POSS} NetRtg=${w.NetRtg} OFF_EFG=${w.OFF_EFG_PCT} DEF_EFG=${w.DEF_EFG_PCT}`);
+    lines.push(`    with:    POSS=${w.POSS} NetRtg=${w.NetRtg} OFF_EFG=${w.OFF_TS_PCT} DEF_EFG=${w.DEF_TS_PCT}`);
     lines.push(`    without: POSS=${(e.without||{}).POSS} NetRtg=${(e.without||{}).NetRtg}`);
     lines.push(`    source: ${e.rating_source||'none'}`);
   });
   if (pbpBuckets) {
-    lines.push(`PBP bucket: POSS=${pbpBuckets.POSS} OFF_EFG=${pbpBuckets.OFF_EFG_PCT} DEF_EFG=${pbpBuckets.DEF_EFG_PCT} OFF_TOV=${pbpBuckets.OFF_TOV_PCT} DEF_TOV=${pbpBuckets.DEF_TOV_PCT}`);
+    lines.push(`PBP bucket: POSS=${pbpBuckets.POSS} OFF_EFG=${pbpBuckets.OFF_TS_PCT} DEF_EFG=${pbpBuckets.DEF_TS_PCT} OFF_TOV=${pbpBuckets.OFF_TOV_PCT} DEF_TOV=${pbpBuckets.DEF_TOV_PCT}`);
   } else {
     lines.push(`PBP bucket: none (using lineup combo fallback)`);
   }
@@ -2709,13 +2881,13 @@ function showWowyDiag(selected, d, pbpBuckets) {
 async function runWowy() {
   const selected = getSelectedWowyPlayers();
   if (!selected.length) {
-    document.getElementById('wowyContent').innerHTML = '<div style="color:var(--muted);font-size:11px;">Select at least one player.</div>';
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML = '<div style="color:var(--muted);font-size:11px;">Select at least one player.</div>';
     return;
   }
 
   const d  = await loadMexData();
   const ld = window._wowyLineupData;
-  const container = document.getElementById('wowyContent');
+  const container = (document.getElementById('wowyResults') || document.getElementById('wowyContent'));
   container.innerHTML = '<div style="color:var(--muted);font-size:11px;">Computingâ€¦</div>';
 
   function getPlayers(c) { return (c.GROUP_NAME||'').split(' - ').map(n=>n.trim()); }
@@ -2727,19 +2899,19 @@ async function runWowy() {
 
   // Available fields: E_OFF_RATING, E_DEF_RATING, E_NET_RATING (smoothed for small samples)
   // EFG_PCT, TM_TOV_PCT, OREB_PCT, DREB_PCT, TS_PCT
-  // No OPP_ fields â€” Four Factors not fetched for lineups yet
+  // No OPP_ fields — Four Factors not fetched for lineups yet
   const API_KEYS = {
     OFF: 'E_OFF_RATING', DEF: 'E_DEF_RATING', NET: 'E_NET_RATING',
-    'OFF eFG%': 'EFG_PCT',    'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
-    'DEF eFG%': 'OPP_EFG_PCT','DEF TOV%': 'OPP_TOV_PCT','DEF ORB%': 'OPP_OREB_PCT',
+    'OFF TS%': 'EFG_PCT',    'OFF TOV%': 'TM_TOV_PCT', 'OFF ORB%': 'OREB_PCT',
+    'DEF TS%': 'OPP_EFG_PCT','DEF TOV%': 'OPP_TOV_PCT','DEF ORB%': 'OPP_OREB_PCT',
   };
   // PBP four factor keys in mex_data wowy entries
   const PBP_KEYS = {
-    'OFF eFG%': 'OFF_EFG_PCT', 'OFF TOV%': 'OFF_TOV_PCT', 'OFF ORB%': 'OFF_ORB_PCT',
-    'DEF eFG%': 'DEF_EFG_PCT', 'DEF TOV%': 'DEF_TOV_PCT', 'DEF ORB%': 'DEF_ORB_PCT',
+    'OFF TS%': 'OFF_TS_PCT', 'OFF TOV%': 'OFF_TOV_PCT', 'OFF ORB%': 'OFF_ORB_PCT',
+    'DEF TS%': 'DEF_TS_PCT', 'DEF TOV%': 'DEF_TOV_PCT', 'DEF ORB%': 'DEF_ORB_PCT',
   };
-  const LB  = new Set(['DEF','OFF TOV%','DEF eFG%','DEF ORB%']);
-  const PCT = new Set(['OFF eFG%','OFF TOV%','OFF ORB%','DEF eFG%','DEF TOV%','DEF ORB%']);
+  const LB  = new Set(['DEF','OFF TOV%','DEF TS%','DEF ORB%']);
+  const PCT = new Set(['OFF TS%','OFF TOV%','OFF ORB%','DEF TS%','DEF TOV%','DEF ORB%']);
 
   if (!window._scWowyCache) window._scWowyCache = {};
   if (!window._scWowyCache.hasOwnProperty(SEASON)) {
@@ -2811,14 +2983,14 @@ async function runWowy() {
         return {
           POSS: totPoss, OffRtg: offS.rtg, DefRtg: defS.rtg,
           NetRtg: (offS.rtg != null && defS.rtg != null) ? (offS.rtg - defS.rtg) : null,
-          OFF_EFG_PCT: offS.efg, OFF_TOV_PCT: offS.tovPct, OFF_ORB_PCT: offS.orbPct,
-          DEF_EFG_PCT: defS.efg, DEF_TOV_PCT: defS.tovPct, DEF_ORB_PCT: defS.orbPct,
+          OFF_TS_PCT: offS.efg, OFF_TOV_PCT: offS.tovPct, OFF_ORB_PCT: offS.orbPct,
+          DEF_TS_PCT: defS.efg, DEF_TOV_PCT: defS.tovPct, DEF_ORB_PCT: defS.orbPct,
         };
       };
       const lgMap = {
         OffRtg: 'OFF_RATING', DefRtg: 'DEF_RATING', NetRtg: 'NET_RATING',
-        OFF_EFG_PCT: 'EFG_PCT', OFF_TOV_PCT: 'TM_TOV_PCT', OFF_ORB_PCT: 'OREB_PCT',
-        DEF_EFG_PCT: 'OPP_EFG_PCT', DEF_TOV_PCT: 'OPP_TOV_PCT', DEF_ORB_PCT: 'DREB_PCT'
+        OFF_TS_PCT: 'EFG_PCT', OFF_TOV_PCT: 'TM_TOV_PCT', OFF_ORB_PCT: 'OREB_PCT',
+        DEF_TS_PCT: 'OPP_EFG_PCT', DEF_TOV_PCT: 'OPP_TOV_PCT', DEF_ORB_PCT: 'DREB_PCT'
       };
       const lgAvg = {};
       if (cachedTeamStats?.slices?.all) {
@@ -2838,8 +3010,8 @@ async function runWowy() {
 
       const cols = [
         { k: 'OffRtg', pct: false, lb: false }, { k: 'DefRtg', pct: false, lb: true }, { k: 'NetRtg', pct: false, lb: false },
-        { k: 'OFF_EFG_PCT', pct: true, lb: false }, { k: 'OFF_TOV_PCT', pct: true, lb: true }, { k: 'OFF_ORB_PCT', pct: true, lb: false },
-        { k: 'DEF_EFG_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false },
+        { k: 'OFF_TS_PCT', pct: true, lb: false }, { k: 'OFF_TOV_PCT', pct: true, lb: true }, { k: 'OFF_ORB_PCT', pct: true, lb: false },
+        { k: 'DEF_TS_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false },
       ];
 
       const rowsHtml = new Array();
@@ -2858,7 +3030,7 @@ async function runWowy() {
 
         const valsHtml = cols.map(col => {
           const v = st[col.k];
-          const disp = v == null ? 'â€”' : (col.pct ? (v * 100).toFixed(1) + '%' : v.toFixed(1));
+          const disp = v == null ? '—' : (col.pct ? (v * 100).toFixed(1) + '%' : v.toFixed(1));
           const nc = col.k === 'NetRtg' ? (v >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
           let subHtml = '';
           if (v != null && lgAvg[col.k] != null && col.k !== 'NetRtg') {
@@ -2879,7 +3051,7 @@ async function runWowy() {
         const diffCells = cols.map(col => {
           const vOn = onSt[col.k];
           const vOff = offSt[col.k];
-          if (vOn == null || vOff == null) return '<td style="padding:8px;text-align:right;">â€”</td>';
+          if (vOn == null || vOff == null) return '<td style="padding:8px;text-align:right;">—</td>';
           const diff = col.pct ? (vOn - vOff) * 100 : (vOn - vOff);
           const better = col.lb ? diff < 0 : diff > 0;
           const colCss = better ? 'var(--green)' : 'var(--red)';
@@ -2887,19 +3059,19 @@ async function runWowy() {
         }).join('');
 
         rowsHtml.push(`<tr style="border-top:2px solid #000;background:rgba(0,0,0,0.025);">
-          <td style="padding:8px 4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.4px;">ON âˆ’ OFF</td>
+          <td style="padding:8px 4px;font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:var(--muted);letter-spacing:0.4px;">ON - OFF</td>
           <td style="padding:8px;text-align:right;font-size:10px;color:var(--muted);">diff</td>
           ${diffCells}
         </tr>`);
       }
 
-      container.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Shot-Chart Play-by-Play Splits Â· Subscript: Î” vs. league avg Â· Bottom row: ON âˆ’ OFF</div>
+      container.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:4px;">Play-by-Play WOWY Splits · Sub-row: Delta vs. G League Avg · Bottom row: ON - OFF</div>
         <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
           <thead><tr style="border-bottom:2px solid #000;font-family:'Oswald',sans-serif;font-size:10.5px;color:var(--muted);">
             <th style="text-align:left;padding:4px;">LINEUP</th><th style="text-align:right;padding:4px 8px;">POSS</th>
             <th style="text-align:right;padding:4px 8px;">OFF</th><th style="text-align:right;padding:4px 8px;">DEF</th><th style="text-align:right;padding:4px 8px;">NET</th>
-            <th style="text-align:right;padding:4px 8px;">OFF eFG%</th><th style="text-align:right;padding:4px 8px;">OFF TOV%</th><th style="text-align:right;padding:4px 8px;">OFF ORB%</th>
-            <th style="text-align:right;padding:4px 8px;">DEF eFG%</th><th style="text-align:right;padding:4px 8px;">DEF TOV%</th><th style="text-align:right;padding:4px 8px;">DEF ORB%</th>
+            <th style="text-align:right;padding:4px 8px;">OFF TS%</th><th style="text-align:right;padding:4px 8px;">OFF TOV%</th><th style="text-align:right;padding:4px 8px;">OFF ORB%</th>
+            <th style="text-align:right;padding:4px 8px;">DEF TS%</th><th style="text-align:right;padding:4px 8px;">DEF TOV%</th><th style="text-align:right;padding:4px 8px;">DEF ORB%</th>
           </tr></thead>
           <tbody>${rowsHtml.join('')}</tbody>
         </table></div>`;
@@ -2943,13 +3115,13 @@ async function runWowy() {
   }
 
   function fmtStat(key, val) {
-    if (val==null) return 'â€”';
+    if (val==null) return '—';
     if (key==='POSS') return Math.round(val).toLocaleString();
     return PCT.has(key) ? (val*100).toFixed(1) : val.toFixed(1);
   }
   function deltaCell(key, val) {
     const avg = leagueAvgs[key];
-    if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">â€”</div>';
+    if (val==null||avg==null) return '<div style="font-size:8px;color:#aaa;">—</div>';
     // Both val and avg are raw API decimals (e.g. 0.13 for 13%)
     // Scale both the same way before comparing
     const scale = PCT.has(key) ? 100 : 1;
@@ -2959,7 +3131,7 @@ async function runWowy() {
     return `<div style="font-size:8px;color:${better?'#E6A817':'#aaa'};">${sign}${diff.toFixed(1)}${PCT.has(key)?'%':''}</div>`;
   }
 
-  // Player photo circle â€” large Databallr style with OFF overlay
+  // Player photo circle — large Databallr style with OFF overlay
   function playerCircle(abbrev, isOn) {
     const entry = _wowyPlayers.find(p=>p.abbrev===abbrev||p.player===abbrev);
     const name  = entry ? (entry.player||abbrev).split(' ').pop() : abbrev;
@@ -3042,11 +3214,11 @@ async function runWowy() {
     { key:'DEF',     label:'DEF'  },
     { key:'NET',     label:'NET'  },
     null,
-    { key:'OFF eFG%', label:'OFF eFG%' },
+    { key:'OFF TS%', label:'OFF TS%' },
     { key:'OFF TOV%', label:'OFF TOV%' },
     { key:'OFF ORB%', label:'OFF ORB%' },
     null,
-    { key:'DEF eFG%', label:'DEF eFG%' },
+    { key:'DEF TS%', label:'DEF TS%' },
     { key:'DEF TOV%', label:'DEF TOV%' },
     { key:'DEF ORB%', label:'DEF ORB%' },
   ];
@@ -3125,17 +3297,17 @@ async function renderWowyInit() {
         sel.appendChild(opt);
       });
     }
-    document.getElementById('wowyContent').innerHTML =
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML =
       '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>';
   } catch(e) {
-    document.getElementById('wowyContent').innerHTML =
+    (document.getElementById('wowyResults') || document.getElementById('wowyContent')).innerHTML =
       `<div style="color:var(--red);font-size:12px;">Could not load WOWY data: ${esc(e.message)}</div>`;
   }
 }
 
 async function renderWowy(abbrev) {
   if (!abbrev) abbrev = document.getElementById('wowyPlayerSelect')?.value || '';
-  const container = document.getElementById('wowyContent');
+  const container = (document.getElementById('wowyResults') || document.getElementById('wowyContent'));
   if (!abbrev) { container.innerHTML = '<div style="color:var(--muted);font-size:12px;">Select a player above.</div>'; return; }
 
   const ld = window._wowyLineupData;
@@ -3191,7 +3363,7 @@ async function renderWowy(abbrev) {
   }
 
   function fmt(key, val, pct) {
-    if (val == null) return 'â€”';
+    if (val == null) return '—';
     return pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1);
   }
 
@@ -3221,7 +3393,7 @@ async function renderWowy(abbrev) {
   }
 
   function buildRow(row, active) {
-    const vol = row.MIN != null ? Number(row.MIN).toFixed(0) : 'â€”';
+    const vol = row.MIN != null ? Number(row.MIN).toFixed(0) : '—';
     const volLabel = row._isPoss ? 'poss' : 'min';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:8px 4px 8px 0;">${photoHtml(active)}</td>
@@ -3232,7 +3404,7 @@ async function renderWowy(abbrev) {
       ${STATS.map(s => {
         const val = row[s.key];
         const netC = s.key === 'NetRtg' ? (val >= 0 ? 'color:var(--green);' : 'color:var(--red);') : '';
-        const dispVal = val == null ? 'â€”' : (s.pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1));
+        const dispVal = val == null ? '—' : (s.pct ? (val * 100).toFixed(1) + '%' : val.toFixed(1));
         return `<td style="padding:4px 8px;text-align:right;">
           <div style="font-size:12px;font-weight:600;${netC}">${dispVal}</div>
           ${delta(s.key, val, s.pct, s.lowerBetter)}
@@ -3248,7 +3420,7 @@ async function renderWowy(abbrev) {
       ${STATS.map(s => {
         const on  = onRow[s.key];
         const off = offRow[s.key];
-        if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">â€”</td>`;
+        if (on == null || off == null) return `<td style="text-align:right;font-size:11px;">—</td>`;
         const diff = on - off;
         const better = s.lowerBetter ? diff < 0 : diff > 0;
         const sign = diff >= 0 ? '+' : '';
@@ -3289,7 +3461,7 @@ function buildWowyMiniTable(rows) {
     <thead><tr>${cols.map(c=>`<th style="background:var(--surface);padding:3px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};color:var(--muted);">${c}</th>`).join('')}</tr></thead>
     <tbody>${rows.map(r=>`<tr>${cols.map(c=>{
       const v=r[c];
-      const disp = v==null?'â€”':typeof v==='number'?v.toFixed(1):v;
+      const disp = v==null?'—':typeof v==='number'?v.toFixed(1):v;
       const color = c==='NetRtg'?(Number(v)>=0?'var(--green)':'var(--red)'):'';
       return `<td style="padding:2px 8px;border-bottom:1px solid var(--border);text-align:${c==='lineup'?'left':'right'};${color?'color:'+color+';font-weight:700;':''}">${disp}</td>`;
     }).join('')}</tr>`).join('')}</tbody>
@@ -3330,7 +3502,7 @@ function ordinal(n) {
 }
 
 function fmt(v, dp=1) {
-  if (v == null) return 'â€”';
+  if (v == null) return '—';
   return (v >= 0 ? '+' : '') + Number(v).toFixed(dp);
 }
 
@@ -3373,7 +3545,7 @@ function rotationPersonSvg(size=28) {
 }
 
 function buildRotationPlayer(name, mins) {
-  const icon = name && name !== 'â€”'
+  const icon = name && name !== '—'
     ? playerIcon(name, 32)
     : rotationPersonSvg(32);
   return `<div class="rot-player">
@@ -3614,7 +3786,7 @@ async function loadStaffNotes() {
   }).join('');
 }
 
-// Rotation placeholder â€” 10 silhouettes with XX Minutes
+// Rotation placeholder — 10 silhouettes with XX Minutes
 async function buildRotationPlaceholders() {
   const r1 = document.getElementById('rotationRow1');
   const r2 = document.getElementById('rotationRow2');
@@ -3703,8 +3875,8 @@ async function buildRotationPlaceholders() {
   } catch(e) {}
 
   // Fallback placeholders
-  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('â€”', 'XX Min');
-  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('â€”', 'XX Min');
+  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('—', 'XX Min');
+  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
 }
 
 let TEAM_STATS_PATH = () => dataPath('team_stats');
@@ -3719,7 +3891,7 @@ function renderTeamRanks(data) {
   function set(rankId, valId, rankKey, valKey, fmt) {
     const r = document.getElementById(rankId);
     const v = document.getElementById(valId);
-    if (r) r.textContent = mxc[rankKey] != null ? ordinal(mxc[rankKey]) : 'â€”';
+    if (r) r.textContent = mxc[rankKey] != null ? ordinal(mxc[rankKey]) : '—';
     if (v && mxc[valKey] != null) v.textContent = ` (${fmt ? fmt(mxc[valKey]) : mxc[valKey]})`;
   }
   const pct = v => (v * 100).toFixed(1) + '%';
@@ -3779,7 +3951,7 @@ async function loadRanksByDate() {
   } catch(e) {
     // CORS fallback: use cached data with a note
     const note = document.getElementById('r-netrtg');
-    if (note) note.textContent = 'â€”';
+    if (note) note.textContent = '—';
   }
 }
 
@@ -3792,7 +3964,7 @@ async function loadRanks(slice) {
       cachedTeamStats = await resp.json();
     }
     const teams = cachedTeamStats.slices?.[slice];
-    if (!teams) return; // slice not in file yet â€” silently leave dashes
+    if (!teams) return; // slice not in file yet — silently leave dashes
     renderTeamRanks({ teams });
   } catch(e) {
     // silently leave ranks as dashes if file doesn't exist yet
@@ -3829,7 +4001,7 @@ fetch('data/players_index.json?v=' + Date.now())
 // Falls back to mex_data.json duos if lineup_data.json not yet committed
 fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
   .then(r => {
-    if (!r.ok) throw new Error('lineup_data.json not found â€” run fetch_lineup_data.py and commit the output');
+    if (!r.ok) throw new Error('lineup_data.json not found — run fetch_lineup_data.py and commit the output');
     return r.json();
   })
   .then(d => {
@@ -3877,7 +4049,7 @@ fetch(LINEUP_DATA_PATH() + '?v=' + Date.now())
     });
   });
 
-// Wire all filter controls â€” slider is client-side only, rest trigger a refetch
+// Wire all filter controls — slider is client-side only, rest trigger a refetch
 const minMinsSlider = document.getElementById('minMinsSlider');
 if (minMinsSlider) {
   minMinsSlider.addEventListener('input', function() {
@@ -3887,7 +4059,7 @@ if (minMinsSlider) {
   });
 }
 
-// Lab filter controls â€” trigger a new fetch when any filter changes
+// Lab filter controls — trigger a new fetch when any filter changes
 document.querySelectorAll('.lab-filter').forEach(el => el.addEventListener('change', triggerLabFetch));
 const labMinsSlider = document.getElementById('labMinsSlider');
 if (labMinsSlider) {
@@ -3940,7 +4112,7 @@ function switchSeason(season) {
     })
     .catch(e => {
       document.getElementById('lineupContent').innerHTML =
-        `<div style="color:var(--red);font-size:12px;">No ${SEASON} lineup data yet â€” run fetch_lineup_data.py ${SEASON}</div>`;
+        `<div style="color:var(--red);font-size:12px;">No ${SEASON} lineup data yet — run fetch_lineup_data.py ${SEASON}</div>`;
       document.getElementById('lineupFetchStatus').textContent = '';
     });
 }
@@ -4577,7 +4749,7 @@ async function renderLastGameRecap() {
   if (!el) return;
   try {
     const [sc, idx, ld, sched, lite] = await Promise.all([
-      fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null),
+      fetch('data/shot_charts_' + SEASON + '.json?raw=1&v=' + Date.now()).then(r => r.ok ? r.json() : null),
       fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
       (window._wowyLineupData ? Promise.resolve(window._wowyLineupData) : fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)),
       fetch('data/schedule_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
@@ -5102,19 +5274,19 @@ async function renderInlineShotCharts() {
 
     const games = sc.games;
     const gSlice = _inlineScSpan === 'last1' ? games.slice(0, 1) : (_inlineScSpan === 'last3' ? games.slice(0, 3) : games);
-    const gidSet = new Set(gSlice.map(g => g.id || g.gid));
+    const gidSet = new Set(gSlice.map(g => String(g.id || g.gid || '').trim()));
     const pidFilter = sel ? sel.value : 'ALL';
 
     const shots = (sc.shots || new Array()).filter(s =>
-      gidSet.has(s.gid) && (pidFilter === 'ALL' || s.side !== 'off' || String(s.pid) === pidFilter)
+      (_inlineScSpan === 'season' || gidSet.has(String(s.gid || '').trim())) && (pidFilter === 'ALL' || s.side !== 'off' || String(s.pid) === pidFilter)
     );
     const fts = (sc.fts || new Array()).filter(f =>
-      gidSet.has(f.gid) && (pidFilter === 'ALL' || f.side !== 'off' || String(f.pid) === pidFilter)
+      (_inlineScSpan === 'season' || gidSet.has(String(f.gid || '').trim())) && (pidFilter === 'ALL' || f.side !== 'off' || String(f.pid) === pidFilter)
     );
     const tovs = (sc.turnovers || new Array()).filter(t =>
-      gidSet.has(t.gid) && (pidFilter === 'ALL' || t.side !== 'off' || String(t.pid) === pidFilter)
+      (_inlineScSpan === 'season' || gidSet.has(String(t.gid || '').trim())) && (pidFilter === 'ALL' || t.side !== 'off' || String(t.pid) === pidFilter)
     );
-    const poss = (sc.poss || new Array()).filter(p => gidSet.has(p.gid));
+    const poss = (sc.poss || new Array()).filter(p => _inlineScSpan === 'season' || gidSet.has(String(p.gid || '').trim()));
 
     const ZONE_POLYS = new Array(
       { k: 'c3_l',   d: 'M 0 0 L 30 0 L 30 140 L 0 140 Z', lx: 15, ly: 76, avg: 0.375 },
@@ -5131,11 +5303,14 @@ async function renderInlineShotCharts() {
       { k: 'rim',    d: 'M 205 0 L 295 0 L 295 52 A 45 45 0 0 1 205 52 Z', lx: 250, ly: 52, avg: 0.635 }
     );
 
+    const isCenteredCoords = (sc.shots || new Array()).some(sh => Number(sh.x) < 0);
     const mapZoneKey = (s) => {
-      let x = Number(s.x ?? 250);
+      let x = Number(s.x ?? (isCenteredCoords ? 0 : 250));
       let y = Number(s.y ?? 80);
-      if (x < 0 || (Math.abs(x) <= 250 && s.x != null && Number(s.x) < 0)) x = x + 250;
-      if (y < 0) y = y + 52;
+      if (isCenteredCoords) {
+        x = x + 250;
+        y = y + 52;
+      }
       const dx = x - 250, dy = y - 52, dist = Math.hypot(dx, dy);
       const is3 = Number(s.val) === 3 || dist >= 225 || x <= 42 || x >= 458;
       if (!is3) {
@@ -5336,24 +5511,22 @@ function clearWowySlots() {
 async function runWowy() {
   const res = document.getElementById('wowyResults');
   if (!res) return;
-  const selectedKeys = [];
+  const selectedKeys = new Array();
   for (let i = 1; i <= 5; i++) {
     const v = document.getElementById('wowySlot' + i)?.value;
     if (v && !selectedKeys.includes(v)) selectedKeys.push(v);
   }
   if (!selectedKeys.length) { clearWowySlots(); return; }
 
-  let [sc, idx, ld] = [
-    window._wowyShotData,
-    window._wowyPlayersIdx,
-    window._wowyLineupData
-  ];
+  let sc = window._wowyShotData;
+  let idx = window._wowyPlayersIdx;
+  let ld = window._wowyLineupData;
   if (!sc) {
     sc = await fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null);
     if (sc) window._wowyShotData = sc;
   }
   if (!idx) {
-    idx = await fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(() => []);
+    idx = await fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : new Array()).catch(() => new Array());
     window._wowyPlayersIdx = idx;
   }
   if (!ld) {
@@ -5371,41 +5544,41 @@ async function runWowy() {
     if (!nm || !u) return;
     photoMap[normN(nm)] = u;
     const pts = normN(nm).split(' ');
-    if (pts.length >= 2) photoMap[pts[0] + '_' + pts[pts.length - 1]] = u;
+    if (pts.length >= 2) photoMap[pts.at(0) + '_' + pts.at(-1)] = u;
   };
   Object.entries(ld?.playerXref || {}).forEach(([ab, info]) => { if (info?.photoUrl) { addPhoto(ab, info.photoUrl); addPhoto(info.name, info.photoUrl); } });
   (Array.isArray(idx) ? idx : Object.values(idx || {})).forEach(p => { if (p?.name && p?.photoUrl) addPhoto(p.name, p.photoUrl); });
   const getPhoto = (nm) => {
     const c = normN(nm), pts = c.split(' ');
-    return photoMap[c] || (pts.length >= 2 ? photoMap[pts[0] + '_' + pts[pts.length - 1]] : null);
+    return photoMap[c] || (pts.length >= 2 ? photoMap[pts.at(0) + '_' + pts.at(-1)] : null);
   };
 
-  const roster = window._wowyRosterList || [];
+  const roster = window._wowyRosterList || new Array();
   const selectedObjs = selectedKeys.map(k => {
     const found = roster.find(r => r.key === k) || { key: k, name: k, scIds: new Set() };
     const last = String(found.name || '').replace(/,\s*(jr|sr|ii|iii|iv|v)\.?$/i, '').split(' ').pop();
     return { ...found, last, photo: getPhoto(found.name), ids: Array.from(found.scIds) };
   });
 
-  const tms = cachedTeamStats?.slices?.all || [];
+  const tms = cachedTeamStats?.slices?.all || new Array();
   const lgAvg = (k, fb) => {
     const vals = tms.map(t => t[k]).filter(v => v != null).map(Number);
     return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : fb;
   };
-  const lgOff  = lgAvg('OFF_RATING', 110.5);
-  const lgDef  = lgAvg('DEF_RATING', 110.5);
-  const lgNet  = lgOff - lgDef;
-  const lgTs   = lgAvg('TS_PCT', 0.568) * 100;
-  const lgTov  = lgAvg('TM_TOV_PCT', 0.155) * 100;
-  const lgOrb  = lgAvg('OREB_PCT', 0.285) * 100;
-  const lgDrb  = lgAvg('DREB_PCT', 0.715) * 100;
+  const lgOff = lgAvg('OFF_RATING', 110.5);
+  const lgDef = lgAvg('DEF_RATING', 110.5);
+  const lgNet = lgOff - lgDef;
+  const lgTs  = lgAvg('TS_PCT', 0.568) * 100;
+  const lgTov = lgAvg('TM_TOV_PCT', 0.155) * 100;
+  const lgOrb = lgAvg('OREB_PCT', 0.285) * 100;
+  const lgDrb = lgAvg('DREB_PCT', 0.715) * 100;
 
   const calcCombo = (mask) => {
     const matches = (onArr) => {
-      const floorIds = (onArr || []).map(Number);
+      const floorIds = (onArr || new Array()).map(Number);
       for (let i = 0; i < selectedObjs.length; i++) {
         const wantOn = ((mask >> i) & 1) === 1;
-        const isOn = selectedObjs[i].ids.some(id => floorIds.includes(id));
+        const isOn = selectedObjs.at(i).ids.some(id => floorIds.includes(id));
         if (isOn !== wantOn) return false;
       }
       return true;
@@ -5413,12 +5586,12 @@ async function runWowy() {
 
     const pOff = sc.poss.filter(p => p.side === 'off' && matches(p.on));
     const pDef = sc.poss.filter(p => p.side === 'def' && matches(p.on));
-    const sOff = (sc.shots || []).filter(s => s.side === 'off' && matches(s.on));
-    const sDef = (sc.shots || []).filter(s => s.side === 'def' && matches(s.on));
-    const fOff = (sc.fts || []).filter(f => f.side === 'off' && matches(f.on));
-    const fDef = (sc.fts || []).filter(f => f.side === 'def' && matches(f.on));
-    const tOff = (sc.turnovers || []).filter(t => t.side === 'off' && matches(t.on));
-    const tDef = (sc.turnovers || []).filter(t => t.side === 'def' && matches(t.on));
+    const sOff = (sc.shots || new Array()).filter(s => s.side === 'off' && matches(s.on));
+    const sDef = (sc.shots || new Array()).filter(s => s.side === 'def' && matches(s.on));
+    const fOff = (sc.fts || new Array()).filter(f => f.side === 'off' && matches(f.on));
+    const fDef = (sc.fts || new Array()).filter(f => f.side === 'def' && matches(f.on));
+    const tOff = (sc.turnovers || new Array()).filter(t => t.side === 'off' && matches(t.on));
+    const tDef = (sc.turnovers || new Array()).filter(t => t.side === 'def' && matches(t.on));
 
     const ptsFor = sOff.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fOff.filter(f => Number(f.made) === 1).length;
     const ptsAg  = sDef.filter(s => Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0) + fDef.filter(f => Number(f.made) === 1).length;
@@ -5446,12 +5619,19 @@ async function runWowy() {
     const offOrb = offRebOpps ? (offOreb / offRebOpps) * 100 : 0;
     const defOrb = defRebOpps ? ((defRebOpps - defOreb) / defRebOpps) * 100 : 0;
 
-    return { poss: Math.round((offPoss + defPoss) / 2), offRtg, defRtg, netRtg, offTs, offTov, offOrb, defTs, defTov, defOrb };
+    const off3a = sOff.filter(s => Number(s.val) === 3).length;
+    const off3m = sOff.filter(s => Number(s.val) === 3 && Number(s.made) === 1).length;
+    const def3a = sDef.filter(s => Number(s.val) === 3).length;
+    const def3m = sDef.filter(s => Number(s.val) === 3 && Number(s.made) === 1).length;
+    const off3p = off3a ? (off3m / off3a) * 100 : null;
+    const def3p = def3a ? (def3m / def3a) * 100 : null;
+
+    return { poss: Math.round((offPoss + defPoss) / 2), offRtg, defRtg, netRtg, offTs, offTov, offOrb, defTs, defTov, defOrb, off3p, def3p };
   };
 
   const n = selectedObjs.length;
   const totalCombos = 1 << n;
-  const rows = [];
+  const rows = new Array();
   for (let idxM = 0; idxM < totalCombos; idxM++) {
     let mask = 0;
     for (let i = 0; i < n; i++) {
@@ -5460,74 +5640,293 @@ async function runWowy() {
     }
     rows.push({ mask, st: calcCombo(mask) });
   }
+  if (n > 1) rows.sort((a, b) => b.st.poss - a.st.poss);
 
-  const statCell = (val, avg, isPct, inv, colorMain) => {
+  window._lastWowyRender = {
+    season: SEASON,
+    exclLow: Boolean(window._excludeLowLev),
+    selItems: selectedObjs.map(p => ({ cleanLast: p.last })),
+    rowsData: rows.map(r => ({
+      mask: r.mask,
+      st: {
+        POSS: r.st.poss, OffRtg: r.st.offRtg, DefRtg: r.st.defRtg, NetRtg: r.st.netRtg,
+        OFF_TS_PCT: r.st.offTs / 100, OFF_TOV_PCT: r.st.offTov / 100, OFF_ORB_PCT: r.st.offOrb / 100,
+        DEF_TS_PCT: r.st.defTs / 100, DEF_TOV_PCT: r.st.defTov / 100, DEF_ORB_PCT: r.st.defOrb / 100,
+        OFF_3P_PCT: r.st.off3p != null ? r.st.off3p / 100 : null,
+        DEF_3P_PCT: r.st.def3p != null ? r.st.def3p / 100 : null
+      }
+    })),
+    lgAvg: {
+      OffRtg: lgOff, DefRtg: lgDef, NetRtg: lgNet,
+      OFF_TS_PCT: lgTs / 100, OFF_TOV_PCT: lgTov / 100, OFF_ORB_PCT: lgOrb / 100,
+      DEF_TS_PCT: lgTs / 100, DEF_TOV_PCT: lgTov / 100, DEF_ORB_PCT: lgDrb / 100
+    },
+    cols: new Array(
+      { k: 'OffRtg', pct: false, lb: false }, { k: 'DefRtg', pct: false, lb: true }, { k: 'NetRtg', pct: false, lb: false },
+      { k: 'OFF_TS_PCT', pct: true, lb: false }, { k: 'OFF_TOV_PCT', pct: true, lb: true }, { k: 'OFF_ORB_PCT', pct: true, lb: false },
+      { k: 'DEF_TS_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false }
+    )
+  };
+
+  const statCell = (val, avg, isPct, inv, colorMain, extraSub) => {
     const d = val - avg;
     const good = inv ? (d <= 0) : (d >= 0);
     const dCol = good ? 'var(--green)' : 'var(--red)';
     const mainCol = colorMain ? (val >= 0 ? 'var(--green)' : 'var(--red)') : 'var(--text)';
     return `<td style="padding:5px 3px;text-align:right;vertical-align:middle;">
-      <div style="font-family:Lora,serif;font-weight:700;font-size:11px;color:${mainCol};line-height:1.1;">${val.toFixed(1)}</div>
+      <div style="font-family:Lora,serif;font-weight:700;font-size:11px;color:${mainCol};line-height:1.1;">${val.toFixed(1)}${isPct ? '%' : ''}</div>
       <div style="font-family:Lora,serif;font-size:8.5px;color:${dCol};line-height:1.1;margin-top:1px;">${d >= 0 ? '+' : ''}${d.toFixed(1)}${isPct ? '%' : ''}</div>
+      ${extraSub || ''}
     </td>`;
   };
 
   const bodyHtml = rows.map(r => {
     const avatars = selectedObjs.map((p, i) => {
       const isOn = ((r.mask >> i) & 1) === 1;
+      const baseImg = p.photo
+        ? `<img src="${p.photo}" referrerpolicy="no-referrer" style="width:34px;height:34px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid ${isOn ? 'var(--blue)' : '#94a3b8'};display:block;${isOn ? '' : 'filter:grayscale(1);opacity:0.42;'}">`
+        : `<div style="width:34px;height:34px;border-radius:50%;background:var(--surface);border:2px solid ${isOn ? 'var(--blue)' : '#94a3b8'};display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:10px;font-weight:700;${isOn ? '' : 'opacity:0.45;'}">${p.last.slice(0,2)}</div>`;
       const circle = isOn
-        ? (p.photo
-            ? `<img src="${p.photo}" referrerpolicy="no-referrer" style="width:32px;height:32px;border-radius:50%;object-fit:cover;object-position:top;border:2px solid var(--blue);display:block;margin:0 auto;">`
-            : `<div style="width:32px;height:32px;border-radius:50%;background:var(--surface);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:10px;font-weight:700;margin:0 auto;">${p.last.slice(0,2)}</div>`)
-        : `<div style="width:32px;height:32px;border-radius:50%;background:#666;color:#fff;display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:9px;font-weight:700;margin:0 auto;letter-spacing:0.3px;">OFF</div>`;
-      return `<div style="text-align:center;width:40px;">${circle}<div style="font-family:Lora,serif;font-size:9px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.last}</div></div>`;
+        ? `<div style="position:relative;width:34px;height:34px;margin:0 auto;">${baseImg}</div>`
+        : `<div style="position:relative;width:34px;height:34px;margin:0 auto;">${baseImg}<div style="position:absolute;inset:0;border-radius:50%;background:rgba(15,23,42,0.45);color:#fff;display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:8.5px;font-weight:700;letter-spacing:0.3px;">OFF</div></div>`;
+      return `<div style="text-align:center;width:42px;">${circle}<div style="font-family:Lora,serif;font-size:9px;color:var(--dim);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.last}</div></div>`;
     }).join('');
 
     const s = r.st;
+    const off3Sub = s.off3p != null ? `<div style="font-family:Lora,serif;font-size:8px;color:var(--muted);margin-top:2px;">${s.off3p.toFixed(1)}%</div>` : '';
+    const def3Sub = s.def3p != null ? `<div style="font-family:Lora,serif;font-size:8px;color:var(--muted);margin-top:2px;">${s.def3p.toFixed(1)}%</div>` : '';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td style="padding:5px 4px 5px 0;text-align:left;vertical-align:middle;"><div style="display:flex;align-items:center;gap:4px;">${avatars}</div></td>
-      <td style="padding:5px 4px;text-align:right;vertical-align:top;font-family:Lora,serif;font-weight:700;font-size:11px;color:var(--text);">${s.poss}</td>
-      ${statCell(s.offRtg, lgOff, false, false, false)}
-      ${statCell(s.defRtg, lgDef, false, true,  false)}
-      ${statCell(s.netRtg, lgNet, false, false, true)}
-      ${statCell(s.offTs,  lgTs,  true,  false, false)}
-      ${statCell(s.offTov, lgTov, true,  true,  false)}
-      ${statCell(s.offOrb, lgOrb, true,  false, false)}
-      ${statCell(s.defTs,  lgTs,  true,  true,  false)}
-      ${statCell(s.defTov, lgTov, true,  false, false)}
-      ${statCell(s.defOrb, lgDrb, true,  false, false)}
+      <td style="padding:5px 4px;text-align:right;vertical-align:middle;font-family:Lora,serif;font-weight:700;font-size:11px;color:var(--text);">
+        <div>${s.poss.toLocaleString()}</div>
+        <div style="font-size:8px;font-weight:600;color:var(--muted);margin-top:12px;">3P%:</div>
+      </td>
+      ${statCell(s.offRtg, lgOff, false, false, false, off3Sub)}
+      ${statCell(s.defRtg, lgDef, false, true,  false, def3Sub)}
+      ${statCell(s.netRtg, lgNet, false, false, true,  '')}
+      ${statCell(s.offTs,  lgTs,  true,  false, false, '')}
+      ${statCell(s.offTov, lgTov, true,  true,  false, '')}
+      ${statCell(s.offOrb, lgOrb, true,  false, false, '')}
+      ${statCell(s.defTs,  lgTs,  true,  true,  false, '')}
+      ${statCell(s.defTov, lgTov, true,  false, false, '')}
+      ${statCell(s.defOrb, lgDrb, true,  false, false, '')}
     </tr>`;
   }).join('');
 
+  const allOn = rows.find(r => r.mask === (totalCombos - 1))?.st;
+  const allOff = rows.find(r => r.mask === 0)?.st;
+  let diffRowHtml = '';
+  if (allOn && allOff && allOn.poss > 0 && allOff.poss > 0) {
+    const diffCell = (v1, v2, isPct, inv) => {
+      const d = v1 - v2;
+      const good = inv ? (d <= 0) : (d >= 0);
+      const col = good ? 'var(--green)' : 'var(--red)';
+      return `<td style="padding:6px 3px;text-align:right;font-family:Lora,serif;font-weight:700;font-size:11px;color:${col};">${d >= 0 ? '+' : ''}${d.toFixed(1)}${isPct ? '%' : ''}</td>`;
+    };
+    diffRowHtml = `<tr style="border-top:2px solid var(--text);background:var(--surface);">
+      <td style="padding:6px 4px;font-family:'Oswald',sans-serif;font-weight:700;font-size:11px;color:var(--blue);letter-spacing:0.4px;">ON - OFF</td>
+      <td style="padding:6px 4px;text-align:right;font-family:Lora,serif;font-size:9.5px;color:var(--muted);">diff</td>
+      ${diffCell(allOn.offRtg, allOff.offRtg, false, false)}
+      ${diffCell(allOn.defRtg, allOff.defRtg, false, true)}
+      ${diffCell(allOn.netRtg, allOff.netRtg, false, false)}
+      ${diffCell(allOn.offTs,  allOff.offTs,  true,  false)}
+      ${diffCell(allOn.offTov, allOff.offTov, true,  true)}
+      ${diffCell(allOn.offOrb, allOff.offOrb, true,  false)}
+      ${diffCell(allOn.defTs,  allOff.defTs,  true,  true)}
+      ${diffCell(allOn.defTov, allOff.defTov, true,  false)}
+      ${diffCell(allOn.defOrb, allOff.defOrb, true,  false)}
+    </tr>`;
+  }
+
   res.innerHTML =
-    `<div style="font-family:Lora,serif;font-size:9.5px;color:var(--muted);margin-bottom:4px;">Lineup combo weighted avg &middot; &Delta; vs. league avg</div>
-     <div style="overflow-x:auto;">
-       <table style="width:100%;border-collapse:collapse;table-layout:auto;">
-         <thead>
-           <tr style="border-bottom:1px solid var(--border);font-family:Oswald,sans-serif;font-size:9.5px;font-weight:700;color:var(--muted);">
-             <th style="text-align:left;padding:2px 4px 3px 0;">LINEUP</th>
-             <th style="text-align:right;padding:2px 4px 3px;">POSS</th>
-             <th style="text-align:right;padding:2px 3px 3px;">OFF</th>
-             <th style="text-align:right;padding:2px 3px 3px;">DEF</th>
-             <th style="text-align:right;padding:2px 3px 3px;">NET</th>
-             <th style="text-align:right;padding:2px 3px 3px;">OFF TS%</th>
-             <th style="text-align:right;padding:2px 3px 3px;">OFF TOV%</th>
-             <th style="text-align:right;padding:2px 3px 3px;">OFF ORB%</th>
-             <th style="text-align:right;padding:2px 3px 3px;">DEF TS%</th>
-             <th style="text-align:right;padding:2px 3px 3px;">DEF TOV%</th>
-             <th style="text-align:right;padding:2px 2px 3px;">DEF ORB%</th>
-           </tr>
-         </thead>
-         <tbody>${bodyHtml}</tbody>
-       </table>
-     </div>`;
+    `<div style="font-family:Lora,serif;font-size:9.5px;color:var(--muted);margin-bottom:4px;">Play-by-play splits &middot; Sub-row: &Delta; vs. G League avg &middot; Bottom: ON - OFF</div>
+     <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;">
+       <thead><tr style="border-bottom:2px solid var(--text);font-family:'Oswald',sans-serif;font-size:9.5px;color:var(--muted);">
+         <th style="text-align:left;padding:3px 4px 3px 0;">LINEUP</th>
+         <th style="text-align:right;padding:3px 4px;">POSS</th>
+         <th style="text-align:right;padding:3px 3px;">OFF</th>
+         <th style="text-align:right;padding:3px 3px;">DEF</th>
+         <th style="text-align:right;padding:3px 3px;">NET</th>
+         <th style="text-align:right;padding:3px 3px;">OFF TS%</th>
+         <th style="text-align:right;padding:3px 3px;">OFF TOV%</th>
+         <th style="text-align:right;padding:3px 3px;">OFF ORB%</th>
+         <th style="text-align:right;padding:3px 3px;">DEF TS%</th>
+         <th style="text-align:right;padding:3px 3px;">DEF TOV%</th>
+         <th style="text-align:right;padding:3px 3px;">DEF ORB%</th>
+       </tr></thead>
+       <tbody>${bodyHtml}${diffRowHtml}</tbody>
+     </table></div>`;
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof renderLastGameRecap === 'function') renderLastGameRecap();
-  if (typeof renderInlineShotCharts === 'function') renderInlineShotCharts();
-  if (typeof renderBap === 'function') renderBap();
-  if (typeof renderSeasonSplits === 'function') renderSeasonSplits();
-  if (typeof renderPsTab === 'function') renderPsTab();
-  if (typeof initWowySlots === 'function') initWowySlots();
-});
+
+async function exportWowyPng(mode) {
+  const state = window._lastWowyRender;
+  const copyBtn = document.getElementById('wowyCopyPngBtn');
+  const saveBtn = document.getElementById('wowySavePngBtn');
+  if (!state || !state.rowsData || !state.rowsData.length) return;
+
+  const { season, selItems, rowsData, lgAvg, cols, exclLow } = state;
+  const headers = new Array('LINEUP', 'POSS', 'OFF', 'DEF', 'NET', 'OFF TS%', 'OFF TOV%', 'OFF ORB%', 'DEF TS%', 'DEF TOV%', 'DEF ORB%');
+  const avatarW = Math.max(95, selItems.length * 54 + 12);
+  const colWidths = new Array(avatarW, 56, 58, 58, 56, 66, 68, 68, 66, 68, 68);
+  const W = colWidths.reduce((a, b) => a + b, 0) + 24;
+  const hdrH = 62;
+  const rowH = 68;
+  const pngOnRow = rowsData.find(r => r.mask === ((1 << selItems.length) - 1));
+  const pngOffRow = rowsData.find(r => r.mask === 0);
+  const hasDiff = Boolean(pngOnRow && pngOffRow);
+  const H = hdrH + rowsData.length * rowH + (hasDiff ? 40 : 12);
+
+  const dpr = 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(1, 1, W - 2, 30);
+  ctx.fillStyle = '#1d428a';
+  ctx.font = 'bold 13px Oswald, sans-serif';
+  ctx.fillText(`CAPITANES (${season}) - WOWY LINEUP IMPACT`, 12, 20);
+  ctx.fillStyle = '#64748b';
+  ctx.font = '10px Lora, serif';
+  const subTag = (exclLow ? 'Competitive Possessions (Low-Lev Dropped)' : 'All Possessions') + ' - Deltas vs. G League Avg';
+  ctx.fillText(subTag, W - ctx.measureText(subTag).width - 12, 20);
+
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(1, 31, W - 2, 30);
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.beginPath(); ctx.moveTo(0, 61); ctx.lineTo(W, 61); ctx.stroke();
+
+  let xCursor = 12;
+  ctx.fillStyle = '#475569';
+  ctx.font = 'bold 10px Oswald, sans-serif';
+  headers.forEach((h, i) => {
+    const cw = colWidths.at(i);
+    if (i === 0) ctx.fillText(h, xCursor + 4, 50);
+    else ctx.fillText(h, xCursor + cw - ctx.measureText(h).width - 6, 50);
+    xCursor += cw;
+  });
+
+  rowsData.forEach(({ mask: m, st }, rIdx) => {
+    const y0 = hdrH + rIdx * rowH;
+    ctx.fillStyle = rIdx % 2 === 0 ? '#ffffff' : '#fafbfc';
+    ctx.fillRect(1, y0, W - 2, rowH);
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.beginPath(); ctx.moveTo(0, y0 + rowH); ctx.lineTo(W, y0 + rowH); ctx.stroke();
+
+    selItems.forEach((item, idx) => {
+      const isOn = Boolean((m >> idx) & 1);
+      const cx = 12 + idx * 54 + 24;
+      const cy = y0 + 25;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 17, 0, Math.PI * 2);
+      ctx.fillStyle = isOn ? '#dbeafe' : '#e2e8f0';
+      ctx.fill();
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = isOn ? '#1d428a' : '#94a3b8';
+      ctx.stroke();
+
+      ctx.fillStyle = isOn ? '#1d428a' : '#475569';
+      ctx.font = 'bold 9.5px Oswald, sans-serif';
+      const stLbl = isOn ? 'ON' : 'OFF';
+      ctx.fillText(stLbl, cx - ctx.measureText(stLbl).width / 2, cy + 3.5);
+
+      ctx.fillStyle = '#0f172a';
+      ctx.font = 'bold 9px Lora, serif';
+      const nm = item.cleanLast.slice(0, 9);
+      ctx.fillText(nm, cx - ctx.measureText(nm).width / 2, y0 + 55);
+    });
+
+    let cxCol = 12 + colWidths.at(0);
+    const possW = colWidths.at(1);
+    ctx.fillStyle = '#0f172a';
+    ctx.font = 'bold 12px Oswald, sans-serif';
+    const pStr = st.POSS.toLocaleString();
+    ctx.fillText(pStr, cxCol + possW - ctx.measureText(pStr).width - 6, y0 + 25);
+    ctx.fillStyle = '#64748b';
+    ctx.font = '9px Oswald, sans-serif';
+    ctx.fillText('3P%:', cxCol + possW - ctx.measureText('3P%:').width - 6, y0 + 54);
+    cxCol += possW;
+
+    cols.forEach((col, cIdx) => {
+      const cw = colWidths.at(cIdx + 2);
+      const v = st[col.k];
+      const disp = v == null ? '-' : (col.pct ? (v * 100).toFixed(1) + '%' : v.toFixed(1));
+      ctx.fillStyle = col.k === 'NetRtg' ? (v >= 0 ? '#15803d' : '#b91c1c') : '#0f172a';
+      ctx.font = 'bold 12px Oswald, sans-serif';
+      ctx.fillText(disp, cxCol + cw - ctx.measureText(disp).width - 6, y0 + 25);
+
+      if (v != null && lgAvg[col.k] != null && col.k !== 'NetRtg') {
+        const diff = col.pct ? (v - lgAvg[col.k]) * 100 : (v - lgAvg[col.k]);
+        const better = col.lb ? diff < 0 : diff > 0;
+        const dStr = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}${col.pct ? '%' : ''}`;
+        ctx.fillStyle = better ? '#15803d' : '#b91c1c';
+        ctx.font = 'bold 9px Oswald, sans-serif';
+        ctx.fillText(dStr, cxCol + cw - ctx.measureText(dStr).width - 6, y0 + 39);
+      }
+
+      if (col.k === 'OffRtg' && st.OFF_3P_PCT != null) {
+        const p3 = (st.OFF_3P_PCT * 100).toFixed(1) + '%';
+        ctx.fillStyle = '#64748b'; ctx.font = '9px Oswald, sans-serif';
+        ctx.fillText(p3, cxCol + cw - ctx.measureText(p3).width - 6, y0 + 54);
+      } else if (col.k === 'DefRtg' && st.DEF_3P_PCT != null) {
+        const p3 = (st.DEF_3P_PCT * 100).toFixed(1) + '%';
+        ctx.fillStyle = '#64748b'; ctx.font = '9px Oswald, sans-serif';
+        ctx.fillText(p3, cxCol + cw - ctx.measureText(p3).width - 6, y0 + 54);
+      }
+      cxCol += cw;
+    });
+  });
+
+  if (hasDiff) {
+    const onSt = pngOnRow.st;
+    const offSt = pngOffRow.st;
+    const yDiff = hdrH + rowsData.length * rowH;
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(1, yDiff, W - 2, 38);
+    ctx.fillStyle = '#1d428a';
+    ctx.font = 'bold 11px Oswald, sans-serif';
+    ctx.fillText('ON - OFF', 16, yDiff + 23);
+
+    let cxCol = 12 + colWidths.at(0) + colWidths.at(1);
+    cols.forEach((col, cIdx) => {
+      const cw = colWidths.at(cIdx + 2);
+      const vOn = onSt[col.k], vOff = offSt[col.k];
+      if (vOn != null && vOff != null) {
+        const diff = col.pct ? (vOn - vOff) * 100 : (vOn - vOff);
+        const better = col.lb ? diff < 0 : diff > 0;
+        const dStr = `${diff >= 0 ? '+' : ''}${diff.toFixed(1)}${col.pct ? '%' : ''}`;
+        ctx.fillStyle = better ? '#15803d' : '#b91c1c';
+        ctx.font = 'bold 11.5px Oswald, sans-serif';
+        ctx.fillText(dStr, cxCol + cw - ctx.measureText(dStr).width - 6, yDiff + 23);
+      }
+      cxCol += cw;
+    });
+  }
+
+  canvas.toBlob(async (blob) => {
+    if (!blob) return;
+    if (mode === 'copy' && navigator.clipboard && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write(new Array(new ClipboardItem({ 'image/png': blob })));
+        if (copyBtn) { const orig = copyBtn.textContent; copyBtn.textContent = 'Copied!'; setTimeout(() => copyBtn.textContent = orig, 1500); }
+        return;
+      } catch (e) {}
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `capitanes_wowy_${season}.png`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    if (saveBtn) { const orig = saveBtn.textContent; saveBtn.textContent = 'Saved!'; setTimeout(() => saveBtn.textContent = orig, 1500); }
+  }, 'image/png');
+}

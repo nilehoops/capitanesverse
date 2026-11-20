@@ -162,6 +162,7 @@
       <div style="display:flex;border:1px solid var(--border);overflow:hidden;">
         <button class="season-btn" data-season="2026-27" onclick="switchSeason('2026-27')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);">2026-27</button>
         <button class="season-btn" data-season="2025-26" onclick="switchSeason('2025-26')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:5px 10px;border:none;cursor:pointer;background:#fff;color:var(--muted);border-left:1px solid var(--border);">2025-26</button>
+      <button id="inseasonLevBtn" onclick="toggleInseasonLowLev()" title="Click to toggle Low-Leverage (garbage time) possessions" style="font-family:'Oswald',sans-serif;font-weight:700;font-size:11.5px;padding:4px 9px;border:1px solid var(--border);cursor:pointer;"></button>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">
         <div style="display:flex;gap:6px;">
@@ -295,14 +296,72 @@
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
         <button id="wowyRunBtn" onclick="runWowy()" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:3px 12px;background:var(--blue);color:#fff;border:none;cursor:pointer;">Run</button>
         <button onclick="clearWowySlots()" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:3px 10px;background:var(--surface);color:var(--dim);border:1px solid var(--border);cursor:pointer;">Clear</button>
+        <button type="button" id="wowyCopyPngBtn" onclick="exportWowyPng('copy')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:3px 9px;background:#fff;color:var(--blue);border:1px solid var(--border);cursor:pointer;">Copy PNG</button>
+        <button type="button" id="wowySavePngBtn" onclick="exportWowyPng('save')" style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;padding:3px 9px;background:#fff;color:var(--blue);border:1px solid var(--border);cursor:pointer;">Save PNG</button>
       </div>
       <div id="wowyResults" style="font-size:10.5px;">Select at least one player.</div>
     </div>
   </div>
 </div>
 
-<script src="js/app.js?v=2138"></script>
+<script>
+window._excludeLowLev = localStorage.getItem('capitanes_exclude_low_lev') !== 'false';
+window._filteredScMemo = {};
+(function() {
+  const _origFetch = window.fetch.bind(window);
+  window.fetch = async function(input, init) {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (window._excludeLowLev && url.includes('shot_charts_') && !url.includes('raw=1')) {
+      const baseKey = url.split('?').at(0);
+      if (window._filteredScMemo[baseKey]) {
+        return new Response(window._filteredScMemo[baseKey], {
+          status: 200,
+          headers: new Headers({ 'Content-Type': 'application/json' })
+        });
+      }
+      const resp = await _origFetch(input, init);
+      if (resp && resp.ok) {
+        const data = await resp.json().catch(() => null);
+        if (data && Array.isArray(data.poss)) {
+          const keep = x => String(x?.lev || 'med') !== 'low';
+          const str = JSON.stringify({
+            ...data,
+            poss: data.poss.filter(keep),
+            shots: (data.shots || new Array()).filter(keep),
+            fts: (data.fts || new Array()).filter(keep),
+            turnovers: (data.turnovers || new Array()).filter(keep),
+            events: (data.events || new Array()).filter(keep)
+          });
+          window._filteredScMemo[baseKey] = str;
+          return new Response(str, {
+            status: 200,
+            headers: new Headers({ 'Content-Type': 'application/json' })
+          });
+        }
+      }
+      return resp;
+    }
+    return _origFetch(input, init);
+  };
+})();
+function toggleInseasonLowLev() {
+  window._excludeLowLev = !window._excludeLowLev;
+  localStorage.setItem('capitanes_exclude_low_lev', String(window._excludeLowLev));
+  location.reload();
+}
+</script>
+<script src="js/app.js?v=2151"></script>
 <script src="js/inseason-search.js?v=2115"></script>
+<script>
+(function(){
+  const b = document.getElementById('inseasonLevBtn');
+  if (!b) return;
+  b.textContent = window._excludeLowLev ? 'Low-Lev: Dropped' : 'Low-Lev: Included';
+  b.style.background = window._excludeLowLev ? 'var(--blue)' : '#fff';
+  b.style.color = window._excludeLowLev ? '#fff' : 'var(--muted)';
+})();
+</script>
+
 </body>
 </html>
 

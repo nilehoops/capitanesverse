@@ -86,6 +86,8 @@
       </div>
       <div class="sc-control"><label>Last N</label><select id="scLastN" onchange="renderShotPage()"><option value="ALL">Season</option><option value="3">Last 3</option><option value="5">Last 5</option><option value="10">Last 10</option><option value="15">Last 15</option></select></div>
       <div class="sc-control"><label>Shot Type</label><select id="scShotType" onchange="renderShotPage()"><option value="ALL">All</option><option value="RIM">Rim</option><option value="CATCH">Catch&amp;Shoot</option><option value="PULLUP">Pullup</option><option value="FLOATER">Floater</option></select></div>
+      <div class="sc-control"><label>Leverage</label><select id="scLeverage" onchange="renderShotPage()"><option value="COMP" selected>Comp (No Low)</option><option value="ALL">All Lev</option><option value="med">Medium</option><option value="high">High</option><option value="vhigh">Very High</option><option value="low">Low (Garbage)</option></select></div>
+      <div class="sc-control"><label>Shot Clock</label><select id="scShotClock" onchange="renderShotPage()"><option value="ALL" selected>All Clock</option><option value="early">24-18s Early</option><option value="mid">17-7s Mid</option><option value="late">6-0s Late</option></select></div>
     </div>
     <div class="sc-ctrl-row">
       <div class="sc-control">
@@ -110,6 +112,6 @@
 </div>
 
 <div id="scGrid" class="sc-grid"><div style="color:var(--muted);font-size:12px;">Loading shot chart data...</div></div>
-<script src="js/shot-charts.js?v=71"></script>
+<script src="js/shot-charts.js?v=2151"></script>
 </body>
 </html>

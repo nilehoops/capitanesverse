@@ -40,6 +40,7 @@
 </div>
 <div id="tmMacro" class="tm-macro"></div>
 <div id="tmBody"></div>
+<script src="js/team-wowy.js?v=5"></script>
 <script>
 function normName(s) {
   return String(s || '')
@@ -270,8 +271,9 @@ async function loadTeamProfile() {
   document.getElementById('tmName').textContent = `${active.name} (${active.abbrev || ''}) — Team Scouting Profile`;
   document.getElementById('tmSub').textContent = `${szn} Season · Record: ${o.w ?? 0}-${o.l ?? 0} (${o.gp ?? 0} GP) · ORtg: ${o.rtg ?? '—'} · DRtg: ${d.rtg ?? '—'} · NetRtg: ${net >= 0 ? '+' : ''}${net}`;
   document.getElementById('tmMacro').innerHTML = `<div><b>Weighted Roster Age:</b> ${active.avgAge ?? '—'} <span style="color:var(--blue);font-weight:700;">(${active.agePctile ?? '—'}%ile)</span></div><div><b>Weighted Roster Height:</b> ${active.avgHeight ?? '—'} <span style="color:var(--blue);font-weight:700;">(${active.heightPctile ?? '—'}%ile)</span></div><div><b>Weighted Roster Weight:</b> ${active.avgWeight ? active.avgWeight + ' lbs' : '—'} <span style="color:var(--blue);font-weight:700;">(${active.weightPctile ?? '—'}%ile)</span></div>`;
-  document.getElementById('tmBody').innerHTML = `<div class="tm-grid-2">${buildCourtCard('Offensive Shot Chart & Shooting Profile', active.zones, lite.leagueZones, o, false)}${buildCourtCard('Defensive Shot Chart & Opponent Allowed', active.defZones, lite.leagueZones, d, true)}</div>` + buildInsightsAndTov(active, lite.leagueZones, teams) + buildFrequentLineupsCard(active) +
+  document.getElementById('tmBody').innerHTML = `<div class="tm-grid-2">${buildCourtCard('Offensive Shot Chart & Shooting Profile', active.zones, lite.leagueZones, o, false)}${buildCourtCard('Defensive Shot Chart & Opponent Allowed', active.defZones, lite.leagueZones, d, true)}</div>` + buildInsightsAndTov(active, lite.leagueZones, teams) + buildFrequentLineupsCard(active) + '<div id="tmWowyHost"></div>' +
     buildRotationsCard(active) + buildRosterTable(active, nameToId);
+  if (window.initTeamWowy) window.initTeamWowy(active, teams, szn, idx);
 }
 loadTeamProfile();
 </script>

@@ -359,7 +359,7 @@ async function renderSeasonSplits() {
     const prevSeason = (() => {
       const m = String(SEASON || '').match(/^(\d{4})-(\d{2})$/);
       if (!m) return null;
-      const y1 = Number(m) - 1;
+      const y1 = Number(m.at(1)) - 1;
       const y2 = String(y1 + 1).slice(-2);
       return y1 + '-' + y2;
     })();
@@ -817,7 +817,7 @@ async function runWowy() {
         { k: 'DEF_TS_PCT', pct: true, lb: true }, { k: 'DEF_TOV_PCT', pct: true, lb: false }, { k: 'DEF_ORB_PCT', pct: true, lb: false }
       );
 
-      window._lastWowyRender = { season: SEASON, selItems, rowsData, lgAvg, cols, exclLow: Boolean(window._excludeLowLev) };
+      window._lastWowyRender = { season: SEASON, selItems, rowsData, lgAvg, cols, exclLow: Boolean(window._excludeLowLev), scData, mexData: d };
 
       const rowsHtml = new Array();
       rowsData.forEach(({ mask: m, st }) => {
@@ -852,7 +852,7 @@ async function runWowy() {
         }).join('');
 
         const possSub = `<div style="font-size:8.5px;color:var(--muted);margin-top:15px;">3P%:</div>`;
-        rowsHtml.push(`<tr style="border-bottom:1px solid var(--border);background:#fff;"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}</td><td style="padding:6px 7px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;"><div>${st.POSS.toLocaleString()}</div>${possSub}</td>${valsHtml}</tr>`);
+        rowsHtml.push(`<tr data-wowy-mask="${m}" onclick="if(window.openWowyProfileModal)openWowyProfileModal(${m})" title="Click for Lineup Support profile" style="cursor:pointer;border-bottom:1px solid var(--border);background:#fff;"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}<button type="button" onclick="event.stopPropagation();if(window.openWowyProfileModal)openWowyProfileModal(${m});" title="Open Lineup Support & Shot Location profile" style="margin-left:6px;padding:3px 7px;font-family:Oswald,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:0.4px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">Profile ↗</button></td><td style="padding:6px 7px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;"><div>${st.POSS.toLocaleString()}</div>${possSub}</td>${valsHtml}</tr>`);
       });
 
       // Dedicated bottom ON - OFF summary row (All-ON minus All-OFF)
@@ -1947,7 +1947,7 @@ async function runWowy() {
           return `<td style="padding:7px 8px;text-align:right;vertical-align:middle;"><div style="font-size:12.5px;font-weight:700;${nc}">${disp}</div>${subHtml}</td>`;
         }).join('');
 
-        rowsHtml.push(`<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}</td><td style="padding:7px 8px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;">${st.POSS.toLocaleString()}</td>${valsHtml}</tr>`);
+        rowsHtml.push(`<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}<button type="button" onclick="event.stopPropagation();if(window.openWowyProfileModal)openWowyProfileModal(${m});" title="Open Lineup Support & Shot Location profile" style="margin-left:6px;padding:3px 7px;font-family:Oswald,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:0.4px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">Profile ↗</button></td><td style="padding:7px 8px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;">${st.POSS.toLocaleString()}</td>${valsHtml}</tr>`);
       });
 
       // Dedicated bottom ON - OFF summary row (All-ON minus All-OFF)
@@ -3041,7 +3041,7 @@ async function runWowy() {
           return `<td style="padding:7px 8px;text-align:right;vertical-align:middle;"><div style="font-size:12.5px;font-weight:700;${nc}">${disp}</div>${subHtml}</td>`;
         }).join('');
 
-        rowsHtml.push(`<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}</td><td style="padding:7px 8px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;">${st.POSS.toLocaleString()}</td>${valsHtml}</tr>`);
+        rowsHtml.push(`<tr style="border-bottom:1px solid var(--border);"><td style="padding:6px 4px;display:flex;align-items:center;">${icons}<button type="button" onclick="event.stopPropagation();if(window.openWowyProfileModal)openWowyProfileModal(${m});" title="Open Lineup Support & Shot Location profile" style="margin-left:6px;padding:3px 7px;font-family:Oswald,sans-serif;font-size:9.5px;font-weight:700;letter-spacing:0.4px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">Profile ↗</button></td><td style="padding:7px 8px;text-align:right;font-weight:700;font-size:12px;vertical-align:middle;">${st.POSS.toLocaleString()}</td>${valsHtml}</tr>`);
       });
 
       // Dedicated bottom ON - OFF summary row (All-ON minus All-OFF)
@@ -5680,6 +5680,32 @@ async function runWowy() {
     </td>`;
   };
 
+  window._activeWowyCtx = {
+    season: SEASON,
+    selectedObjs,
+    lgAvg: { OFF_RATING: lgOff, DEF_RATING: lgDef, OFF_TS_PCT: lgTs / 100, OFF_TOV_PCT: lgTov / 100, OFF_ORB_PCT: lgOrb / 100, DEF_TS_PCT: lgTs / 100, DEF_TOV_PCT: lgTov / 100, DEF_ORB_PCT: lgDrb / 100 }
+  };
+  window.openActiveWowyProfile = async function(mask) {
+    const c = window._activeWowyCtx;
+    if (!c || typeof window.openWowyProfileModal !== 'function') return;
+    const [scData, mexData] = await Promise.all([
+      fetch('data/shot_charts_' + c.season + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+      fetch('data/mex_data_' + c.season + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
+    ]);
+    const selItems = c.selectedObjs.map(p => ({
+      pid: Number(p.id || p.pid || 0),
+      fullName: p.name || p.fullName || p.last || '',
+      cleanLast: p.last || '', photo: p.photo || '',
+      key: String(p.name || p.last || '').toLowerCase()
+    }));
+    c.selectedObjs.forEach(p => {
+      if (p.photo && window._wowyPhotoMap) {
+        window._wowyPhotoMap[String(p.name || '').toLowerCase()] = p.photo;
+        window._wowyPhotoMap[String(p.last || '').toLowerCase()] = p.photo;
+      }
+    });
+    window.openWowyProfileModal(mask, { season: c.season, selItems, lgAvg: c.lgAvg, scData, mexData });
+  };
   const bodyHtml = rows.map(r => {
     const avatars = selectedObjs.map((p, i) => {
       const isOn = ((r.mask >> i) & 1) === 1;
@@ -5696,7 +5722,7 @@ async function runWowy() {
     const off3Sub = s.off3p != null ? `<div style="font-family:Lora,serif;font-size:8px;color:var(--muted);margin-top:2px;">${s.off3p.toFixed(1)}%</div>` : '';
     const def3Sub = s.def3p != null ? `<div style="font-family:Lora,serif;font-size:8px;color:var(--muted);margin-top:2px;">${s.def3p.toFixed(1)}%</div>` : '';
     return `<tr style="border-bottom:1px solid var(--border);">
-      <td style="padding:5px 4px 5px 0;text-align:left;vertical-align:middle;"><div style="display:flex;align-items:center;gap:4px;">${avatars}</div></td>
+      <td style="padding:5px 4px 5px 0;text-align:left;vertical-align:middle;"><div style="display:flex;align-items:center;gap:5px;">${avatars}<button type="button" onclick="event.stopPropagation();window.openActiveWowyProfile && window.openActiveWowyProfile(${r.mask});" title="Open Lineup Support & Shot Location profile" style="padding:3px 6px;font-family:Oswald,sans-serif;font-size:9px;font-weight:700;letter-spacing:0.3px;background:var(--blue);color:#fff;border:none;border-radius:4px;cursor:pointer;white-space:nowrap;">Profile ↗</button></div></td>
       <td style="padding:5px 4px;text-align:right;vertical-align:middle;font-family:Lora,serif;font-weight:700;font-size:11px;color:var(--text);">
         <div>${s.poss.toLocaleString()}</div>
         <div style="font-size:8px;font-weight:600;color:var(--muted);margin-top:12px;">3P%:</div>

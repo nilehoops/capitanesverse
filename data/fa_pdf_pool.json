@@ -1,0 +1,632 @@
+[
+  {
+    "id": 1642627,
+    "name": "Chase Adams",
+    "yos": 0,
+    "age": 27.0,
+    "height": "5'8\"",
+    "weight": 144,
+    "position": "G",
+    "school": "Jackson State"
+  },
+  {
+    "id": 1643961,
+    "name": "Emmanuel Akot",
+    "yos": null,
+    "age": 27.6,
+    "height": "6'8\"",
+    "weight": null,
+    "position": "F",
+    "school": ""
+  },
+  {
+    "id": 1643996,
+    "name": "Prince Aligbe",
+    "yos": null,
+    "age": 23.0,
+    "height": "6'7\"",
+    "weight": 235,
+    "position": "F",
+    "school": "Southern Illinois-Carbondale"
+  },
+  {
+    "id": 1643987,
+    "name": "Alex Anderson",
+    "yos": null,
+    "age": 24.6,
+    "height": "6'6\"",
+    "weight": 200,
+    "position": "G",
+    "school": "Texas Southern"
+  },
+  {
+    "id": 1643395,
+    "name": "Eric Ayala",
+    "yos": 1,
+    "age": 27.8,
+    "height": "6'6\"",
+    "weight": 200,
+    "position": "G",
+    "school": "Maryland"
+  },
+  {
+    "id": 1643896,
+    "name": "Jaxson Baker",
+    "yos": 0,
+    "age": 27.3,
+    "height": "6'8\"",
+    "weight": 200,
+    "position": "F",
+    "school": "New Hampshire"
+  },
+  {
+    "id": 1643890,
+    "name": "Coleton Benson",
+    "yos": 0,
+    "age": 24.5,
+    "height": "6'2\"",
+    "weight": 182,
+    "position": "G",
+    "school": "New Orleans"
+  },
+  {
+    "id": 1643974,
+    "name": "Brandon Betson",
+    "yos": null,
+    "age": 26.5,
+    "height": "6'1\"",
+    "weight": 180,
+    "position": "G",
+    "school": "Sacramento State"
+  },
+  {
+    "id": 1643877,
+    "name": "Diamant Blazi",
+    "yos": 0,
+    "age": 21.3,
+    "height": "6'7\"",
+    "weight": null,
+    "position": "F",
+    "school": "Paris, France"
+  },
+  {
+    "id": 1643968,
+    "name": "Bernie Blunt III",
+    "yos": null,
+    "age": 25.6,
+    "height": "5'11\"",
+    "weight": 180,
+    "position": "G",
+    "school": "Mercyhurst"
+  },
+  {
+    "id": 1629648,
+    "name": "Jordan Bone",
+    "yos": 3,
+    "age": 29.0,
+    "height": "6'2\"",
+    "weight": 180,
+    "position": "G",
+    "school": "Tennessee"
+  },
+  {
+    "id": 1642567,
+    "name": "Tommy Bruner",
+    "yos": 2,
+    "age": 25.5,
+    "height": "6'1\"",
+    "weight": 180,
+    "position": "G",
+    "school": "Denver"
+  },
+  {
+    "id": 1643947,
+    "name": "Quion Burns",
+    "yos": 0,
+    "age": 24.0,
+    "height": "6'6\"",
+    "weight": 180,
+    "position": "G",
+    "school": "Maine"
+  },
+  {
+    "id": 1630711,
+    "name": "Olin Carter III",
+    "yos": 4,
+    "age": 30.0,
+    "height": "6'3\"",
+    "weight": 190,
+    "position": "G",
+    "school": "San Diego"
+  },
+  {
+    "id": 1642491,
+    "name": "Sam Cele",
+    "yos": 0,
+    "age": 28.9,
+    "height": "6'5\"",
+    "weight": 209,
+    "position": "",
+    "school": "Oklahoma Science and Arts"
+  },
+  {
+    "id": 1643915,
+    "name": "David Cheatom",
+    "yos": 0,
+    "age": 24.3,
+    "height": "6'4\"",
+    "weight": 200,
+    "position": "G",
+    "school": "California State-Dominguez Hills"
+  },
+  {
+    "id": 1643834,
+    "name": "Jun-yong Choi",
+    "yos": 0,
+    "age": 32.6,
+    "height": "6'7\"",
+    "weight": null,
+    "position": "G",
+    "school": "South Korea"
+  },
+  {
+    "id": 1642037,
+    "name": "T.J. Clark",
+    "yos": 1,
+    "age": 23.0,
+    "height": "6'3\"",
+    "weight": 188,
+    "position": "G",
+    "school": ""
+  },
+  {
+    "id": 1643993,
+    "name": "Tyler Cochran",
+    "yos": null,
+    "age": 26.2,
+    "height": "6'4\"",
+    "weight": 222,
+    "position": "G",
+    "school": "Rhode Island"
+  },
+  {
+    "id": 1643924,
+    "name": "Jeriah Coleman",
+    "yos": 0,
+    "age": 26.3,
+    "height": "7'1\"",
+    "weight": 231,
+    "position": "C",
+    "school": "Nevada"
+  },
+  {
+    "id": 1643305,
+    "name": "Fousseyni Drame",
+    "yos": 1,
+    "age": 26.2,
+    "height": "6'7\"",
+    "weight": 200,
+    "position": "F",
+    "school": "Duquesne"
+  },
+  {
+    "id": 1643982,
+    "name": "E.J. Farmer",
+    "yos": null,
+    "age": 23.5,
+    "height": "6'5\"",
+    "weight": 185,
+    "position": "G",
+    "school": "Youngstown State"
+  },
+  {
+    "id": 1643926,
+    "name": "Faizon Fields",
+    "yos": 0,
+    "age": 24.8,
+    "height": "6'10\"",
+    "weight": 220,
+    "position": "F",
+    "school": "Wisconsin-Milwaukee"
+  },
+  {
+    "id": 1643895,
+    "name": "Trey Fort",
+    "yos": 0,
+    "age": 25.6,
+    "height": "6'4\"",
+    "weight": 200,
+    "position": "G",
+    "school": "Michigan State"
+  },
+  {
+    "id": 1642549,
+    "name": "Eric Gaines",
+    "yos": 1,
+    "age": 25.8,
+    "height": "6'2\"",
+    "weight": 165,
+    "position": "G",
+    "school": "Alabama-Birmingham"
+  },
+  {
+    "id": 1630348,
+    "name": "Admon Gilder",
+    "yos": 0,
+    "age": 31.0,
+    "height": "6'4\"",
+    "weight": 205,
+    "position": "G",
+    "school": "Gonzaga"
+  },
+  {
+    "id": 1643197,
+    "name": "Gerald Gittens",
+    "yos": 0,
+    "age": 24.1,
+    "height": "6'0\"",
+    "weight": 195,
+    "position": "G",
+    "school": "Northern Michigan"
+  },
+  {
+    "id": 1643873,
+    "name": "Greg Gordon",
+    "yos": 0,
+    "age": 24.8,
+    "height": "6'5\"",
+    "weight": 209,
+    "position": "G",
+    "school": "Long Island-Brooklyn"
+  },
+  {
+    "id": 1641570,
+    "name": "Vance Jackson",
+    "yos": 3,
+    "age": 29.2,
+    "height": "6'9\"",
+    "weight": 230,
+    "position": "F",
+    "school": "East Carolina"
+  },
+  {
+    "id": 1643919,
+    "name": "Jordan Johnson",
+    "yos": 0,
+    "age": 22.1,
+    "height": "6'4\"",
+    "weight": 195,
+    "position": "G",
+    "school": "Bethune-Cookman"
+  },
+  {
+    "id": 1643670,
+    "name": "Aly Khalifa",
+    "yos": 0,
+    "age": 25.8,
+    "height": "7'0\"",
+    "weight": 248,
+    "position": "C",
+    "school": "Louisville"
+  },
+  {
+    "id": 1643944,
+    "name": "BJ Kolly",
+    "yos": 0,
+    "age": 23.6,
+    "height": "6'10\"",
+    "weight": 224,
+    "position": "F",
+    "school": "California-Riverside"
+  },
+  {
+    "id": 1643953,
+    "name": "AJ Lopez",
+    "yos": 0,
+    "age": 25.3,
+    "height": "6'5\"",
+    "weight": 185,
+    "position": "G",
+    "school": "Richmond"
+  },
+  {
+    "id": 1629666,
+    "name": "Charles Matthews",
+    "yos": 4,
+    "age": 30.0,
+    "height": "6'6\"",
+    "weight": 205,
+    "position": "G",
+    "school": "Michigan"
+  },
+  {
+    "id": 1643847,
+    "name": "Cedric Mbiaba",
+    "yos": 0,
+    "age": 26.3,
+    "height": "6'6\"",
+    "weight": 220,
+    "position": "F",
+    "school": "Carleton"
+  },
+  {
+    "id": 1643893,
+    "name": "Don McHenry",
+    "yos": 0,
+    "age": 23.5,
+    "height": "6'2\"",
+    "weight": 160,
+    "position": "G",
+    "school": "Utah"
+  },
+  {
+    "id": 1643188,
+    "name": "Matthew Moncrieffe",
+    "yos": 1,
+    "age": 25.6,
+    "height": "6'8\"",
+    "weight": 214,
+    "position": "F",
+    "school": "Seattle"
+  },
+  {
+    "id": 1642068,
+    "name": "Isaiah Moore",
+    "yos": 3,
+    "age": 26.7,
+    "height": "6'1\"",
+    "weight": 163,
+    "position": "G",
+    "school": "South Alabama"
+  },
+  {
+    "id": 1643965,
+    "name": "Joe Octave",
+    "yos": null,
+    "age": 25.6,
+    "height": "6'4\"",
+    "weight": 205,
+    "position": "G",
+    "school": "Stony Brook"
+  },
+  {
+    "id": 1643971,
+    "name": "Masai Olowokere",
+    "yos": null,
+    "age": 25.4,
+    "height": "6'5\"",
+    "weight": 195,
+    "position": "F",
+    "school": "Central Arkansas"
+  },
+  {
+    "id": 1643929,
+    "name": "Paul Otieno",
+    "yos": 0,
+    "age": 25.1,
+    "height": "6'9\"",
+    "weight": 230,
+    "position": "F",
+    "school": "St. Louis"
+  },
+  {
+    "id": 1643277,
+    "name": "Dylan Penn",
+    "yos": 1,
+    "age": 27.0,
+    "height": "6'3\"",
+    "weight": null,
+    "position": "G",
+    "school": "Vermont"
+  },
+  {
+    "id": 1643914,
+    "name": "Amayoa'ah Phillips",
+    "yos": 0,
+    "age": 23.7,
+    "height": "6'2\"",
+    "weight": 173,
+    "position": "G",
+    "school": ""
+  },
+  {
+    "id": 1643853,
+    "name": "Preston Phillips",
+    "yos": 0,
+    "age": 24.4,
+    "height": "6'8\"",
+    "weight": 224,
+    "position": "F",
+    "school": "Pepperdine"
+  },
+  {
+    "id": 1643967,
+    "name": "Jayden Pierre",
+    "yos": null,
+    "age": 23.5,
+    "height": "6'0\"",
+    "weight": 175,
+    "position": "G",
+    "school": "TCU"
+  },
+  {
+    "id": 1642390,
+    "name": "Wooga Poplar",
+    "yos": 1,
+    "age": 23.8,
+    "height": "6'5\"",
+    "weight": 197,
+    "position": "F",
+    "school": "Villanova"
+  },
+  {
+    "id": 1643920,
+    "name": "Colby Rogers",
+    "yos": 0,
+    "age": 25.8,
+    "height": "6'3\"",
+    "weight": 196,
+    "position": "G",
+    "school": "Memphis"
+  },
+  {
+    "id": 1643883,
+    "name": "Julius Rollins",
+    "yos": 0,
+    "age": 23.7,
+    "height": "6'7\"",
+    "weight": 200,
+    "position": "G",
+    "school": "Denver"
+  },
+  {
+    "id": 1643859,
+    "name": "Kevin Samuel",
+    "yos": 0,
+    "age": 29.3,
+    "height": "7'0\"",
+    "weight": 259,
+    "position": "C",
+    "school": "South Alabama"
+  },
+  {
+    "id": 1643174,
+    "name": "Jaden Seymour",
+    "yos": 1,
+    "age": 24.5,
+    "height": "6'8\"",
+    "weight": 205,
+    "position": "F",
+    "school": "East Tennessee State"
+  },
+  {
+    "id": 1643988,
+    "name": "KC Shaw",
+    "yos": null,
+    "age": 22.1,
+    "height": "6'5\"",
+    "weight": 195,
+    "position": "G",
+    "school": "Old Dominion"
+  },
+  {
+    "id": 1642622,
+    "name": "Quinn Slazinski",
+    "yos": 1,
+    "age": 25.7,
+    "height": "6'9\"",
+    "weight": 215,
+    "position": "F",
+    "school": "West Virginia"
+  },
+  {
+    "id": 1643842,
+    "name": "Gabe Spinelli",
+    "yos": 0,
+    "age": 24.9,
+    "height": "6'3\"",
+    "weight": 193,
+    "position": "G",
+    "school": "Central Connecticut State"
+  },
+  {
+    "id": 1643990,
+    "name": "Jason Thirdkill",
+    "yos": null,
+    "age": 23.6,
+    "height": "6'7\"",
+    "weight": 220,
+    "position": "G",
+    "school": "Jacksonville"
+  },
+  {
+    "id": 1643960,
+    "name": "Daniel Titus",
+    "yos": 0,
+    "age": 26.5,
+    "height": "6'8\"",
+    "weight": 209,
+    "position": "F",
+    "school": "Coppin State"
+  },
+  {
+    "id": 1643387,
+    "name": "Kellen Tynes",
+    "yos": 1,
+    "age": 25.2,
+    "height": "6'3\"",
+    "weight": 175,
+    "position": "G",
+    "school": "Maine"
+  },
+  {
+    "id": 1643863,
+    "name": "Marcus Weathers",
+    "yos": 0,
+    "age": 29.3,
+    "height": "6'7\"",
+    "weight": 215,
+    "position": "F",
+    "school": "Southern Methodist"
+  },
+  {
+    "id": 1643288,
+    "name": "T.J. Weeks",
+    "yos": 1,
+    "age": 26.6,
+    "height": "6'4\"",
+    "weight": 190,
+    "position": "G",
+    "school": "Rider"
+  },
+  {
+    "id": 1643324,
+    "name": "Jahlil White",
+    "yos": 1,
+    "age": 24.9,
+    "height": "6'7\"",
+    "weight": 210,
+    "position": "G",
+    "school": "La Salle"
+  },
+  {
+    "id": 1643313,
+    "name": "Jalen Williams",
+    "yos": 1,
+    "age": 24.2,
+    "height": "6'5\"",
+    "weight": null,
+    "position": "G",
+    "school": "Clark Atlanta"
+  },
+  {
+    "id": 1643262,
+    "name": "Cam Young",
+    "yos": 1,
+    "age": 26.1,
+    "height": "6'7\"",
+    "weight": 210,
+    "position": "F",
+    "school": "East Stroudsburg-Pennsylvania"
+  },
+  {
+    "id": 1643936,
+    "name": "Jaeden Zackery",
+    "yos": 0,
+    "age": 25.2,
+    "height": "6'2\"",
+    "weight": 220,
+    "position": "G",
+    "school": "Clemson"
+  },
+  {
+    "id": 1642570,
+    "name": "J.Z. Zaher",
+    "yos": 1,
+    "age": 22.3,
+    "height": "6'0\"",
+    "weight": 165,
+    "position": "G",
+    "school": "Bowling Green"
+  }
+]

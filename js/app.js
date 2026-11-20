@@ -3792,25 +3792,19 @@ async function buildRotationPlaceholders() {
   const r2 = document.getElementById('rotationRow2');
   if (!r1 || !r2) return;
 
-  // Load real rotation from mex_data players sorted by minutes
-  // Cross-reference with players_index for photos
   try {
-    const [d, idx, ld] = await Promise.all([
+    const [d, idx, ld, sc] = await Promise.all([
       loadMexData(),
-      loadBap().catch(() => []),
+      loadBap().catch(() => new Array()),
       (window._wowyLineupData
         ? Promise.resolve(window._wowyLineupData)
         : fetch(LINEUP_DATA_PATH() + '?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)),
+      fetch('data/shot_charts_' + SEASON + '.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null)
     ]);
-
-    const players = (d.players || [])
-      .filter(p => (p.MIN || 0) > 0)
-      .sort((a, b) => (b.MIN || 0) - (a.MIN || 0))
-      .slice(0, 10);
 
     const normKey = (s) => String(s || '')
       .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().replace(/[.,'â€™\-]/g, ' ')
+      .toLowerCase().replace(/[.,'?\-]/g, ' ')
       .split(/\s+/).filter(w => w && !/^(jr|sr|ii|iii|iv|v)$/.test(w)).join(' ');
 
     const photoMap = {};
@@ -3829,54 +3823,113 @@ async function buildRotationPlaceholders() {
       }
     };
 
-    // 1. Primary source: Lineup Data playerXref (exact same images as Lineup Data section)
     Object.entries(ld?.playerXref || {}).forEach(([abbrev, info]) => {
       if (info?.photoUrl) {
         registerPhoto(abbrev, info.photoUrl);
         if (info.name) registerPhoto(info.name, info.photoUrl);
       }
     });
-
-    // 2. Fallback source: players_index
-    (idx || []).forEach(p => {
-      if (p.name && p.photoUrl) registerPhoto(p.name, p.photoUrl);
-    });
-    // Also try nameLookup from mex_data
+    (idx || new Array()).forEach(p => { if (p.name && p.photoUrl) registerPhoto(p.name, p.photoUrl); });
     const nameLookup = d.nameLookup || {};
 
-    if (players.length > 0) {
-      function rotCard(p) {
-        const fullName = p.Player || p.PLAYER_NAME || '';
-        // Try nameLookup for display name, then split
-        const displayName = nameLookup[fullName] || fullName;
+    const games = (sc && Array.isArray(sc.games)) ? sc.games : new Array();
+    const allPoss = (sc && Array.isArray(sc.poss)) ? sc.poss : new Array();
+    const scPlayers = (sc && Array.isArray(sc.players)) ? sc.players : new Array();
+
+    let rotList = new Array();
+    let shiftSummary = '';
+
+    if (games.length >= 2 && allPoss.length > 0 && scPlayers.length > 0) {
+      const recentWindow = Math.min(5, Math.max(1, Math.floor(games.length / 2)));
+      const recentGids = new Set(games.slice(0, recentWindow).map(g => String(g.id || g.gid)));
+      const priorGids = new Set(games.slice(recentWindow).map(g => String(g.id || g.gid)));
+
+      let recTot = 0, priTot = 0;
+      const recCnt = {}, priCnt = {};
+      allPoss.forEach(px => {
+        const gid = String(px.gid || '');
+        const onArr = px.on || new Array();
+        if (recentGids.has(gid)) {
+          recTot++;
+          onArr.forEach(pid => { const k = Number(pid); recCnt[k] = (recCnt[k] || 0) + 1; });
+        } else if (priorGids.has(gid)) {
+          priTot++;
+          onArr.forEach(pid => { const k = Number(pid); priCnt[k] = (priCnt[k] || 0) + 1; });
+        }
+      });
+
+      const priorRanked = scPlayers
+        .map(sp => ({ id: Number(sp.id), pct: priTot > 0 ? ((priCnt[Number(sp.id)] || 0) / priTot) * 100 : 0 }))
+        .filter(x => x.pct > 0)
+        .sort((a, b) => b.pct - a.pct);
+      const priorTop10 = new Set(priorRanked.slice(0, 10).map(x => x.id));
+
+      const merged = scPlayers.map(sp => {
+        const pid = Number(sp.id);
+        const recPct = recTot > 0 ? ((recCnt[pid] || 0) / recTot) * 100 : 0;
+        const priPct = priTot > 0 ? ((priCnt[pid] || 0) / priTot) * 100 : 0;
+        const delta = priTot > 0 ? (recPct - priPct) : 0;
+        return {
+          pid,
+          fullName: sp.name || '',
+          recPct,
+          priPct,
+          delta,
+          isNew: priTot > 0 && recPct > 0 && !priorTop10.has(pid)
+        };
+      });
+
+      rotList = merged.filter(x => x.recPct > 0).sort((a, b) => b.recPct - a.recPct).slice(0, 10);
+
+      if (priTot > 0) {
+        const risers = merged.filter(x => x.delta >= 4).sort((a, b) => b.delta - a.delta).slice(0, 3);
+        const fallers = merged.filter(x => x.delta <= -4).sort((a, b) => a.delta - b.delta).slice(0, 3);
+        const fmtShort = nm => { const pts = (nameLookup[nm] || nm).split(' '); return pts.length > 1 ? pts.at(0).at(0) + '. ' + pts.at(-1) : nm; };
+        const upTxt = risers.length ? ('<span style="color:var(--blue);font-weight:700;">&#9650;</span> ' + risers.map(r => `${esc(fmtShort(r.fullName))} (+${r.delta.toFixed(0)}%)`).join(', ')) : '';
+        const dnTxt = fallers.length ? ('<span style="color:var(--red);font-weight:700;">&#9660;</span> ' + fallers.map(f => `${esc(fmtShort(f.fullName))} (${f.delta.toFixed(0)}%)`).join(', ')) : '';
+        if (upTxt || dnTxt) {
+          shiftSummary = `<div style="margin-top:5px;padding-top:4px;border-top:1px solid var(--border);font-size:9.5px;line-height:1.3;text-align:center;color:var(--text);"><b>L${recentWindow} vs. Prior Shift:</b> ${new Array(upTxt, dnTxt).filter(Boolean).join(' &nbsp;|&nbsp; ')}</div>`;
+        }
+      }
+    }
+
+    if (rotList.length > 0) {
+      function rotCard(item) {
+        const displayName = nameLookup[item.fullName] || item.fullName;
         const parts = displayName.split(' ');
-        const shortName = parts.length > 1
-          ? `${parts[0][0]}. ${parts[parts.length - 1]}`
-          : (parts[0] || '');
-        const mins = p.MIN != null ? Number(p.MIN).toFixed(0) + ' Min' : 'XX Min';
+        const shortName = parts.length > 1 ? `${parts.at(0).at(0)}. ${parts.at(-1)}` : (parts.at(0) || '');
         const cleanDisp = normKey(displayName);
         const dPts = cleanDisp.split(' ');
         const flDisp = dPts.length >= 2 ? `${dPts.at(0)} ${dPts.at(-1)}` : cleanDisp;
-        const photoUrl = photoMap[fullName.toLowerCase()]
+        const photoUrl = photoMap[item.fullName.toLowerCase()]
           || photoMap[displayName.toLowerCase()]
           || photoMap[shortName.toLowerCase()]
-          || photoMap[normKey(fullName)]
+          || photoMap[normKey(item.fullName)]
           || photoMap[cleanDisp]
           || photoMap[flDisp];
         const photo = photoUrl
           ? `<img src="${esc(photoUrl)}" style="width:36px;height:36px;border-radius:50%;object-fit:cover;object-position:top;display:block;margin:0 auto 1px;" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><svg width="36" height="36" viewBox="0 0 36 36" style="display:none;margin:0 auto 1px;"><circle cx="18" cy="13" r="8" fill="#999"/><ellipse cx="18" cy="32" rx="13" ry="9" fill="#999"/></svg>`
           : `<svg width="36" height="36" viewBox="0 0 36 36" style="display:block;margin:0 auto 1px;"><circle cx="18" cy="13" r="8" fill="#999"/><ellipse cx="18" cy="32" rx="13" ry="9" fill="#999"/></svg>`;
-        return `<div class="rot-player">${photo}<span class="rot-player-mins">${mins}</span><span class="rot-player-name">${esc(shortName)}</span></div>`;
+        const dRounded = Math.round(item.delta);
+        const dCol = item.isNew ? 'var(--blue)' : (dRounded > 0 ? 'var(--blue)' : (dRounded < 0 ? 'var(--red)' : 'var(--muted)'));
+        const dLabel = item.isNew ? 'NEW' : (dRounded === 0 ? '0%' : ((dRounded > 0 ? '+' : '') + dRounded + '%'));
+        return `<div class="rot-player" title="Last ${Math.min(5, Math.max(1, Math.floor(games.length / 2)))}G: ${item.recPct.toFixed(1)}% poss | Prior: ${item.priPct.toFixed(1)}% poss">${photo}<span class="rot-player-mins">${item.recPct.toFixed(0)}% <span style="color:${dCol};font-weight:700;">(${dLabel})</span></span><span class="rot-player-name">${esc(shortName)}</span></div>`;
       }
-      r1.innerHTML = players.slice(0, 4).map(rotCard).join('');
-      r2.innerHTML = players.slice(5, 10).map(rotCard).join('');
+      r1.innerHTML = rotList.slice(0, 5).map(rotCard).join('');
+      r2.innerHTML = rotList.slice(5, 10).map(rotCard).join('');
+      let noteEl = document.getElementById('rotationShiftNote');
+      if (!noteEl && r2.parentElement) {
+        noteEl = document.createElement('div');
+        noteEl.id = 'rotationShiftNote';
+        r2.parentElement.appendChild(noteEl);
+      }
+      if (noteEl) noteEl.innerHTML = shiftSummary;
       return;
     }
-  } catch(e) {}
+  } catch (e) {}
 
-  // Fallback placeholders
-  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('—', 'XX Min');
-  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('—', 'XX Min');
+  for (let i = 0; i < 5; i++) r1.innerHTML += buildRotationPlayer('?', 'XX Min');
+  for (let i = 0; i < 5; i++) r2.innerHTML += buildRotationPlayer('?', 'XX Min');
 }
 
 let TEAM_STATS_PATH = () => dataPath('team_stats');
@@ -4761,13 +4814,36 @@ async function renderLastGameRecap() {
       if (rTs && rTs.ok) cachedTeamStats = await rTs.json();
     }
 
+    const todayIso = new Date().toLocaleDateString('en-CA');
+    const liveSb = await fetch('https://nba.com' + Date.now())
+      .then(r => r.ok ? r.json() : null).catch(() => null);
+    const liveById = {};
+    (liveSb?.scoreboard?.games || []).forEach(lg => {
+      if (lg?.gameId) liveById[String(lg.gameId)] = lg;
+    });
+
     const playedList = (sc && Array.isArray(sc.games) ? sc.games : new Array()).map((gm, i) => ({ ...gm, _played: true, _pIdx: i }));
     const playedIds = new Set(playedList.map(gm => String(gm.id || gm.gid)));
     const rawSched = Array.isArray(sched) ? sched : (sched?.games || sched?.upcoming || new Array());
-    const futureList = rawSched
-      .filter(ug => !playedIds.has(String(ug.id || ug.gid || '')) && (ug.future || ug.upcoming || !ug.wl))
-      .map(ug => ({ ...ug, _played: false }));
-    const allGames = new Array(...futureList, ...playedList);
+
+    const extraCompleted = [];
+    const futureList = [];
+    rawSched.forEach(ug => {
+      const idStr = String(ug.id || ug.gid || '');
+      if (playedIds.has(idStr)) return;
+      const lv = liveById[idStr];
+      const st = Number(lv?.gameStatus || 0);
+      const gDate = String(ug.date || (String(ug.label || '').match(/^(\d{4}-\d{2}-\d{2})/) || []).at(1) || '');
+      const isLiveOrFinal = st === 2 || st === 3 || Boolean(ug.wl) || (gDate && gDate < todayIso);
+      if (isLiveOrFinal) {
+        extraCompleted.push({ ...ug, _played: true, _liveGame: lv || null, _liveStatus: st });
+      } else {
+        futureList.push({ ...ug, _played: false, _liveGame: lv || null, _liveStatus: st });
+      }
+    });
+
+    const mergedPlayed = new Array(...extraCompleted, ...playedList);
+    const allGames = new Array(...futureList, ...mergedPlayed);
 
     if (!allGames.length) {
       el.innerHTML = '';
@@ -4775,9 +4851,24 @@ async function renderLastGameRecap() {
       return;
     }
 
+    const nextGameIdx = futureList.length ? (futureList.length - 1) : -1;
+    const nextGame = nextGameIdx >= 0 ? futureList.at(nextGameIdx) : null;
+    const isNextGameToday = Boolean(nextGame && String(nextGame.date || '').startsWith(todayIso));
+
     if (window._recapSeason !== SEASON) {
       window._recapSeason = SEASON;
-      window._recapIdx = futureList.length < allGames.length ? futureList.length : 0;
+      if (isNextGameToday) {
+        window._recapIdx = nextGameIdx;
+      } else {
+        window._recapIdx = futureList.length < allGames.length ? futureList.length : 0;
+      }
+    }
+
+    const hasLiveOrToday = isNextGameToday || extraCompleted.some(x => x._liveStatus === 2);
+    if (hasLiveOrToday && !window._recapPollTimer) {
+      window._recapPollTimer = setInterval(() => {
+        if (typeof renderLastGameRecap === 'function') renderLastGameRecap();
+      }, 60000);
     }
     const curIdx = Math.max(0, Math.min(allGames.length - 1, Number(window._recapIdx ?? 0)));
     window._recapIdx = curIdx;
@@ -5080,11 +5171,63 @@ const lblMatch = lblStr.match(/MXC\s+(?:vs.?|@)\s+([A-Z]{2,4})/i);
 const dateMatch = lblStr.match(/^(\d{4}-\d{2}-\d{2})/);
 const oppAb = (g.opp || (lblMatch ? lblMatch.at(1) : 'OPP')).toUpperCase();
 const gameDate = g.date || (dateMatch ? dateMatch.at(1) : '');
-const gPoss = (sc.poss || new Array()).filter(p => p.gid === gid);
-const gShots = (sc.shots || new Array()).filter(s => s.gid === gid);
-const gFts = (sc.fts || new Array()).filter(f => f.gid === gid);
-const gTovs = (sc.turnovers || new Array()).filter(t => t.gid === gid);
-const periods = Array.from(new Set(gPoss.map(p => Number(p.p || 1)))).sort((a, b) => a - b);
+    const gPoss = (sc && Array.isArray(sc.poss) ? sc.poss : new Array()).filter(p => p.gid === gid);
+    const gShots = (sc && Array.isArray(sc.shots) ? sc.shots : new Array()).filter(s => s.gid === gid);
+    const gFts = (sc && Array.isArray(sc.fts) ? sc.fts : new Array()).filter(f => f.gid === gid);
+    const gTovs = (sc && Array.isArray(sc.turnovers) ? sc.turnovers : new Array()).filter(t => t.gid === gid);
+
+    if (!gPoss.length && !gShots.length) {
+      let mPts = '?', oPts = '?', stTxt = 'FINAL', statLine = '', leaderLine = '', mxcIsHome = String(g.loc || '').toLowerCase() === 'home';
+      try {
+        const [sbResp, bxResp] = await Promise.all([
+          typeof nbaFetch === 'function' && gameDate
+            ? nbaFetch('https://nba.com' + encodeURIComponent(gameDate)).catch(() => null)
+            : Promise.resolve(null),
+          typeof nbaFetch === 'function' && gid
+            ? nbaFetch('https://nba.com' + encodeURIComponent(gid) + '&LeagueID=20').catch(() => null)
+            : Promise.resolve(null)
+        ]);
+        const sbData = sbResp && sbResp.ok ? await sbResp.json().catch(() => null) : null;
+        const bxData = bxResp && bxResp.ok ? await bxResp.json().catch(() => null) : null;
+        const sbGame = (sbData?.scoreboard?.games || []).find(x => String(x.gameId) === String(gid)) || g._liveGame || null;
+        const bg = bxData?.boxScoreTraditional || sbGame || null;
+        if (bg) {
+          const hTm = bg.homeTeam || {}, aTm = bg.awayTeam || {};
+          if (String(hTm.teamTricode || '').toUpperCase() === 'MXC') mxcIsHome = true;
+          else if (String(aTm.teamTricode || '').toUpperCase() === 'MXC') mxcIsHome = false;
+          const mTm = mxcIsHome ? hTm : aTm, oTm = mxcIsHome ? aTm : hTm;
+          if (mTm.score != null) mPts = mTm.score;
+          if (oTm.score != null) oPts = oTm.score;
+          if (sbGame?.gameStatusText) stTxt = sbGame.gameStatusText;
+          else if (Number(sbGame?.gameStatus) === 2) stTxt = 'LIVE';
+          const mSt = mTm.statistics || {}, oSt = oTm.statistics || {};
+          if (mSt.fieldGoalsPercentage != null) {
+            statLine = 'FG%: ' + (Number(mSt.fieldGoalsPercentage) * 100).toFixed(1) + '% vs ' + (Number(oSt.fieldGoalsPercentage || 0) * 100).toFixed(1) + '% ? 3P%: ' + (Number(mSt.threePointersPercentage || 0) * 100).toFixed(1) + '% ? REB: ' + (mSt.reboundsTotal ?? '?') + ' vs ' + (oSt.reboundsTotal ?? '?') + ' ? TOV: ' + (mSt.turnoversTotal ?? '?') + ' vs ' + (oSt.turnoversTotal ?? '?');
+          }
+          const topScorer = (mTm.players || []).slice().sort((a, b) => Number(b.statistics?.points || 0) - Number(a.statistics?.points || 0)).at(0);
+          if (topScorer) {
+            const pNm = topScorer.nameI || ((topScorer.firstName || '') + ' ' + (topScorer.familyName || '')).trim();
+            leaderLine = 'MXC Leader: ' + pNm + ' (' + (topScorer.statistics?.points ?? 0) + ' PTS, ' + (topScorer.statistics?.reboundsTotal ?? 0) + ' REB, ' + (topScorer.statistics?.assists ?? 0) + ' AST)';
+          }
+        }
+      } catch (err) {}
+
+      el.appendChild(h('div', 'padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:#fff;',
+        h('div', 'display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;',
+          h('span', 'font-family:Oswald,sans-serif;font-size:11.5px;font-weight:700;color:var(--blue);', gameDate + ' ? MXC ' + (mxcIsHome ? 'vs.' : '@') + ' ' + oppAb),
+          h('span', 'font-family:Oswald,sans-serif;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:4px;background:' + (stTxt === 'LIVE' ? '#fee2e2;color:#b91c1c;' : '#e0f2fe;color:#0369a1;'), stTxt)
+        ),
+        h('div', 'font-family:Oswald,sans-serif;font-size:19px;font-weight:700;color:var(--ink);margin-bottom:5px;',
+          'MXC ' + mPts + ' ? ' + oppAb + ' ' + oPts
+        ),
+        statLine ? h('div', 'font-size:10.5px;color:var(--muted);margin-bottom:4px;', statLine) : null,
+        h('div', 'font-size:10.5px;' + (leaderLine ? 'font-weight:600;color:var(--ink);' : 'color:var(--muted);'),
+          leaderLine || 'Run update_2027.bat to sync full play-by-play shot chart.'
+        )
+      ));
+      return;
+    }
+    const periods = Array.from(new Set(gPoss.map(p => Number(p.p || 1)))).sort((a, b) => a - b);
 let mxcTot = 0, oppTot = 0;
 const qCols = periods.map(pNum => {
 const mPts = gShots.filter(s => Number(s.p) === pNum && s.side === 'off' && Number(s.made) === 1).reduce((a, s) => a + (Number(s.val) || 2), 0)

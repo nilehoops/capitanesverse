@@ -1,0 +1,346 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Capitanesverse · Transactions &amp; Free Agent Lab (2026-27 MXC Baseline)</title>
+<link href="https://googleapis.com" rel="stylesheet">
+<link rel="stylesheet" href="css/inseason.css?v=202">
+<script src="https://cloudflare.com"></script>
+<style>
+  body { font-family:'Lora',serif; background:var(--bg); color:var(--text); margin:0; padding:12px 16px; }
+  .tx-wrap { max-width:1360px; margin:0 auto; }
+  .tx-hdr { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; border-bottom:2px solid var(--ink); padding-bottom:8px; margin-bottom:10px; }
+  .tx-title { font-family:'Oswald',sans-serif; font-size:20px; font-weight:700; letter-spacing:0.4px; }
+  .tx-nav a { font-family:'Oswald',sans-serif; font-size:11.5px; font-weight:700; color:var(--blue); text-decoration:none; margin-left:10px; text-transform:uppercase; }
+  .tx-card { background:#fff; border:1px solid var(--border); padding:10px 12px; margin-bottom:10px; }
+  .tx-ctitle { font-family:'Oswald',sans-serif; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink); margin-bottom:4px; }
+  .tx-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; margin-top:6px; }
+  .tx-kpi { background:var(--surface); border:1px solid var(--border); padding:6px 8px; }
+  .tx-kpi-lbl { font-family:'Oswald',sans-serif; font-size:9.5px; color:var(--muted); text-transform:uppercase; }
+  .tx-kpi-val { font-family:'Oswald',sans-serif; font-size:16px; font-weight:700; color:var(--ink); }
+  .tx-tabs { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; align-items:center; }
+  .tx-tab { font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; padding:4px 10px; border:1px solid var(--border); background:#fff; color:var(--ink); cursor:pointer; }
+  .tx-tab.active { background:var(--blue); color:#fff; border-color:var(--blue); }
+  table.tx-tbl { width:100%; border-collapse:collapse; font-size:11px; }
+  table.tx-tbl th { background:var(--surface); color:var(--muted); font-family:'Oswald',sans-serif; font-size:10px; padding:5px 6px; border-bottom:1px solid var(--border); text-align:right; position:sticky; top:0; }
+  table.tx-tbl th:first-child, table.tx-tbl th:nth-child(2), table.tx-tbl th:nth-child(3) { text-align:left; }
+  table.tx-tbl td { padding:5px 6px; border-bottom:1px solid var(--border); text-align:right; }
+  table.tx-tbl td:first-child, table.tx-tbl td:nth-child(2), table.tx-tbl td:nth-child(3) { text-align:left; }
+  .badge { display:inline-block; padding:1px 5px; border-radius:3px; font-family:'Oswald',sans-serif; font-size:9.5px; font-weight:700; }
+  .b-nba { background:#fee2e2; color:#991b1b; }
+  .b-fa { background:#dcfce7; color:#166534; }
+  .b-pdf { background:#e0f2fe; color:#0369a1; }
+  .b-gl { background:#f1f5f9; color:#334155; }
+</style>
+</head>
+<body>
+<div class="tx-wrap">
+  <div class="tx-hdr">
+    <div>
+      <div class="tx-title">Capitanesverse &middot; Transactions &amp; Free Agent Lab</div>
+      <div id="txSub" style="font-size:11px;color:var(--muted);">Loading 2026-27 MXC Roster Baseline, G League Pool &amp; Released NBA Players...</div>
+    </div>
+    <div class="tx-nav">
+      <a href="inseason.html">In-Season</a>
+      <a href="team.html?team=MXC">MXC Profile</a>
+      <a href="playerstats.html">Player Stats</a>
+    </div>
+  </div>
+
+  <div class="tx-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
+      <div class="tx-ctitle" style="margin:0;">2026-27 Capitanes (MXC) Roster Baseline</div>
+      <div style="font-size:10.5px;color:var(--muted);">Every free agent &amp; released NBA player is benchmarked against MXC's active roster and <b>similar-height (&plusmn;2 in) MXC roster players</b>.</div>
+    </div>
+    <div id="mxcBaselineGrid" class="tx-grid"></div>
+    <div id="mxcRosterStrip" style="margin-top:8px;font-size:10.5px;color:var(--text);"></div>
+  </div>
+
+  <div class="tx-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
+      <div class="tx-ctitle" style="margin:0;">Available Pool, Released NBA Players &amp; Free Agent PDF Import</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <label style="font-family:'Oswald',sans-serif;font-size:10.5px;font-weight:700;padding:4px 9px;background:var(--blue);color:#fff;border-radius:3px;cursor:pointer;">
+          + Upload Free Agent PDF <input type="file" id="faPdfInput" accept="application/pdf" style="display:none;">
+        </label>
+        <input type="text" id="txSearch" placeholder="Filter by player, pos, height, or tag..." style="font-family:'Lora',serif;font-size:11px;padding:3px 7px;border:1px solid var(--border);width:210px;">
+      </div>
+    </div>
+    <div class="tx-tabs" id="txTabs">
+      <button class="tx-tab active" data-tab="all">All (PDF Free Agents + NBA Released)</button>
+      <button class="tx-tab" data-tab="nba">Released NBA Players</button>
+            <button class="tx-tab" data-tab="pdf">PDF Free Agents (<span id="pdfCount">0</span>)</button>
+      <button class="tx-tab" data-tab="moves">Recent League Transactions</button>
+    </div>
+    <div id="txTableWrap" style="overflow-x:auto;max-height:72vh;"></div>
+  </div>
+</div>
+<script>
+(async function () {
+  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  const parseHtIn = h => {
+    if (typeof h === 'number' && h > 50) return h;
+    const m = String(h || '').match(/(\d)\s*[-']\s*(\d{1,2})/);
+    return m ? (Number(m.at(1)) * 12 + Number(m.at(2))) : null;
+  };
+  const fmtHt = inches => inches ? `${Math.floor(inches / 12)}-${Math.round(inches % 12)}` : '—';
+  const calcDre = p => {
+    if (!p || typeof p !== 'object') return null;
+    if (p.dre != null && !isNaN(Number(p.dre))) return Number(p.dre);
+    const poss = Number(p.poss ?? p.POSS ?? 0);
+    if (poss <= 0) return null;
+    return (100 / poss) * (0.792 * Number(p.pts || 0) - 0.719 * Number(p.fga || 0) - 0.299 * Number(p.fta || 0) + 0.145 * Number(p.reb || 0) + 0.369 * Number(p.ast || 0) + 1.662 * Number(p.stl || 0) + 0.696 * Number(p.blk || 0) - 0.844 * Number(p.tov || 0));
+  };
+
+  const v = '?v=' + Date.now();
+  const [lite27, lite26, pIdx, pFull, gRoster, faPdfPool, nbaMove] = await Promise.all([
+    fetch('data/league_lite_shots_2026-27.json' + v).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('data/league_lite_shots_2025-26.json' + v).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('data/players_index.json' + v).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
+    fetch('data/players.json' + v).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
+    fetch('data/gleague_roster_2026-27.json' + v).then(r => r.ok ? r.json() : null).catch(() => null),
+    fetch('data/fa_pdf_pool.json' + v).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
+    fetch('https://nba.com' + v).then(r => r.ok ? r.json() : null).catch(() => null)
+  ]);
+
+  const dbByKey = {};
+  const upsert = (raw, src) => {
+    const nm = String(raw?.name || raw?.PLAYER_NAME || raw?.Player || '').trim();
+    if (!nm) return;
+    const k = norm(nm);
+    const cur = dbByKey[k] || { name: nm, pos: '', heightIn: null, weight: null, age: null, stats: null, sourceSeason: '' };
+    if (!cur.pos && raw.position) cur.pos = raw.position;
+    const ht = parseHtIn(raw.heightIn || raw.height || raw.heightDisplay);
+    if (!cur.heightIn && ht) cur.heightIn = ht;
+    const wt = Number(raw.weight || raw.biography?.weight || 0);
+    if (!cur.weight && wt > 120) cur.weight = Math.round(wt);
+    const age = Number(raw.age || raw.biography?.age || 0);
+    if (!cur.age && age > 15) cur.age = Number(age.toFixed(1));
+    const dre = calcDre(raw);
+    const hasStat = (Number(raw.gp || 0) > 0 || Number(raw.poss || 0) > 0 || raw.pts75 != null || dre != null);
+    if (hasStat && (!cur.stats || src === '2026-27' || (src === '2025-26' && cur.sourceSeason !== '2026-27'))) {
+      cur.stats = {
+        gp: raw.gp ?? null,
+        mpg: raw.mpg ?? null,
+        pts75: raw.pts75 ?? null,
+        reb75: raw.reb75 ?? null,
+        ast75: raw.ast75 ?? null,
+        tsPct: raw.tsPct ?? null,
+        fg3Pct: raw.fg3Pct ?? null,
+        usg: raw.usg ?? null,
+        dre: dre != null ? Number(dre.toFixed(1)) : null
+      };
+      cur.sourceSeason = src;
+    }
+    dbByKey[k] = cur;
+  };
+
+  (lite27?.teams || new Array()).forEach(tm => (tm.rosterStats || new Array()).forEach(p => upsert(p, '2026-27')));
+  (lite26?.teams || new Array()).forEach(tm => (tm.rosterStats || new Array()).forEach(p => upsert(p, '2025-26')));
+  (Array.isArray(pFull) ? pFull : Object.values(pFull || {})).forEach(p => upsert(p, 'players.json'));
+  (Array.isArray(pIdx) ? pIdx : Object.values(pIdx || {})).forEach(p => upsert(p, 'index'));
+  (Array.isArray(faPdfPool) ? faPdfPool : new Array()).forEach(p => upsert(p, 'pdf'));
+
+  // Build similar-height peer cohorts (±2 inches) from all G League players with logged stats
+  const mxcBaseList = (lite27?.teams || new Array()).find(t => t.abbrev === 'MXC')?.rosterStats?.length
+    ? (lite27.teams.find(t => t.abbrev === 'MXC').rosterStats)
+    : ((lite26?.teams || new Array()).find(t => t.abbrev === 'MXC')?.rosterStats || new Array());
+  const mxcKeys = new Set(mxcBaseList.map(p => norm(p.name)));
+  const statPool = Object.values(dbByKey).filter(x => x.stats && x.heightIn && mxcKeys.has(norm(x.name)));
+  const getHeightPeerAvg = htIn => {
+    if (!htIn) return null;
+    const peers = statPool.filter(x => Math.abs(x.heightIn - htIn) <= 2);
+    if (!peers.length) return null;
+    const avg = fn => {
+      const vals = peers.map(fn).filter(v => v != null && !isNaN(v));
+      return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : null;
+    };
+    return {
+      n: peers.length,
+      pts75: avg(x => x.stats.pts75),
+      reb75: avg(x => x.stats.reb75),
+      ast75: avg(x => x.stats.ast75),
+      tsPct: avg(x => x.stats.tsPct),
+      dre: avg(x => x.stats.dre)
+    };
+  };
+
+  // 2026-27 MXC Roster Baseline
+  const mxc27 = (lite27?.teams || new Array()).find(t => t.abbrev === 'MXC') || (lite26?.teams || new Array()).find(t => t.abbrev === 'MXC') || {};
+  const mxcRoster = (mxc27.rosterStats || new Array()).slice().sort((a, b) => (b.mpg || 0) - (a.mpg || 0));
+  const mxcAvgDre = (() => {
+    const vals = mxcRoster.map(calcDre).filter(v => v != null && !isNaN(v));
+    return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—';
+  })();
+  document.getElementById('mxcBaselineGrid').innerHTML = `
+    <div class="tx-kpi"><div class="tx-kpi-lbl">Active MXC Roster</div><div class="tx-kpi-val">${mxcRoster.length} Players</div></div>
+    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg Height</div><div class="tx-kpi-val">${mxc27.avgHeight || '—'}</div></div>
+    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg Weight</div><div class="tx-kpi-val">${mxc27.avgWeight ? Math.round(mxc27.avgWeight) + ' lbs' : '—'}</div></div>
+    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg Age</div><div class="tx-kpi-val">${mxc27.avgAge || '—'}</div></div>
+    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg DRE</div><div class="tx-kpi-val">${mxcAvgDre}</div></div>
+    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC NetRtg</div><div class="tx-kpi-val">${mxc27.netRtg != null ? ((mxc27.netRtg >= 0 ? '+' : '') + mxc27.netRtg) : '—'}</div></div>
+  `;
+  document.getElementById('mxcRosterStrip').innerHTML = '<b>2026-27 MXC Baseline Roster:</b> ' + (mxcRoster.map(p => `${p.name} (${p.height || '—'}, ${p.weight ? Math.round(p.weight) + 'lb' : '—'}, DRE ${calcDre(p) != null ? calcDre(p).toFixed(1) : '—'})`).join(' &middot; ') || 'No 2026-27 roster logged yet.');
+  const candidates = [];
+  const seenKey = new Set();
+
+  // 1. Released / Waived NBA Players (live NBA Player Movement feed + cached gleague_roster nbaReleased)
+  const nbaRows = (nbaMove?.NBA_Player_Movement?.rows || []).filter(r => {
+    const desc = String(r.TRANSACTION_DESCRIPTION || '').toLowerCase();
+    const ttype = String(r.TRANSACTION_TYPE || '').toLowerCase();
+    const dt = String(r.TRANSACTION_DATE || '').slice(0, 10);
+    return (desc.includes('waiv') || ttype.includes('waiv') || desc.includes('releas')) && dt >= '2026-07-01';
+  }).map(r => ({
+    name: `${r.FIRST_NAME || ''} ${r.LAST_NAME || ''}`.trim(),
+    team: r.TEAM_ABBREVIATION || '',
+    date: String(r.TRANSACTION_DATE || '').slice(0, 10),
+    desc: r.TRANSACTION_DESCRIPTION || 'Waived by NBA team'
+  }));
+  const allNbaRel = nbaRows.length ? nbaRows : (gRoster?.nbaReleased || []);
+  allNbaRel.forEach(nr => {
+    const k = norm(nr.name);
+    if (!k || seenKey.has(k)) return;
+    seenKey.add(k);
+    candidates.push({ name: nr.name, source: 'nba', tag: `NBA Waived (${nr.team || 'NBA'} · ${nr.date || ''})`, note: nr.desc || '' });
+  });
+
+
+
+
+  // Pre-seed Free Agent PDF List from data/fa_pdf_pool.json
+  (Array.isArray(faPdfPool) ? faPdfPool : new Array()).forEach(p => {
+    const k = norm(p.name);
+    if (!k) return;
+    const existing = candidates.find(c => norm(c.name) === k);
+    const tagStr = 'PDF FA' + (p.yos != null ? ' ? ' + p.yos + ' YOS' : '') + (p.school ? ' (' + p.school + ')' : '');
+    if (existing) {
+      existing.source = 'pdf';
+      existing.tag = tagStr;
+    } else {
+      seenKey.add(k);
+      candidates.unshift({ name: p.name, source: 'pdf', tag: tagStr, note: p.school || '' });
+    }
+  });
+  document.getElementById('pdfCount').textContent = candidates.filter(c => c.source === 'pdf').length;
+
+  let currentTab = 'all';
+  const fmtDiff = (val, peerVal) => {
+    if (val == null || peerVal == null || isNaN(val) || isNaN(peerVal)) return '';
+    const d = val - peerVal;
+    const col = d >= 0 ? 'var(--green)' : 'var(--red)';
+    return ` <span style="font-size:9.5px;font-weight:700;color:${col};">(${d >= 0 ? '+' : ''}${d.toFixed(1)})</span>`;
+  };
+
+  const renderTable = () => {
+    const q = norm(document.getElementById('txSearch').value);
+    const wrap = document.getElementById('txTableWrap');
+    if (currentTab === 'moves') {
+      const txs = (gRoster?.transactions || []).concat(allNbaRel.map(x => ({ date: x.date, team: x.team, player: x.name, type: x.desc })));
+      if (!txs.length) {
+        wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11.5px;">No transactions cached yet. Run <code>update_2027.bat</code> to refresh official G League &amp; NBA movement logs.</div>';
+        return;
+      }
+      wrap.innerHTML = `<table class="tx-tbl"><thead><tr><th>Date</th><th>Team</th><th>Player</th><th>Transaction</th></tr></thead><tbody>${txs.slice(0, 150).map(t => `<tr><td>${t.date || '—'}</td><td><b>${t.team || '—'}</b></td><td><b>${t.player || t.name || '—'}</b></td><td>${t.type || t.description || '—'}</td></tr>`).join('')}</tbody></table>`;
+      return;
+    }
+
+    const list = candidates.filter(c => {
+      if (currentTab !== 'all' && c.source !== currentTab) return false;
+      if (!q) return true;
+      const rec = dbByKey[norm(c.name)] || {};
+      return norm(c.name + ' ' + c.tag + ' ' + (rec.pos || '') + ' ' + fmtHt(rec.heightIn)).includes(q);
+    });
+
+    document.getElementById('txSub').textContent = `2026-27 MXC Baseline (${mxcRoster.length} active) · Showing ${list.length} candidates benchmarked vs. ±2" G League height peers`;
+
+    if (!list.length) {
+      wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11.5px;">No players match this filter. Upload a Free Agent PDF or switch tabs above.</div>';
+      return;
+    }
+
+    const rowsHtml = list.slice(0, 250).map(c => {
+      const rec = dbByKey[norm(c.name)] || {};
+      const st = rec.stats; // null if player has zero stats in any site database -> leaves stat cells blank!
+      const peers = getHeightPeerAvg(rec.heightIn);
+      const badgeCls = c.source === 'nba' ? 'b-nba' : (c.source === 'pdf' ? 'b-pdf' : 'b-fa');
+      return `<tr>
+        <td><b>${c.name}</b>${rec.sourceSeason ? ` <span style="font-size:9px;color:var(--muted);">(${rec.sourceSeason})</span>` : ''}</td>
+        <td><span class="badge ${badgeCls}">${c.tag}</span></td>
+        <td>${rec.pos || '—'}</td>
+        <td>${fmtHt(rec.heightIn)}${peers ? ` <span style="font-size:9px;color:var(--muted);">(${peers.n}p)</span>` : ''}</td>
+        <td>${rec.weight ? rec.weight + ' lb' : '—'}</td>
+        <td>${rec.age ?? '—'}</td>
+        <td>${st?.gp ?? ''}</td>
+        <td>${st?.mpg != null ? Number(st.mpg).toFixed(1) : ''}</td>
+        <td>${st?.pts75 != null ? Number(st.pts75).toFixed(1) + fmtDiff(Number(st.pts75), peers?.pts75) : ''}</td>
+        <td>${st?.reb75 != null ? Number(st.reb75).toFixed(1) + fmtDiff(Number(st.reb75), peers?.reb75) : ''}</td>
+        <td>${st?.ast75 != null ? Number(st.ast75).toFixed(1) + fmtDiff(Number(st.ast75), peers?.ast75) : ''}</td>
+        <td>${st?.tsPct != null ? Number(st.tsPct).toFixed(1) + '%' + fmtDiff(Number(st.tsPct), peers?.tsPct) : ''}</td>
+        <td style="font-weight:700;">${st?.dre != null ? (st.dre >= 0 ? '+' : '') + Number(st.dre).toFixed(1) + fmtDiff(Number(st.dre), peers?.dre) : ''}</td>
+      </tr>`;
+    }).join('');
+
+    wrap.innerHTML = `<table class="tx-tbl"><thead><tr>
+      <th>Player</th><th>Status / Origin</th><th>Pos</th><th>Ht (MXC)</th><th>Wt</th><th>Age</th>
+      <th>GP</th><th>MPG</th><th>PTS/75 (vs Ht)</th><th>REB/75 (vs Ht)</th><th>AST/75 (vs Ht)</th><th>TS% (vs Ht)</th><th>DRE (vs Ht)</th>
+    </tr></thead><tbody>${rowsHtml}</tbody></table>`;
+  };
+
+  // Client-side Free Agent PDF Parser (pdf.js)
+  document.getElementById('faPdfInput').onchange = async e => {
+    const file = e.target.files?.[0];
+    if (!file || !window.pdfjsLib) return;
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cloudflare.com';
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let fullText = '';
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const tc = await page.getTextContent();
+      fullText += '\n' + tc.items.map(it => it.str).join(' ');
+    }
+    // Extract player names ("First Last" or "Last, First") plus optional height/weight/age tokens
+    const extracted = new Set();
+    const lines = fullText.split(/[\n\r;|]+/);
+    lines.forEach(ln => {
+      const matches = ln.match(/\b[A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){1,2}\b/g) || [];
+      matches.forEach(m => {
+        if (!/^(Free Agent|Available|Pool|Player|Height|Weight|Age|Position|College|Guard|Forward|Center|Page|NBA|League)$/i.test(m)) {
+          extracted.add(m.trim());
+        }
+      });
+    });
+    let added = 0;
+    extracted.forEach(nm => {
+      const k = norm(nm);
+      if (!k || k.length < 5) return;
+      const existing = candidates.find(c => norm(c.name) === k);
+      if (existing) {
+        existing.source = 'pdf';
+        existing.tag = 'PDF Free Agent';
+        added++;
+      } else {
+        candidates.unshift({ name: nm, source: 'pdf', tag: 'PDF Free Agent', note: file.name });
+        added++;
+      }
+    });
+    document.getElementById('pdfCount').textContent = candidates.filter(c => c.source === 'pdf').length;
+    currentTab = 'pdf';
+    document.querySelectorAll('#txTabs .tx-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'pdf'));
+    renderTable();
+  };
+
+  document.querySelectorAll('#txTabs .tx-tab').forEach(btn => {
+    btn.onclick = () => {
+      currentTab = btn.dataset.tab;
+      document.querySelectorAll('#txTabs .tx-tab').forEach(b => b.classList.toggle('active', b === btn));
+      renderTable();
+    };
+  });
+  document.getElementById('txSearch').oninput = renderTable;
+  renderTable();
+})();
+</script>
+</body>
+</html>

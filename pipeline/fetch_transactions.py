@@ -124,6 +124,33 @@ for tx in reversed(all_tx):
     elif any(k in comb for k in ["sign", "claim", "acquire", "transfer", "assign", "two-way"]) and tx["team"]:
         name_to_team[low_nm] = tx["team"]
 
+
+# 3b. Pull official Released / Waived NBA Players from NBA Player Movement feed
+nba_released = []
+try:
+    r_nba = requests.get("https://nba.com", headers=HEADERS, timeout=20)
+    if r_nba.ok:
+        rows = r_nba.json().get("NBA_Player_Movement", {}).get("rows", [])
+        for row in rows:
+            desc = str(row.get("TRANSACTION_DESCRIPTION", ""))
+            ttype = str(row.get("TRANSACTION_TYPE", ""))
+            tdate = str(row.get("TRANSACTION_DATE", ""))[:10]
+            if ("waiv" in desc.lower() or "waiv" in ttype.lower() or "releas" in desc.lower()) and tdate >= "2026-07-01":
+                full = f"{row.get('FIRST_NAME', '').strip()} {row.get('LAST_NAME', '').strip()}".strip()
+                if full:
+                    nba_released.append({
+                        "pid": row.get("PLAYER_ID"),
+                        "name": full,
+                        "team": row.get("TEAM_ABBREVIATION", ""),
+                        "date": tdate,
+                        "type": "NBA Waived / Released",
+                        "desc": desc
+                    })
+        print(f"  Synced {len(nba_released)} released NBA players since July 2026.")
+except Exception as e:
+    print(f"  [Note] NBA released feed fallback: {e}")
+roster_data["nbaReleased"] = nba_released
+
 # 4. Write updated players + nameToTeam + transactions back into data/gleague_roster_2026-27.json
 updated_players = sorted(
     [{"name": name_case.get(k, k.title()), "team": v} for k, v in name_to_team.items()],

@@ -1,4 +1,4 @@
-﻿with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
+with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
     code = f.read()
 
 # Replace any existing Rebound handler with exact player-ID + team-tricode OREB/DREB detection

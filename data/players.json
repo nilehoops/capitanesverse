@@ -15912,7 +15912,7 @@
       "griftRatePctile": 0.968,
       "jumperRate": 0.7932
     },
-    "onRoster": true,
+    "onRoster": false,
     "biography": {
       "weight": "172 lbs",
       "hometown": "Santo Domingo",

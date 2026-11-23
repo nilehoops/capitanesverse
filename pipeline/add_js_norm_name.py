@@ -1,4 +1,4 @@
-﻿norm_js = '''function normName(s) {
+norm_js = '''function normName(s) {
   return String(s || '')
     .normalize('NFD').replace(/[\\u0300-\\u036f]/g, '')
     .toLowerCase()

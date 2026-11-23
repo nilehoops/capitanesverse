@@ -1,4 +1,4 @@
-﻿import json
+import json
 from nba_api.stats.endpoints import leaguegamefinder
 
 d = json.load(open("data/shot_charts_2025-26.json", encoding="utf-8"))

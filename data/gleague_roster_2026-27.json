@@ -1,10 +1,6 @@
 {
   "players": [
     {
-      "name": "A.J. Staton-McCray",
-      "team": "SXF"
-    },
-    {
       "name": "AJ Hoggard",
       "team": "RAP"
     },
@@ -35,6 +31,14 @@
     {
       "name": "Agapy de Melo Santos",
       "team": "MXC"
+    },
+    {
+      "name": "Ahmet Jonovic",
+      "team": "GBO"
+    },
+    {
+      "name": "Alejandro Rama",
+      "team": "IWA"
     },
     {
       "name": "Alex Morales",
@@ -165,10 +169,6 @@
       "team": "MCC"
     },
     {
-      "name": "Buddy Boeheim",
-      "team": "OKL"
-    },
-    {
       "name": "CJ Huntley",
       "team": "VAL"
     },
@@ -191,6 +191,10 @@
     {
       "name": "Caleb Stone-Carrawell",
       "team": "RAP"
+    },
+    {
+      "name": "Cam Carter",
+      "team": "OSC"
     },
     {
       "name": "Cam Christie",
@@ -225,8 +229,8 @@
       "team": "CVL"
     },
     {
-      "name": "Chad Baker-Mazara",
-      "team": "MXC"
+      "name": "Carter Whitt",
+      "team": "RCR"
     },
     {
       "name": "Chance McMillian",
@@ -239,10 +243,6 @@
     {
       "name": "Chase Ross",
       "team": "CVL"
-    },
-    {
-      "name": "Chaz Lanier",
-      "team": "MCC"
     },
     {
       "name": "Chris Bell",
@@ -271,10 +271,6 @@
     {
       "name": "Chucky Hepburn",
       "team": "RAP"
-    },
-    {
-      "name": "Cole Swider",
-      "team": "CVL"
     },
     {
       "name": "Coleman Hawkins",
@@ -323,10 +319,6 @@
     {
       "name": "DaRon Holmes II",
       "team": "GRG"
-    },
-    {
-      "name": "Dailyn Swain",
-      "team": "WCB"
     },
     {
       "name": "Daimion Collins",
@@ -409,10 +401,6 @@
       "team": "CPS"
     },
     {
-      "name": "Dillon Jones",
-      "team": "DEL"
-    },
-    {
       "name": "Dillon Mitchell",
       "team": "MNE"
     },
@@ -457,10 +445,6 @@
       "team": "LIN"
     },
     {
-      "name": "Ebuka Okorie",
-      "team": "MCC"
-    },
-    {
       "name": "Elias Ralph",
       "team": "SCW"
     },
@@ -473,6 +457,10 @@
       "team": "GRG"
     },
     {
+      "name": "Emmitt Matthews, Jr.",
+      "team": "OSC"
+    },
+    {
       "name": "Enrique Freeman",
       "team": "IWA"
     },
@@ -481,8 +469,12 @@
       "team": "MHU"
     },
     {
-      "name": "Ernest Udeh, Jr.",
+      "name": "Ernest Udeh Jr.",
       "team": "CLC"
+    },
+    {
+      "name": "Esteban Ezequiel Roacho Amador",
+      "team": "MXC"
     },
     {
       "name": "Ethan Taylor",
@@ -537,10 +529,6 @@
       "team": "MNE"
     },
     {
-      "name": "Hannes Steinbach",
-      "team": "GBO"
-    },
-    {
       "name": "Harrison Ingram",
       "team": "SLC"
     },
@@ -551,10 +539,6 @@
     {
       "name": "Houston Mallette",
       "team": "WCB"
-    },
-    {
-      "name": "Hunter Dickinson",
-      "team": "LTN"
     },
     {
       "name": "Hunter Sallis",
@@ -673,10 +657,6 @@
       "team": "WCB"
     },
     {
-      "name": "Jalen Crutcher",
-      "team": "IWA"
-    },
-    {
       "name": "Jalen Pickett",
       "team": "SDC"
     },
@@ -695,6 +675,10 @@
     {
       "name": "Jalon Moore",
       "team": "LTN"
+    },
+    {
+      "name": "Jamar Brown",
+      "team": "CVL"
     },
     {
       "name": "Jamarion Sharp",
@@ -763,6 +747,10 @@
     {
       "name": "Jazian Gortman",
       "team": "CCG"
+    },
+    {
+      "name": "Jemel Jones",
+      "team": "SXF"
     },
     {
       "name": "Jeremiah Burke",
@@ -837,6 +825,10 @@
       "team": "MHU"
     },
     {
+      "name": "Jordan Derkack",
+      "team": "IWA"
+    },
+    {
       "name": "Jordan Dingle",
       "team": "LIN"
     },
@@ -877,10 +869,6 @@
       "team": "LIN"
     },
     {
-      "name": "Josiah Allick",
-      "team": "GBO"
-    },
-    {
       "name": "Jules Bernard",
       "team": "IWA"
     },
@@ -903,10 +891,6 @@
     {
       "name": "Kadary Richmond",
       "team": "CLC"
-    },
-    {
-      "name": "Kalifa Sakho",
-      "team": "CCG"
     },
     {
       "name": "Kam Jones",
@@ -957,10 +941,6 @@
       "team": "SXF"
     },
     {
-      "name": "Keshon Gilbert",
-      "team": "CPS"
-    },
-    {
       "name": "Kevin McCullar Jr.",
       "team": "RAP"
     },
@@ -971,6 +951,10 @@
     {
       "name": "Keyshawn Bryant",
       "team": "CPS"
+    },
+    {
+      "name": "Khalifa Diop",
+      "team": "CLC"
     },
     {
       "name": "Khamari McGriff",
@@ -1011,10 +995,6 @@
     {
       "name": "Kyle Mangas",
       "team": "GBO"
-    },
-    {
-      "name": "Kylor Kelley",
-      "team": "SXF"
     },
     {
       "name": "LJ Cryer",
@@ -1105,10 +1085,6 @@
       "team": "WIS"
     },
     {
-      "name": "Mark Armstrong",
-      "team": "RCR"
-    },
-    {
       "name": "Mark Sears",
       "team": "RCR"
     },
@@ -1141,10 +1117,6 @@
       "team": "GBO"
     },
     {
-      "name": "Mike Sharavjamts",
-      "team": "OSC"
-    },
-    {
       "name": "Miles Barnstable",
       "team": "AUS"
     },
@@ -1170,7 +1142,7 @@
     },
     {
       "name": "Myron Amey",
-      "team": "VAL"
+      "team": "GRG"
     },
     {
       "name": "N'Faly Dante",
@@ -1245,10 +1217,6 @@
       "team": "RGV"
     },
     {
-      "name": "Orlando Robinson",
-      "team": "WCB"
-    },
-    {
       "name": "Oscar Tshiebwe",
       "team": "RGV"
     },
@@ -1267,10 +1235,6 @@
     {
       "name": "Payton Sandfort",
       "team": "IWA"
-    },
-    {
-      "name": "Pedro Bradshaw",
-      "team": "GRG"
     },
     {
       "name": "Pete Nance",
@@ -1303,6 +1267,10 @@
     {
       "name": "RJ Felton",
       "team": "NOB"
+    },
+    {
+      "name": "Rafael Castro",
+      "team": "CPS"
     },
     {
       "name": "Rashaun Agee",
@@ -1343,10 +1311,6 @@
     {
       "name": "Rienk Mast",
       "team": "NOB"
-    },
-    {
-      "name": "Riley Minix",
-      "team": "CLC"
     },
     {
       "name": "Rob Dillingham",
@@ -1397,8 +1361,8 @@
       "team": "TEX"
     },
     {
-      "name": "Shawn Jones, Jr.",
-      "team": "LTN"
+      "name": "Shammah Scott",
+      "team": "CLC"
     },
     {
       "name": "Skal Labissiere",
@@ -1521,12 +1485,12 @@
       "team": "CCG"
     },
     {
-      "name": "Trey Alexander",
-      "team": "SLC"
-    },
-    {
       "name": "Trey Edmonds",
       "team": "GRG"
+    },
+    {
+      "name": "Trey Fort",
+      "team": "SXF"
     },
     {
       "name": "Trey Jemison III",
@@ -1559,6 +1523,10 @@
     {
       "name": "Tyler Burton",
       "team": "SCW"
+    },
+    {
+      "name": "Tyler Cochran",
+      "team": "DEL"
     },
     {
       "name": "Tyler Nickel",
@@ -1633,6 +1601,10 @@
       "team": "MHU"
     },
     {
+      "name": "Yusuf Mohamed",
+      "team": "OKL"
+    },
+    {
       "name": "Zach Cleveland",
       "team": "MHU"
     },
@@ -1658,15 +1630,16 @@
     }
   ],
   "nameToTeam": {
-    "a.j. staton-mccray": "SXF",
     "aaron nkrumah": "STO",
     "aaron scott": "LIN",
     "abou ousmane": "DEL",
     "adam flagler": "TEX",
     "adama bal": "WIS",
     "agapy de melo santos": "MXC",
+    "ahmet jonovic": "GBO",
     "aj hoggard": "RAP",
     "ak okereke": "CVL",
+    "alejandro rama": "IWA",
     "alex morales": "OSC",
     "alex toohey": "SCW",
     "alondes williams": "CCG",
@@ -1699,12 +1672,12 @@
     "bryce harris": "RGV",
     "bryce hopkins": "GRG",
     "bryson warren": "MCC",
-    "buddy boeheim": "OKL",
     "caleb grill": "MNE",
     "caleb houstan": "RCR",
     "caleb love": "DEL",
     "caleb mcconnell": "RGV",
     "caleb stone-carrawell": "RAP",
+    "cam carter": "OSC",
     "cam christie": "SDC",
     "cam whitmore": "GRG",
     "cameron corhen": "CPS",
@@ -1713,11 +1686,10 @@
     "cameron matthews": "RGV",
     "cameron parker": "WIS",
     "carson cooper": "CVL",
-    "chad baker-mazara": "MXC",
+    "carter whitt": "RCR",
     "chance mcmillian": "SCW",
     "chaney johnson": "LIN",
     "chase ross": "CVL",
-    "chaz lanier": "MCC",
     "chris bell": "LTN",
     "chris mantis": "TEX",
     "chris ma\u00f1on": "CVL",
@@ -1726,7 +1698,6 @@
     "christoph tilly": "OKL",
     "chucky hepburn": "RAP",
     "cj huntley": "VAL",
-    "cole swider": "CVL",
     "coleman hawkins": "GRG",
     "colin castleton": "OSC",
     "corey camper": "VAL",
@@ -1734,7 +1705,6 @@
     "cris carroll": "DEL",
     "curtis jones": "CLC",
     "d'andre davis": "MNE",
-    "dailyn swain": "WCB",
     "daimion collins": "AUS",
     "dain dainja": "LIN",
     "dajuan gordon": "GBO",
@@ -1757,7 +1727,6 @@
     "dennis smith jr.": "SXF",
     "devin carter": "MNE",
     "devon higgs": "CPS",
-    "dillon jones": "DEL",
     "dillon mitchell": "MNE",
     "dink pate": "WES",
     "dion brown": "LIN",
@@ -1772,13 +1741,14 @@
     "duke miles": "DEL",
     "duop reath": "VAL",
     "dwight murray, jr.": "LIN",
-    "ebuka okorie": "MCC",
     "elias ralph": "SCW",
     "elijah harkless": "MCC",
     "emanuel miller": "GRG",
+    "emmitt matthews, jr.": "OSC",
     "enrique freeman": "IWA",
     "eric dixon": "MHU",
-    "ernest udeh, jr.": "CLC",
+    "ernest udeh jr.": "CLC",
+    "esteban ezequiel roacho amador": "MXC",
     "ethan taylor": "LTN",
     "felix okpara": "CCG",
     "fletcher loyer": "SDC",
@@ -1792,11 +1762,9 @@
     "guillermo diaz-graham": "TEX",
     "guy ragland jr.": "DEL",
     "hank morgan": "MNE",
-    "hannes steinbach": "GBO",
     "harrison ingram": "SLC",
     "hayden gray": "MNE",
     "houston mallette": "WCB",
-    "hunter dickinson": "LTN",
     "hunter sallis": "SDC",
     "hyunjung lee": "RCR",
     "ian martinez": "CLC",
@@ -1825,12 +1793,12 @@
     "jahmyl telfort": "SDC",
     "jake stephens": "WIS",
     "jalen bridges": "WCB",
-    "jalen crutcher": "IWA",
     "jalen pickett": "SDC",
     "jalen slawson": "NOB",
     "jalen warley": "NOB",
     "jalen wilson": "CPS",
     "jalon moore": "LTN",
+    "jamar brown": "CVL",
     "jamarion sharp": "RAP",
     "jameer nelson jr.": "DEL",
     "james bouknight": "MXC",
@@ -1849,6 +1817,7 @@
     "jayson kent": "RCR",
     "jazian gortman": "CCG",
     "jd davison": "OSC",
+    "jemel jones": "SXF",
     "jeremiah burke": "WIS",
     "jeremy sochan": "TEX",
     "jestin porter": "CPS",
@@ -1867,6 +1836,7 @@
     "jonathan mogbo": "STO",
     "jonathan pierre": "LIN",
     "jordan bowden": "MHU",
+    "jordan derkack": "IWA",
     "jordan dingle": "LIN",
     "jordan hawkins": "WCB",
     "jordan johnson": "IWA",
@@ -1877,13 +1847,11 @@
     "josh dix": "OKL",
     "josh roberts": "MNE",
     "joshua jefferson": "LIN",
-    "josiah allick": "GBO",
     "jules bernard": "IWA",
     "julian phillips": "RGV",
     "julian reese": "LTN",
     "justin harmon": "SLC",
     "kadary richmond": "CLC",
-    "kalifa sakho": "CCG",
     "kam jones": "WIS",
     "kameron warrens": "OKL",
     "kasean pryor": "OSC",
@@ -1896,10 +1864,10 @@
     "keon johnson": "CPS",
     "keonte jones": "GRG",
     "keshad johnson": "SXF",
-    "keshon gilbert": "CPS",
     "kevin mccullar jr.": "RAP",
     "keylan boone": "RCR",
     "keyshawn bryant": "CPS",
+    "khalifa diop": "CLC",
     "khamari mcgriff": "MHU",
     "kira lewis jr.": "MHU",
     "kj martin": "IWA",
@@ -1911,7 +1879,6 @@
     "kowacie reeves jr.": "NOB",
     "kylan boswell": "GBO",
     "kyle mangas": "GBO",
-    "kylor kelley": "SXF",
     "lacey james": "WCB",
     "lamont butler": "CPS",
     "lance terry": "MHU",
@@ -1934,7 +1901,6 @@
     "manny obaseki": "WIS",
     "marcus bagley": "DEL",
     "marcus garrett": "WIS",
-    "mark armstrong": "RCR",
     "mark sears": "RCR",
     "markquis nowell": "LTN",
     "marquel sutton": "WCB",
@@ -1943,14 +1909,13 @@
     "meechie johnson": "CVL",
     "micah peavy": "OKL",
     "michael ajayi": "GBO",
-    "mike sharavjamts": "OSC",
     "miles barnstable": "AUS",
     "miles kelly": "SCW",
     "milos uzan": "MNE",
     "mitchell mascari": "WES",
     "miye oni": "SDC",
     "mohamed wague": "SLC",
-    "myron amey": "VAL",
+    "myron amey": "GRG",
     "n'faly dante": "WES",
     "nate bittle": "RAP",
     "nate johnson": "OKL",
@@ -1969,12 +1934,10 @@
     "ochai agbaji": "AUS",
     "olumide adelodun": "RAP",
     "omer yurtseven": "RGV",
-    "orlando robinson": "WCB",
     "oscar tshiebwe": "RGV",
     "pat spencer": "VAL",
     "paul zilinskas": "WES",
     "payton sandfort": "IWA",
-    "pedro bradshaw": "GRG",
     "pete nance": "WIS",
     "peter suder": "WCB",
     "phillip wheeler": "VAL",
@@ -1983,6 +1946,7 @@
     "quadir copeland": "RGV",
     "quinn denker": "MXC",
     "r.j. davis": "AUS",
+    "rafael castro": "CPS",
     "rashaun agee": "CLC",
     "rayan rupert": "DEL",
     "rayj dennis": "CPS",
@@ -1993,7 +1957,6 @@
     "richie saunders": "MHU",
     "ricky council iv": "OSC",
     "rienk mast": "NOB",
-    "riley minix": "CLC",
     "rj felton": "NOB",
     "rob dillingham": "WES",
     "robert mccray v": "OKL",
@@ -2007,7 +1970,7 @@
     "sean mcneil": "CLC",
     "sean pedulla": "STO",
     "seth lundy": "TEX",
-    "shawn jones, jr.": "LTN",
+    "shammah scott": "CLC",
     "skal labissiere": "CCG",
     "solomon washington": "LTN",
     "stephen thompson": "IWA",
@@ -2038,8 +2001,8 @@
     "tre donaldson": "SXF",
     "tre'von spillers": "CLC",
     "trevor keels": "CCG",
-    "trey alexander": "SLC",
     "trey edmonds": "GRG",
+    "trey fort": "SXF",
     "trey jemison iii": "RAP",
     "trey townsend": "GBO",
     "trhae mitchell": "STO",
@@ -2048,6 +2011,7 @@
     "ty berry": "WIS",
     "tyler bilodeau": "LIN",
     "tyler burton": "SCW",
+    "tyler cochran": "DEL",
     "tyler nickel": "WES",
     "tyler smith": "RGV",
     "tyon grant-foster": "SXF",
@@ -2066,11 +2030,13 @@
     "wyatt fricks": "GBO",
     "yuki kawamura": "SDC",
     "yuri collins": "MHU",
+    "yusuf mohamed": "OKL",
     "zach cleveland": "MHU",
     "zack austin": "CLC",
     "zeke mayo": "MXC",
     "zhaire smith": "OKL",
     "zhuric phelps": "VAL",
     "zyon pullin": "IWA"
-  }
+  },
+  "nbaReleased": []
 }

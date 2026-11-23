@@ -1,4 +1,4 @@
-﻿import re
+import re
 
 # 1. Remove the old wireMainSearch script from inseason.html so there are zero syntax errors
 with open("inseason.html", encoding="utf-8") as f:

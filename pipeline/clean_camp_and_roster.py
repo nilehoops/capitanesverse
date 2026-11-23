@@ -1,4 +1,4 @@
-﻿import json
+import json
 import re
 
 # 1. Clean trainingCampInvite & restore onRoster strictly to MXC players

@@ -1,4 +1,4 @@
-﻿with open("team.html", encoding="utf-8") as f:
+with open("team.html", encoding="utf-8") as f:
     th = f.read()
 
 old_tov = "if (o.tovPct >= 16.5) bullets.push(`<b>TURNOVER VULNERABILITY:</b> Commits turnovers on <b>${o.tovPct}%</b> of offensive possessions.`);"

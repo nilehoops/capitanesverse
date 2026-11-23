@@ -1,4 +1,4 @@
-﻿with open("inseason.html", encoding="utf-8") as f:
+with open("inseason.html", encoding="utf-8") as f:
     h = f.read()
 
 old_block = '''  const inp = document.getElementById('mainSearch');

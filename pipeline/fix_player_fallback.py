@@ -1,4 +1,4 @@
-﻿with open("player.html", encoding="utf-8") as f:
+with open("player.html", encoding="utf-8") as f:
     h = f.read()
 
 # Intercept "(no id given)" when ?name= is passed so player.html renders the G League Lite Shot Chart cleanly

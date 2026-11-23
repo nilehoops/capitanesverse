@@ -1,4 +1,4 @@
-﻿import json
+import json
 import datetime
 from nba_api.stats.endpoints import scheduleleaguev2, leaguegamefinder
 

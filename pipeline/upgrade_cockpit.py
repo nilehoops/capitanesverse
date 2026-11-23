@@ -1,4 +1,4 @@
-﻿with open("js/shot-charts.js", encoding="utf-8") as f:
+with open("js/shot-charts.js", encoding="utf-8") as f:
     js = f.read()
 
 # 1. Upgrade SVG label legibility (larger fonts + contrast halo + compact Corner 3 labels)

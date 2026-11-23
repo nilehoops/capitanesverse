@@ -1,4 +1,4 @@
-﻿import json
+import json
 
 ros = json.load(open("data/gleague_roster_2026-27.json", encoding="utf-8"))
 mxc_names = {k for k, v in ros.get("nameToTeam", {}).items() if v == "MXC"}

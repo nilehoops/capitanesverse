@@ -7,7 +7,7 @@ def norm_name(s):
     parts = [w for w in s.split() if w not in {"jr", "sr", "ii", "iii", "iv", "v"}]
     return " ".join(parts)
 
-﻿import json
+import json
 import time
 import requests
 from nba_api.stats.endpoints import commonteamroster, leaguegamefinder

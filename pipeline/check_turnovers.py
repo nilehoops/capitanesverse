@@ -1,4 +1,4 @@
-﻿from nba_api.stats.endpoints import leaguegamefinder, playbyplayv3
+from nba_api.stats.endpoints import leaguegamefinder, playbyplayv3
 
 df = leaguegamefinder.LeagueGameFinder(league_id_nullable="20", season_nullable="2025-26").get_data_frames().pop(0)
 gids = df[df["TEAM_ABBREVIATION"] == "MXC"].drop_duplicates(subset=["GAME_ID"]).sort_values("GAME_DATE")["GAME_ID"].tolist()

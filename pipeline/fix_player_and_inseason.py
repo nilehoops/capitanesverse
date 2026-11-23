@@ -1,4 +1,4 @@
-﻿import re
+import re
 
 # 1. Fix player.html so ?name= renders the G League Lite Shot Chart without throwing "(no id given)"
 with open("player.html", encoding="utf-8") as f:

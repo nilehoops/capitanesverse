@@ -1,4 +1,4 @@
-﻿import json
+import json
 from nba_api.stats.endpoints import leaguedashteamstats
 
 ff = leaguedashteamstats.LeagueDashTeamStats(

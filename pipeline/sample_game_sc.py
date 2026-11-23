@@ -1,4 +1,4 @@
-﻿import glob
+import glob
 import json
 import re
 from nba_api.stats.endpoints import playbyplayv3

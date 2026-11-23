@@ -1,4 +1,4 @@
-﻿import re
+import re
 
 # 1. Clean any previous search patches out of inseason.html and js/app.js
 with open("inseason.html", encoding="utf-8") as f:

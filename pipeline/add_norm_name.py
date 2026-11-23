@@ -1,4 +1,4 @@
-﻿import re, unicodedata
+import re, unicodedata
 
 norm_py = '''
 def norm_name(s):

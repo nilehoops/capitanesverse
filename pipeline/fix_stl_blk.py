@@ -1,4 +1,4 @@
-﻿with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
+with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
     code = f.read()
 
 # Remove any older Steal:/Block: block if present

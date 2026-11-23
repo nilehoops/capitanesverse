@@ -1,4 +1,4 @@
-﻿import json
+import json
 import re
 import time
 from nba_api.stats.endpoints import leaguegamefinder, playbyplayv3

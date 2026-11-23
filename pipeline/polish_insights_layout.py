@@ -1,4 +1,4 @@
-﻿import re
+import re
 
 with open("js/shot-charts.js", encoding="utf-8") as f:
     js = f.read()

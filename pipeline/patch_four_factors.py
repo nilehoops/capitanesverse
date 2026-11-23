@@ -1,4 +1,4 @@
-﻿with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
+with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
     py_code = f.read()
 
 py_code = py_code.replace(

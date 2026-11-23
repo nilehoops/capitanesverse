@@ -1,4 +1,4 @@
-﻿import json, time
+import json, time
 from nba_api.stats.endpoints import leaguedashlineups
 
 d_ref = json.load(open("data/league_lite_shots_2025-26.json", encoding="utf-8-sig"))

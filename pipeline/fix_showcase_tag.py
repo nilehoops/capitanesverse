@@ -1,4 +1,4 @@
-﻿import json
+import json
 
 d = json.load(open("data/shot_charts_2025-26.json", encoding="utf-8"))
 

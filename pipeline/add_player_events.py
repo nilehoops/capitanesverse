@@ -1,4 +1,4 @@
-﻿with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
+with open("pipeline/build_shot_charts.py", encoding="utf-8") as f:
     code = f.read()
 
 # 1. Add all_events list for AST, OREB, DREB, STL, BLK

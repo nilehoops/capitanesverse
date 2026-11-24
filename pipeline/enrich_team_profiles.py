@@ -110,17 +110,23 @@ for szn in ["2026-27", "2025-26"]:
 
     p_map = {}
     for stype in ["Showcase", "Regular Season"]:
-        for m_type in ["Base", "Advanced"]:
+        for m_type in ["Base", "Advanced", "Scoring"]:
             try:
                 df = leaguedashplayerstats.LeagueDashPlayerStats(league_id_nullable=LEAGUE_ID, season=szn, season_type_all_star=stype, measure_type_detailed_defense=m_type, per_mode_detailed="Totals").get_data_frames().pop(0)
                 for _, r in df.iterrows():
                     key = f"{r['PLAYER_ID']}_{r['TEAM_ABBREVIATION']}"
-                    rec = p_map.setdefault(key, {"id": str(r["PLAYER_ID"]), "name": str(r["PLAYER_NAME"]).strip(), "team": str(r["TEAM_ABBREVIATION"]).strip(), "gp": 0, "min": 0.0, "pts": 0.0, "reb": 0.0, "ast": 0.0, "tov": 0.0, "stl": 0.0, "blk": 0.0, "fgm": 0.0, "fga": 0.0, "fg3m": 0.0, "fg3a": 0.0, "fta": 0.0, "poss": 0.0, "ortg_w": 0.0, "drtg_w": 0.0, "usg_w": 0.0})
+                    rec = p_map.setdefault(key, {"id": str(r["PLAYER_ID"]), "name": str(r["PLAYER_NAME"]).strip(), "team": str(r["TEAM_ABBREVIATION"]).strip(), "gp": 0, "min": 0.0, "pts": 0.0, "reb": 0.0, "oreb": 0.0, "dreb": 0.0, "ast": 0.0, "tov": 0.0, "stl": 0.0, "blk": 0.0, "fgm": 0.0, "fga": 0.0, "fg3m": 0.0, "fg3a": 0.0, "ftm": 0.0, "fta": 0.0, "poss": 0.0, "ortg_w": 0.0, "drtg_w": 0.0, "usg_w": 0.0, "astd_w": 0.0, "uast_w": 0.0, "fg2_astd_w": 0.0, "fg3_astd_w": 0.0, "oreb_pct_w": 0.0, "dreb_pct_w": 0.0})
                     if m_type == "Base":
                         rec["gp"] += int(r.get("GP", 0) or 0)
-                        for k, col in [("min", "MIN"), ("pts", "PTS"), ("reb", "REB"), ("ast", "AST"), ("tov", "TOV"), ("stl", "STL"), ("blk", "BLK"), ("fgm", "FGM"), ("fga", "FGA"), ("fg3m", "FG3M"), ("fg3a", "FG3A"), ("fta", "FTA")]: rec[k] += float(r.get(col, 0) or 0)
-                    else:
+                        for k, col in [("min", "MIN"), ("pts", "PTS"), ("reb", "REB"), ("oreb", "OREB"), ("dreb", "DREB"), ("ast", "AST"), ("tov", "TOV"), ("stl", "STL"), ("blk", "BLK"), ("fgm", "FGM"), ("fga", "FGA"), ("fg3m", "FG3M"), ("fg3a", "FG3A"), ("ftm", "FTM"), ("fta", "FTA")]: rec[k] += float(r.get(col, 0) or 0)
+                    elif m_type == "Advanced":
                         ps = float(r.get("POSS", 0) or 0); rec["poss"] += ps; rec["ortg_w"] += float(r.get("OFF_RATING", 0) or 0) * ps; rec["drtg_w"] += float(r.get("DEF_RATING", 0) or 0) * ps; rec["usg_w"] += float(r.get("USG_PCT", 0) or 0) * 100 * ps
+                    elif m_type == "Scoring":
+                        fgm_s = float(r.get("FGM", 0) or 0); fg2m_s = float(r.get("FG2M", 0) or (fgm_s - float(r.get("FG3M", 0) or 0))); fg3m_s = float(r.get("FG3M", 0) or 0)
+                        rec["astd_w"] += float(r.get("PCT_AST_FGM", 0) or 0) * 100 * fgm_s
+                        rec["uast_w"] += float(r.get("PCT_UAST_FGM", 0) or 0) * 100 * fgm_s
+                        rec["fg2_astd_w"] += float(r.get("PCT_AST_2PM", 0) or 0) * 100 * fg2m_s
+                        rec["fg3_astd_w"] += float(r.get("PCT_AST_3PM", 0) or 0) * 100 * fg3m_s; rec["oreb_pct_w"] += float(r.get("OREB_PCT", 0) or 0) * 100 * ps; rec["dreb_pct_w"] += float(r.get("DREB_PCT", 0) or 0) * 100 * ps
                 time.sleep(0.25)
             except Exception: continue
 
@@ -128,11 +134,17 @@ for szn in ["2026-27", "2025-26"]:
     for rec in p_map.values():
         gp = max(1, rec["gp"]); poss = max(1.0, rec["poss"] or (rec["min"] * 2.1) or 1.0); fg2m, fg2a = rec["fgm"] - rec["fg3m"], rec["fga"] - rec["fg3a"]
         rec["mpg"] = round(rec["min"] / gp, 1); rec["min"] = round(rec["min"], 1)
-        for k in ["pts", "reb", "ast", "tov", "stl", "blk"]: rec[f"{k}75"] = round(rec[k] / poss * 75, 1)
+        for k in ["pts", "reb", "oreb", "dreb", "ast", "tov", "stl", "blk"]: rec[f"{k}75"] = round(rec[k] / poss * 75, 1)
         rec["fg2Pct"] = round((fg2m / fg2a * 100) if fg2a else 0, 1); rec["fg3Pct"] = round((rec["fg3m"] / rec["fg3a"] * 100) if rec["fg3a"] else 0, 1)
         rec["tsPct"] = round((rec["pts"] / (2 * (rec["fga"] + 0.44 * rec["fta"])) * 100) if (rec["fga"] + 0.44 * rec["fta"]) else 0, 1)
         rec["threePar"] = round((rec["fg3a"] / rec["fga"] * 100) if rec["fga"] else 0, 1); rec["ftr"] = round((rec["fta"] / rec["fga"] * 100) if rec["fga"] else 0, 1)
         rec["ortg"] = round(rec["ortg_w"] / poss, 1) if rec["poss"] else 0; rec["drtg"] = round(rec["drtg_w"] / poss, 1) if rec["poss"] else 0; rec["netRtg"] = round(rec["ortg"] - rec["drtg"], 1); rec["usg"] = round(rec["usg_w"] / poss, 1) if rec["poss"] else 0
+        rec["astdPct"] = round(rec["astd_w"] / rec["fgm"], 1) if rec["fgm"] > 0 else None
+        rec["unastdPct"] = round(rec["uast_w"] / rec["fgm"], 1) if rec["fgm"] > 0 else None
+        rec["fg2AstdPct"] = round(rec["fg2_astd_w"] / fg2m, 1) if fg2m > 0 else None
+        rec["fg3AstdPct"] = round(rec["fg3_astd_w"] / rec["fg3m"], 1) if rec["fg3m"] > 0 else None
+        uast_pts = (fg2m * (1 - (rec["fg2AstdPct"] or 0) / 100.0) * 2.0) + (rec["fg3m"] * (1 - (rec["fg3AstdPct"] or 0) / 100.0) * 3.0)
+        rec["unastPts75"] = round((uast_pts / poss) * 75, 1) if rec["fgm"] > 0 else None; rec["orebPct"] = round(rec["oreb_pct_w"] / poss, 1) if rec["poss"] else None; rec["drebPct"] = round(rec["dreb_pct_w"] / poss, 1) if rec["poss"] else None
         b = bio_lookup.get(norm_name(rec["name"]), {}); rec["age"] = b.get("age"); rec["height"] = b.get("height") or "—"; rec["heightIn"] = parse_height_in(rec["height"]); rec["weight"] = b.get("weight")
         by_team.setdefault(rec["team"], []).append(rec)
 

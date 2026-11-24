@@ -4259,14 +4259,15 @@ function bapNameHtml(p) {
 function bapRankRow(rank, p) {
   const twBadge = p._isTwoWay
     ? ` <span style="font-size:8.5px;font-weight:700;color:#1631FF;background:#EEF4FB;padding:0 3px;border:1px solid #B8D0F0;">2W/E10</span>`
-    : '';
+    : (p._leagueTag ? ` <span style="font-size:8.5px;font-weight:700;color:#0f172a;background:#f1f5f9;padding:0 3px;border:1px solid #cbd5e1;">${esc(p._leagueTag)}</span>` : '');
   const noteBadge = p._hasNote
     ? ` <span style="font-size:8.5px;font-weight:700;color:#854D0E;background:#FEF9C3;padding:0 3px;border:1px solid #FDE047;">NOTE</span>`
     : '';
-  const teamTag = p._currentTeam
-    ? ` <span style="font-size:9px;color:var(--muted);">(${esc(p._currentTeam)})</span>`
+  const metaParts = new Array(p._currentTeam || '', p._ht || '').filter(Boolean);
+  const teamTag = metaParts.length
+    ? ` <span style="font-size:9px;color:var(--muted);">(${esc(metaParts.join(' ? '))})</span>`
     : '';
-  return `<a href="player.html?id=${esc(p.id)}" style="font-size:11px;line-height:1.4;display:block;color:inherit;text-decoration:none;">
+  return `<a href="player.html?id=${esc(p.id)}" title="${esc(p.availabilityNote || '')}" style="font-size:11px;line-height:1.4;display:block;color:inherit;text-decoration:none;">
     <span style="margin-right:3px;color:var(--muted);">${rank}.</span>${bapNameHtml(p)}${twBadge}${noteBadge}${teamTag}
   </a>`;
 }
@@ -4340,11 +4341,52 @@ async function renderBap() {
     }
     const staffNoteIds = window._bapStaffNoteIds;
 
-    const noteStr = (p) => `${p.availabilityNote || ''} ${p.availabilityDetail || ''} ${p.contract || ''} ${p.league || ''}`;
+    // Load full players.json once to enrich missing league/club designations from proStints & biography
+    if (!window._bapFullMap) {
+      const pfResp = await fetch('data/players.json?v=' + Date.now()).catch(() => null);
+      const pfRaw = (pfResp && pfResp.ok) ? await pfResp.json().catch(() => null) : null;
+      const m = {};
+      (Array.isArray(pfRaw) ? pfRaw : Object.values(pfRaw || {})).forEach(fp => {
+        if (!fp) return;
+        const stintsTxt = (fp.proStints || []).map(st => `${st.team || ''} ${st.league || ''} ${st.country || ''}`).join(' ');
+        const rec = { extra: `${fp.team || ''} ${fp.conf || ''} ${fp.availabilityLabel || ''} ${stintsTxt}`, ht: fp.heightDisplay || '', pts: fp.stats?.pts ?? null, dre: fp.advanced?.dre ?? null };
+        if (fp.id) m[String(fp.id)] = rec;
+        if (fp.name) m[fp.name.toLowerCase()] = rec;
+      });
+      window._bapFullMap = m;
+    }
+    const fullMap = window._bapFullMap || {};
+
+    // Club-to-League dictionary to mend players whose note names a club without its league acronym
+    const inferLeagueFromClub = txt => {
+      const t = txt.toLowerCase();
+      if (/real madrid|barcelona|baskonia|valencia|unicaja|joventut|manresa|tenerife|gran canaria|murcia|bilbao|breogan|zaragoza|andorra|girona|lleida|coruna/.test(t)) return 'ACB';
+      if (/monaco|asvel|paris basketball|bourg|boulogne|strasbourg|dijon|limoges|nanterre|cholet|le mans|gravelines|nancy|saint-quentin|chalon/.test(t)) return 'Betclic Elite';
+      if (/fenerbahce|efes|besiktas|galatasaray|pinar karsiyaka|turk telekom|tofas|bursaspor|bahcesehir|darussafaka|manisa|petkim/.test(t)) return 'BSL';
+      if (/virtus bologna|olimpia milano|brescia|reggio emilia|trento|venezia|sassari|tortona|treviso|varese|napoli|cremona|scafati|pistoia|trieste/.test(t)) return 'LBA';
+      if (/alba berlin|bayern munich|ulm|bonn|ludwigsburg|oldenburg|chemnitz|braunschweig|wurzburg|heidelberg|bamberg|rostock|vechta|hamburg/.test(t)) return 'BBL';
+      if (/partizan|crvena zvezda|red star|buducnost|cedevita|mega|igokea|zadar|split|cibona|mornar|fmp|studentski/.test(t)) return 'ABA';
+      if (/zalgiris|rytas|lietkabelis|wolves|neptunas|juventus|siauliai/.test(t)) return 'LKL';
+      if (/cska|zenit|unics|lokomotiv kuban|parma|uralmash|avtodor|enisey/.test(t)) return 'VTB';
+      if (/melbourne|sydney kings|perth wildcats|new zealand breakers|tasmania|adelaide|brisbane|cairns|illawarra|south east melbourne/.test(t)) return 'NBL';
+      if (/franca|flamengo|minas|bauru|pinheiros|paulistano|corinthians|sao paulo|unifacisa|vasco|botafogo|brasilia/.test(t)) return 'NBB';
+      if (/fuerza regia|astros|diablos rojos|soles|halcones|dorados|abejas|panteras|plateros|libertadores|mineros|correcaminos|freseros|santos del potosi/.test(t)) return 'LNBP';
+      if (/ostrow|oostende|antwerp|leiden|den bosch|charleroi|mechelen|leuven|limburg/.test(t)) return 'BNXT';
+      if (/santeros|vaqueros|capitanes de arecibo|piratas|gigantes|mets|atleticos|cangrejeros|leones|indios|osos|criollos/.test(t)) return 'BSN';
+      return '';
+    };
+
+    const enrichedMeta = (p) => {
+      const f = fullMap[String(p.id || '')] || fullMap[String(p.name || '').toLowerCase()] || {};
+      const raw = `${p.availabilityNote || ''} ${p.availabilityDetail || ''} ${p.contract || ''} ${p.league || ''} ${p.conf || ''} ${p.team || ''} ${f.extra || ''}`;
+      const inferred = inferLeagueFromClub(raw);
+      return { raw: `${raw} ${inferred}`, inferred, f };
+    };
+    const noteStr = (p) => enrichedMeta(p).raw;
     const isTwoWayOrE10 = (p) => /two[-\s]?way|2[-\s]?way|exhibit[-\s]?10|\be10\b/i.test(noteStr(p));
     const isLnbp = (p) => /\blnbp\b/i.test(noteStr(p));
     const isHighTier = (p) => /\b(nba|acb|jeep elite|betclic|euroleague|eurocup|vtb|cba)\b/i.test(noteStr(p)) && !isTwoWayOrE10(p);
-    const isMidTier = (p) => /\b(bbl|bsl|lkl|lega basket|lba|aba|bcl|kbl|bleague|b\.league|nbl)\b/i.test(noteStr(p));
+    const isMidTier = (p) => /\b(bbl|bsl|lkl|lega basket|lba|aba|bcl|kbl|bleague|b\.league|nbl|heba|greek basket)\b/i.test(noteStr(p));
     const isLowTier = (p) => /\b(nbb|bnxt|pro b|leb|primera feb|bal|cibacopa|spb|bsn)\b/i.test(noteStr(p));
     const isAnyLeagueTier = (p) => isHighTier(p) || isMidTier(p) || isLowTier(p);
     const isLowMinGl = (p) => Boolean(idToTeam[p.id] && (idToPoss[p.id] || 0) <= p40 && !isTwoWayOrE10(p));
@@ -4380,7 +4422,13 @@ async function renderBap() {
     });
 
     // Attach current team tag to each player
-    pool = pool.map(p => ({ ...p, _currentTeam: idToTeam[p.id] || null, _isTwoWay: isTwoWayOrE10(p), _hasNote: hasStaffNotes(p) }));
+    pool = pool.map(p => {
+      const em = enrichedMeta(p);
+      const lgMatch = em.raw.match(/\b(ACB|Betclic Elite|EuroLeague|EuroCup|VTB|CBA|BBL|BSL|LKL|LBA|ABA|BCL|KBL|B\.League|NBL|NBB|BNXT|Primera FEB|LEB|BAL|CIBACOPA|SPB|BSN|LNBP)\b/i);
+      const lgTag = lgMatch ? lgMatch.at(1).toUpperCase() : (em.inferred || '');
+      const tierTag = isTwoWayOrE10(p) ? '2W/E10' : (isLnbp(p) ? 'LNBP' : (isHighTier(p) ? (lgTag || 'HIGH') : (isMidTier(p) ? (lgTag || 'MID') : (isLowTier(p) ? (lgTag || 'LOW') : lgTag))));
+      return { ...p, _currentTeam: idToTeam[p.id] || null, _isTwoWay: isTwoWayOrE10(p), _hasNote: hasStaffNotes(p), _leagueTag: tierTag, _ht: em.f?.ht || p.heightDisplay || '' };
+    });
 
     const latino = pool.filter(p => p.latino === true).sort((a, b) => a.overallRank - b.overallRank);
     const byPos  = pos => pool.filter(p => p.position === pos && p.positionalRank != null)

@@ -317,10 +317,6 @@
       "team": "GBO"
     },
     {
-      "name": "DaRon Holmes II",
-      "team": "GRG"
-    },
-    {
       "name": "Daimion Collins",
       "team": "AUS"
     },
@@ -1716,7 +1712,6 @@
     "daniel rivera": "MXC",
     "darin green": "TEX",
     "dariq whitehead": "OKL",
-    "daron holmes ii": "GRG",
     "david jones garcia": "AUS",
     "david muoka": "STO",
     "david sloan": "MXC",
@@ -2038,5 +2033,3089 @@
     "zhuric phelps": "VAL",
     "zyon pullin": "IWA"
   },
-  "nbaReleased": []
+  "nbaReleased": [],
+  "transactions": [
+    {
+      "date": "2026-11-22",
+      "team": "BHM",
+      "player": "Shawn Jones, Jr.",
+      "pid": 1643911,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-22",
+      "team": "BHM",
+      "player": "Olisa Akonobi",
+      "pid": 1642122,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-22",
+      "team": "SXF",
+      "player": "A.J. Staton-McCray",
+      "pid": 1643894,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "MCC",
+      "player": "Conor Enright",
+      "pid": 1643928,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "CCG",
+      "player": "Kalifa Sakho",
+      "pid": 1643697,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "GRG",
+      "player": "Myron Amey",
+      "pid": 1643950,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "GRG",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "RAP",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-20",
+      "team": "SXF",
+      "player": "Jemel Jones",
+      "pid": 1643975,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-19",
+      "team": "CCG",
+      "player": "Kalifa Sakho",
+      "pid": 1643697,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-19",
+      "team": "VAL",
+      "player": "Myron Amey",
+      "pid": 1643950,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-18",
+      "team": "BHM",
+      "player": "Shawn Jones, Jr.",
+      "pid": 1643911,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-17",
+      "team": "CCG",
+      "player": "Markhi Strickland",
+      "pid": 1643638,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-17",
+      "team": "WCB",
+      "player": "Russel Tchewa",
+      "pid": 1642574,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "GRG",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "RAP",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "RAP",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "RAP",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "IWA",
+      "player": "Jordan Derkack",
+      "pid": 1643934,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "CCG",
+      "player": "Jordan Derkack",
+      "pid": 1643934,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "BHM",
+      "player": "Shawn Jones, Jr.",
+      "pid": 1643911,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "WES",
+      "player": "David Dixon",
+      "pid": 1643948,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-15",
+      "team": "CCG",
+      "player": "Markhi Strickland",
+      "pid": 1643638,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-15",
+      "team": "RGV",
+      "player": "Bryson Tucker",
+      "pid": 1643904,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-15",
+      "team": "WCB",
+      "player": "Russel Tchewa",
+      "pid": 1642574,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "IWA",
+      "player": "Jordan Derkack",
+      "pid": 1643934,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "RAP",
+      "player": "Jordan Derkack",
+      "pid": 1643934,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "GRG",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "RAP",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "RAP",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "WCB",
+      "player": "Lacey James",
+      "pid": 1630732,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "WES",
+      "player": "David Dixon",
+      "pid": 1643948,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "MHU",
+      "player": "Jaden Brownell",
+      "pid": 1643892,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "IWA",
+      "player": "Tuburu Naivalurua",
+      "pid": 1643691,
+      "type": "Traded",
+      "desc": "Traded"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "WES",
+      "player": "Rob Dillingham",
+      "pid": 1642265,
+      "type": "Traded",
+      "desc": "Traded"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "MCC",
+      "player": "Brandon Noel",
+      "pid": 1643870,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "GRG",
+      "player": "Myron Amey",
+      "pid": 1643950,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "SCW",
+      "player": "Alex Gil Fernandez",
+      "pid": 1642764,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "IWA",
+      "player": "Jordan Derkack",
+      "pid": 1643934,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "RGV",
+      "player": "Bryson Tucker",
+      "pid": 1643904,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "VAL",
+      "player": "Myron Amey",
+      "pid": 1643950,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "MHU",
+      "player": "Jaden Brownell",
+      "pid": 1643892,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "WCB",
+      "player": "Lacey James",
+      "pid": 1630732,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "WCB",
+      "player": "Jasman Sangha",
+      "pid": 1643907,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "RAP",
+      "player": "Jasman Sangha",
+      "pid": 1643907,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "RAP",
+      "player": "Daveon Thomas",
+      "pid": 1643762,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "RAP",
+      "player": "Daveon Thomas",
+      "pid": 1643762,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "RAP",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-11",
+      "team": "SCW",
+      "player": "Alex Gil Fernandez",
+      "pid": 1642764,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-11",
+      "team": "CCG",
+      "player": "Jordan Derkack",
+      "pid": 1643934,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-09",
+      "team": "SDC",
+      "player": "Ileri Ayo-Faleye",
+      "pid": 1643220,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-09",
+      "team": "IWA",
+      "player": "Alejandro Rama",
+      "pid": 1643933,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-09",
+      "team": "WCB",
+      "player": "Giddy Potts",
+      "pid": 1630948,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-08",
+      "team": "AUS",
+      "player": "Elijah Pemberton",
+      "pid": 1630289,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "SDC",
+      "player": "Ileri Ayo-Faleye",
+      "pid": 1643220,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "IWA",
+      "player": "Alejandro Rama",
+      "pid": 1643933,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "CCG",
+      "player": "Shammah Scott",
+      "pid": 1643939,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "CCG",
+      "player": "Lydell Elmore",
+      "pid": 1630809,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "CCG",
+      "player": "Will Tschetter",
+      "pid": 1643765,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "WCB",
+      "player": "Lacey James",
+      "pid": 1630732,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "GBO",
+      "player": "Pierre Crockrell II",
+      "pid": 1642623,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "MHU",
+      "player": "Jaden Brownell",
+      "pid": 1643892,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "DEL",
+      "player": "Patrick Suemnick",
+      "pid": 1643937,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "CCG",
+      "player": "Ian Martinez",
+      "pid": 1643703,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "SLC",
+      "player": "Chance Moore",
+      "pid": 1643869,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "MXC",
+      "player": "Esteban Ezequiel Roacho Amador",
+      "pid": 1643336,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "NOB",
+      "player": "Yacine Toumi",
+      "pid": 1643882,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "NOB",
+      "player": "Michael Folarin",
+      "pid": 1643880,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "MCC",
+      "player": "Conor Enright",
+      "pid": 1643928,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "NOB",
+      "player": "Austin Benigni",
+      "pid": 1643747,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "CCG",
+      "player": "Themus Fulks",
+      "pid": 1643787,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "GRG",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "GBO",
+      "player": "Ahmet Jonovic",
+      "pid": 1643921,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "GRG",
+      "player": "Al Green",
+      "pid": 1643923,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SLC",
+      "player": "CJ Fulton",
+      "pid": 1643123,
+      "type": "Traded",
+      "desc": "Traded"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SLC",
+      "player": "Jaylin Williams",
+      "pid": 1642444,
+      "type": "Traded",
+      "desc": "Traded"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "AUS",
+      "player": "Ochai Agbaji",
+      "pid": 1630534,
+      "type": "Traded",
+      "desc": "Traded"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "IWA",
+      "player": "Enrique Freeman",
+      "pid": 1642402,
+      "type": "Traded",
+      "desc": "Traded"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SBL",
+      "player": "Jamaree Bouyea",
+      "pid": 1631123,
+      "type": "Traded",
+      "desc": "Traded"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "AUS",
+      "player": "Elijah Pemberton",
+      "pid": 1630289,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "MCC",
+      "player": "Rafael Pinzon",
+      "pid": 1643970,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "MCC",
+      "player": "Brandon Noel",
+      "pid": 1643870,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "MCC",
+      "player": "Tyson Acuff",
+      "pid": 1643902,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "IWA",
+      "player": "Jordan Derkack",
+      "pid": 1643934,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "IWA",
+      "player": "Anton Brookshire",
+      "pid": 1643841,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SXF",
+      "player": "Riley Grigsby",
+      "pid": 1643175,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "AUS",
+      "player": "Justin Ndjock Tadjore",
+      "pid": 1643963,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "VAL",
+      "player": "Kaleb Johnson",
+      "pid": 1629993,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "VAL",
+      "player": "Chris Flippin",
+      "pid": 1643969,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "GRG",
+      "player": "Myron Amey",
+      "pid": 1643950,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "BHM",
+      "player": "Olisa Akonobi",
+      "pid": 1642122,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "TEX",
+      "player": "Jevin Muniz",
+      "pid": 1643956,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "RGV",
+      "player": "Malik Whitaker",
+      "pid": 1643927,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "WCB",
+      "player": "Russel Tchewa",
+      "pid": 1642574,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "WCB",
+      "player": "Jasman Sangha",
+      "pid": 1643907,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "WCB",
+      "player": "Matt Mcandrews",
+      "pid": 1643906,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SBL",
+      "player": "Tyler Mcghie",
+      "pid": 1643943,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "CCG",
+      "player": "Kalifa Sakho",
+      "pid": 1643697,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SBL",
+      "player": "Tegra Izay",
+      "pid": 1643980,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "STO",
+      "player": "Ben Coupet Jr.",
+      "pid": 1631408,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "STO",
+      "player": "Nana Appiah",
+      "pid": 1642112,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "STO",
+      "player": "Jaden Henderson",
+      "pid": 1643958,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "BHM",
+      "player": "Shawn Jones, Jr.",
+      "pid": 1643911,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "BHM",
+      "player": "Kyle Rose",
+      "pid": 1642524,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SBL",
+      "player": "Tyrese Hunter",
+      "pid": 1643214,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "TEX",
+      "player": "Shammah Scott",
+      "pid": 1643939,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CCG",
+      "player": "Lydell Elmore",
+      "pid": 1630809,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RCR",
+      "player": "Will Tschetter",
+      "pid": 1643765,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "GBO",
+      "player": "Lacey James",
+      "pid": 1630732,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "GBO",
+      "player": "Pierre Crockrell II",
+      "pid": 1642623,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MHU",
+      "player": "Jaden Brownell",
+      "pid": 1643892,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "DEL",
+      "player": "Patrick Suemnick",
+      "pid": 1643937,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RCR",
+      "player": "Carter Whitt",
+      "pid": 1643302,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RGV",
+      "player": "Ja'sean Jackson",
+      "pid": 1643984,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RGV",
+      "player": "Cearius Warren",
+      "pid": 1643303,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RGV",
+      "player": "Javon Ruffin",
+      "pid": 1643887,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RAP",
+      "player": "Jalen Celestine",
+      "pid": 1643719,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "",
+      "player": "Daveon Thomas",
+      "pid": 1643762,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RAP",
+      "player": "Justin Lee Wilson",
+      "pid": 1643946,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RAP",
+      "player": "Jaiden Delaire",
+      "pid": 1642009,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Jesiah West",
+      "pid": 1643972,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Gabe Osabuohien",
+      "pid": 1631436,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Kaleb Lowery",
+      "pid": 1643981,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Desmond Cambridge",
+      "pid": 1641892,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SBL",
+      "player": "Jamar Brown",
+      "pid": 1643852,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CCG",
+      "player": "Cj White",
+      "pid": 1643952,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CCG",
+      "player": "Marlon Moore",
+      "pid": 1643918,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OSC",
+      "player": "Emmitt Matthews, Jr",
+      "pid": 1642044,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OSC",
+      "player": "Caleb Huffman",
+      "pid": 1643945,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OSC",
+      "player": "Anthony Cambo",
+      "pid": 1643951,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "TEX",
+      "player": "Matthew Lane",
+      "pid": 1643978,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "TEX",
+      "player": "Jonathan Jackson",
+      "pid": 1643994,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CCG",
+      "player": "Ian Martinez",
+      "pid": 1643703,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "TEX",
+      "player": "Zee Hamoda",
+      "pid": 1643689,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Jordan Lathon",
+      "pid": 1642584,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Kevion Nolan",
+      "pid": 1642058,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Cameron Smith",
+      "pid": 1642648,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Dakota Rivers",
+      "pid": 1642540,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CPS",
+      "player": "Chandler Baker",
+      "pid": 1643186,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "WES",
+      "player": "Oleksandr Kobzystyi",
+      "pid": 1643949,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "WES",
+      "player": "Tre Dinkins",
+      "pid": 1643979,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "WES",
+      "player": "Tahj Malik Campbell",
+      "pid": 1643957,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OKL",
+      "player": "Yusuf Mohamed",
+      "pid": 1643966,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OKL",
+      "player": "Trey Galloway",
+      "pid": 1643187,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OKL",
+      "player": "Jailen Bedford",
+      "pid": 1643991,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "LIN",
+      "player": "Tidjiane Dioumassi",
+      "pid": 1643669,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SLC",
+      "player": "Chance Moore",
+      "pid": 1643869,
+      "type": "Waived",
+      "desc": "Waived"
+    }
+  ],
+  "glWaivedPool": [
+    {
+      "date": "2026-11-22",
+      "team": "BHM",
+      "player": "Shawn Jones, Jr.",
+      "pid": 1643911,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-22",
+      "team": "BHM",
+      "player": "Olisa Akonobi",
+      "pid": 1642122,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-22",
+      "team": "SXF",
+      "player": "A.J. Staton-McCray",
+      "pid": 1643894,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "MCC",
+      "player": "Conor Enright",
+      "pid": 1643928,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "CCG",
+      "player": "Kalifa Sakho",
+      "pid": 1643697,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-21",
+      "team": "GRG",
+      "player": "TJ Bickerstaff",
+      "pid": 1642511,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-17",
+      "team": "CCG",
+      "player": "Markhi Strickland",
+      "pid": 1643638,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-17",
+      "team": "WCB",
+      "player": "Russel Tchewa",
+      "pid": 1642574,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "RAP",
+      "player": "Brandon Muntu",
+      "pid": 1643872,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-16",
+      "team": "WES",
+      "player": "David Dixon",
+      "pid": 1643948,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-15",
+      "team": "RGV",
+      "player": "Bryson Tucker",
+      "pid": 1643904,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-14",
+      "team": "MHU",
+      "player": "Jaden Brownell",
+      "pid": 1643892,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "MCC",
+      "player": "Brandon Noel",
+      "pid": 1643870,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-13",
+      "team": "SCW",
+      "player": "Alex Gil Fernandez",
+      "pid": 1642764,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "WCB",
+      "player": "Jasman Sangha",
+      "pid": 1643907,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-12",
+      "team": "RAP",
+      "player": "Daveon Thomas",
+      "pid": 1643762,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-09",
+      "team": "WCB",
+      "player": "Giddy Potts",
+      "pid": 1630948,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-08",
+      "team": "AUS",
+      "player": "Elijah Pemberton",
+      "pid": 1630289,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "CCG",
+      "player": "Lydell Elmore",
+      "pid": 1630809,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "GBO",
+      "player": "Pierre Crockrell II",
+      "pid": 1642623,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "DEL",
+      "player": "Patrick Suemnick",
+      "pid": 1643937,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "SLC",
+      "player": "Chance Moore",
+      "pid": 1643869,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "NOB",
+      "player": "Yacine Toumi",
+      "pid": 1643882,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "NOB",
+      "player": "Michael Folarin",
+      "pid": 1643880,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "NOB",
+      "player": "Austin Benigni",
+      "pid": 1643747,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "CCG",
+      "player": "Themus Fulks",
+      "pid": 1643787,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-07",
+      "team": "GRG",
+      "player": "Al Green",
+      "pid": 1643923,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "MCC",
+      "player": "Rafael Pinzon",
+      "pid": 1643970,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "MCC",
+      "player": "Tyson Acuff",
+      "pid": 1643902,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "IWA",
+      "player": "Anton Brookshire",
+      "pid": 1643841,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SXF",
+      "player": "Riley Grigsby",
+      "pid": 1643175,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "AUS",
+      "player": "Justin Ndjock Tadjore",
+      "pid": 1643963,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "VAL",
+      "player": "Kaleb Johnson",
+      "pid": 1629993,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "VAL",
+      "player": "Chris Flippin",
+      "pid": 1643969,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "TEX",
+      "player": "Jevin Muniz",
+      "pid": 1643956,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "WCB",
+      "player": "Matt Mcandrews",
+      "pid": 1643906,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SBL",
+      "player": "Tyler Mcghie",
+      "pid": 1643943,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SBL",
+      "player": "Tegra Izay",
+      "pid": 1643980,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "STO",
+      "player": "Ben Coupet Jr.",
+      "pid": 1631408,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "STO",
+      "player": "Nana Appiah",
+      "pid": 1642112,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "STO",
+      "player": "Jaden Henderson",
+      "pid": 1643958,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "BHM",
+      "player": "Kyle Rose",
+      "pid": 1642524,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-06",
+      "team": "SBL",
+      "player": "Tyrese Hunter",
+      "pid": 1643214,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RGV",
+      "player": "Ja'sean Jackson",
+      "pid": 1643984,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RGV",
+      "player": "Cearius Warren",
+      "pid": 1643303,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RGV",
+      "player": "Javon Ruffin",
+      "pid": 1643887,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RAP",
+      "player": "Jalen Celestine",
+      "pid": 1643719,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RAP",
+      "player": "Justin Lee Wilson",
+      "pid": 1643946,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "RAP",
+      "player": "Jaiden Delaire",
+      "pid": 1642009,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Jesiah West",
+      "pid": 1643972,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Gabe Osabuohien",
+      "pid": 1631436,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Kaleb Lowery",
+      "pid": 1643981,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "MNE",
+      "player": "Desmond Cambridge",
+      "pid": 1641892,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CCG",
+      "player": "Cj White",
+      "pid": 1643952,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CCG",
+      "player": "Marlon Moore",
+      "pid": 1643918,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OSC",
+      "player": "Caleb Huffman",
+      "pid": 1643945,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OSC",
+      "player": "Anthony Cambo",
+      "pid": 1643951,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "TEX",
+      "player": "Matthew Lane",
+      "pid": 1643978,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "TEX",
+      "player": "Jonathan Jackson",
+      "pid": 1643994,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "TEX",
+      "player": "Zee Hamoda",
+      "pid": 1643689,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Jordan Lathon",
+      "pid": 1642584,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Kevion Nolan",
+      "pid": 1642058,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Cameron Smith",
+      "pid": 1642648,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "SDC",
+      "player": "Dakota Rivers",
+      "pid": 1642540,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "CPS",
+      "player": "Chandler Baker",
+      "pid": 1643186,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "WES",
+      "player": "Oleksandr Kobzystyi",
+      "pid": 1643949,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "WES",
+      "player": "Tre Dinkins",
+      "pid": 1643979,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "WES",
+      "player": "Tahj Malik Campbell",
+      "pid": 1643957,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OKL",
+      "player": "Trey Galloway",
+      "pid": 1643187,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "OKL",
+      "player": "Jailen Bedford",
+      "pid": 1643991,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-05",
+      "team": "LIN",
+      "player": "Tidjiane Dioumassi",
+      "pid": 1643669,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "BHM",
+      "player": "Vance Jackson",
+      "pid": 1641570,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "BHM",
+      "player": "David Cheatom",
+      "pid": 1643915,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "BHM",
+      "player": "Jordan Bone",
+      "pid": 1629648,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "DEL",
+      "player": "Jason Thirdkill",
+      "pid": 1643990,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "DEL",
+      "player": "T.J. Clark",
+      "pid": 1642037,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "MHU",
+      "player": "Cam Young",
+      "pid": 1643262,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "SXF",
+      "player": "Don McHenry",
+      "pid": 1643893,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "MHU",
+      "player": "Olin Carter III",
+      "pid": 1630711,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "SCW",
+      "player": "AJ Lopez",
+      "pid": 1643953,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-04",
+      "team": "SCW",
+      "player": "BJ Kolly",
+      "pid": 1643944,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-03",
+      "team": "RCR",
+      "player": "Quinn Slazinski",
+      "pid": 1642622,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-03",
+      "team": "RCR",
+      "player": "Charles Matthews",
+      "pid": 1629666,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-02",
+      "team": "LIN",
+      "player": "Wooga Poplar",
+      "pid": 1642390,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-02",
+      "team": "LIN",
+      "player": "Cedric Mbiaba",
+      "pid": 1643847,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-02",
+      "team": "LIN",
+      "player": "Jeriah Coleman",
+      "pid": 1643924,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-01",
+      "team": "SBL",
+      "player": "Jayden Pierre",
+      "pid": 1643967,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-01",
+      "team": "SBL",
+      "player": "Faizon Fields",
+      "pid": 1643926,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-01",
+      "team": "SBL",
+      "player": "Quion Burns",
+      "pid": 1643947,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-01",
+      "team": "SXF",
+      "player": "Jaxson Baker",
+      "pid": 1643896,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-01",
+      "team": "SXF",
+      "player": "Masai Olowokere",
+      "pid": 1643971,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-01",
+      "team": "GBO",
+      "player": "Jaden Seymour",
+      "pid": 1643174,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-01",
+      "team": "GBO",
+      "player": "Colby Rogers",
+      "pid": 1643920,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-10-31",
+      "team": "DEL",
+      "player": "Kellen Tynes",
+      "pid": 1643387,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-10-29",
+      "team": "GBO",
+      "player": "Jahlil White",
+      "pid": 1643324,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-10-28",
+      "team": "VAL",
+      "player": "Kevin Samuel",
+      "pid": 1643859,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-10-28",
+      "team": "WCB",
+      "player": "Matthew Moncrieffe",
+      "pid": 1643188,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-10-26",
+      "team": "MCC",
+      "player": "Vianney Salatchoum",
+      "pid": 1643661,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-03-31",
+      "team": "RGV",
+      "player": "Jermaine Couisnard",
+      "pid": 1642494,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-17",
+      "team": "RGV",
+      "player": "Chase Jeter",
+      "pid": 1631485,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-15",
+      "team": "",
+      "player": "Devine Eke",
+      "pid": 1642522,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-13",
+      "team": "CPS",
+      "player": "Derrin Boyd",
+      "pid": 1643177,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-11",
+      "team": "BHM",
+      "player": "Caleb Mills",
+      "pid": 1643312,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-08",
+      "team": "MHU",
+      "player": "Kalil Thomas",
+      "pid": 1643255,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-07",
+      "team": "CCG",
+      "player": "Isaiah Hawthorne",
+      "pid": 1643200,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-07",
+      "team": "SLC",
+      "player": "Parker Van Dyke",
+      "pid": 1642565,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-06",
+      "team": "SLC",
+      "player": "Elijah Cain",
+      "pid": 1629906,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-03-06",
+      "team": "WCB",
+      "player": "Jamal Bieniemy",
+      "pid": 1631400,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-05",
+      "team": "SCW",
+      "player": "Jordan Hall",
+      "pid": 1631160,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-04",
+      "team": "SBL",
+      "player": "Augustas Marciulionis",
+      "pid": 1643051,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2026-03-02",
+      "team": "MCC",
+      "player": "Brian Taylor",
+      "pid": 1643190,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-02",
+      "team": "NOB",
+      "player": "Omar El-Sheikh",
+      "pid": 1643217,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-01",
+      "team": "",
+      "player": "James Caron Butler Jr",
+      "pid": 1641925,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-03-01",
+      "team": "SXF",
+      "player": "Josh Cohen",
+      "pid": 1643170,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-27",
+      "team": "TEX",
+      "player": "Jalen Williams",
+      "pid": 1643313,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-25",
+      "team": "GRG",
+      "player": "James Akinjo",
+      "pid": 1631231,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2026-02-23",
+      "team": "GBO",
+      "player": "Brandon Slater",
+      "pid": 1641994,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-19",
+      "team": "NOB",
+      "player": "James Reese",
+      "pid": 1643212,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-19",
+      "team": "WES",
+      "player": "Obadiah Noel",
+      "pid": 1630750,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-16",
+      "team": "BHM",
+      "player": "Garrison Brooks",
+      "pid": 1631365,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-15",
+      "team": "CCG",
+      "player": "Micah Parrish",
+      "pid": 1643045,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-14",
+      "team": "GBO",
+      "player": "Jaire Grayer",
+      "pid": 1630340,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-02-13",
+      "team": "IWA",
+      "player": "Alize Johnson",
+      "pid": 1628993,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2026-02-07",
+      "team": "CPS",
+      "player": "Javan Johnson",
+      "pid": 1641881,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-28",
+      "team": "GRG",
+      "player": "Rahsool Diggins",
+      "pid": 1643323,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-26",
+      "team": "AUS",
+      "player": "Tre King",
+      "pid": 1642561,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-24",
+      "team": "RAP",
+      "player": "Jaden Bediako",
+      "pid": 1643173,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-22",
+      "team": "SLC",
+      "player": "Kenan Blackshear",
+      "pid": 1642507,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-21",
+      "team": "WIS",
+      "player": "Kaden Anderson",
+      "pid": 1643237,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-18",
+      "team": "GRG",
+      "player": "Michael Caicedo",
+      "pid": 1643014,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-18",
+      "team": "SBL",
+      "player": "Zach Hicks",
+      "pid": 1643061,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-18",
+      "team": "WCB",
+      "player": "Justin Jackson",
+      "pid": 1628992,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-16",
+      "team": "NOB",
+      "player": "Kyle Guy",
+      "pid": 1629657,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2026-01-15",
+      "team": "NOB",
+      "player": "Ray Spalding",
+      "pid": 1629034,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-14",
+      "team": "MCC",
+      "player": "Ray Williams, Jr.",
+      "pid": 1643295,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-13",
+      "team": "DEL",
+      "player": "Dylan Penn",
+      "pid": 1643277,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-12",
+      "team": "LIN",
+      "player": "Jay Scrubb",
+      "pid": 1630206,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-11",
+      "team": "SXF",
+      "player": "Blaise Threatt",
+      "pid": 1643144,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-10",
+      "team": "OKL",
+      "player": "Bryce Thompson",
+      "pid": 1643298,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-10",
+      "team": "DEL",
+      "player": "Dwayne Cohill",
+      "pid": 1643297,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-10",
+      "team": "MNE",
+      "player": "Ebenezer Dowuona",
+      "pid": 1643256,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-09",
+      "team": "MCC",
+      "player": "Makhi Mitchell",
+      "pid": 1642560,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-08",
+      "team": "OKL",
+      "player": "T.J. Weeks",
+      "pid": 1643288,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-07",
+      "team": "WCB",
+      "player": "Jean-Jacques Boissy",
+      "pid": 1642999,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-03",
+      "team": "RGV",
+      "player": "Craig Randall II",
+      "pid": 1630310,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-02",
+      "team": "OKL",
+      "player": "Noah Starkey",
+      "pid": 1631489,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-01",
+      "team": "TEX",
+      "player": "Matt Becht",
+      "pid": 1643304,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-01-01",
+      "team": "MNE",
+      "player": "Robert Woodard II",
+      "pid": 1630218,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-22",
+      "team": "RGV",
+      "player": "Naheem Mcleod",
+      "pid": 1643250,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-20",
+      "team": "SCW",
+      "player": "Issac McBride",
+      "pid": 1643162,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-19",
+      "team": "WCB",
+      "player": "Fousseyni Drame",
+      "pid": 1643305,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-17",
+      "team": "LIN",
+      "player": "Jamal Mashburn, Jr.",
+      "pid": 1643330,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-14",
+      "team": "VAL",
+      "player": "Mason Madsen",
+      "pid": 1643201,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-14",
+      "team": "SCW",
+      "player": "Michael O'Connell",
+      "pid": 1643172,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-12",
+      "team": "MXC",
+      "player": "Ahmad Caver",
+      "pid": 1629958,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-06",
+      "team": "TEX",
+      "player": "Kario Oquendo",
+      "pid": 1643194,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-05",
+      "team": "WIS",
+      "player": "Philip Alston",
+      "pid": 1642521,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-04",
+      "team": "MXC",
+      "player": "Alejandro Vasquez",
+      "pid": 1643247,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-04",
+      "team": "MXC",
+      "player": "Josue Erazo",
+      "pid": 1643381,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-04",
+      "team": "OSC",
+      "player": "Jacob Calloway",
+      "pid": 1643228,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-03",
+      "team": "MHU",
+      "player": "Davonte Gaines",
+      "pid": 1643241,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-12-03",
+      "team": "GRG",
+      "player": "Wesley Cardet, Jr",
+      "pid": 1643271,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-30",
+      "team": "GRG",
+      "player": "Bryce Wills",
+      "pid": 1630706,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-25",
+      "team": "MCC",
+      "player": "Feron Hunt",
+      "pid": 1630624,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2025-11-23",
+      "team": "DEL",
+      "player": "Drew Cisse",
+      "pid": 1642583,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-20",
+      "team": "RCR",
+      "player": "Ashton Hagans",
+      "pid": 1630204,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2025-11-18",
+      "team": "RAP",
+      "player": "Jared Rhoden",
+      "pid": 1631197,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2025-11-17",
+      "team": "MXC",
+      "player": "Jordan Forbes",
+      "pid": 1643348,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-14",
+      "team": "MCC",
+      "player": "JP Pegues",
+      "pid": 1643320,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-12",
+      "team": "WCB",
+      "player": "Jalen Harris",
+      "pid": 1630223,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-12",
+      "team": "WES",
+      "player": "Matt Ryan",
+      "pid": 1630346,
+      "type": "Buyout",
+      "desc": "Buyout"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "MNE",
+      "player": "Rj Luis Jr",
+      "pid": 1642961,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "DEL",
+      "player": "Sam Hines",
+      "pid": 1643261,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "DEL",
+      "player": "Collin Moore",
+      "pid": 1643260,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "SBL",
+      "player": "Selton Miguel",
+      "pid": 1643081,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "SBL",
+      "player": "Braxton Meah",
+      "pid": 1643213,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "SBL",
+      "player": "Erik Timko",
+      "pid": 1643178,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "WIS",
+      "player": "Anthony Tarke",
+      "pid": 1630697,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "STO",
+      "player": "Jayden Hardaway",
+      "pid": 1642541,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "MNE",
+      "player": "D'maurian Williams",
+      "pid": 1643259,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-08",
+      "team": "MNE",
+      "player": "Nicolas Timberlake",
+      "pid": 1643243,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "RGV",
+      "player": "Jaylen Murray",
+      "pid": 1643267,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "RGV",
+      "player": "Jordan Hinds",
+      "pid": 1643332,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "RGV",
+      "player": "Moses Byekwaso",
+      "pid": 1643274,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "RGV",
+      "player": "Vin Baker Jr",
+      "pid": 1641921,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "GRG",
+      "player": "Markeese Hastings",
+      "pid": 1643289,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "MCC",
+      "player": "Jason Hubbard",
+      "pid": 1643280,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "AUS",
+      "player": "Justice Smith",
+      "pid": 1643226,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "WIS",
+      "player": "Jordan Ivy Curry",
+      "pid": 1643239,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "CCG",
+      "player": "Javier Ezquerra",
+      "pid": 1643240,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "LIN",
+      "player": "Chaunce Jenkins",
+      "pid": 1643192,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "SXF",
+      "player": "Shemar Wilson",
+      "pid": 1643183,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "SXF",
+      "player": "Tyler Hawkins",
+      "pid": 1642074,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "SXF",
+      "player": "Kam'ron Blue",
+      "pid": 1642065,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "TEX",
+      "player": "Sean Durugordon",
+      "pid": 1643316,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "TEX",
+      "player": "Max Agbonkpolo",
+      "pid": 1643233,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "NOB",
+      "player": "Ahmaad Rorie",
+      "pid": 1643276,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "NOB",
+      "player": "Sterling Manley",
+      "pid": 1630812,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "NOB",
+      "player": "Ithiel Horton",
+      "pid": 1642595,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "OSC",
+      "player": "Zac Triplett",
+      "pid": 1643168,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "AUS",
+      "player": "Trey McGowens",
+      "pid": 1631413,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "",
+      "player": "Jared Wilson Frame",
+      "pid": 1630045,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-07",
+      "team": "VAL",
+      "player": "Marcus Burk",
+      "pid": 1630721,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "SCW",
+      "player": "Franco Miller, Jr.",
+      "pid": 1643182,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "CCG",
+      "player": "Max Brooks",
+      "pid": 1643242,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "BHM",
+      "player": "J.Z. Zaher",
+      "pid": 1642570,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "BHM",
+      "player": "Everette Hammond",
+      "pid": 1642034,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "BHM",
+      "player": "Will Brown",
+      "pid": 1642771,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "TEX",
+      "player": "Cole Anderson",
+      "pid": 1643236,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "SDC",
+      "player": "Shakur Daniel",
+      "pid": 1642669,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "CPS",
+      "player": "Lok Wur",
+      "pid": 1643219,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "CPS",
+      "player": "Tyrin Lawrence",
+      "pid": 1641797,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "WES",
+      "player": "Romeo Langford",
+      "pid": 1629641,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-06",
+      "team": "WES",
+      "player": "Bijan Cortes",
+      "pid": 1643254,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "RCR",
+      "player": "Demarcus Sharp",
+      "pid": 1643258,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "IWA",
+      "player": "Brandon Adelman",
+      "pid": 1643231,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "CCG",
+      "player": "Sy Chatman",
+      "pid": 1642442,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "AUS",
+      "player": "Jahmal Mcmurray",
+      "pid": 1629794,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "SXF",
+      "player": "Dischon Thomas",
+      "pid": 1643285,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "SXF",
+      "player": "Darius Maddox",
+      "pid": 1643307,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "MHU",
+      "player": "Kobe Webster",
+      "pid": 1643309,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "MHU",
+      "player": "Charles Pride",
+      "pid": 1642515,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "MHU",
+      "player": "Jordan Longino",
+      "pid": 1643068,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "GRG",
+      "player": "Antwan Kimmons",
+      "pid": 1643272,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "MHU",
+      "player": "Tommy Bruner",
+      "pid": 1642567,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-05",
+      "team": "OKL",
+      "player": "John Harge",
+      "pid": 1643334,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-04",
+      "team": "BHM",
+      "player": "Tray Jackson",
+      "pid": 1642684,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-04",
+      "team": "SCW",
+      "player": "Jimmy Whitt",
+      "pid": 1630307,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-04",
+      "team": "CCG",
+      "player": "Stefan Simanic",
+      "pid": 1642988,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-02",
+      "team": "LIN",
+      "player": "James Montgomery",
+      "pid": 1643306,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-02",
+      "team": "GBO",
+      "player": "Jairus Hamilton",
+      "pid": 1643252,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-02",
+      "team": "LIN",
+      "player": "James Bishop Iv",
+      "pid": 1642458,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-02",
+      "team": "LIN",
+      "player": "Abdourachid Tsimbila",
+      "pid": 1643181,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-11-02",
+      "team": "GBO",
+      "player": "Dj Burns",
+      "pid": 1642469,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2025-10-31",
+      "team": "SLC",
+      "player": "Des Watson",
+      "pid": 1643124,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    }
+  ]
 }

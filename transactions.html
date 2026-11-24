@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="en">
 <head>
+  <link rel="icon" href="data:,">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Capitanesverse · Transactions &amp; Free Agent Lab (2026-27 MXC Baseline)</title>
@@ -51,7 +52,7 @@
   <div class="tx-card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px;">
       <div class="tx-ctitle" style="margin:0;">2026-27 Capitanes (MXC) Roster Baseline</div>
-      <div style="font-size:10.5px;color:var(--muted);">Every free agent &amp; released NBA player is benchmarked against MXC's active roster and <b>similar-height (&plusmn;2 in) MXC roster players</b>.</div>
+      
     </div>
     <div id="mxcBaselineGrid" class="tx-grid"></div>
     <div id="mxcRosterStrip" style="margin-top:8px;font-size:10.5px;color:var(--text);"></div>
@@ -59,18 +60,18 @@
 
   <div class="tx-card">
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:6px;">
-      <div class="tx-ctitle" style="margin:0;">Available Pool, Released NBA Players &amp; Free Agent PDF Import</div>
+      <div class="tx-ctitle" style="margin:0;">Free Agents, Released NBA Players &amp; League Transactions</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <label style="font-family:'Oswald',sans-serif;font-size:10.5px;font-weight:700;padding:4px 9px;background:var(--blue);color:#fff;border-radius:3px;cursor:pointer;">
-          + Upload Free Agent PDF <input type="file" id="faPdfInput" accept="application/pdf" style="display:none;">
-        </label>
-        <input type="text" id="txSearch" placeholder="Filter by player, pos, height, or tag..." style="font-family:'Lora',serif;font-size:11px;padding:3px 7px;border:1px solid var(--border);width:210px;">
+        
+        <input type="text" id="txSearch" placeholder="Search player, team, date, or move..." style="font-family:'Lora',serif;font-size:11px;padding:3px 7px;border:1px solid var(--border);width:210px;">
+    
+    
+    
+    
       </div>
     </div>
     <div class="tx-tabs" id="txTabs">
-      <button class="tx-tab active" data-tab="all">All (PDF Free Agents + NBA Released)</button>
-      <button class="tx-tab" data-tab="nba">Released NBA Players</button>
-            <button class="tx-tab" data-tab="pdf">PDF Free Agents (<span id="pdfCount">0</span>)</button>
+      <button class="tx-tab active" data-tab="pdf">Free Agents (<span id="pdfCount">0</span>)</button>
       <button class="tx-tab" data-tab="moves">Recent League Transactions</button>
     </div>
     <div id="txTableWrap" style="overflow-x:auto;max-height:72vh;"></div>
@@ -78,268 +79,563 @@
 </div>
 <script>
 (async function () {
-  const norm = s => String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+  const _nameAliases = { bernieblunt: 'berniebluntiii', jamesbishop: 'jamesbishopiv' };
+  const norm = s => {
+    const raw = String(s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    return _nameAliases[raw] || raw;
+  };
   const parseHtIn = h => {
     if (typeof h === 'number' && h > 50) return h;
-    const m = String(h || '').match(/(\d)\s*[-']\s*(\d{1,2})/);
+    const s = String(h || '').trim();
+    const dtM = s.match(/^20\d{2}-0?([567])-0?(\d{1,2})$/);
+    if (dtM) return Number(dtM.at(1)) * 12 + Number(dtM.at(2));
+    const m = s.match(/(\d)\s*[-']\s*(\d{1,2})/);
     return m ? (Number(m.at(1)) * 12 + Number(m.at(2))) : null;
   };
-  const fmtHt = inches => inches ? `${Math.floor(inches / 12)}-${Math.round(inches % 12)}` : '—';
-  const calcDre = p => {
-    if (!p || typeof p !== 'object') return null;
-    if (p.dre != null && !isNaN(Number(p.dre))) return Number(p.dre);
-    const poss = Number(p.poss ?? p.POSS ?? 0);
-    if (poss <= 0) return null;
-    return (100 / poss) * (0.792 * Number(p.pts || 0) - 0.719 * Number(p.fga || 0) - 0.299 * Number(p.fta || 0) + 0.145 * Number(p.reb || 0) + 0.369 * Number(p.ast || 0) + 1.662 * Number(p.stl || 0) + 0.696 * Number(p.blk || 0) - 0.844 * Number(p.tov || 0));
-  };
+  const fmtHt = inches => inches ? `${Math.floor(inches / 12)}-${Math.round(inches % 12)}` : '?';
 
   const v = '?v=' + Date.now();
-  const [lite27, lite26, pIdx, pFull, gRoster, faPdfPool, nbaMove] = await Promise.all([
+  const [lite27, lite26, pIdx, pFull, gRoster, faPdfPool, glPIndex, repoOverrides] = await Promise.all([
     fetch('data/league_lite_shots_2026-27.json' + v).then(r => r.ok ? r.json() : null).catch(() => null),
     fetch('data/league_lite_shots_2025-26.json' + v).then(r => r.ok ? r.json() : null).catch(() => null),
     fetch('data/players_index.json' + v).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
     fetch('data/players.json' + v).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
     fetch('data/gleague_roster_2026-27.json' + v).then(r => r.ok ? r.json() : null).catch(() => null),
     fetch('data/fa_pdf_pool.json' + v).then(r => r.ok ? r.json() : new Array()).catch(() => new Array()),
-    fetch('https://nba.com' + v).then(r => r.ok ? r.json() : null).catch(() => null)
+    fetch('data/gleague_player_index.json' + v).then(r => r.ok ? r.json() : {}).catch(() => ({})),
+    fetch('data/manual_overrides.json' + v).then(r => r.ok ? r.json() : {}).catch(() => ({}))
   ]);
 
   const dbByKey = {};
+  const dbById = {};
   const upsert = (raw, src) => {
-    const nm = String(raw?.name || raw?.PLAYER_NAME || raw?.Player || '').trim();
-    if (!nm) return;
+    if (!raw || typeof raw !== 'object') return;
+    const nm = String(raw.name || raw.PLAYER_NAME || raw.Player || '').trim();
+    const pid = raw.id && !isNaN(Number(raw.id)) ? String(Number(raw.id)) : (raw.pid ? String(Number(raw.pid)) : '');
+    if (!nm && !pid) return;
     const k = norm(nm);
-    const cur = dbByKey[k] || { name: nm, pos: '', heightIn: null, weight: null, age: null, stats: null, sourceSeason: '' };
+    const byId = pid ? dbById[pid] : null;
+    const byKey = k ? dbByKey[k] : null;
+    const cur = byId || byKey || { id: pid, name: nm, pos: '', heightIn: null, weight: null, age: null, college: '', yos: null, proStats: null, ncaaStats: null, stats: null, sourceSeason: '' };
+    if (byId && byKey && byId !== byKey) {
+      cur.heightIn = cur.heightIn || byKey.heightIn;
+      cur.weight = cur.weight || byKey.weight;
+      cur.age = cur.age ?? byKey.age;
+      cur.college = cur.college || byKey.college;
+      cur.yos = cur.yos ?? byKey.yos;
+      cur.proStats = cur.proStats || byKey.proStats;
+      cur.ncaaStats = cur.ncaaStats || byKey.ncaaStats;
+    }
+
+    const isCollegeSrc = (src === 'players.json' || src === 'index');
+    if (pid && !cur.id) cur.id = pid;
     if (!cur.pos && raw.position) cur.pos = raw.position;
+    if (!cur.college) {
+      if (raw.school || raw.college) cur.college = raw.school || raw.college;
+      else if (isCollegeSrc && raw.team && raw.team !== 'N/A') cur.college = raw.team;
+    }
+    if (cur.yos == null && (raw.yos != null || raw.exp != null)) cur.yos = raw.yos ?? raw.exp;
+    if (cur.yos == null && isCollegeSrc && raw.class) cur.yos = 0;
     const ht = parseHtIn(raw.heightIn || raw.height || raw.heightDisplay);
     if (!cur.heightIn && ht) cur.heightIn = ht;
-    const wt = Number(raw.weight || raw.biography?.weight || 0);
+    const wt = Number(raw.weight || raw.biography?.weight || raw.measurables?.weight || 0);
     if (!cur.weight && wt > 120) cur.weight = Math.round(wt);
-    const age = Number(raw.age || raw.biography?.age || 0);
-    if (!cur.age && age > 15) cur.age = Number(age.toFixed(1));
-    const dre = calcDre(raw);
-    const hasStat = (Number(raw.gp || 0) > 0 || Number(raw.poss || 0) > 0 || raw.pts75 != null || dre != null);
-    if (hasStat && (!cur.stats || src === '2026-27' || (src === '2025-26' && cur.sourceSeason !== '2026-27'))) {
-      cur.stats = {
-        gp: raw.gp ?? null,
-        mpg: raw.mpg ?? null,
-        pts75: raw.pts75 ?? null,
-        reb75: raw.reb75 ?? null,
-        ast75: raw.ast75 ?? null,
-        tsPct: raw.tsPct ?? null,
-        fg3Pct: raw.fg3Pct ?? null,
-        usg: raw.usg ?? null,
-        dre: dre != null ? Number(dre.toFixed(1)) : null
+    const rawAge = Number(raw.age || raw.biography?.age || raw.stats?.age || 0);
+    if (!cur.age && rawAge > 15) cur.age = Number(rawAge.toFixed(1));
+
+    if (raw.ncaaCareer && !cur.ncaaStats && Number(raw.ncaaCareer.min || 0) > 0) {
+      const nc = raw.ncaaCareer;
+      const p40 = 40 / Number(nc.min);
+      const tsa = 2 * (Number(nc.fga || 0) + 0.44 * Number(nc.fta || 0));
+      cur.ncaaStats = {
+        season: 'NCAA', cohort: 'ncaa_p40',
+        gp: Number(nc.gp || 0) || null, mpg: nc.gp > 0 ? Number(nc.min) / Number(nc.gp) : null,
+        ptsRate: Number(nc.pts || 0) * p40, rebRate: Number(nc.reb || 0) * p40, astRate: Number(nc.ast || 0) * p40,
+        tsPct: tsa > 0 ? (Number(nc.pts || 0) / tsa) * 100 : null,
+        impact: null, impactLabel: '', unitSub: 'per 40 mins.', isNcaa: true,
       };
-      cur.sourceSeason = src;
     }
-    dbByKey[k] = cur;
+
+    const stCand = raw.stats || raw.collegeStats || raw.ncaaStats || null;
+    if (stCand && typeof stCand === 'object') {
+      const st = stCand;
+      if (!isCollegeSrc && !cur.proStats && (st.pts != null || st.pts75 != null)) {
+        const gp = Number(st.gp || 0);
+        const totMin = Number(st.min || 0);
+        const mpg = st.mpg != null ? Number(st.mpg) : (gp > 0 && totMin > 0 ? totMin / gp : null);
+        const estPoss = Number(st.poss || 0) > 0 ? Number(st.poss) : (totMin > 0 ? totMin * 2.08 : 0);
+        const p75Scale = estPoss > 0 ? (75 / estPoss) : (mpg > 0 ? (36 / mpg) : 1);
+        const ptsRate = st.pts75 != null ? Number(st.pts75) : (st.pts != null ? Number(st.pts) * p75Scale : null);
+        const rebRate = st.reb75 != null ? Number(st.reb75) : (st.reb != null ? Number(st.reb) * p75Scale : null);
+        const astRate = st.ast75 != null ? Number(st.ast75) : (st.ast != null ? Number(st.ast) * p75Scale : null);
+        let tsRaw = st.tsPct ?? st.ts ?? null;
+        if (tsRaw == null && st.pts != null && (Number(st.fga || 0) + 0.44 * Number(st.fta || 0)) > 0) {
+          tsRaw = (Number(st.pts) / (2 * (Number(st.fga || 0) + 0.44 * Number(st.fta || 0)))) * 100;
+        }
+        let dreVal = st.dre ?? raw.advanced?.dre ?? null;
+        if (dreVal == null && estPoss >= 120 && st.pts != null && st.fga != null) {
+          const rawDre = 0.79 * Number(st.pts) - 0.72 * Number(st.fga) - 0.55 * Number(st.fta || 0)
+            + 0.28 * Number(st.reb || 0) + 0.54 * Number(st.ast || 0) + 1.68 * Number(st.stl || 0)
+            + 0.76 * Number(st.blk || 0) - 1.36 * Number(st.tov || 0);
+          dreVal = (rawDre / estPoss) * 100;
+        } else if (estPoss > 0 && estPoss < 120 && st.dre == null) {
+          dreVal = null;
+        }
+        cur.proStats = {
+          season: st.season || src, cohort: 'gl_p75',
+          gp: gp || null, mpg, ptsRate, rebRate, astRate,
+          tsPct: tsRaw != null ? (Number(tsRaw) <= 1 ? Number(tsRaw) * 100 : Number(tsRaw)) : null,
+          impact: dreVal != null ? Number(dreVal) : null,
+          impactLabel: dreVal != null ? 'DRE' : '',
+          unitSub: 'per 75 poss.', isNcaa: false,
+        };
+      } else if (isCollegeSrc && (st.ts != null || st.bpm != null || st.twoPM != null)) {
+        if (cur.ncaaStats) {
+          if (st.bpm != null) { cur.ncaaStats.impact = Number(st.bpm); cur.ncaaStats.impactLabel = 'BPM'; }
+        } else {
+          const gp = Number(st.gp || 0);
+          const minPct = Number(st.minPct || 0);
+          const estMin = (gp > 0 && minPct > 0) ? (gp * 40 * (minPct / 100)) : 0;
+          const p40Scale = estMin > 0 ? (40 / estMin) : 0;
+          const totPts = (st.twoPM != null || st.threePM != null || st.ftMakes != null)
+            ? (2 * Number(st.twoPM || 0) + 3 * Number(st.threePM || 0) + Number(st.ftMakes || 0))
+            : null;
+          const ptsRate = totPts != null ? (p40Scale > 0 ? totPts * p40Scale : (gp > 0 ? totPts / gp : null)) : null;
+          const rebRate = (st.orb != null || st.drb != null) ? (Number(st.orb || 0) + Number(st.drb || 0)) : null;
+          const astRate = st.ast != null ? Number(st.ast) : null;
+          const tsRaw = st.ts ?? st.tsPct ?? null;
+          cur.ncaaStats = {
+            season: 'NCAA', cohort: p40Scale > 0 ? 'ncaa_p40_pct' : 'ncaa_pg_pct',
+            gp: gp || null, mpg: (gp > 0 && estMin > 0) ? (estMin / gp) : null,
+            ptsRate, rebRate, astRate,
+            tsPct: tsRaw != null ? (Number(tsRaw) <= 1 ? Number(tsRaw) * 100 : Number(tsRaw)) : null,
+            impact: st.bpm != null ? Number(st.bpm) : null,
+            impactLabel: st.bpm != null ? 'BPM' : '',
+            unitSub: p40Scale > 0 ? 'per 40 / TRB% / AST%' : ' / TRB% / AST%',
+            isNcaa: true,
+          };
+        }
+      }
+    }
+
+    if (raw.realgmUrl && !cur.realgmUrl) cur.realgmUrl = raw.realgmUrl;
+    if (raw.latestMove && !cur.latestMove) cur.latestMove = raw.latestMove;
+    if (raw.overseasStats && !cur.overseasStats && Number(raw.overseasStats.mpg || 0) > 0) {
+      const ov = raw.overseasStats;
+      cur.overseasStats = {
+        season: ov.season || 'Overseas',
+        cohort: 'intl_pg',
+        gp: Number(ov.gp || 0) || null,
+        mpg: Number(ov.mpg || 0) || null,
+        ptsRate: ov.pts != null ? Number(ov.pts) : null,
+        rebRate: ov.reb != null ? Number(ov.reb) : null,
+        astRate: ov.ast != null ? Number(ov.ast) : null,
+        tsPct: null,
+        impact: null,
+        impactLabel: '',
+        unitSub: ' (Intl)',
+        isNcaa: false,
+      };
+    }
+    if (raw.manualStats && !cur.manualStats) {
+      cur.manualStats = Object.assign({}, raw.manualStats);
+    }
+    cur.stats = cur.proStats || cur.ncaaStats || cur.overseasStats || cur.manualStats || null;
+    if (cur.stats && cur.stats.impact == null && cur.manualStats && cur.manualStats.impact != null) {
+      cur.stats.impact = cur.manualStats.impact;
+      cur.stats.impactLabel = cur.manualStats.impactLabel || 'PER';
+      cur.stats.impactCohort = 'manual_pg';
+    }
+    cur.sourceSeason = cur.proStats && cur.ncaaStats ? `${cur.proStats.season} + NCAA` : (cur.stats?.season || '');
+    if (k) dbByKey[k] = cur;
+    if (pid) dbById[pid] = cur;
   };
 
+  Object.values(glPIndex || {}).forEach(p => upsert(p, 'GL'));
   (lite27?.teams || new Array()).forEach(tm => (tm.rosterStats || new Array()).forEach(p => upsert(p, '2026-27')));
   (lite26?.teams || new Array()).forEach(tm => (tm.rosterStats || new Array()).forEach(p => upsert(p, '2025-26')));
   (Array.isArray(pFull) ? pFull : Object.values(pFull || {})).forEach(p => upsert(p, 'players.json'));
   (Array.isArray(pIdx) ? pIdx : Object.values(pIdx || {})).forEach(p => upsert(p, 'index'));
   (Array.isArray(faPdfPool) ? faPdfPool : new Array()).forEach(p => upsert(p, 'pdf'));
 
-  // Build similar-height peer cohorts (±2 inches) from all G League players with logged stats
+  Object.values(dbById).forEach(idRec => {
+    const k = norm(idRec.name);
+    const keyRec = k ? dbByKey[k] : null;
+    if (keyRec && keyRec !== idRec) {
+      idRec.heightIn = idRec.heightIn || keyRec.heightIn;
+      idRec.weight = idRec.weight || keyRec.weight;
+      idRec.age = idRec.age ?? keyRec.age;
+      idRec.college = idRec.college || keyRec.college;
+      idRec.yos = idRec.yos ?? keyRec.yos;
+      idRec.proStats = idRec.proStats || keyRec.proStats;
+      idRec.ncaaStats = idRec.ncaaStats || keyRec.ncaaStats;
+      idRec.stats = idRec.proStats || idRec.ncaaStats || idRec.stats || keyRec.stats;
+      idRec.sourceSeason = idRec.sourceSeason || keyRec.sourceSeason;
+      dbByKey[k] = idRec;
+    } else if (k && !keyRec) {
+      dbByKey[k] = idRec;
+    }
+  });
+
   const mxcBaseList = (lite27?.teams || new Array()).find(t => t.abbrev === 'MXC')?.rosterStats?.length
     ? (lite27.teams.find(t => t.abbrev === 'MXC').rosterStats)
     : ((lite26?.teams || new Array()).find(t => t.abbrev === 'MXC')?.rosterStats || new Array());
-  const mxcKeys = new Set(mxcBaseList.map(p => norm(p.name)));
-  const statPool = Object.values(dbByKey).filter(x => x.stats && x.heightIn && mxcKeys.has(norm(x.name)));
-  const getHeightPeerAvg = htIn => {
-    if (!htIn) return null;
-    const peers = statPool.filter(x => Math.abs(x.heightIn - htIn) <= 2);
-    if (!peers.length) return null;
-    const avg = fn => {
-      const vals = peers.map(fn).filter(v => v != null && !isNaN(v));
-      return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : null;
-    };
-    return {
-      n: peers.length,
-      pts75: avg(x => x.stats.pts75),
-      reb75: avg(x => x.stats.reb75),
-      ast75: avg(x => x.stats.ast75),
-      tsPct: avg(x => x.stats.tsPct),
-      dre: avg(x => x.stats.dre)
-    };
-  };
+  const mxcRoster = gRoster?.teams?.MXC?.players || mxcBaseList;
 
-  // 2026-27 MXC Roster Baseline
-  const mxc27 = (lite27?.teams || new Array()).find(t => t.abbrev === 'MXC') || (lite26?.teams || new Array()).find(t => t.abbrev === 'MXC') || {};
-  const mxcRoster = (mxc27.rosterStats || new Array()).slice().sort((a, b) => (b.mpg || 0) - (a.mpg || 0));
-  const mxcAvgDre = (() => {
-    const vals = mxcRoster.map(calcDre).filter(v => v != null && !isNaN(v));
-    return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length).toFixed(1) : '—';
-  })();
-  document.getElementById('mxcBaselineGrid').innerHTML = `
-    <div class="tx-kpi"><div class="tx-kpi-lbl">Active MXC Roster</div><div class="tx-kpi-val">${mxcRoster.length} Players</div></div>
-    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg Height</div><div class="tx-kpi-val">${mxc27.avgHeight || '—'}</div></div>
-    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg Weight</div><div class="tx-kpi-val">${mxc27.avgWeight ? Math.round(mxc27.avgWeight) + ' lbs' : '—'}</div></div>
-    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg Age</div><div class="tx-kpi-val">${mxc27.avgAge || '—'}</div></div>
-    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC Avg DRE</div><div class="tx-kpi-val">${mxcAvgDre}</div></div>
-    <div class="tx-kpi"><div class="tx-kpi-lbl">MXC NetRtg</div><div class="tx-kpi-val">${mxc27.netRtg != null ? ((mxc27.netRtg >= 0 ? '+' : '') + mxc27.netRtg) : '—'}</div></div>
-  `;
-  document.getElementById('mxcRosterStrip').innerHTML = '<b>2026-27 MXC Baseline Roster:</b> ' + (mxcRoster.map(p => `${p.name} (${p.height || '—'}, ${p.weight ? Math.round(p.weight) + 'lb' : '—'}, DRE ${calcDre(p) != null ? calcDre(p).toFixed(1) : '—'})`).join(' &middot; ') || 'No 2026-27 roster logged yet.');
-  const candidates = [];
-  const seenKey = new Set();
-
-  // 1. Released / Waived NBA Players (live NBA Player Movement feed + cached gleague_roster nbaReleased)
-  const nbaRows = (nbaMove?.NBA_Player_Movement?.rows || []).filter(r => {
-    const desc = String(r.TRANSACTION_DESCRIPTION || '').toLowerCase();
-    const ttype = String(r.TRANSACTION_TYPE || '').toLowerCase();
-    const dt = String(r.TRANSACTION_DATE || '').slice(0, 10);
-    return (desc.includes('waiv') || ttype.includes('waiv') || desc.includes('releas')) && dt >= '2026-07-01';
-  }).map(r => ({
-    name: `${r.FIRST_NAME || ''} ${r.LAST_NAME || ''}`.trim(),
-    team: r.TEAM_ABBREVIATION || '',
-    date: String(r.TRANSACTION_DATE || '').slice(0, 10),
-    desc: r.TRANSACTION_DESCRIPTION || 'Waived by NBA team'
-  }));
-  const allNbaRel = nbaRows.length ? nbaRows : (gRoster?.nbaReleased || []);
-  allNbaRel.forEach(nr => {
-    const k = norm(nr.name);
-    if (!k || seenKey.has(k)) return;
-    seenKey.add(k);
-    candidates.push({ name: nr.name, source: 'nba', tag: `NBA Waived (${nr.team || 'NBA'} · ${nr.date || ''})`, note: nr.desc || '' });
-  });
-
-
-
-
-  // Pre-seed Free Agent PDF List from data/fa_pdf_pool.json
-  (Array.isArray(faPdfPool) ? faPdfPool : new Array()).forEach(p => {
-    const k = norm(p.name);
+  const activeSet = new Set();
+  const activeTokens = new Array();
+  const addActive = nm => {
+    const k = norm(nm);
     if (!k) return;
-    const existing = candidates.find(c => norm(c.name) === k);
-    const tagStr = 'PDF FA' + (p.yos != null ? ' ? ' + p.yos + ' YOS' : '') + (p.school ? ' (' + p.school + ')' : '');
-    if (existing) {
-      existing.source = 'pdf';
-      existing.tag = tagStr;
-    } else {
-      seenKey.add(k);
-      candidates.unshift({ name: p.name, source: 'pdf', tag: tagStr, note: p.school || '' });
+    activeSet.add(k);
+    const toks = String(nm || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !new Set(['jr', 'sr', 'ii', 'iii', 'iv']).has(w));
+    if (toks.length >= 2) activeTokens.push(toks);
+  };
+  Object.values(gRoster?.teams || {}).forEach(tm => (tm.players || new Array()).forEach(p => addActive(p.name)));
+  (lite27?.teams || new Array()).forEach(tm => (tm.rosterStats || new Array()).forEach(p => { if ((p.gp || 0) > 0) addActive(p.name); }));
+  (Array.isArray(pFull) ? pFull : Object.values(pFull || {})).forEach(p => {
+    if (p?.onRoster || /on roster|two-way|nba contract/i.test(String(p?.availabilityLabel || p?.availabilitySimple || ''))) addActive(p.name);
+  });
+
+  const isOnActiveRoster = nm => {
+    const k = norm(nm);
+    if (!k) return false;
+    if (activeSet.has(k)) return true;
+    const toks = String(nm || '').toLowerCase().replace(/[^a-z\s]/g, ' ').split(/\s+/).filter(w => w.length >= 3 && !new Set(['jr', 'sr', 'ii', 'iii', 'iv']).has(w));
+    if (toks.length < 2) return false;
+    return activeTokens.some(at => at.length === toks.length && at.every(w => toks.includes(w)));
+  };
+
+  const signedOutSet = new Set();
+  (Array.isArray(pIdx) ? pIdx : Object.values(pIdx || {})).forEach(p => {
+    if (p?.name && /signed|overseas|europe|cba|bleague|nbl|euroleague|acb|retired/i.test(`${p.availabilitySimple || ''} ${p.availabilityNote || ''}`)) {
+      signedOutSet.add(norm(p.name));
     }
   });
-  document.getElementById('pdfCount').textContent = candidates.filter(c => c.source === 'pdf').length;
-
-  let currentTab = 'all';
-  const fmtDiff = (val, peerVal) => {
-    if (val == null || peerVal == null || isNaN(val) || isNaN(peerVal)) return '';
-    const d = val - peerVal;
-    const col = d >= 0 ? 'var(--green)' : 'var(--red)';
-    return ` <span style="font-size:9.5px;font-weight:700;color:${col};">(${d >= 0 ? '+' : ''}${d.toFixed(1)})</span>`;
-  };
-
-  const renderTable = () => {
-    const q = norm(document.getElementById('txSearch').value);
-    const wrap = document.getElementById('txTableWrap');
-    if (currentTab === 'moves') {
-      const txs = (gRoster?.transactions || []).concat(allNbaRel.map(x => ({ date: x.date, team: x.team, player: x.name, type: x.desc })));
-      if (!txs.length) {
-        wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11.5px;">No transactions cached yet. Run <code>update_2027.bat</code> to refresh official G League &amp; NBA movement logs.</div>';
-        return;
-      }
-      wrap.innerHTML = `<table class="tx-tbl"><thead><tr><th>Date</th><th>Team</th><th>Player</th><th>Transaction</th></tr></thead><tbody>${txs.slice(0, 150).map(t => `<tr><td>${t.date || '—'}</td><td><b>${t.team || '—'}</b></td><td><b>${t.player || t.name || '—'}</b></td><td>${t.type || t.description || '—'}</td></tr>`).join('')}</tbody></table>`;
-      return;
+  Object.values(glPIndex || {}).forEach(p => {
+    if (p?.name && (p.unavailable || p.currentTeam)) {
+      signedOutSet.add(norm(p.name));
     }
+  });
 
-    const list = candidates.filter(c => {
-      if (currentTab !== 'all' && c.source !== currentTab) return false;
-      if (!q) return true;
-      const rec = dbByKey[norm(c.name)] || {};
-      return norm(c.name + ' ' + c.tag + ' ' + (rec.pos || '') + ' ' + fmtHt(rec.heightIn)).includes(q);
-    });
-
-    document.getElementById('txSub').textContent = `2026-27 MXC Baseline (${mxcRoster.length} active) · Showing ${list.length} candidates benchmarked vs. ±2" G League height peers`;
-
-    if (!list.length) {
-      wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11.5px;">No players match this filter. Upload a Free Agent PDF or switch tabs above.</div>';
-      return;
-    }
-
-    const rowsHtml = list.slice(0, 250).map(c => {
-      const rec = dbByKey[norm(c.name)] || {};
-      const st = rec.stats; // null if player has zero stats in any site database -> leaves stat cells blank!
-      const peers = getHeightPeerAvg(rec.heightIn);
-      const badgeCls = c.source === 'nba' ? 'b-nba' : (c.source === 'pdf' ? 'b-pdf' : 'b-fa');
-      return `<tr>
-        <td><b>${c.name}</b>${rec.sourceSeason ? ` <span style="font-size:9px;color:var(--muted);">(${rec.sourceSeason})</span>` : ''}</td>
-        <td><span class="badge ${badgeCls}">${c.tag}</span></td>
-        <td>${rec.pos || '—'}</td>
-        <td>${fmtHt(rec.heightIn)}${peers ? ` <span style="font-size:9px;color:var(--muted);">(${peers.n}p)</span>` : ''}</td>
-        <td>${rec.weight ? rec.weight + ' lb' : '—'}</td>
-        <td>${rec.age ?? '—'}</td>
-        <td>${st?.gp ?? ''}</td>
-        <td>${st?.mpg != null ? Number(st.mpg).toFixed(1) : ''}</td>
-        <td>${st?.pts75 != null ? Number(st.pts75).toFixed(1) + fmtDiff(Number(st.pts75), peers?.pts75) : ''}</td>
-        <td>${st?.reb75 != null ? Number(st.reb75).toFixed(1) + fmtDiff(Number(st.reb75), peers?.reb75) : ''}</td>
-        <td>${st?.ast75 != null ? Number(st.ast75).toFixed(1) + fmtDiff(Number(st.ast75), peers?.ast75) : ''}</td>
-        <td>${st?.tsPct != null ? Number(st.tsPct).toFixed(1) + '%' + fmtDiff(Number(st.tsPct), peers?.tsPct) : ''}</td>
-        <td style="font-weight:700;">${st?.dre != null ? (st.dre >= 0 ? '+' : '') + Number(st.dre).toFixed(1) + fmtDiff(Number(st.dre), peers?.dre) : ''}</td>
-      </tr>`;
-    }).join('');
-
-    wrap.innerHTML = `<table class="tx-tbl"><thead><tr>
-      <th>Player</th><th>Status / Origin</th><th>Pos</th><th>Ht (MXC)</th><th>Wt</th><th>Age</th>
-      <th>GP</th><th>MPG</th><th>PTS/75 (vs Ht)</th><th>REB/75 (vs Ht)</th><th>AST/75 (vs Ht)</th><th>TS% (vs Ht)</th><th>DRE (vs Ht)</th>
-    </tr></thead><tbody>${rowsHtml}</tbody></table>`;
-  };
-
-  // Client-side Free Agent PDF Parser (pdf.js)
-  document.getElementById('faPdfInput').onchange = async e => {
-    const file = e.target.files?.[0];
-    if (!file || !window.pdfjsLib) return;
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cloudflare.com';
-    const buf = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
-    let fullText = '';
-    for (let p = 1; p <= pdf.numPages; p++) {
-      const page = await pdf.getPage(p);
-      const tc = await page.getTextContent();
-      fullText += '\n' + tc.items.map(it => it.str).join(' ');
-    }
-    // Extract player names ("First Last" or "Last, First") plus optional height/weight/age tokens
-    const extracted = new Set();
-    const lines = fullText.split(/[\n\r;|]+/);
-    lines.forEach(ln => {
-      const matches = ln.match(/\b[A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){1,2}\b/g) || [];
-      matches.forEach(m => {
-        if (!/^(Free Agent|Available|Pool|Player|Height|Weight|Age|Position|College|Guard|Forward|Center|Page|NBA|League)$/i.test(m)) {
-          extracted.add(m.trim());
+  const applyManualOverrides = () => {
+    try {
+      const localSaved = JSON.parse('{}' || '{}');
+      const saved = Object.assign({}, repoOverrides || {}, localSaved);
+      const idMatchesByNorm = {};
+      Object.values(dbById).forEach(r => {
+        const nk = norm(r.name);
+        if (nk) {
+          if (!idMatchesByNorm[nk]) idMatchesByNorm[nk] = new Array();
+          idMatchesByNorm[nk].push(r);
         }
       });
+      Object.entries(saved).forEach(([k, ov]) => {
+        if (ov.unavailable) {
+          signedOutSet.add(k);
+          return;
+        }
+        const targets = new Array();
+        const keyRec = dbByKey[k] || (dbByKey[k] = { name: ov.name || k, heightIn: null, weight: null, age: null, college: '', proStats: null, ncaaStats: null, stats: null, sourceSeason: '' });
+        targets.push(keyRec);
+        const matches = idMatchesByNorm[k] || new Array();
+        matches.forEach(ir => { if (ir !== keyRec) targets.push(ir); });
+        targets.forEach(rec => {
+          if (ov.heightIn) rec.heightIn = ov.heightIn;
+          if (ov.weight) rec.weight = ov.weight;
+          if (ov.age != null) rec.age = ov.age;
+          if (ov.college) rec.college = ov.college;
+          if (ov.manualStats) {
+            rec.manualStats = Object.assign({}, ov.manualStats);
+            if (!rec.proStats && !rec.ncaaStats) {
+              rec.stats = rec.manualStats;
+              rec.sourceSeason = rec.manualStats.season || 'NCAA/Pro';
+            } else if (rec.stats && rec.stats.impact == null && ov.manualStats.impact != null) {
+              rec.stats.impact = ov.manualStats.impact;
+              rec.stats.impactLabel = ov.manualStats.impactLabel || 'PER';
+              rec.stats.impactCohort = 'manual_pg';
+            }
+          }
+        });
+      });
+    } catch (e) {
+      console.error('applyManualOverrides error:', e);
+    }
+  };
+  applyManualOverrides();
+
+  const candidates = new Array();
+  const seenKey = new Set();
+  const allNbaRel = gRoster?.nbaReleased || new Array();
+
+  allNbaRel.forEach(nr => {
+    if (!nr?.name) return;
+    const k = norm(nr.name);
+    if (!k || isOnActiveRoster(nr.name) || signedOutSet.has(k) || seenKey.has(k)) return;
+    seenKey.add(k);
+    candidates.push({ name: nr.name, pid: nr.pid ? String(Number(nr.pid)) : '', source: 'nba', lastTeam: nr.team || '', moveDate: nr.date || '', tag: 'NBA Waived', note: nr.desc || '' });
+  });
+
+  (Array.isArray(faPdfPool) ? faPdfPool : new Array()).forEach(fp => {
+    if (!fp?.name) return;
+    const k = norm(fp.name);
+    if (!k || isOnActiveRoster(fp.name) || signedOutSet.has(k) || seenKey.has(k)) return;
+    seenKey.add(k);
+    candidates.push({ name: fp.name, pid: fp.id ? String(Number(fp.id)) : '', source: 'pdf', lastTeam: '', moveDate: '', tag: 'Free Agent', note: '' });
+  });
+
+  (gRoster?.glWaivedPool || new Array()).forEach(w => {
+    if (!w?.player) return;
+    const k = norm(w.player);
+    const pid = w.pid ? String(Number(w.pid)) : '';
+    const rec = (pid && dbById[pid]) || dbByKey[k] || {};
+    const canonicalName = rec.name || w.player;
+    const ck = norm(canonicalName);
+    if (!ck || isOnActiveRoster(canonicalName) || signedOutSet.has(ck) || seenKey.has(ck)) return;
+    seenKey.add(ck);
+    candidates.push({ name: canonicalName, pid, source: 'pdf', lastTeam: w.team || '', moveDate: w.date || '', tag: 'Free Agent', note: w.desc || '' });
+  });
+
+  (Array.isArray(pIdx) ? pIdx : Object.values(pIdx || {})).forEach(p => {
+    if (!p?.name) return;
+    if (String(p.availabilitySimple || '').trim().toLowerCase() !== 'yes') return;
+    const k = norm(p.name);
+    if (!k || isOnActiveRoster(p.name) || signedOutSet.has(k) || seenKey.has(k)) return;
+    seenKey.add(k);
+    candidates.push({ name: p.name, pid: '', source: 'pdf', lastTeam: '', moveDate: '', tag: 'Available', note: p.availabilityNote || '' });
+  });
+
+  document.getElementById('pdfCount').textContent = candidates.filter(c => c.source === 'pdf').length;
+
+
+  const mxcEnriched = mxcRoster.map(mp => {
+    const pid = mp.id ? String(Number(mp.id)) : '';
+    const rec = (pid && dbById[pid]) || dbByKey[norm(mp.name)] || {};
+    const ht = parseHtIn(mp.height || mp.heightIn) || rec.heightIn || null;
+    const wt = Number(mp.weight || 0) > 120 ? Math.round(Number(mp.weight)) : (rec.weight || null);
+    const age = Number(mp.age || 0) > 15 ? Number(Number(mp.age).toFixed(1)) : (rec.age ?? null);
+    return { name: mp.name, pos: mp.position || rec.pos || '', heightIn: ht, weight: wt, age, stats: rec.stats || null };
+  });
+
+  const avgOf = arr => arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length) : null;
+  const avgHt = avgOf(mxcEnriched.map(x => x.heightIn).filter(Boolean));
+  const avgWt = avgOf(mxcEnriched.map(x => x.weight).filter(Boolean));
+  const avgAge = avgOf(mxcEnriched.map(x => x.age).filter(x => x != null));
+
+  const gridEl = document.getElementById('mxcBaselineGrid');
+  if (gridEl) {
+    gridEl.innerHTML = [
+      { k: 'Active Roster', v: `${mxcEnriched.length} players` },
+      { k: 'Avg Height', v: avgHt ? fmtHt(Math.round(avgHt)) : '?' },
+      { k: 'Avg Weight', v: avgWt ? `${Math.round(avgWt)} lb` : '?' },
+      { k: 'Avg Age', v: avgAge ? `${avgAge.toFixed(1)} yrs` : '?' }
+    ].map(c => `<div class="tx-stat"><div class="k">${c.k}</div><div class="v">${c.v}</div></div>`).join('');
+  }
+  const stripEl = document.getElementById('mxcRosterStrip');
+  if (stripEl) {
+    stripEl.innerHTML = mxcEnriched.map(p =>
+      `<span style="display:inline-block;margin:2px 6px 2px 0;padding:2px 6px;background:#f8fafc;border:1px solid var(--border);border-radius:3px;"><b>${p.name}</b> &middot; ${fmtHt(p.heightIn)}${p.weight ? ' &middot; ' + p.weight + ' lb' : ''}${p.age != null ? ' &middot; ' + p.age + 'y' : ''}</span>`
+    ).join('');
+  }
+
+  let sortCol = null, sortDir = -1;
+  window.setTxSort = col => {
+    sortDir = (sortCol === col) ? -sortDir : -1;
+    sortCol = col;
+    window.renderTable();
+  };
+  const getMxcPeers = htIn => {
+    if (!htIn || !mxcEnriched.length) return new Array();
+    const withHt = mxcEnriched.filter(x => x.heightIn);
+    if (!withHt.length) return new Array();
+    for (const tol of new Array(2, 4, 6)) {
+      const m = withHt.filter(x => Math.abs(x.heightIn - htIn) <= tol);
+      if (m.length) return m;
+    }
+    return withHt.slice().sort((a, b) => Math.abs(a.heightIn - htIn) - Math.abs(b.heightIn - htIn)).slice(0, 3);
+  };
+
+  let currentTab = 'pdf';
+
+  window.renderTable = function renderTable() {
+    const q = norm(document.getElementById('txSearch').value);
+    const wrap = document.getElementById('txTableWrap');
+
+    if (currentTab === 'moves') {
+      const toIso2026 = (rawDt, note) => {
+        const sDt = String(rawDt || '').trim();
+        if (/^\d{4}-\d{2}-\d{2}/.test(sDt)) return sDt.slice(0, 10);
+        const m = (sDt || String(note || '')).match(/(\d{1,2})\/(\d{1,2})/);
+        if (m) return `2026-${String(Number(m.at(1))).padStart(2, '0')}-${String(Number(m.at(2))).padStart(2, '0')}`;
+        return /2026-27/i.test(String(note || '')) ? '2026-11-01' : '';
+      };
+      const idxMoves = (Array.isArray(pIdx) ? pIdx : Object.values(pIdx || {}))
+        .filter(p => p?.availabilityNote && /signed|waived|traded|claimed|released/i.test(p.availabilityNote))
+        .map(p => {
+          const iso = toIso2026('', p.availabilityNote);
+          return { date: iso || '?', _sort: iso || '0000-00-00', team: p.team || '?', player: p.name, type: p.availabilityNote };
+        });
+      const isNoiseMove = m => /\b(call[\s-]?up|recall|recalled|assign|assigned)\b/i.test(`${m?.type || ''} ${m?.desc || ''} ${m?.description || ''}`);
+      const seenPlayerLatest = new Set();
+      const txs = (gRoster?.transactions || new Array()).concat(idxMoves).concat(allNbaRel.map(x => ({ date: x.date, team: x.team, player: x.name, type: x.desc })))
+        .filter(m => !isNoiseMove(m))
+        .map(x => {
+          const iso = toIso2026(x.date, x.type);
+          return { ...x, date: iso || x.date || '?', team: x.team === 'GOG' ? 'CCG' : (x.team || '?'), _sort: iso || '0000-00-00' };
+        })
+        .sort((a, b) => String(b._sort).localeCompare(String(a._sort)))
+        .filter(x => {
+          const pk = norm(x.player);
+          if (!pk || seenPlayerLatest.has(pk)) return false;
+          seenPlayerLatest.add(pk);
+          return true;
+        });
+      const filteredTxs = q
+        ? txs.filter(t => norm(`${t.date || ''} ${t.team || ''} ${t.player || t.name || ''} ${t.type || ''} ${t.desc || ''}`).includes(q))
+        : txs;
+      document.getElementById('txSub').textContent = `2026-27 MXC Baseline (${mxcRoster.length} active) ? Showing ${filteredTxs.length} of ${txs.length} latest player transactions`;
+      if (!filteredTxs.length) {
+        wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:11.5px;">No transactions match this search.</div>';
+        return;
+      }
+      wrap.innerHTML = `<table class="tx-tbl"><thead><tr><th>Date</th><th>Team</th><th>Player</th><th>Latest Transaction</th></tr></thead><tbody>${filteredTxs.map(t => `<tr><td>${t.date || '?'}</td><td><b>${t.team || '?'}</b></td><td><b>${t.player || t.name || '?'}</b></td><td>${new Array(t.type, t.desc && t.desc !== t.type ? t.desc : '').filter(Boolean).join(' &middot; ') || '?'}</td></tr>`).join('')}</tbody></table>`;
+      return;
+    }
+
+    
+
+    const hasStatsOnly = Boolean(document.getElementById('txHasStats')?.checked);
+    let list = candidates.filter(c => {
+      if (currentTab === 'nba' && c.source !== 'nba') return false;
+      if (currentTab === 'pdf' && c.source !== 'pdf') return false;
+      const rec = (c.pid && dbById[String(c.pid)]) || dbByKey[norm(c.name)] || {};
+      if (hasStatsOnly && !rec.stats) return false;
+      if (!q) return true;
+      const hay = norm(`${c.name} ${c.tag} ${c.note} ${c.lastTeam || ''} ${rec.college || ''} ${fmtHt(rec.heightIn)}`);
+      return hay.includes(q);
     });
-    let added = 0;
-    extracted.forEach(nm => {
-      const k = norm(nm);
-      if (!k || k.length < 5) return;
-      const existing = candidates.find(c => norm(c.name) === k);
-      if (existing) {
-        existing.source = 'pdf';
-        existing.tag = 'PDF Free Agent';
-        added++;
-      } else {
-        candidates.unshift({ name: nm, source: 'pdf', tag: 'PDF Free Agent', note: file.name });
-        added++;
+
+    const allStObjs = Object.values(dbByKey).flatMap(x => new Array(x.proStats, x.ncaaStats, x.manualStats).filter(Boolean));
+    const pctRank = (val, arr) => {
+      if (val == null || isNaN(val) || !arr.length) return null;
+      const below = arr.filter(v => v < val).length;
+      const equal = arr.filter(v => v === val).length;
+      return Math.round(((below + 0.5 * equal) / arr.length) * 100);
+    };
+
+    const cohortPools = {};
+    allStObjs.forEach(st => {
+      const cKey = st.cohort || (st.isNcaa ? 'ncaa_p40' : 'gl_p75');
+      const bucket = cohortPools[cKey] || (cohortPools[cKey] = { pts: new Array(), reb: new Array(), ast: new Array(), ts: new Array(), impact: new Array() });
+      if (st.ptsRate != null && !isNaN(st.ptsRate)) bucket.pts.push(st.ptsRate);
+      if (st.rebRate != null && !isNaN(st.rebRate)) bucket.reb.push(st.rebRate);
+      if (st.astRate != null && !isNaN(st.astRate)) bucket.ast.push(st.astRate);
+      if (st.tsPct != null && !isNaN(st.tsPct)) bucket.ts.push(st.tsPct);
+      if (st.impact != null && !isNaN(st.impact)) {
+        const ib = st.impactCohort ? (cohortPools[st.impactCohort] || (cohortPools[st.impactCohort] = { pts: new Array(), reb: new Array(), ast: new Array(), ts: new Array(), impact: new Array() })) : bucket;
+        ib.impact.push(st.impact);
       }
     });
-    document.getElementById('pdfCount').textContent = candidates.filter(c => c.source === 'pdf').length;
-    currentTab = 'pdf';
-    document.querySelectorAll('#txTabs .tx-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'pdf'));
-    renderTable();
+
+    const getStPct = (st, key) => {
+      if (!st) return null;
+      const cKey = (key === 'impact' && st.impactCohort) ? st.impactCohort : (st.cohort || (st.isNcaa ? 'ncaa_p40' : 'gl_p75'));
+      const pool = cohortPools[cKey];
+      if (!pool) return null;
+      if (key === 'pts') return pctRank(st.ptsRate, pool.pts);
+      if (key === 'reb') return pctRank(st.rebRate, pool.reb);
+      if (key === 'ast') return pctRank(st.astRate, pool.ast);
+      if (key === 'ts') return pctRank(st.tsPct, pool.ts);
+      if (key === 'impact') return pctRank(st.impact, pool.impact);
+      return null;
+    };
+
+    if (sortCol) {
+      list = list.slice().sort((a, b) => {
+        const ra = (a.pid && dbById[String(a.pid)]) || dbByKey[norm(a.name)] || {};
+        const rb = (b.pid && dbById[String(b.pid)]) || dbByKey[norm(b.name)] || {};
+        const valOf = (c, rec) => {
+          if (sortCol === 'name') return c.name || '';
+          if (sortCol === 'status') return new Array(rec.college, c.note).filter(Boolean).join(' ');
+          if (sortCol === 'ht') return rec.heightIn ?? null;
+          if (sortCol === 'wt') return rec.weight ?? null;
+          if (sortCol === 'age') return rec.age ?? null;
+          if (sortCol === 'gp') return rec?.stats?.gp ?? null;
+          if (sortCol === 'mpg') return rec?.stats?.mpg ?? null;
+          const sources = new Array(rec.proStats, rec.ncaaStats, rec.manualStats).filter(Boolean);
+          if (!sources.length) return null;
+          let wSum = 0, pSum = 0;
+          sources.forEach(s => {
+            const p = getStPct(s, sortCol);
+            if (p != null) {
+              const mins = Math.min(Math.max((Number(s.gp || 1) * Number(s.mpg || 10)), 25), 1200);
+              wSum += mins;
+              pSum += mins * p;
+            }
+          });
+          return wSum > 0 ? Math.round(pSum / wSum) : getStPct(rec?.stats, sortCol);
+        };
+        const va = valOf(a, ra), vb = valOf(b, rb);
+        if (va == null && vb == null) return 0;
+        if (va == null) return 1;
+        if (vb == null) return -1;
+        const cmp = typeof va === 'string' ? va.localeCompare(vb) : (va - vb);
+        return sortDir * cmp;
+      });
+    }
+
+    document.getElementById('txSub').textContent = `2026-27 MXC Baseline (${mxcRoster.length} active) ? Showing ${list.length} available free agents`;
+    const th = (col, label) => {
+      const arrow = sortCol === col ? (sortDir > 0 ? ' ?' : ' ?') : '';
+      return `<th style="cursor:pointer;user-select:none;" onclick="setTxSort('${col}')">${label}${arrow}</th>`;
+    };
+    const fmtSingle = (st, key, suffix) => {
+      if (!st) return '?';
+      const pct = getStPct(st, key);
+      const badge = pct != null ? ` <span style="font-size:9px;font-weight:700;color:${pct >= 75 ? '#15803d' : (pct >= 40 ? '#0369a1' : '#64748b')};">(${pct}%ile)</span>` : '';
+      if (key === 'pts') return st.ptsRate != null ? `<b>${st.ptsRate.toFixed(1)}</b>${badge}` : '?';
+      if (key === 'reb') return st.rebRate != null ? `<b>${st.rebRate.toFixed(1)}</b>${badge}` : '?';
+      if (key === 'ast') return st.astRate != null ? `<b>${st.astRate.toFixed(1)}</b>${badge}` : '?';
+      if (key === 'ts') return st.tsPct != null ? `<b>${st.tsPct.toFixed(1)}%</b>${badge}` : '?';
+      if (key === 'impact') {
+        if (st.impact == null) return '?';
+        const lbl = st.impactLabel || 'DRE';
+        const sign = (lbl !== 'PER' && st.impact > 0) ? '+' : '';
+        return `<b>${lbl} ${sign}${st.impact.toFixed(1)}</b>${badge}`;
+      }
+      return '?';
+    };
+    const fmtDual = (rec, key, suffix) => {
+      if (!rec || !rec.stats) return '?';
+      const top = fmtSingle(rec.stats, key, suffix);
+      const _u = (key === 'ts' || key === 'impact') ? '' : (rec.stats.cohort === 'gl_p75' ? 'per 75 poss.' : (rec.stats.cohort === 'ncaa_p40_pct' ? (key === 'pts' ? 'per 40 mins.' : (key === 'reb' ? 'TRB%' : 'AST%')) : 'per 40 mins.')); const subU = _u ? `<div style="font-size:8.5px;color:var(--muted);">${_u}</div>` : '';
+      if (rec.proStats && rec.ncaaStats && rec.stats === rec.proStats) {
+        const bot = fmtSingle(rec.ncaaStats, key, suffix);
+        if (bot !== '?') return `${top}${subU}<div style="font-size:9.5px;color:#475569;margin-top:2px;">NCAA: ${bot}</div>`;
+      }
+      return `${top}${subU}`;
+    };
+
+    wrap.innerHTML = `<table class="tx-tbl"><thead><tr>${th('name', 'Player')}${th('status', 'College / Last Team')}${th('ht', 'Ht')}${th('wt', 'Wt')}${th('age', 'Age')}${th('gp', 'GP')}${th('mpg', 'MPG')}${th('pts', 'Points')}${th('reb', 'Rebounds')}${th('ast', 'Assists')}${th('ts', 'TS%')}${th('impact', 'Impact')}</tr></thead><tbody>${list.map(c => {
+      const rec = (c.pid && dbById[String(c.pid)]) || dbByKey[norm(c.name)] || {};
+      const st = rec.stats;
+      const gpStr = st && st.gp != null ? (rec.proStats && rec.ncaaStats && st === rec.proStats ? `${st.gp}<div style="font-size:9px;color:#475569;">NCAA: ${rec.ncaaStats.gp}</div>` : `${st.gp}`) : '?';
+      const mpgStr = st && st.mpg != null ? st.mpg.toFixed(1) : '?';
+      const peers = getMxcPeers(rec.heightIn);
+      const peerStr = peers.length ? peers.map(p => `${p.name} (${fmtHt(p.heightIn)})`).join(', ') : '?';
+      return `<tr><td><b>${c.name}</b>${(rec.sourceSeason && !String(c.name).includes(rec.sourceSeason)) ? ` <span style="font-size:9px;color:var(--muted);">(${rec.sourceSeason})</span>` : ''}</td><td>${new Array(rec.college, c.note).filter(Boolean).join(' &middot; ') || '?'}</td><td style="white-space:nowrap;">${fmtHt(rec.heightIn)}</td><td>${rec.weight ? rec.weight + ' lb' : '?'}</td><td>${rec.age ?? '?'}</td><td>${gpStr}</td><td>${mpgStr}</td><td>${fmtDual(rec, 'pts')}</td><td>${fmtDual(rec, 'reb')}</td><td>${fmtDual(rec, 'ast')}</td><td>${fmtDual(rec, 'ts')}</td><td>${fmtDual(rec, 'impact')}</td></tr>`;
+    }).join('')}</tbody></table>`;
   };
 
   document.querySelectorAll('#txTabs .tx-tab').forEach(btn => {
     btn.onclick = () => {
       currentTab = btn.dataset.tab;
       document.querySelectorAll('#txTabs .tx-tab').forEach(b => b.classList.toggle('active', b === btn));
-      renderTable();
+      window.renderTable();
     };
   });
-  document.getElementById('txSearch').oninput = renderTable;
-  renderTable();
+  document.getElementById('txSearch').oninput = window.renderTable;
+  window.renderTable();
 })();
 </script>
 </body>

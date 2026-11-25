@@ -5,6 +5,10 @@
       "team": "RAP"
     },
     {
+      "name": "AJ Johnson",
+      "team": "LTN"
+    },
+    {
       "name": "AK Okereke",
       "team": "CVL"
     },
@@ -133,10 +137,6 @@
       "team": "SDC"
     },
     {
-      "name": "Bogoljub Markovi\u0107",
-      "team": "WIS"
-    },
-    {
       "name": "Boopie Miller",
       "team": "GRG"
     },
@@ -223,6 +223,10 @@
     {
       "name": "Cameron Parker",
       "team": "WIS"
+    },
+    {
+      "name": "Cameron Smith",
+      "team": "AUS"
     },
     {
       "name": "Carson Cooper",
@@ -345,10 +349,6 @@
       "team": "GRG"
     },
     {
-      "name": "Daniel Rivera",
-      "team": "MXC"
-    },
-    {
       "name": "Darin Green",
       "team": "TEX"
     },
@@ -413,6 +413,10 @@
       "team": "LTN"
     },
     {
+      "name": "Don McHenry",
+      "team": "SXF"
+    },
+    {
       "name": "Drake Allen",
       "team": "MCC"
     },
@@ -427,10 +431,6 @@
     {
       "name": "Drew Timme",
       "team": "VAL"
-    },
-    {
-      "name": "Duke Miles",
-      "team": "DEL"
     },
     {
       "name": "Duop Reath",
@@ -557,10 +557,6 @@
       "team": "SLC"
     },
     {
-      "name": "Igor Mili\u010di\u0107, Jr.",
-      "team": "WES"
-    },
-    {
       "name": "Ileri Ayo-Faleye",
       "team": "SDC"
     },
@@ -673,6 +669,10 @@
       "team": "LTN"
     },
     {
+      "name": "Jamal Bey",
+      "team": "WES"
+    },
+    {
       "name": "Jamar Brown",
       "team": "CVL"
     },
@@ -749,16 +749,8 @@
       "team": "SXF"
     },
     {
-      "name": "Jeremiah Burke",
-      "team": "WIS"
-    },
-    {
       "name": "Jeremy Sochan",
       "team": "TEX"
-    },
-    {
-      "name": "Jestin Porter",
-      "team": "CPS"
     },
     {
       "name": "Jett Howard",
@@ -889,6 +881,10 @@
       "team": "CLC"
     },
     {
+      "name": "Kalifa Sakho",
+      "team": "WIS"
+    },
+    {
       "name": "Kam Jones",
       "team": "WIS"
     },
@@ -997,10 +993,6 @@
       "team": "SCW"
     },
     {
-      "name": "Lacey James",
-      "team": "WCB"
-    },
-    {
       "name": "Lamont Butler",
       "team": "CPS"
     },
@@ -1015,10 +1007,6 @@
     {
       "name": "Leaky Black",
       "team": "STO"
-    },
-    {
-      "name": "Lester Quinones",
-      "team": "SXF"
     },
     {
       "name": "Liam Robbins",
@@ -1067,6 +1055,10 @@
     {
       "name": "Maliq Brown",
       "team": "AUS"
+    },
+    {
+      "name": "Manny Camper",
+      "team": "MXC"
     },
     {
       "name": "Manny Obaseki",
@@ -1441,6 +1433,10 @@
       "team": "AUS"
     },
     {
+      "name": "Themus Fulks",
+      "team": "CCG"
+    },
+    {
       "name": "Tobe Awaka",
       "team": "WCB"
     },
@@ -1634,6 +1630,7 @@
     "agapy de melo santos": "MXC",
     "ahmet jonovic": "GBO",
     "aj hoggard": "RAP",
+    "aj johnson": "LTN",
     "ak okereke": "CVL",
     "alejandro rama": "IWA",
     "alex morales": "OSC",
@@ -1659,7 +1656,6 @@
     "bez mbeng": "SXF",
     "blake hinson": "STO",
     "blake wesley": "SDC",
-    "bogoljub markovi\u0107": "WIS",
     "boopie miller": "GRG",
     "braden smith": "NOB",
     "brendan hausen": "MHU",
@@ -1681,6 +1677,7 @@
     "cameron martin": "IWA",
     "cameron matthews": "RGV",
     "cameron parker": "WIS",
+    "cameron smith": "AUS",
     "carson cooper": "CVL",
     "carter whitt": "RCR",
     "chance mcmillian": "SCW",
@@ -1709,7 +1706,6 @@
     "dalton knecht": "WES",
     "damari monsanto": "DEL",
     "dane goodwin": "GRG",
-    "daniel rivera": "MXC",
     "darin green": "TEX",
     "dariq whitehead": "OKL",
     "david jones garcia": "AUS",
@@ -1729,11 +1725,11 @@
     "dj patrick": "WCB",
     "dj rodman": "LIN",
     "dominique daniels, jr.": "LTN",
+    "don mchenry": "SXF",
     "drake allen": "MCC",
     "drake powell": "LIN",
     "drew peterson": "WCB",
     "drew timme": "VAL",
-    "duke miles": "DEL",
     "duop reath": "VAL",
     "dwight murray, jr.": "LIN",
     "elias ralph": "SCW",
@@ -1765,7 +1761,6 @@
     "ian martinez": "CLC",
     "ian schieffelin": "SXF",
     "ibrahima diallo": "SLC",
-    "igor mili\u010di\u0107, jr.": "WES",
     "ileri ayo-faleye": "SDC",
     "isaac jones": "MCC",
     "isaac mckneely": "CPS",
@@ -1793,6 +1788,7 @@
     "jalen warley": "NOB",
     "jalen wilson": "CPS",
     "jalon moore": "LTN",
+    "jamal bey": "WES",
     "jamar brown": "CVL",
     "jamarion sharp": "RAP",
     "jameer nelson jr.": "DEL",
@@ -1813,9 +1809,7 @@
     "jazian gortman": "CCG",
     "jd davison": "OSC",
     "jemel jones": "SXF",
-    "jeremiah burke": "WIS",
     "jeremy sochan": "TEX",
-    "jestin porter": "CPS",
     "jett howard": "TEX",
     "john butler jr.": "WIS",
     "john camden": "VAL",
@@ -1847,6 +1841,7 @@
     "julian reese": "LTN",
     "justin harmon": "SLC",
     "kadary richmond": "CLC",
+    "kalifa sakho": "WIS",
     "kam jones": "WIS",
     "kameron warrens": "OKL",
     "kasean pryor": "OSC",
@@ -1874,12 +1869,10 @@
     "kowacie reeves jr.": "NOB",
     "kylan boswell": "GBO",
     "kyle mangas": "GBO",
-    "lacey james": "WCB",
     "lamont butler": "CPS",
     "lance terry": "MHU",
     "lawson lovering": "MHU",
     "leaky black": "STO",
-    "lester quinones": "SXF",
     "liam robbins": "WES",
     "lj cryer": "SCW",
     "logan johnson": "MNE",
@@ -1893,6 +1886,7 @@
     "malik whitaker": "RGV",
     "malik williams": "AUS",
     "maliq brown": "AUS",
+    "manny camper": "MXC",
     "manny obaseki": "WIS",
     "marcus bagley": "DEL",
     "marcus garrett": "WIS",
@@ -1986,6 +1980,7 @@
     "terri miller, jr.": "MXC",
     "terry anderson": "RCR",
     "terry taylor": "AUS",
+    "themus fulks": "CCG",
     "tobe awaka": "WCB",
     "tobi lawal": "TEX",
     "toby harris": "IWA",
@@ -2036,6 +2031,30 @@
   "nbaReleased": [],
   "transactions": [
     {
+      "date": "2026-11-23",
+      "team": "CPS",
+      "player": "Jestin Porter",
+      "pid": 1643720,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-23",
+      "team": "WIS",
+      "player": "Jeremiah Burke",
+      "pid": 1643932,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-23",
+      "team": "RCR",
+      "player": "Hakim Hart",
+      "pid": 1641791,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
       "date": "2026-11-22",
       "team": "BHM",
       "player": "Shawn Jones, Jr.",
@@ -2069,7 +2088,7 @@
     },
     {
       "date": "2026-11-21",
-      "team": "CCG",
+      "team": "WIS",
       "player": "Kalifa Sakho",
       "pid": 1643697,
       "type": "Waivers Cleared",
@@ -2405,7 +2424,7 @@
     },
     {
       "date": "2026-11-12",
-      "team": "RAP",
+      "team": "CPS",
       "player": "Daveon Thomas",
       "pid": 1643762,
       "type": "Waivers Cleared",
@@ -2829,7 +2848,7 @@
     },
     {
       "date": "2026-11-06",
-      "team": "CCG",
+      "team": "WIS",
       "player": "Kalifa Sakho",
       "pid": 1643697,
       "type": "Waivers Cleared",
@@ -2989,7 +3008,7 @@
     },
     {
       "date": "2026-11-05",
-      "team": "",
+      "team": "CPS",
       "player": "Daveon Thomas",
       "pid": 1643762,
       "type": "Waivers Cleared",
@@ -3149,7 +3168,7 @@
     },
     {
       "date": "2026-11-05",
-      "team": "SDC",
+      "team": "AUS",
       "player": "Cameron Smith",
       "pid": 1642648,
       "type": "Waivers Cleared",
@@ -3210,33 +3229,33 @@
       "pid": 1643187,
       "type": "Waivers Cleared",
       "desc": "Waivers Cleared"
-    },
-    {
-      "date": "2026-11-05",
-      "team": "OKL",
-      "player": "Jailen Bedford",
-      "pid": 1643991,
-      "type": "Waivers Cleared",
-      "desc": "Waivers Cleared"
-    },
-    {
-      "date": "2026-11-05",
-      "team": "LIN",
-      "player": "Tidjiane Dioumassi",
-      "pid": 1643669,
-      "type": "Waivers Cleared",
-      "desc": "Waivers Cleared"
-    },
-    {
-      "date": "2026-11-05",
-      "team": "SLC",
-      "player": "Chance Moore",
-      "pid": 1643869,
-      "type": "Waived",
-      "desc": "Waived"
     }
   ],
   "glWaivedPool": [
+    {
+      "date": "2026-11-23",
+      "team": "CPS",
+      "player": "Jestin Porter",
+      "pid": 1643720,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-23",
+      "team": "WIS",
+      "player": "Jeremiah Burke",
+      "pid": 1643932,
+      "type": "Waived",
+      "desc": "Waived"
+    },
+    {
+      "date": "2026-11-23",
+      "team": "RCR",
+      "player": "Hakim Hart",
+      "pid": 1641791,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
     {
       "date": "2026-11-22",
       "team": "BHM",
@@ -3266,14 +3285,6 @@
       "team": "MCC",
       "player": "Conor Enright",
       "pid": 1643928,
-      "type": "Waivers Cleared",
-      "desc": "Waivers Cleared"
-    },
-    {
-      "date": "2026-11-21",
-      "team": "CCG",
-      "player": "Kalifa Sakho",
-      "pid": 1643697,
       "type": "Waivers Cleared",
       "desc": "Waivers Cleared"
     },
@@ -3327,6 +3338,14 @@
     },
     {
       "date": "2026-11-14",
+      "team": "WCB",
+      "player": "Lacey James",
+      "pid": 1630732,
+      "type": "Waivers Cleared",
+      "desc": "Waivers Cleared"
+    },
+    {
+      "date": "2026-11-14",
       "team": "MHU",
       "player": "Jaden Brownell",
       "pid": 1643892,
@@ -3359,7 +3378,7 @@
     },
     {
       "date": "2026-11-12",
-      "team": "RAP",
+      "team": "CPS",
       "player": "Daveon Thomas",
       "pid": 1643762,
       "type": "Waivers Cleared",
@@ -3434,14 +3453,6 @@
       "team": "NOB",
       "player": "Austin Benigni",
       "pid": 1643747,
-      "type": "Waivers Cleared",
-      "desc": "Waivers Cleared"
-    },
-    {
-      "date": "2026-11-07",
-      "team": "CCG",
-      "player": "Themus Fulks",
-      "pid": 1643787,
       "type": "Waivers Cleared",
       "desc": "Waivers Cleared"
     },
@@ -3736,14 +3747,6 @@
     {
       "date": "2026-11-05",
       "team": "SDC",
-      "player": "Cameron Smith",
-      "pid": 1642648,
-      "type": "Waivers Cleared",
-      "desc": "Waivers Cleared"
-    },
-    {
-      "date": "2026-11-05",
-      "team": "SDC",
       "player": "Dakota Rivers",
       "pid": 1642540,
       "type": "Waivers Cleared",
@@ -3850,14 +3853,6 @@
       "team": "MHU",
       "player": "Cam Young",
       "pid": 1643262,
-      "type": "Waivers Cleared",
-      "desc": "Waivers Cleared"
-    },
-    {
-      "date": "2026-11-04",
-      "team": "SXF",
-      "player": "Don McHenry",
-      "pid": 1643893,
       "type": "Waivers Cleared",
       "desc": "Waivers Cleared"
     },

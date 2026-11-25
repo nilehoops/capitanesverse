@@ -3,8 +3,8 @@
     "5": [
       {
         "q": 1,
-        "lgShare": 45.7,
-        "lgNet": -0.4
+        "lgShare": 47.1,
+        "lgNet": -1.8
       },
       {
         "q": 2,
@@ -93,89 +93,89 @@
     "5": [
       {
         "q": 1,
-        "lgShare": 13.3,
-        "lgNet": -10.0
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 2,
-        "lgShare": 17.7,
-        "lgNet": -6.5
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 3,
-        "lgShare": 19.2,
-        "lgNet": -16.8
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 4,
-        "lgShare": 16.5,
-        "lgNet": -18.1
+        "lgShare": 0.0,
+        "lgNet": 0.0
       }
     ],
     "4": [
       {
         "q": 1,
-        "lgShare": 56.5,
-        "lgNet": -5.0
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 2,
-        "lgShare": 68.4,
-        "lgNet": -1.8
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 3,
-        "lgShare": 60.8,
-        "lgNet": -3.3
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 4,
-        "lgShare": 58.2,
-        "lgNet": -7.6
+        "lgShare": 0.0,
+        "lgNet": 0.0
       }
     ],
     "3": [
       {
         "q": 1,
-        "lgShare": 72.4,
-        "lgNet": -3.0
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 2,
-        "lgShare": 83.2,
-        "lgNet": -0.0
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 3,
-        "lgShare": 74.7,
-        "lgNet": -1.5
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 4,
-        "lgShare": 73.2,
-        "lgNet": -3.0
+        "lgShare": 0.0,
+        "lgNet": 0.0
       }
     ],
     "2": [
       {
         "q": 1,
-        "lgShare": 49.7,
-        "lgNet": -4.0
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 2,
-        "lgShare": 55.0,
-        "lgNet": -0.1
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 3,
-        "lgShare": 51.4,
-        "lgNet": -2.5
+        "lgShare": 0.0,
+        "lgNet": 0.0
       },
       {
         "q": 4,
-        "lgShare": 49.7,
-        "lgNet": -5.1
+        "lgShare": 0.0,
+        "lgNet": 0.0
       }
     ]
   }

@@ -110,6 +110,45 @@ def xref_name(abbrev_name, by_key):
     return by_key.get(f"{initial}. {last}")
 
 
+
+# --- Chrome TLS + Retry Shim for stats.nba.com ---
+import io as _io
+_orig_urlopen = urllib.request.urlopen
+try:
+    from curl_cffi import requests as _cffi_req
+    _cffi_sess = _cffi_req.Session(impersonate="chrome")
+except Exception:
+    _cffi_sess = None
+
+class _ShimResp:
+    def __init__(self, body_bytes):
+        self._buf = _io.BytesIO(body_bytes)
+    def read(self, *a):
+        return self._buf.read(*a)
+    def __enter__(self):
+        return self
+    def __exit__(self, *a):
+        return False
+
+def _chrome_urlopen(req, timeout=45):
+    url = req.full_url if hasattr(req, "full_url") else str(req)
+    hdrs = dict(req.header_items()) if hasattr(req, "header_items") else dict(HEADERS)
+    last_err = None
+    for attempt in range(2 if 'leaguedashlineups' in url else 3):
+        try:
+            if _cffi_sess is not None and "stats.nba.com" in url:
+                r = _cffi_sess.get(url, headers=hdrs, timeout=(12 if 'leaguedashlineups' in url else max(35, timeout)))
+                r.raise_for_status()
+                return _ShimResp(r.content)
+            return _orig_urlopen(req, timeout=(12 if 'leaguedashlineups' in url else max(35, timeout)))
+        except Exception as e:
+            last_err = e
+            time.sleep(1.5 * (attempt + 1))
+    raise last_err
+
+urllib.request.urlopen = _chrome_urlopen
+# -------------------------------------------------
+
 ACTIVE_SEASON_TYPE = "Regular+Season"  # updated by discover_teams if needed
 
 def discover_teams():
@@ -130,8 +169,21 @@ def discover_teams():
             "&PlayerPosition=&StarterBench=&TwoWay=0&MinutesFilter=0"
         )
         req = urllib.request.Request(url, headers=HEADERS)
-        with urllib.request.urlopen(req, timeout=20) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+        try:
+            with urllib.request.urlopen(req, timeout=12) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+        except Exception as e:
+            print(f"  [Fast-fallback] {season_type} leaguedashlineups timed out ({e}); loading cached 31-team IDs...")
+            for fallback_p in (f"data/league_lite_shots_{SEASON}.json", f"data/team_stats_{SEASON}.json", "data/team_stats_2026-27.json"):
+                if os.path.exists(fallback_p):
+                    fd = json.load(open(fallback_p, encoding="utf-8"))
+                    t_list = fd.get("teams") if isinstance(fd, dict) else (list(fd.values()) if isinstance(fd, dict) else fd)
+                    seen = {str(t.get("abbrev") or t.get("TEAM_ABBREVIATION")): int(t.get("id") or t.get("TEAM_ID")) for t in (t_list or []) if (t.get("abbrev") or t.get("TEAM_ABBREVIATION")) and (t.get("id") or t.get("TEAM_ID"))}
+                    if "MXC" in seen:
+                        ACTIVE_SEASON_TYPE = "Showcase" if SEASON == "2026-27" else "Regular+Season"
+                        print(f"  Loaded {len(seen)} teams from {fallback_p} ({ACTIVE_SEASON_TYPE})")
+                        return seen, seen["MXC"]
+            raise
         rs = data["resultSets"][0]
         hdrs = rs["headers"]
         rows = [dict(zip(hdrs, row)) for row in rs["rowSet"]]

@@ -22585,7 +22585,7 @@
       "griftRatePctile": 0.164,
       "jumperRate": 0.5308
     },
-    "onRoster": true,
+    "onRoster": false,
     "biography": {
       "weight": "250 lbs",
       "hometown": "Fresno (CA)",
@@ -29234,7 +29234,7 @@
         "thumbnail": "https://i.ytimg.com/vi/hjMpRLjJPVQ/hq720.jpg?sqp=-oaymwE2COgCEMoBSFXyq4qpAygIARUAAIhCGAFwAcABBvABAfgB_gmAAtAFigIMCAAQARhyIEcoUTAP&rs=AOn4CLBAC7k9jyG1Mu6uyz9OMRQqfsHw5A"
       }
     ],
-    "onRoster": true
+    "onRoster": false
   },
   {
     "id": "hayden-gray",

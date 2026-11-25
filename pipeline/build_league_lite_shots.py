@@ -62,11 +62,13 @@ for _, tr in team_rows.iterrows():
         "last5Rotations": new_list() if False else []
     }
 
-for _, tr in team_rows.iterrows():
+tot_t = len(team_rows)
+for idx_t, (_, tr) in enumerate(team_rows.iterrows(), 1):
     tid = int(tr["TEAM_ID"])
     stid = str(tid)
     ab = str(tr["TEAM_ABBREVIATION"]).strip()
     tname = str(tr["TEAM_NAME"]).strip()
+    print(f"  [{idx_t}/{tot_t}] Shot zones: {ab} ({tname})...", flush=True)
 
     frames = []
     for stype in ["Showcase", "Regular Season"]:
@@ -148,39 +150,70 @@ for measure in ["Base", "Opponent"]:
     except Exception as e:
         print(f"  [Note] {measure} skipped: {e}")
 
-print("Fetching Last 5 Games rotation stints for all 31 teams...")
+print("Fetching Last 5 Games rotation stints (deduplicated + cached in data/rot_cache/)...", flush=True)
+import os
+os.makedirs("data/rot_cache", exist_ok=True)
 gf_sorted = gf.sort_values("GAME_DATE", ascending=False)
+
+# 1. Collect last 5 games per team & deduplicate unique GAME_IDs
+team_top5 = {}
+unique_gids = []
+seen_gids = set()
 for _, tr in team_rows.iterrows():
     tid = int(tr["TEAM_ID"])
-    stid = str(tid)
     t_games = gf_sorted[gf_sorted["TEAM_ID"] == tid].head(5)
-    rot_games = []
+    rows_list = []
     for _, gr in t_games.iterrows():
         gid = str(gr["GAME_ID"])
+        rows_list.append((gid, str(gr["GAME_DATE"]), str(gr["MATCHUP"]), str(gr["WL"])))
+        if gid not in seen_gids:
+            seen_gids.add(gid)
+            unique_gids.append(gid)
+    team_top5[tid] = rows_list
+
+# 2. Load cached game rotations or fetch only uncached unique games once
+rot_by_gid = {}
+uncached = [g for g in unique_gids if not os.path.exists(f"data/rot_cache/{g}.json")]
+print(f"  {len(unique_gids)} unique games needed ({len(unique_gids) - len(uncached)} cached, {len(uncached)} to fetch)...", flush=True)
+
+for g in unique_gids:
+    cpath = f"data/rot_cache/{g}.json"
+    if os.path.exists(cpath):
         try:
-            rot_dfs = gamerotation.GameRotation(game_id=gid, league_id=LEAGUE_ID).get_data_frames()
-            stints = []
-            for rdf in rot_dfs:
-                if not rdf.empty and int(rdf["TEAM_ID"].iloc.item()) == tid:
-                    for _, sr in rdf.iterrows():
-                        stints.append({
-                            "player": f"{sr.get('PLAYER_FIRST', '')} {sr.get('PLAYER_LAST', '')}".strip(),
-                            "in": round(float(sr.get("IN_TIME_REAL", 0) or 0) / 600.0, 1),
-                            "out": round(float(sr.get("OUT_TIME_REAL", 0) or 0) / 600.0, 1),
-                            "pts": int(sr.get("PLAYER_PTS", 0) or 0),
-                            "pm": int(sr.get("PT_DIFF", 0) or 0),
-                        })
-            rot_games.append({
-                "gid": gid,
-                "date": str(gr["GAME_DATE"]),
-                "matchup": str(gr["MATCHUP"]),
-                "wl": str(gr["WL"]),
-                "stints": stints
-            })
-            time.sleep(0.35)
+            rot_by_gid[g] = json.load(open(cpath, encoding="utf-8"))
         except Exception:
-            continue
-    teams[stid]["last5Rotations"] = rot_games
+            pass
+
+for idx_u, gid in enumerate(uncached, 1):
+    print(f"  [{idx_u}/{len(uncached)}] Fetching GameRotation {gid}...", flush=True)
+    try:
+        rot_dfs = gamerotation.GameRotation(game_id=gid, league_id=LEAGUE_ID).get_data_frames()
+        by_tid = {}
+        for rdf in rot_dfs:
+            if not rdf.empty:
+                rtid = str(int(rdf["TEAM_ID"].iloc.item()))
+                stints = []
+                for _, sr in rdf.iterrows():
+                    stints.append({
+                        "player": f"{sr.get('PLAYER_FIRST', '')} {sr.get('PLAYER_LAST', '')}".strip(),
+                        "in": round(float(sr.get("IN_TIME_REAL", 0) or 0) / 600.0, 1),
+                        "out": round(float(sr.get("OUT_TIME_REAL", 0) or 0) / 600.0, 1),
+                        "pts": int(sr.get("PLAYER_PTS", 0) or 0),
+                        "pm": int(sr.get("PT_DIFF", 0) or 0),
+                    })
+                by_tid[rtid] = stints
+        rot_by_gid[gid] = by_tid
+        json.dump(by_tid, open(f"data/rot_cache/{gid}.json", "w", encoding="utf-8"))
+        time.sleep(0.3)
+    except Exception:
+        continue
+
+for tid, rows_list in team_top5.items():
+    stid = str(tid)
+    teams[stid]["last5Rotations"] = [
+        {"gid": gid, "date": dt, "matchup": mu, "wl": wl, "stints": rot_by_gid.get(gid, {}).get(stid, [])}
+        for gid, dt, mu, wl in rows_list
+    ]
 
 def pack_zones(zdict):
     return {z: list((zdict[z]["m"], zdict[z]["a"])) for z in ZONES}

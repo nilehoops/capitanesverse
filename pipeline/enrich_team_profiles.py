@@ -48,7 +48,9 @@ for szn in ["2026-27", "2025-26"]:
     except Exception: continue
     print(f"Enriching 31 teams (Percentiles, Lineups, 2PT%/3PAr/FTr & Physicals) for {szn}...")
 
-    for t in data.get("teams", []):
+    t_all = data.get("teams", [])
+    for idx_e, t in enumerate(t_all, 1):
+        print(f"  [{idx_e}/{len(t_all)}] Roster bios: {t.get('abbrev','')}...", flush=True)
         try:
             rdf = commonteamroster.CommonTeamRoster(team_id=int(t["id"]), season=szn, league_id_nullable=LEAGUE_ID).get_data_frames().pop(0)
             for _, r in rdf.iterrows():

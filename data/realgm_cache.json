@@ -5830,5 +5830,17 @@
     "college": "Detroit Mercy",
     "unavailable": true,
     "currentTeam": "Sacramento Kings"
+  },
+  "jestin porter": {
+    "status": "not_found"
+  },
+  "jeremiah burke": {
+    "status": "not_found"
+  },
+  "hakim hart": {
+    "status": "not_found"
+  },
+  "lacey james": {
+    "status": "not_found"
   }
 }

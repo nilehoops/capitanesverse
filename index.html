@@ -1129,7 +1129,7 @@ document.getElementById('incompleteImportBtn').addEventListener('click', async (
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) { status.textContent = `Could not read file (${getResp.status}).`; return; }
     const fileData = await getResp.json();
-    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const allPlayers = await readGitHubJsonContent(fileData, headers);
     const byId = new Map(allPlayers.map(p => [p.id, p]));
     let updated = 0;
     for (const row of incompleteImportRows) {
@@ -1411,6 +1411,16 @@ function utf8ToBase64(str) {
   bytes.forEach(b => binary += String.fromCharCode(b));
   return btoa(binary);
 }
+async function readGitHubJsonContent(fileData, headers) {
+  let rawB64 = fileData.content;
+  if (!rawB64 && fileData.sha) {
+    const blobResp = await fetch(`https://github.com{REPO_OWNER}/${REPO_NAME}/git/blobs/${fileData.sha}`, { headers });
+    if (!blobResp.ok) throw new Error(`Could not read blob (${blobResp.status})`);
+    const blobData = await blobResp.json();
+    rawB64 = blobData.content;
+  }
+  return JSON.parse(base64ToUtf8(rawB64));
+}
 function base64ToUtf8(b64) {
   const binary = atob(b64);
   const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
@@ -1628,7 +1638,7 @@ async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).` };
     const fileData = await getResp.json();
-    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const allPlayers = await readGitHubJsonContent(fileData, headers);
     const target = allPlayers.find(p => p.id === playerId);
     if (!target) return { ok: false, message: 'Player not found in remote file.' };
     mutate(target);
@@ -1843,7 +1853,7 @@ document.getElementById('availImportBtn').addEventListener('click', async () => 
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) { status.textContent = `Could not read file (${getResp.status}).`; return; }
     const fileData = await getResp.json();
-    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const allPlayers = await readGitHubJsonContent(fileData, headers);
     let updated = 0;
     for (const p of allPlayers) {
       const row = rowsById.get(p.id);
@@ -2166,7 +2176,7 @@ async function commitBulkStints(rows, path, commitMessage) {
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).`, appliedCount: 0, notFoundIds: [] };
     const fileData = await getResp.json();
-    const allPlayers = JSON.parse(base64ToUtf8(fileData.content));
+    const allPlayers = await readGitHubJsonContent(fileData, headers);
     const byId = new Map(allPlayers.map(p => [p.id, p]));
 
     let appliedCount = 0;

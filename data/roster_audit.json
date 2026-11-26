@@ -1,6 +1,32 @@
 {
   "season": "2026-27",
   "activeCount": 11,
-  "matchedCount": 11,
-  "missingFromDb": []
+  "matchedCount": 6,
+  "missingFromDb": [
+    {
+      "name": "Agapy de Melo Santos",
+      "id": null,
+      "pos": ""
+    },
+    {
+      "name": "Esteban Ezequiel Roacho Amador",
+      "id": null,
+      "pos": ""
+    },
+    {
+      "name": "Manny Camper",
+      "id": null,
+      "pos": ""
+    },
+    {
+      "name": "Tomas Chapero",
+      "id": null,
+      "pos": ""
+    },
+    {
+      "name": "Zeke Mayo",
+      "id": null,
+      "pos": ""
+    }
+  ]
 }

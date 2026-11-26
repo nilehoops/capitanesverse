@@ -1666,11 +1666,20 @@ async function pushNewPlayerToFile(path, newPlayerSlice, playerName) {
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) return { ok: false, message: `Could not read ${path} (${getResp.status}). Check token permissions.` };
     const fileData = await getResp.json();
-    const allEntries = JSON.parse(base64ToUtf8(fileData.content));
-    if (allEntries.some(p => p.id === newPlayerSlice.id)) {
-      return { ok: false, message: `A player with id "${newPlayerSlice.id}" already exists in ${path}.` };
+    let rawB64 = fileData.content;
+    if (!rawB64 && fileData.sha) {
+      const blobResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/blobs/${fileData.sha}`, { headers });
+      if (!blobResp.ok) return { ok: false, message: `Could not read blob for ${path} (${blobResp.status}).` };
+      const blobData = await blobResp.json();
+      rawB64 = blobData.content;
     }
-    allEntries.push(newPlayerSlice);
+    const allEntries = JSON.parse(base64ToUtf8(rawB64));
+    const existingIdx = allEntries.findIndex(p => p.id === newPlayerSlice.id);
+    if (existingIdx >= 0) {
+      allEntries[existingIdx] = newPlayerSlice;
+    } else {
+      allEntries.push(newPlayerSlice);
+    }
     const putResp = await fetch(apiUrl, {
       method: 'PUT',
       headers: { ...headers, 'Content-Type': 'application/json' },

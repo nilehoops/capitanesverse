@@ -1123,7 +1123,7 @@ document.getElementById('incompleteImportBtn').addEventListener('click', async (
     if (!githubToken) { status.textContent = 'Cancelled — no token entered.'; return; }
   }
   const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DETAIL_PATH_IN_REPO}`;
-  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  const headers = { 'Authorization': `Bearer ${githubToken.trim()}`, 'Accept': 'application/vnd.github+json' };
   status.textContent = 'Saving...';
   try {
     const getResp = await fetch(apiUrl, { headers });
@@ -1424,7 +1424,10 @@ async function writeGitHubJsonContent(path, dataObj, commitMsg, headers) {
     return { ok: false, status: blobRes.status, message: err.message || 'Blob upload failed' };
   }
   const { sha: blobSha } = await blobRes.json();
-  const refRes = await fetch(`${base}/git/refs/heads/main`, { headers });
+  const repoRes = await fetch(base, { headers });
+  const repoInfo = repoRes.ok ? await repoRes.json() : {};
+  const branch = repoInfo.default_branch || 'main';
+  const refRes = await fetch(`${base}/git/refs/heads/${branch}`, { headers });
   if (!refRes.ok) return { ok: false, status: refRes.status, message: 'Could not read branch ref' };
   const { object: { sha: headSha } } = await refRes.json();
   const commitRes = await fetch(`${base}/git/commits/${headSha}`, { headers });
@@ -1442,7 +1445,7 @@ async function writeGitHubJsonContent(path, dataObj, commitMsg, headers) {
   });
   if (!newCommitRes.ok) return { ok: false, status: newCommitRes.status, message: 'Could not create commit' };
   const { sha: newCommitSha } = await newCommitRes.json();
-  const patchRes = await fetch(`${base}/git/refs/heads/main`, {
+  const patchRes = await fetch(`${base}/git/refs/heads/${branch}`, {
     method: 'PATCH', headers: jsonHeaders,
     body: JSON.stringify({ sha: newCommitSha })
   });
@@ -1671,10 +1674,10 @@ function parseHeight(input) {
 async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
   if (!githubToken) {
     githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
-    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
+    if (!githubToken || !githubToken.trim()) return { ok: false, message: 'Cancelled — no token entered.' };
   }
   const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
-  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  const headers = { 'Authorization': `Bearer ${githubToken.trim()}`, 'Accept': 'application/vnd.github+json' };
   try {
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).` };
@@ -1703,10 +1706,10 @@ async function pushNewPlayerToFile(path, newPlayerSlice, playerName) {
       'GitHub personal access token (Contents: read/write on this repo).\n' +
       'Only used for this save, kept in memory only, never stored.'
     );
-    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.' };
+    if (!githubToken || !githubToken.trim()) return { ok: false, message: 'Cancelled — no token entered.' };
   }
   const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
-  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  const headers = { 'Authorization': `Bearer ${githubToken.trim()}`, 'Accept': 'application/vnd.github+json' };
   try {
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) return { ok: false, message: `Could not read ${path} (${getResp.status}). Check token permissions.` };
@@ -1877,7 +1880,7 @@ document.getElementById('availImportBtn').addEventListener('click', async () => 
   }
   try {
     const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${INDEX_PATH_IN_REPO}`;
-    const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+    const headers = { 'Authorization': `Bearer ${githubToken.trim()}`, 'Accept': 'application/vnd.github+json' };
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) { status.textContent = `Could not read file (${getResp.status}).`; return; }
     const fileData = await getResp.json();
@@ -2196,10 +2199,10 @@ document.getElementById('ps_bulkPasteArea').addEventListener('paste', () => {
 async function commitBulkStints(rows, path, commitMessage) {
   if (!githubToken) {
     githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
-    if (!githubToken) return { ok: false, message: 'Cancelled — no token entered.', appliedCount: 0, notFoundIds: [] };
+    if (!githubToken || !githubToken.trim()) return { ok: false, message: 'Cancelled — no token entered.', appliedCount: 0, notFoundIds: [] };
   }
   const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
-  const headers = { 'Authorization': `Bearer ${githubToken}`, 'Accept': 'application/vnd.github+json' };
+  const headers = { 'Authorization': `Bearer ${githubToken.trim()}`, 'Accept': 'application/vnd.github+json' };
   try {
     const getResp = await fetch(apiUrl, { headers });
     if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).`, appliedCount: 0, notFoundIds: [] };

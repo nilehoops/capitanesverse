@@ -1412,6 +1412,28 @@ function utf8ToBase64(str) {
   bytes.forEach(b => binary += String.fromCharCode(b));
   return btoa(binary);
 }
+async function readGitHubJsonRepoFile(path, headers) {
+  const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+  const repoRes = await fetch(base, { headers });
+  if (!repoRes.ok) throw new Error(`Repo lookup failed (${repoRes.status})`);
+  const repoInfo = await repoRes.json();
+  const branch = repoInfo.default_branch || 'main';
+  const refRes = await fetch(`${base}/git/refs/heads/${branch}`, { headers });
+  if (!refRes.ok) throw new Error(`Branch ref failed (${refRes.status})`);
+  const { object: { sha: headSha } } = await refRes.json();
+  const commitRes = await fetch(`${base}/git/commits/${headSha}`, { headers });
+  if (!commitRes.ok) throw new Error(`Head commit failed (${commitRes.status})`);
+  const { tree: { sha: baseTreeSha } } = await commitRes.json();
+  const treeRes = await fetch(`${base}/git/trees/${baseTreeSha}?recursive=1`, { headers });
+  if (!treeRes.ok) throw new Error(`Tree lookup failed (${treeRes.status})`);
+  const treeData = await treeRes.json();
+  const entry = (treeData.tree || []).find(t => t.path === path);
+  if (!entry || !entry.sha) throw new Error(`Path not found in repo tree: ${path}`);
+  const blobRes = await fetch(`${base}/git/blobs/${entry.sha}`, { headers });
+  if (!blobRes.ok) throw new Error(`Blob read failed (${blobRes.status})`);
+  const blobData = await blobRes.json();
+  return JSON.parse(base64ToUtf8(blobData.content));
+}
 async function writeGitHubJsonContent(path, dataObj, commitMsg, headers) {
   const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
   const jsonHeaders = { ...headers, 'Content-Type': 'application/json' };
@@ -1708,20 +1730,9 @@ async function pushNewPlayerToFile(path, newPlayerSlice, playerName) {
     );
     if (!githubToken || !githubToken.trim()) return { ok: false, message: 'Cancelled — no token entered.' };
   }
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
   const headers = { 'Authorization': `Bearer ${githubToken.trim()}`, 'Accept': 'application/vnd.github+json' };
   try {
-    const getResp = await fetch(apiUrl, { headers });
-    if (!getResp.ok) return { ok: false, message: `Could not read ${path} (${getResp.status}). Check token permissions.` };
-    const fileData = await getResp.json();
-    let rawB64 = fileData.content;
-    if (!rawB64 && fileData.sha) {
-      const blobResp = await fetch(`https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/git/blobs/${fileData.sha}`, { headers });
-      if (!blobResp.ok) return { ok: false, message: `Could not read blob for ${path} (${blobResp.status}).` };
-      const blobData = await blobResp.json();
-      rawB64 = blobData.content;
-    }
-    const allEntries = JSON.parse(base64ToUtf8(rawB64));
+    const allEntries = await readGitHubJsonRepoFile(path, headers);
     const existingIdx = allEntries.findIndex(p => p.id === newPlayerSlice.id);
     if (existingIdx >= 0) {
       allEntries[existingIdx] = newPlayerSlice;

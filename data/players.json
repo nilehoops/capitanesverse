@@ -22585,7 +22585,7 @@
       "griftRatePctile": 0.164,
       "jumperRate": 0.5308
     },
-    "onRoster": false,
+    "onRoster": true,
     "biography": {
       "weight": "250 lbs",
       "hometown": "Fresno (CA)",

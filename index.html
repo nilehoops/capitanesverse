@@ -404,7 +404,7 @@
     <div>
       <div class="roster-photos" id="rosterPhotos"></div>
       <div class="roster-names" id="rosterNames"></div>
-      <button id="openMockBuilder" class="mock-builder-trigger">+ Mock Roster Builder</button>
+      <button id="openMockBuilder" class="mock-builder-trigger">+ Mock Roster Builder</button><span id="rosterAuditBadge" style="display:none;font-family:'Oswald',sans-serif;font-size:11px;font-weight:600;color:#fde68a;background:rgba(180,83,9,0.28);border:1px solid #f59e0b;padding:4px 9px;margin-left:8px;vertical-align:middle;letter-spacing:0.3px;"></span>
     </div>
   </div>
 
@@ -2273,7 +2273,7 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
     advanced: advancedObj,
     biography,
     onRoster: document.getElementById('ap_onRoster').checked,
-    trainingCampInvite: document.getElementById('ap_trainingCampInvite').checked,
+    trainingCampInvite: Boolean(document.getElementById('ap_trainingCampInvite')?.checked),
     photoUrl: photoUrl || null,
     videos: [],
   };
@@ -2286,7 +2286,7 @@ document.getElementById('addPlayerSave').addEventListener('click', async () => {
      'ap_age','ap_weight','ap_agent','ap_hometown','ap_highSchool','ap_currentStatus','ap_photoUrl']
       .forEach(id => document.getElementById(id).value = '');
     document.getElementById('ap_onRoster').checked = false;
-    document.getElementById('ap_trainingCampInvite').checked = false;
+    if (document.getElementById('ap_trainingCampInvite')) document.getElementById('ap_trainingCampInvite').checked = false;
     document.querySelectorAll('#apStatGrid input, #apAdvGrid input').forEach(el => el.value = '');
     document.getElementById('ap_pasteArea').value = '';
     pastedExtra = {};
@@ -3343,5 +3343,16 @@ Promise.all([
   document.body.appendChild(layer);
 })();
 </script>
+
+<script>
+fetch('data/roster_audit.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).then(a => {
+  const b = document.getElementById('rosterAuditBadge');
+  if (b && a && Array.isArray(a.missingFromDb) && a.missingFromDb.length) {
+    b.style.display = 'inline-block';
+    b.textContent = 'Needs DB profile: ' + a.missingFromDb.map(x => x.name).join(', ');
+  }
+}).catch(() => {});
+</script>
+
 </body>
 </html>

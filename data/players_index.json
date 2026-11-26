@@ -3590,7 +3590,7 @@
     "latino": true,
     "availabilitySimple": "yes",
     "availabilityNote": "Verbal agreement with Mexico City Capitanes 7/1",
-    "onRoster": false,
+    "onRoster": true,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/5175976.png"
   },
   {
@@ -7083,7 +7083,7 @@
     "latino": true,
     "availabilitySimple": "yes",
     "availabilityNote": "Verbal agreement with Mexico City Capitanes",
-    "onRoster": false,
+    "onRoster": true,
     "photoUrl": "https://lnb.com.br/wp-content/uploads/2021/07/Cabec%CC%A7a%CC%83oSite_0002_Agapy.png"
   },
   {
@@ -8724,7 +8724,7 @@
     "latino": true,
     "availabilitySimple": "yes",
     "availabilityNote": null,
-    "onRoster": false,
+    "onRoster": true,
     "trainingCampInvite": false,
     "photoUrl": "https://www.proballers.com/media/cache/headshot_600/player/headshot/238558.png"
   }

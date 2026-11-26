@@ -157,7 +157,7 @@ def discover_teams():
     global ACTIVE_SEASON_TYPE
     print("Discovering G League teams...")
 
-    for season_type in ("Regular+Season", "Showcase"):
+    for season_type in ("Showcase", "Regular+Season"):
         url = (
             "https://stats.nba.com/stats/leaguedashlineups"
             f"?LeagueID=20&Season={SEASON}&SeasonType={season_type}"

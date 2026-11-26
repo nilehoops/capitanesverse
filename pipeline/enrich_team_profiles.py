@@ -42,7 +42,8 @@ for lid in ["00", "20"]:
             if wt and not entry.get("weight") and str(wt).replace(".", "", 1).isdigit(): entry["weight"] = float(wt)
         time.sleep(0.3)
     except Exception: pass
-for szn in ["2026-27", "2025-26"]:
+import os as _os, sys as _sys
+for szn in (["2026-27", "2025-26"] if "--full" in _sys.argv or not _os.path.exists("data/league_lite_shots_2025-26.json") else ["2026-27"]):
     path = f"data/league_lite_shots_{szn}.json"
     try: data = json.load(open(path, encoding="utf-8"))
     except Exception: continue

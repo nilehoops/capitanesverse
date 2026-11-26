@@ -230,12 +230,13 @@ function buildRotationsCard(active) {
   const games = active.last5Rotations || new Array();
   if (!games.length) return '';
   const gamesHtml = games.map(g => {
+      const boxHref = `boxscore.html?game=${encodeURIComponent(g.gid || g.id || '')}&season=${encodeURIComponent(currentSeason || '2025-26')}`;
     const byPlayer = {};
     (g.stints || new Array()).forEach(st => { if (!byPlayer[st.player]) byPlayer[st.player] = new Array(); byPlayer[st.player].push(st); });
     const pRows = Object.entries(byPlayer).slice(0, 10).map(([pname, stints]) => {
       const bars = stints.map(s => { const left = Math.max(0, Math.min(100, (s.in / 48) * 100)); const width = Math.max(1, Math.min(100 - left, ((s.out - s.in) / 48) * 100)); return `<div class="rot-bar" style="left:${left}%;width:${width}%;" title="${s.in}m–${s.out}m (${s.pm>=0?'+':''}${s.pm})"></div>`; }).join('');
       const totPm = stints.reduce((a, b) => a + (b.pm || 0), 0);
-      return `<div class="rot-row"><div class="rot-pname">${pname}</div><div class="rot-track">${bars}</div><div style="width:28px;text-align:right;font-weight:700;color:${totPm>=0?'var(--green)':'var(--red)'};">${totPm>=0?'+':''}${totPm}</div></div>`;
+      return `<div class="rot-row"><div class="rot-pname">${pname}</div><div class="rot-track">${bars}</div><div style="width:28px;text-align:right;font-weight:700;color:${totPm>=0?'var(--green)':'var(--red)'};">${totPm>=0?'+':''}${totPm}</div><div style="margin-top:4px;text-align:right;"><a href="${boxHref}" style="color:#F9D116;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;">Full Box Score ?</a></div></div>`;
     }).join('');
     return `<div class="rot-game"><div style="font-family:'Oswald',sans-serif;font-size:11px;font-weight:700;color:var(--blue);margin-bottom:3px;">${g.date} · ${g.matchup} (${g.wl})</div>${pRows}</div>`;
   }).join('');

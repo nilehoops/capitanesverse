@@ -1,4 +1,7 @@
-import subprocess, sys, time
+import os, subprocess, sys, time
+for _k in ("OPENBLAS_NUM_THREADS", "OMP_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ[_k] = "1"
+
 
 STEPS = [
     ("1. Lineups, Box Scores, Splits & WOWY (2026-27)", [sys.executable, "fetch_lineup_data.py"]),

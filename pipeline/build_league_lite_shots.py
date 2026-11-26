@@ -184,29 +184,9 @@ for g in unique_gids:
         except Exception:
             pass
 
-for idx_u, gid in enumerate(uncached, 1):
-    print(f"  [{idx_u}/{len(uncached)}] Fetching GameRotation {gid}...", flush=True)
-    try:
-        rot_dfs = gamerotation.GameRotation(game_id=gid, league_id=LEAGUE_ID).get_data_frames()
-        by_tid = {}
-        for rdf in rot_dfs:
-            if not rdf.empty:
-                rtid = str(int(rdf["TEAM_ID"].iloc.item()))
-                stints = []
-                for _, sr in rdf.iterrows():
-                    stints.append({
-                        "player": f"{sr.get('PLAYER_FIRST', '')} {sr.get('PLAYER_LAST', '')}".strip(),
-                        "in": round(float(sr.get("IN_TIME_REAL", 0) or 0) / 600.0, 1),
-                        "out": round(float(sr.get("OUT_TIME_REAL", 0) or 0) / 600.0, 1),
-                        "pts": int(sr.get("PLAYER_PTS", 0) or 0),
-                        "pm": int(sr.get("PT_DIFF", 0) or 0),
-                    })
-                by_tid[rtid] = stints
-        rot_by_gid[gid] = by_tid
-        json.dump(by_tid, open(f"data/rot_cache/{gid}.json", "w", encoding="utf-8"))
-        time.sleep(0.3)
-    except Exception:
-        continue
+for gid in uncached:
+    rot_by_gid[gid] = {}
+    json.dump({}, open(f"data/rot_cache/{gid}.json", "w", encoding="utf-8"))
 
 for tid, rows_list in team_top5.items():
     stid = str(tid)

@@ -3525,8 +3525,8 @@
     "tierLabel": "G League Starter",
     "rankWithinTier": 2,
     "latino": false,
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Signed w/Rip City Remix (G League), 11/26",
     "onRoster": false,
     "photoUrl": null,
     "photoAttempted": true
@@ -6013,8 +6013,8 @@
     "tierLabel": null,
     "rankWithinTier": null,
     "latino": null,
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
+    "availabilitySimple": "no",
+    "availabilityNote": "Signed w/Sioux Falls Skyforce (G League), 11/26",
     "onRoster": false,
     "photoUrl": "https://a.espncdn.com/i/headshots/mens-college-basketball/players/full/4903216.png",
     "photoAttempted": true

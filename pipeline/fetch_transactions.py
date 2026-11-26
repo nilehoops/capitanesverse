@@ -370,7 +370,10 @@ def _fetch_gl_bio(item):
         return None
 
 if _to_fetch:
-    print(f"  Fetching official CommonPlayerInfo & career stats for {len(_to_fetch)} waived G Leaguers...")
+    _existing_gl_idx = {int(x["id"]): x for x in (json.load(open("data/gleague_player_index.json", encoding="utf-8")) if __import__("os").path.exists("data/gleague_player_index.json") else []) if isinstance(x, dict) and x.get("id")}
+    _to_fetch = [x for x in _to_fetch if int(next(iter(x)) if isinstance(x, (list, tuple)) else x) not in _existing_gl_idx]
+if _to_fetch:
+    print(f"  Fetching official CommonPlayerInfo & career stats for {len(_to_fetch)} new waived G Leaguers...")
     with _TPE(max_workers=16) as _ex:
         for _res in _ex.map(_fetch_gl_bio, _to_fetch):
             if not _res:

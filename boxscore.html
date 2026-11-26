@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advanced Box Score ? Capitanesverse</title>
+<link href="https://googleapis.com" rel="stylesheet">
+<style>
+  :root { --bg:#000; --panel:#0a0a0a; --border:#222; --text:#ECECEC; --muted:#8A8A8A; --blue:#2358A6; --yellow:#F9D116; --green:#3FCF5C; --red:#D81F2A; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font-family:'Lora',Georgia,serif; font-size:13px; }
+  a { color:inherit; text-decoration:none; }
+  .topbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border); background:#050505; }
+  .brand { font-family:'Oswald',sans-serif; font-weight:700; font-size:18px; letter-spacing:0.5px; }
+  .brand span { color:var(--yellow); }
+  .nav-links { display:flex; flex-wrap:wrap; align-items:center; gap:6px; }
+  .nav-btn { font-family:'Oswald',sans-serif; font-weight:700; font-size:11px; padding:5px 11px; border:1px solid #333; background:#111; color:#ECECEC; cursor:pointer; }
+  .nav-btn:hover { border-color:var(--yellow); color:var(--yellow); }
+  .nav-btn.primary { background:var(--blue); border-color:var(--blue); color:#fff; }
+  .controls { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px 16px; border-bottom:1px solid var(--border); background:#080808; }
+  select, button.ctrl-btn { background:#000; color:var(--text); border:1px solid #383838; font-family:'Oswald',sans-serif; font-size:12px; padding:5px 10px; cursor:pointer; }
+  select:focus, button.ctrl-btn:hover { border-color:var(--yellow); outline:none; }
+  .container { max-width:1460px; margin:0 auto; padding:14px 16px 40px; }
+  .score-banner { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; padding:14px 18px; border:1px solid var(--border); background:var(--panel); margin-bottom:14px; }
+  .team-side { display:flex; flex-direction:column; gap:3px; }
+  .team-side.right { text-align:right; align-items:flex-end; }
+  .team-name { font-family:'Oswald',sans-serif; font-size:22px; font-weight:700; }
+  .team-sub { font-size:11px; color:var(--muted); }
+  .score-center { text-align:center; }
+  .score-big { font-family:'Oswald',sans-serif; font-size:30px; font-weight:700; }
+  .score-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+  .qtr-table { margin:8px auto 0; border-collapse:collapse; font-family:'Oswald',sans-serif; font-size:11px; }
+  .qtr-table th, .qtr-table td { border:1px solid #262626; padding:2px 8px; text-align:center; }
+  .qtr-table th { color:var(--muted); background:#050505; }
+  .section-title { font-family:'Oswald',sans-serif; font-size:16px; font-weight:700; margin:18px 0 8px; padding-bottom:4px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+  .table-wrap { overflow-x:auto; border:1px solid var(--border); background:var(--panel); }
+  table.box { width:100%; border-collapse:collapse; font-size:12px; white-space:nowrap; }
+  table.box th { font-family:'Oswald',sans-serif; font-size:11px; color:var(--muted); background:#060606; border-bottom:1px solid #2b2b2b; padding:6px; text-align:right; cursor:pointer; }
+  table.box th:first-child, table.box td:first-child { text-align:left; position:sticky; left:0; background:#0a0a0a; z-index:1; }
+  table.box th:first-child { background:#060606; z-index:2; }
+  table.box td { padding:5px 6px; border-bottom:1px solid #181818; text-align:right; font-variant-numeric:tabular-nums; }
+  table.box tr:hover td { background:#131720; }
+  table.box tr.totals td { font-weight:700; background:#10131a; border-top:1px solid #3a3a3a; font-family:'Oswald',sans-serif; }
+  .split-grid { display:grid; grid-template-columns:1.55fr 1fr; gap:14px; margin-top:16px; }
+  @media (max-width:1020px) { .split-grid { grid-template-columns:1fr; } }
+  table.ctx { width:100%; border-collapse:collapse; font-size:12px; }
+  table.ctx th { font-family:'Oswald',sans-serif; font-size:11px; color:var(--muted); background:#060606; border-bottom:1px solid #2b2b2b; padding:6px 7px; text-align:right; }
+  table.ctx th:first-child, table.ctx td:first-child { text-align:left; }
+  table.ctx td { padding:5px 7px; border-bottom:1px solid #181818; text-align:right; font-variant-numeric:tabular-nums; }
+  table.ctx tr.cat-hdr td { background:#0e1118; color:var(--yellow); font-family:'Oswald',sans-serif; font-size:11px; font-weight:700; text-align:left; padding:4px 7px; }
+  .shot-panel { border:1px solid var(--border); background:var(--panel); padding:10px 12px; }
+  .shot-filters { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; align-items:center; }
+  .good { color:var(--green); } .bad { color:var(--red); }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">CAPITANES<span>VERSE</span> ? ADVANCED BOX SCORES</div>
+  <div class="nav-links">
+    <a class="nav-btn" href="inseason.html">? In-Season Hub</a>
+    <a class="nav-btn primary" href="team.html">Team Profiles</a>
+    <a class="nav-btn" href="playerstats.html">Player Stats</a>
+    <a class="nav-btn" href="transactions.html">Transactions</a>
+    <a class="nav-btn" href="index.html">? Offseason Tool</a>
+  </div>
+</div>
+<div class="controls">
+  <label style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--muted);">SEASON</label>
+  <select id="seasonSelect"><option value="2026-27">2026-27</option><option value="2025-26">2025-26</option></select>
+  <label style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--muted);">GAME</label>
+  <select id="gameSelect" style="min-width:290px;"></select>
+  <button class="ctrl-btn" id="prevGameBtn">? Prev</button>
+  <button class="ctrl-btn" id="nextGameBtn">Next ?</button>
+  <span id="statusMsg" style="font-size:11px;color:var(--muted);margin-left:auto;"></span>
+</div>
+<div class="container">
+  <div id="bannerWrap"></div>
+  <div class="section-title"><span id="mxcTitle">Mexico City Capitanes ? Advanced Box Score</span><span style="font-size:11px;color:var(--muted);">Click any header to sort ? Rim ? 4 ft</span></div>
+  <div class="table-wrap" id="mxcBoxWrap"></div>
+  <div class="section-title"><span id="oppTitle">Opponent ? Advanced Box Score</span><span style="font-size:11px;color:var(--muted);">Derived from play-by-play possessions, shots, FTs & turnovers</span></div>
+  <div class="table-wrap" id="oppBoxWrap"></div>
+  <div class="split-grid">
+    <div><div class="section-title" style="margin-top:0;">Play-by-Play Shot & Context Breakdown</div><div class="table-wrap" id="contextWrap"></div></div>
+    <div><div class="section-title" style="margin-top:0;">Interactive Game Shot Chart</div><div class="shot-panel"><div class="shot-filters"><select id="scSideFilter"><option value="off">Mexico City Capitanes</option><option value="def">Opponent</option><option value="all">Both Teams</option></select><select id="scPlayerFilter"><option value="all">All Players</option></select><span id="scSummary" style="font-size:11px;color:var(--muted);margin-left:auto;"></span></div><svg id="courtSvg" viewBox="-260 -55 520 475" style="width:100%;max-height:430px;background:#050505;border:1px solid #1e1e1e;display:block;"></svg></div></div>
+  </div>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+let currentSeason = params.get('season') || '2026-27';
+let requestedGid = params.get('game') || '';
+const cacheBySeason = {};
+let currentGameData = null;
+const TEAM_NAMES = { MXC:'Mexico City Capitanes',AUS:'Austin Spurs',BHM:'Birmingham Squadron',CAP:'Capital City Go-Go',CCG:'Cleveland Charge',CPS:'College Park Skyhawks',DEL:'Delaware Blue Coats',GRG:'Grand Rapids Gold',GBO:'Greensboro Swarm',IWA:'Iowa Wolves',LIN:'Long Island Nets',MNE:'Maine Celtics',MHU:'Memphis Hustle',MCC:'Motor City Cruise',NOB:'Noblesville Boom',OKL:'Oklahoma City Blue',OSC:'Osceola Magic',RAP:'Raptors 905',RGV:'Rio Grande Valley Vipers',RCR:'Rip City Remix',SLC:'Salt Lake City Stars',SCW:'Santa Cruz Warriors',SXF:'Sioux Falls Skyforce',SBL:'South Bay Lakers',STO:'Stockton Kings',TEX:'Texas Legends',VAL:'Valley Suns',WES:'Westchester Knicks',WCB:'Windy City Bulls',WIS:'Wisconsin Herd',SD:'San Diego Clippers' };
+
+async function loadSeasonData(season) {
+  if (cacheBySeason[season]) return cacheBySeason[season];
+  document.getElementById('statusMsg').textContent = `Loading ${season} play-by-play...`;
+  const resp = await fetch(`data/shot_charts_${season}.json?v=${Date.now()}`);
+  if (!resp.ok) throw new Error(`Failed to load shot_charts_${season}.json`);
+  const data = await resp.json();
+  if ((!data.games || !data.games.length) && season === '2026-27' && !params.get('season')) {
+    document.getElementById('seasonSelect').value = '2025-26'; currentSeason = '2025-26';
+    return loadSeasonData('2025-26');
+  }
+  const nameById = new Map();
+  const pl = data.players || {};
+  if (Array.isArray(pl)) pl.forEach(p => nameById.set(Number(p.id), p.name));
+  else Object.entries(pl).forEach(([id, v]) => nameById.set(Number(id), typeof v === 'string' ? v : v.name));
+  data._nameById = nameById; cacheBySeason[season] = data;
+  document.getElementById('statusMsg').textContent = `${data.games.length} games loaded`;
+  return data;
+}
+
+function parseGameMeta(gameObj) {
+  const lbl = gameObj.label || gameObj.id;
+  const m = lbl.match(/^(\d{4}-\d{2}-\d{2})\s*·\s*MXC\s+(vs\.|@)\s+([A-Z]{2,4})(?:\s*\(([WL])\))?/);
+  const date = m ? m : '', loc = m ? (m === '@' ? 'Away' : 'Home') : '', oppCode = m ? m : 'OPP', wl = m ? (m || '') : '';
+  return { id: String(gameObj.id), label: lbl, date, loc, oppCode, oppName: TEAM_NAMES[oppCode] || oppCode, wl };
+}
+function buildBoxForSide(side, gPoss, gShots, gFts, gTos, gEvts, nameById) {
+  const sidePoss = gPoss.filter(x => x.side === side), oppPoss = gPoss.filter(x => x.side !== side);
+  const sideShots = gShots.filter(x => x.side === side), sideFts = gFts.filter(x => x.side === side);
+  const sideTos = gTos.filter(x => x.side === side), oppTos = gTos.filter(x => x.side !== side);
+  const sideEvts = gEvts.filter(x => x.side === side), oppEvts = gEvts.filter(x => x.side !== side);
+  const totalPoss = Math.max(1, sidePoss.length), oppTotalPoss = Math.max(1, oppPoss.length);
+  const teamPts = sideShots.reduce((s, x) => s + (x.made ? x.val : 0), 0) + sideFts.reduce((s, x) => s + (x.made ? 1 : 0), 0);
+  const teamFga = sideShots.length, teamFgm = sideShots.filter(x => x.made).length;
+  const team3pm = sideShots.filter(x => x.val === 3 && x.made).length, team3pa = sideShots.filter(x => x.val === 3).length;
+  const team2pm = teamFgm - team3pm, team2pa = teamFga - team3pa;
+  const teamFtm = sideFts.filter(x => x.made).length, teamFta = sideFts.length;
+  const teamOrb = sideEvts.filter(e => e.type === 'OREB').length || sidePoss.reduce((s, x) => s + (x.oreb || 0), 0);
+  const teamDrb = sideEvts.filter(e => e.type === 'DREB').length || oppPoss.reduce((s, x) => s + (x.dreb || 0), 0);
+  const oppOrb = oppEvts.filter(e => e.type === 'OREB').length || oppPoss.reduce((s, x) => s + (x.oreb || 0), 0);
+  const oppDrb = oppEvts.filter(e => e.type === 'DREB').length || sidePoss.reduce((s, x) => s + (x.dreb || 0), 0);
+  const teamTov = sideTos.length, opp2pa = gShots.filter(x => x.side !== side && x.val === 2).length;
+  const playersMap = new Map();
+  const ensureP = (pid, fallbackName) => {
+    const id = Number(pid); if (!id) return null;
+    if (!playersMap.has(id)) playersMap.set(id, { id, name: fallbackName || nameById.get(id) || `#${id}`, possOn:0,offPtsOn:0,defPtsOn:0,pts:0,fgm:0,fga:0,fg3m:0,fg3a:0,ftm:0,fta:0,dunkM:0,dunkA:0,rimM:0,rimA:0,midM:0,midA:0,ast:0,tov:0,stl:0,blk:0,orb:0,drb:0,pf:0,teamFgmOn:0,teamFgaOn:0,teamFtaOn:0,teamTovOn:0,oppPossOn:0 });
+    else if (fallbackName && playersMap.get(id).name.startsWith('#')) playersMap.get(id).name = fallbackName;
+    return playersMap.get(id);
+  };
+  const allGamePoss = gPoss.slice().sort((a, b) => (a.gord || 0) - (b.gord || 0));
+  const totalGamePoss = Math.max(1, allGamePoss.length), maxP = Math.max(4, ...allGamePoss.map(x => Number(x.p || 4)));
+  const totalGameMins = 48 + Math.max(0, maxP - 4) * 5;
+  if (side === 'off') {
+    for (const ps of allGamePoss) {
+      for (const pid of (Array.isArray(ps.on) ? ps.on : [])) {
+        const p = ensureP(pid); if (!p) continue; p.possOn += 1;
+        if (ps.side === 'off') p.offPtsOn += (ps.pts || 0); else { p.defPtsOn += (ps.pts || 0); p.oppPossOn += 1; }
+      }
+    }
+  }
+  for (const sh of sideShots) {
+    const p = ensureP(sh.pid, sh.shooter); if (!p) continue; p.fga += 1;
+    if (sh.made) { p.fgm += 1; p.pts += sh.val; }
+    if (sh.val === 3) { p.fg3a += 1; if (sh.made) p.fg3m += 1; }
+    else {
+      const isDunk = /dunk/i.test(String(sh.sub || ''));
+      const isRim = isDunk || Number(sh.dist || 99) <= 4 || /layup|tip|hook/i.test(String(sh.sub || ''));
+      if (isDunk) { p.dunkA += 1; if (sh.made) p.dunkM += 1; }
+      if (isRim) { p.rimA += 1; if (sh.made) p.rimM += 1; } else { p.midA += 1; if (sh.made) p.midM += 1; }
+    }
+    if (side === 'off' && Array.isArray(sh.on)) for (const oid of sh.on) { const op = ensureP(oid); if (op) { op.teamFgaOn += 1; if (sh.made) op.teamFgmOn += 1; } }
+  }
+  for (const ft of sideFts) {
+    const p = ensureP(ft.pid); if (!p) continue; p.fta += 1; if (ft.made) { p.ftm += 1; p.pts += 1; }
+    if (side === 'off' && Array.isArray(ft.on)) for (const oid of ft.on) { const op = ensureP(oid); if (op) op.teamFtaOn += 1; }
+  }
+  for (const to of sideTos) {
+    const p = ensureP(to.pid, to.player); if (p) p.tov += 1;
+    if (side === 'off' && Array.isArray(to.on)) for (const oid of to.on) { const op = ensureP(oid); if (op) op.teamTovOn += 1; }
+  }
+  for (const oto of oppTos) if (oto.spid) { const sp = ensureP(oto.spid, oto.stealer); if (sp) sp.stl += 1; }
+  for (const ev of sideEvts) {
+    const p = ensureP(ev.pid); if (!p) continue; const t = String(ev.type || '').toUpperCase();
+    if (t === 'AST') p.ast += 1; else if (t === 'OREB') p.orb += 1; else if (t === 'DREB') p.drb += 1; else if (t === 'BLK') p.blk += 1; else if (t === 'FOUL' || t === 'PF') p.pf += 1;
+  }
+  const rows = Array.from(playersMap.values()).map(p => {
+    const min = side === 'off' ? Math.max(1, Math.round((p.possOn / totalGamePoss) * totalGameMins)) : Math.min(48, Math.max(4, Math.round((p.fga + p.fta * 0.44 + p.tov + p.orb + p.drb + p.ast + p.stl + p.blk) * 1.45)));
+    const minShare = min / totalGameMins, fg2m = p.fgm - p.fg3m, fg2a = p.fga - p.fg3a;
+    const efg = p.fga ? ((p.fgm + 0.5 * p.fg3m) / p.fga) * 100 : null;
+    const tsa = p.fga + 0.44 * p.fta, ts = tsa ? (p.pts / (2 * tsa)) * 100 : null;
+    const tmFga = p.teamFgaOn || Math.max(1, Math.round(teamFga * minShare)), tmFta = p.teamFtaOn || Math.max(1, Math.round(teamFta * minShare)), tmTov = p.teamTovOn || Math.max(1, Math.round(teamTov * minShare)), tmFgm = p.teamFgmOn || Math.max(1, Math.round(teamFgm * minShare));
+    const usgDen = tmFga + 0.44 * tmFta + tmTov, usg = usgDen ? ((p.fga + 0.44 * p.fta + p.tov) / usgDen) * 100 * (side === 'off' ? 1 : 0.2) : null;
+    const indivPoss = p.fga + 0.44 * p.fta + p.tov - p.orb * 0.5, ortg = indivPoss > 0.5 ? ((p.pts + p.ast * 1.5) / indivPoss) * 100 : null;
+    const orbCh = (teamOrb + oppDrb) * minShare, drbCh = (teamDrb + oppOrb) * minShare;
+    const orPct = orbCh > 0.5 ? (p.orb / orbCh) * 100 : null, drPct = drbCh > 0.5 ? (p.drb / drbCh) * 100 : null;
+    const astPct = (p.ast / Math.max(1, tmFgm - p.fgm)) * 100;
+    const tovPct = (p.fga + 0.44 * p.fta + p.tov) > 0 ? (p.tov / (p.fga + 0.44 * p.fta + p.tov)) * 100 : null;
+    const stlPct = (p.stl / (p.oppPossOn || Math.max(1, oppTotalPoss * minShare))) * 100;
+    const blkPct = (p.blk / Math.max(1, opp2pa * minShare)) * 100;
+    const pm = side === 'off' ? (p.offPtsOn - p.defPtsOn) : null;
+    return { ...p, min, fg2m, fg2a, efg, ts, usg, ortg, orPct, drPct, astPct, tovPct, stlPct, blkPct, pm };
+  }).sort((a, b) => b.min - a.min || b.pts - a.pts);
+  const totals = {
+    min: totalGameMins, pts: teamPts, ortg: (teamPts / totalPoss) * 100,
+    efg: teamFga ? ((teamFgm + 0.5 * team3pm) / teamFga) * 100 : null,
+    ts: (teamFga + 0.44 * teamFta) ? (teamPts / (2 * (teamFga + 0.44 * teamFta))) * 100 : null,
+    orPct: (teamOrb + oppDrb) ? (teamOrb / (teamOrb + oppDrb)) * 100 : null,
+    drPct: (teamDrb + oppOrb) ? (teamDrb / (teamDrb + oppOrb)) * 100 : null,
+    ast: rows.reduce((s, r) => s + r.ast, 0), astPct: teamFgm ? (rows.reduce((s, r) => s + r.ast, 0) / teamFgm) * 100 : null,
+    tov: teamTov, tovPct: (teamFga + 0.44 * teamFta + teamTov) ? (teamTov / (teamFga + 0.44 * teamFta + teamTov)) * 100 : null,
+    stl: rows.reduce((s, r) => s + r.stl, 0), stlPct: (rows.reduce((s, r) => s + r.stl, 0) / oppTotalPoss) * 100,
+    blk: rows.reduce((s, r) => s + r.blk, 0), blkPct: opp2pa ? (rows.reduce((s, r) => s + r.blk, 0) / opp2pa) * 100 : null,
+    dunkM: rows.reduce((s, r) => s + r.dunkM, 0), dunkA: rows.reduce((s, r) => s + r.dunkA, 0),
+    rimM: rows.reduce((s, r) => s + r.rimM, 0), rimA: rows.reduce((s, r) => s + r.rimA, 0),
+    midM: rows.reduce((s, r) => s + r.midM, 0), midA: rows.reduce((s, r) => s + r.midA, 0),
+    fg2m: team2pm, fg2a: team2pa, fg3m: team3pm, fg3a: team3pa, ftm: teamFtm, fta: teamFta,
+    orb: teamOrb, drb: teamDrb, pf: rows.reduce((s, r) => s + r.pf, 0), poss: totalPoss
+  };
+  return { rows, totals };
+}
+function renderBoxTable(containerId, boxObj, isMxc) {
+  const cols = [
+    { key:'name',label:'Player'},{key:'min',label:'Min'},{key:'ortg',label:'ORtg',dec:1},{key:'usg',label:'Usg%',dec:1},
+    {key:'efg',label:'eFG%',dec:1},{key:'ts',label:'TS%',dec:1},{key:'orPct',label:'OR%',dec:0},{key:'drPct',label:'DR%',dec:0},
+    {key:'astPct',label:'A%',dec:0},{key:'tovPct',label:'TO%',dec:0},{key:'stlPct',label:'Stl%',dec:1},{key:'blkPct',label:'Blk%',dec:1},
+    {key:'dunkA',label:'Dunk',ma:['dunkM','dunkA']},{key:'rimA',label:'Rim',ma:['rimM','rimA']},{key:'midA',label:'Mid',ma:['midM','midA']},
+    {key:'fg2a',label:'2Pt',ma:['fg2m','fg2a']},{key:'fg3a',label:'3Pt',ma:['fg3m','fg3a']},{key:'fta',label:'FT',ma:['ftm','fta']},
+    {key:'ast',label:'Ast'},{key:'tov',label:'TO'},{key:'stl',label:'Stl'},{key:'blk',label:'Blk'},{key:'orb',label:'OR'},{key:'drb',label:'DR'},{key:'pf',label:'PF'},
+    ...(isMxc ? [{key:'pm',label:'+/-',signed:true}] : []),{key:'pts',label:'Pts'}
+  ];
+  let sortKey = 'min', sortDir = -1;
+  const draw = () => {
+    const sorted = boxObj.rows.slice().sort((a, b) => sortKey === 'name' ? a.name.localeCompare(b.name) * sortDir : ((a[sortKey] ?? -9999) - (b[sortKey] ?? -9999)) * sortDir);
+    const t = boxObj.totals;
+    const cellVal = (row, c) => {
+      if (c.key === 'name') return `<strong>${row.name}</strong>`;
+      if (c.ma) return `${row[c.ma[0]]}-${row[c.ma[1]]}`;
+      const v = row[c.key]; if (v == null || Number.isNaN(v)) return '—';
+      if (c.signed) return v > 0 ? `<span class="good">+${v}</span>` : v < 0 ? `<span class="bad">${v}</span>` : '0';
+      return c.dec != null ? Number(v).toFixed(c.dec) : Math.round(v);
+    };
+    const el = document.getElementById(containerId);
+    el.innerHTML = `<table class="box"><thead><tr>${cols.map(c => `<th data-k="${c.key}">${c.label}${sortKey === c.key ? (sortDir < 0 ? ' ↓' : ' ↑') : ''}</th>`).join('')}</tr></thead><tbody>`
+      + sorted.map(r => `<tr>${cols.map(c => `<td>${cellVal(r, c)}</td>`).join('')}</tr>`).join('')
+      + `<tr class="totals">${cols.map(c => c.key === 'name' ? `<td>Totals (${t.poss} poss)</td>` : (c.key === 'usg' || c.key === 'pm') ? '<td>—</td>' : `<td>${cellVal(t, c)}</td>`).join('')}</tr></tbody></table>`;
+    el.querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; } draw(); });
+  };
+  draw();
+}
+
+function renderContextBreakdown(gPoss, gShots, gFts, gTos, oppCode) {
+  const possByKey = new Map(); gPoss.forEach(p => possByKey.set(`${p.side}_${p.gord}`, p));
+  const sortedPoss = gPoss.slice().sort((a, b) => (a.gord || 0) - (b.gord || 0));
+  const prevPossMap = new Map(); for (let i = 1; i < sortedPoss.length; i++) prevPossMap.set(`${sortedPoss[i].side}_${sortedPoss[i].gord}`, sortedPoss[i - 1]);
+  const sideStats = (side) => {
+    const sh = gShots.filter(x => x.side === side), totalFga = Math.max(1, sh.length);
+    const calc = (arr) => {
+      const fga = arr.length, fgm = arr.filter(x => x.made).length, fg3m = arr.filter(x => x.made && x.val === 3).length, astd = arr.filter(x => x.made && x.astd).length;
+      return { ma: `${fgm}-${fga}`, efg: fga ? (((fgm + 0.5 * fg3m) / fga) * 100).toFixed(1) : '—', share: ((fga / totalFga) * 100).toFixed(1) + '%', astPct: fgm ? ((astd / fgm) * 100).toFixed(1) + '%' : '—' };
+    };
+    const isDunk = x => /dunk/i.test(String(x.sub || '')), isRim = x => x.val === 2 && (isDunk(x) || Number(x.dist || 99) <= 4 || /layup|tip|hook/i.test(String(x.sub || '')));
+    const isEarly = x => String(x.clk || '').toLowerCase() === 'early';
+    const is2nd = x => { const ps = possByKey.get(`${side}_${x.gord}`); return ps && (ps.oreb || 0) > 0; };
+    const isOffTov = x => { const prev = prevPossMap.get(`${side}_${x.gord}`); return prev ? gTos.some(t => t.side !== side && t.gord === prev.gord) : false; };
+    const and1Count = gFts.filter(f => f.side === side && f.and1).length;
+    return { all: calc(sh), dunk: calc(sh.filter(isDunk)), rim: calc(sh.filter(isRim)), mid: calc(sh.filter(x => x.val === 2 && !isRim(x))), three: calc(sh.filter(x => x.val === 3)), early: calc(sh.filter(isEarly)), half: calc(sh.filter(x => !isEarly(x))), second: calc(sh.filter(is2nd)), offTov: calc(sh.filter(isOffTov)), and1: { ma: `${and1Count}`, efg: '—', share: totalFga ? ((and1Count / totalFga) * 100).toFixed(1) + '%' : '—', astPct: '—' }, h1: calc(sh.filter(x => Number(x.p || 1) <= 2)), h2: calc(sh.filter(x => Number(x.p || 1) >= 3)) };
+  };
+  const m = sideStats('off'), o = sideStats('def');
+  const rows = [
+    { cat: 'SHOT ZONES' },{ label: 'All Field Goals', k: 'all' },{ label: 'Dunks', k: 'dunk' },{ label: 'At the Rim (Close 2)', k: 'rim' },{ label: 'Other 2-PT (Mid)', k: 'mid' },{ label: '3-Pt Jumpers', k: 'three' },
+    { cat: 'PLAY CONTEXTS' },{ label: 'Transition / Early Clock', k: 'early' },{ label: 'Half-Court', k: 'half' },{ label: '2nd Chance (Poss. w/ OREB)', k: 'second' },{ label: 'Off Opponent Turnover', k: 'offTov' },{ label: 'And-1s (Bonus FT)', k: 'and1' },
+    { cat: 'BY PERIOD' },{ label: '1st Half (Q1–Q2)', k: 'h1' },{ label: '2nd Half (Q3–Q4+)', k: 'h2' }
+  ];
+  document.getElementById('contextWrap').innerHTML = `<table class="ctx"><thead><tr><th rowspan="2">Split / Context</th><th colspan="4" style="text-align:center;color:var(--yellow);border-left:1px solid #2b2b2b;">MXC</th><th colspan="4" style="text-align:center;color:#9ec5fe;border-left:1px solid #2b2b2b;">${oppCode}</th></tr><tr><th style="border-left:1px solid #2b2b2b;">FGM-A</th><th>eFG%</th><th>Share</th><th>Ast'd</th><th style="border-left:1px solid #2b2b2b;">FGM-A</th><th>eFG%</th><th>Share</th><th>Ast'd</th></tr></thead><tbody>${rows.map(r => r.cat ? `<tr class="cat-hdr"><td colspan="9">${r.cat}</td></tr>` : `<tr><td>${r.label}</td><td style="border-left:1px solid #1f1f1f;">${m[r.k].ma}</td><td>${m[r.k].efg}</td><td>${m[r.k].share}</td><td>${m[r.k].astPct}</td><td style="border-left:1px solid #1f1f1f;">${o[r.k].ma}</td><td>${o[r.k].efg}</td><td>${o[r.k].share}</td><td>${o[r.k].astPct}</td></tr>`).join('')}</tbody></table>`;
+}
+function renderShotChart(gShots, nameById) {
+  const sideSel = document.getElementById('scSideFilter'), playerSel = document.getElementById('scPlayerFilter');
+  const rebuildPlayers = () => {
+    const side = sideSel.value, pool = side === 'all' ? gShots : gShots.filter(s => s.side === side), pMap = new Map();
+    pool.forEach(s => { const id = Number(s.pid); if (id) pMap.set(id, s.shooter || nameById.get(id) || `#${id}`); });
+    const prev = playerSel.value;
+    playerSel.innerHTML = `<option value="all">All Players (${pMap.size})</option>` + Array.from(pMap.entries()).sort((a, b) => a[1].localeCompare(b[1])).map(([id, nm]) => `<option value="${id}">${nm}</option>`).join('');
+    if (Array.from(playerSel.options).some(o => o.value === prev)) playerSel.value = prev;
+  };
+  const drawCourt = () => {
+    const side = sideSel.value, pid = playerSel.value;
+    let pool = side === 'all' ? gShots : gShots.filter(s => s.side === side);
+    if (pid !== 'all') pool = pool.filter(s => String(s.pid) === pid);
+    const fgm = pool.filter(s => s.made).length, fga = pool.length, fg3m = pool.filter(s => s.made && s.val === 3).length;
+    document.getElementById('scSummary').textContent = `${fgm}-${fga} FG (${fga ? (((fgm + 0.5 * fg3m) / fga) * 100).toFixed(1) : '—'}% eFG)`;
+    const lines = `<rect x="-250" y="-47.5" width="500" height="470" fill="none" stroke="#2c2c2c" stroke-width="1.5"/><rect x="-80" y="-47.5" width="160" height="190" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><circle cx="0" cy="142.5" r="60" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><line x1="-220" y1="-47.5" x2="-220" y2="92.5" stroke="#2c2c2c" stroke-width="1.3"/><line x1="220" y1="-47.5" x2="220" y2="92.5" stroke="#2c2c2c" stroke-width="1.3"/><path d="M -220 92.5 A 237.5 237.5 0 0 0 220 92.5" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><circle cx="0" cy="0" r="7.5" fill="none" stroke="#F9D116" stroke-width="1.5"/><line x1="-30" y1="-7.5" x2="30" y2="-7.5" stroke="#666" stroke-width="2"/>`;
+    const dots = pool.map(s => { const x = Number(s.x || 0), y = Math.min(410, Number(s.y || 0)), lbl = `${s.shooter || ''} (${s.sub || ''}, ${s.dist || 0}ft)`; return s.made ? `<circle cx="${x}" cy="${y}" r="4.3" fill="#3FCF5C" fill-opacity="0.85" stroke="#000" stroke-width="0.8"><title>${lbl} — MADE</title></circle>` : `<g stroke="#D81F2A" stroke-width="1.6" opacity="0.82"><line x1="${x-3.5}" y1="${y-3.5}" x2="${x+3.5}" y2="${y+3.5}"/><line x1="${x-3.5}" y1="${y+3.5}" x2="${x+3.5}" y2="${y-3.5}"/><title>${lbl} — MISS</title></g>`; }).join('');
+    document.getElementById('courtSvg').innerHTML = lines + dots;
+  };
+  sideSel.onchange = () => { rebuildPlayers(); drawCourt(); }; playerSel.onchange = drawCourt; rebuildPlayers(); drawCourt();
+}
+function renderGame(data, gid) {
+  const games = data.games || []; if (!games.length) return;
+  const gameObj = games.find(g => String(g.id) === String(gid)) || games[0];
+  const activeGid = String(gameObj.id); document.getElementById('gameSelect').value = activeGid;
+  const u = new URL(location.href); u.searchParams.set('season', currentSeason); u.searchParams.set('game', activeGid); history.replaceState(null, '', u.toString());
+  const meta = parseGameMeta(gameObj);
+  const gPoss = (data.poss || []).filter(x => String(x.gid) === activeGid), gShots = (data.shots || []).filter(x => String(x.gid) === activeGid);
+  const gFts = (data.fts || []).filter(x => String(x.gid) === activeGid), gTos = (data.turnovers || []).filter(x => String(x.gid) === activeGid), gEvts = (data.events || []).filter(x => String(x.gid) === activeGid);
+  const mxcBox = buildBoxForSide('off', gPoss, gShots, gFts, gTos, gEvts, data._nameById), oppBox = buildBoxForSide('def', gPoss, gShots, gFts, gTos, gEvts, data._nameById);
+  const mxcPts = mxcBox.totals.pts, oppPts = oppBox.totals.pts, possCount = Math.round((mxcBox.totals.poss + oppBox.totals.poss) / 2);
+  const ortg = ((mxcPts / Math.max(1, mxcBox.totals.poss)) * 100).toFixed(1), drtg = ((oppPts / Math.max(1, oppBox.totals.poss)) * 100).toFixed(1), net = (Number(ortg) - Number(drtg)).toFixed(1);
+  const periods = Array.from(new Set(gPoss.map(p => Number(p.p || 1)))).sort((a, b) => a - b);
+  const pPts = (side, pNum) => gShots.filter(s => s.side === side && Number(s.p) === pNum && s.made).reduce((a, b) => a + b.val, 0) + gFts.filter(f => f.side === side && Number(f.p) === pNum && f.made).length;
+  document.getElementById('bannerWrap').innerHTML = `<div class="score-banner"><div class="team-side"><div class="team-name" style="color:var(--yellow);">Mexico City Capitanes (MXC)</div><div class="team-sub">ORtg ${ortg} · eFG% ${mxcBox.totals.efg?.toFixed(1) ?? '—'} · TO% ${mxcBox.totals.tovPct?.toFixed(1) ?? '—'} · OR% ${mxcBox.totals.orPct?.toFixed(1) ?? '—'}</div></div><div class="score-center"><div class="score-big"><span class="${mxcPts > oppPts ? 'good' : ''}">${mxcPts}</span> – <span class="${oppPts > mxcPts ? 'good' : ''}">${oppPts}</span></div><div class="score-meta">${meta.date} · ${meta.loc || 'Neutral'} · ${possCount} Possessions · Net ${Number(net) > 0 ? '+' + net : net}</div><table class="qtr-table"><thead><tr><th>Team</th>${periods.map(p => `<th>${p <= 4 ? 'Q' + p : 'OT' + (p - 4)}</th>`).join('')}<th>Total</th></tr></thead><tbody><tr><td>MXC</td>${periods.map(p => `<td>${pPts('off', p)}</td>`).join('')}<td><strong>${mxcPts}</strong></td></tr><tr><td>${meta.oppCode}</td>${periods.map(p => `<td>${pPts('def', p)}</td>`).join('')}<td><strong>${oppPts}</strong></td></tr></tbody></table></div><div class="team-side right"><div class="team-name">${meta.oppName} (${meta.oppCode})</div><div class="team-sub">ORtg ${drtg} · eFG% ${oppBox.totals.efg?.toFixed(1) ?? '—'} · TO% ${oppBox.totals.tovPct?.toFixed(1) ?? '—'} · OR% ${oppBox.totals.orPct?.toFixed(1) ?? '—'}</div></div></div>`;
+  document.getElementById('mxcTitle').textContent = `Mexico City Capitanes — Advanced Box Score (${mxcPts} pts)`;
+  document.getElementById('oppTitle').textContent = `${meta.oppName} (${meta.oppCode}) — Advanced Box Score (${oppPts} pts)`;
+  renderBoxTable('mxcBoxWrap', mxcBox, true); renderBoxTable('oppBoxWrap', oppBox, false); renderContextBreakdown(gPoss, gShots, gFts, gTos, meta.oppCode); renderShotChart(gShots, data._nameById);
+}
+async function init() {
+  const sSel = document.getElementById('seasonSelect'), gSel = document.getElementById('gameSelect');
+  sSel.value = currentSeason;
+  const loadAndPopulate = async (season, targetGid) => {
+    const data = await loadSeasonData(season); currentGameData = data;
+    const games = data.games || [];
+    gSel.innerHTML = games.map(g => `<option value="${g.id}">${g.label || g.id}</option>`).join('');
+    renderGame(data, targetGid || (games[0] && games[0].id));
+  };
+  sSel.onchange = () => { currentSeason = sSel.value; loadAndPopulate(currentSeason, ''); };
+  gSel.onchange = () => { if (currentGameData) renderGame(currentGameData, gSel.value); };
+  document.getElementById('prevGameBtn').onclick = () => { if (gSel.selectedIndex < gSel.options.length - 1) { gSel.selectedIndex += 1; gSel.onchange(); } };
+  document.getElementById('nextGameBtn').onclick = () => { if (gSel.selectedIndex > 0) { gSel.selectedIndex -= 1; gSel.onchange(); } };
+  await loadAndPopulate(currentSeason, requestedGid);
+}
+init().catch(err => { document.getElementById('statusMsg').textContent = err.message; });
+</script>
+</body>
+</html>

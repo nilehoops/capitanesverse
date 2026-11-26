@@ -48,6 +48,26 @@ for szn in SEASONS:
             rows = json.load(open(cpath, encoding="utf-8"))
         except Exception:
             rows = None
+    if szn == "2026-27" and os.path.exists("data/league_lite_shots_2026-27.json"):
+        lite = json.load(open("data/league_lite_shots_2026-27.json", encoding="utf-8"))
+        rows = []
+        for t in lite.get("teams", []):
+            ab = t.get("abbrev") or ""
+            for r in t.get("rosterStats", []):
+                if float(r.get("min") or 0) <= 0: continue
+                fgm = float(r.get("fgm") or 0); fg3m = float(r.get("fg3m") or 0); ftm = float(r.get("ftm") or 0)
+                pts = float(r.get("pts") or ((fgm - fg3m) * 2 + fg3m * 3 + ftm))
+                rows.append({
+                    "PLAYER_NAME": r.get("name", ""), "TEAM_ABBREVIATION": ab,
+                    "GP": int(r.get("gp") or 0), "MIN": float(r.get("min") or 0), "PTS": pts,
+                    "FGM": fgm, "FGA": float(r.get("fga") or 0),
+                    "FG3M": fg3m, "FG3A": float(r.get("fg3a") or 0),
+                    "FTM": ftm, "FTA": float(r.get("fta") or 0),
+                    "OREB": float(r.get("oreb") or 0), "DREB": float(r.get("dreb") or 0),
+                    "AST": float(r.get("ast") or 0), "STL": float(r.get("stl") or 0),
+                    "BLK": float(r.get("blk") or 0), "TOV": float(r.get("tov") or 0),
+                })
+        print(f"Reused {len(rows)} player rows for 2026-27 from data/league_lite_shots_2026-27.json (0 API calls).")
     if rows is None:
         print(f"Fetching G League season totals for {szn}...", flush=True)
         agg = {}

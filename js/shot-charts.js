@@ -481,7 +481,8 @@ function buildGameMenu() {
   const rows = games.map(g => {
     const isInc = _incGames.has(g.id);
     const isExc = _excGames.has(g.id);
-    return `<div class="sc-game-row">
+    const bsLink = `<a href="boxscore.html?game=${encodeURIComponent(g.id)}&season=${encodeURIComponent(typeof currentSeason !== 'undefined' ? currentSeason : '2025-26')}" onclick="event.stopPropagation()" style="margin-left:auto;color:#F9D116;font-family:'Oswald',sans-serif;font-size:10px;font-weight:700;padding:1px 5px;border:1px solid #444;">Box ?</a>`;
+      return `<div class="sc-game-row" style="display:flex;align-items:center;gap:6px;">
       <span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isExc ? 'var(--muted);text-decoration:line-through' : 'var(--text)'};" title="${g.label}">${g.label}</span>
       <div style="display:flex;gap:3px;flex-shrink:0;">
         <button type="button" class="sc-gbtn ${isInc ? 'inc-active' : ''}" onclick="toggleGameFilter('${g.id}','inc')">✓</button>

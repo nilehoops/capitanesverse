@@ -6746,9 +6746,9 @@
     "tierLabel": null,
     "rankWithinTier": null,
     "latino": true,
-    "availabilitySimple": "unknown",
-    "availabilityNote": null,
-    "onRoster": false,
+    "availabilitySimple": "no",
+    "availabilityNote": "On MXC roster (temporary contract)",
+    "onRoster": true,
     "photoUrl": null,
     "photoAttempted": true
   },

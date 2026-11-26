@@ -2365,7 +2365,7 @@ const TEAM_SW_STATS = [
   { key: 'ftPct', label: 'FT%', pct: true },
   { key: 'efg', label: 'eFG', pct: true, scale100: true },
   { key: 'ts', label: 'TS', pct: true, scale100: true },
-  { key: 'leagueStrength', label: 'Lg Strength', directPctile: true }, // already a 0-1 percentile, not a raw stat to rank against peers
+  { key: 'leagueStrength', label: 'Comp. Pedigree', directPctile: true }, // already a 0-1 percentile, not a raw stat to rank against peers
   { key: 'height', label: 'Height' }, // explicit size dimension
   { key: 'bmi', label: 'BMI' },
 ];
@@ -2441,7 +2441,7 @@ const TEAM_SW_LOWER_IS_BETTER = new Set(['tov', 'drtg', 'tov40']);
 // patterns (Oregon St. vs Oregon State-type schools are real, distinct
 // programs), so normalizing them together risks a false match.
 function normalizeTeamName(name) {
-  return String(name).toLowerCase().replace(/[.,']/g, '').replace(/\s+/g, ' ').trim();
+  return String(name).toLowerCase().replace(/[.,']/g, '').replace(/\bst\b/g, 'state').replace(/\s+/g, ' ').trim();
 }
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
@@ -2494,30 +2494,31 @@ function seasonStartYear(season) {
   return singleMatch ? Number(singleMatch[1]) : -Infinity;
 }
 function getLeagueStrength(player) {
-  const stints = player.proStints || [];
-  if (!stints.length) return null;
-  // Most-recent-season, not highest-minutes — a player's current-season
-  // competition level is what belongs on their profile, not whichever
-  // season happened to have the most playing time.
-  const mostRecent = stints.reduce((best, s) =>
-    seasonStartYear(s.season) > seasonStartYear(best.season) ? s : best, stints[0]);
-  if (mostRecent.leagueStrengthPctile != null) return mostRecent.leagueStrengthPctile;
+  const entries = [];
+  const baseConf = player.conf || resolveTeamConf(player.team);
+  const basePctile = baseConf ? leagueStrengthMap[`NCAA ${baseConf}`] : null;
+  const baseMins = Number(player.stats?.min || player.stats?.mins || (basePctile != null ? 500 : 0));
+  if (basePctile != null && baseMins > 0) entries.push({ pctile: basePctile, weight: baseMins });
 
-  // Resolved live in the browser, not baked into players_detail.json — this
-  // way the fix applies to whatever the current data actually contains,
-  // including anything added after this code ships, without ever requiring
-  // a replacement data file that risks overwriting newer work.
-  const league = mostRecent.league;
-  if (league && /^ncaa$/i.test(league)) {
-    const team = mostRecent.team || player.team || null; // prefer the stint's own team, fall back to the player's current one
-    const conf = resolveTeamConf(team);
-    if (conf) {
-      const resolved = leagueStrengthMap[`NCAA ${conf}`];
-      if (resolved != null) return resolved;
+  for (const s of (player.proStints || [])) {
+    let pct = s.leagueStrengthPctile;
+    if (pct == null && s.league && /^ncaa$/i.test(s.league)) {
+      const conf = resolveTeamConf(s.team || player.team);
+      if (conf) pct = leagueStrengthMap[`NCAA ${conf}`];
     }
+    if (pct == null) continue;
+    const rawMins = Math.max(0, Number(s.mins || 0));
+    if (rawMins <= 0 && entries.length > 0) continue;
+    const isGL = /^g\s*league$/i.test(String(s.league || ''));
+    const effWeight = isGL ? (rawMins * (rawMins / (rawMins + 500))) : Math.max(rawMins, 250);
+    if (effWeight > 0) entries.push({ pctile: pct, weight: effWeight });
   }
-  return null;
+
+  if (!entries.length) return null;
+  const totW = entries.reduce((sum, e) => sum + e.weight, 0);
+  return totW ? entries.reduce((sum, e) => sum + e.pctile * e.weight, 0) / totW : null;
 }
+
 // Fields where pro-stint per-40 data is confirmed compatible with the
 // Bart-format stat of the same displayed dimension — verified scale match
 // (fta_rate is 0-1, Bart's ftr is 0-100, so it needs the *100 conversion
@@ -2630,9 +2631,10 @@ function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
         }
       }
       if (pct == null) continue;
-      if (!buckets.has(stat.label)) buckets.set(stat.label, { weightedSum: 0, weightTotal: 0, count: 0, contributingIds: new Set() });
+      if (!buckets.has(stat.label)) buckets.set(stat.label, { weightedSum: 0, weightTotal: 0, count: 0, contributingIds: new Set(), breakdown: [] });
       const b = buckets.get(stat.label);
       b.weightedSum += pct * w; b.weightTotal += w; b.count++; b.contributingIds.add(p.id);
+      b.breakdown.push({ name: p.name, pct: Math.round(pct * 100), w });
     }
   }
 
@@ -2640,7 +2642,8 @@ function computeTeamStrengthsWeaknesses(allPlayers, playerIds) {
   for (const [label, b] of buckets) {
     const avg = b.weightedSum / b.weightTotal;
     const missingPlayers = rosterPlayers.filter(p => !b.contributingIds.has(p.id)).map(p => p.name);
-    aggregates.push({ label, avgPct: Math.round(avg * 100), sampleSize: b.count, missingPlayers });
+    const breakdownText = (b.breakdown || []).sort((x, y) => y.w - x.w).map(x => `${x.name}: ${x.pct}${ordinalSuffix(x.pct)} (${Math.round(x.w * 100)}% min)`).join(' ? ');
+    aggregates.push({ label, avgPct: Math.round(avg * 100), sampleSize: b.count, missingPlayers, breakdownText });
   }
   aggregates.sort((a, b) => b.avgPct - a.avgPct);
   return aggregates;
@@ -2650,7 +2653,8 @@ function renderTeamStrengthsWeaknessesInto(aggregates, linesElId, moreLinkElId, 
   const strengths = aggregates.slice(0, 2);
   const weaknesses = aggregates.slice(-2).reverse();
 
-  const lineHtml = (a, cls) => `<div class="team-sw-line ${cls}">${a.avgPct}<sup>th</sup> %ile <span class="stat-name">${a.label}</span></div>`;
+  const swColor = (pct) => pct > 60 ? '#3FCF5C' : pct < 40 ? '#D81F2A' : '#9A9A9A';
+  const lineHtml = (a, cls) => `<div class="team-sw-line ${cls}" style="color:${swColor(a.avgPct)};" title="${a.breakdownText || ''}">${a.avgPct}<sup>th</sup> %ile <span class="stat-name">${a.label}</span></div>`;
   document.getElementById(linesElId).innerHTML = aggregates.length
     ? strengths.map(a => lineHtml(a, 'strength')).join('') + weaknesses.map(a => lineHtml(a, 'weakness')).join('')
     : '<div class="team-sw-line" style="color:#8A8A8A;font-weight:400;">Not enough roster stat data yet.</div>';
@@ -2663,9 +2667,9 @@ function renderTeamStrengthsWeaknessesInto(aggregates, linesElId, moreLinkElId, 
       full.innerHTML = `<div style="font-weight:700;margin-bottom:10px;">Full Relative Team Strengths/Weaknesses (roster average percentile per stat, position-relative, includes height as a size dimension)</div>`
         + `<div style="column-count:2;column-gap:32px;">`
         + aggregates.map(a => `
-          <div class="team-sw-full-row" style="break-inside:avoid;">
+          <div class="team-sw-full-row" style="break-inside:avoid;" title="${a.breakdownText || ''}">
             <span>${a.label}</span>
-            <span style="color:${a.avgPct >= 50 ? '#3FCF5C' : '#D81F2A'};font-weight:700;">${a.avgPct}${ordinalSuffix(a.avgPct)} %ile <span style="color:#6A6A6A;font-weight:400;" title="${a.missingPlayers.length ? 'Not counted: ' + a.missingPlayers.join(', ') : ''}">(n=${a.sampleSize})</span></span>
+            <span style="color:${swColor(a.avgPct)};font-weight:700;">${a.avgPct}${ordinalSuffix(a.avgPct)} %ile <span style="color:#6A6A6A;font-weight:400;" title="${a.missingPlayers.length ? 'Not counted: ' + a.missingPlayers.join(', ') : a.breakdownText}">(n=${a.sampleSize})</span></span>
           </div>`).join('')
         + `</div>`;
       full.style.display = 'block';

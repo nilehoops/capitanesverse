@@ -40607,7 +40607,7 @@
       "jumperRate": 0.7838
     },
     "biography": null,
-    "onRoster": false,
+    "onRoster": true,
     "photoUrl": null,
     "videos": [
       {

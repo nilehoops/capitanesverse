@@ -41,6 +41,20 @@ for p_file in ["data/players_index.json", "data/players.json"]:
     except Exception:
         pass
 
+
+TEMP_MXC_IDS = {"juan-reyna-iii"}
+for p_file in ["data/players_index.json", "data/players.json"]:
+    try:
+        pdata = json.load(open(p_file, encoding="utf-8"))
+        items = pdata if isinstance(pdata, list) else list(pdata.values())
+        for obj in items:
+            if isinstance(obj, dict) and obj.get("id") in TEMP_MXC_IDS:
+                obj["onRoster"] = True
+        with open(p_file, "w", encoding="utf-8") as f:
+            json.dump(pdata, f, indent=2)
+    except Exception:
+        pass
+
 missing_from_db = [p for p in mxc_players if p["name"] not in matched_mxc]
 audit = {
     "season": "2026-27",

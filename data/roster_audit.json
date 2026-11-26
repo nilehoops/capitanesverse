@@ -1,12 +1,6 @@
 {
   "season": "2026-27",
   "activeCount": 11,
-  "matchedCount": 10,
-  "missingFromDb": [
-    {
-      "name": "Manny Camper",
-      "id": null,
-      "pos": ""
-    }
-  ]
+  "matchedCount": 11,
+  "missingFromDb": []
 }

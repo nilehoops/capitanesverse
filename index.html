@@ -1130,7 +1130,8 @@ document.getElementById('incompleteImportBtn').addEventListener('click', async (
     if (!getResp.ok) { status.textContent = `Could not read file (${getResp.status}).`; return; }
     const fileData = await getResp.json();
     const allPlayers = await readGitHubJsonContent(fileData, headers);
-    const byId = new Map(allPlayers.map(p => [p.id, p]));
+    const playerArr = Array.isArray(allPlayers) ? allPlayers : Object.values(allPlayers);
+    const byId = new Map(playerArr.filter(p => p && p.id != null).map(p => [String(p.id), p]));
     let updated = 0;
     for (const row of incompleteImportRows) {
       const target = byId.get(row.id);
@@ -2182,7 +2183,7 @@ async function commitBulkStints(rows, path, commitMessage) {
     let appliedCount = 0;
     const notFoundIds = [];
     for (const row of rows) {
-      const target = byId.get(row.playerId);
+      const target = byId.get(String(row.playerId));
       if (!target) { notFoundIds.push(row.playerId); continue; }
       mergeStintIntoPlayer(target, row.stint);
       appliedCount++;
@@ -3364,11 +3365,28 @@ Promise.all([
 </script>
 
 <script>
-fetch('data/roster_audit.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).then(a => {
+Promise.all([
+  fetch('data/gleague_roster_2026-27.json?v=' + Date.now()).then(r => r.ok ? r.json() : null).catch(() => null),
+  fetch('data/players_index.json?v=' + Date.now()).then(r => r.ok ? r.json() : []).catch(() => [])
+]).then(([ros, idx]) => {
   const b = document.getElementById('rosterAuditBadge');
-  if (b && a && Array.isArray(a.missingFromDb) && a.missingFromDb.length) {
+  if (!b || !ros) return;
+  const tok = s => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w && !/^(jr|sr|ii|iii|iv|v|de|del|dos|da)$/.test(w));
+  const same = (a, bName) => {
+    const at = tok(a), bt = tok(bName);
+    if (!at.length || !bt.length) return false;
+    if (at.join(' ') === bt.join(' ')) return true;
+    const as = new Set(at), bs = new Set(bt);
+    return (bt.length >= 2 && bt.every(w => as.has(w))) || (at.length >= 2 && at.every(w => bs.has(w)));
+  };
+  const dbItems = Array.isArray(idx) ? idx : Object.values(idx || {});
+  const mxc = (ros.players || []).filter(p => p.team === 'MXC' && p.name);
+  const missing = mxc.filter(mp => !dbItems.some(dp => dp && dp.name && same(mp.name, dp.name)));
+  if (missing.length) {
     b.style.display = 'inline-block';
-    b.textContent = 'Needs DB profile: ' + a.missingFromDb.map(x => x.name).join(', ');
+    b.textContent = 'Needs DB profile: ' + missing.map(x => x.name).join(', ');
+  } else {
+    b.style.display = 'none';
   }
 }).catch(() => {});
 </script>

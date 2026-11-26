@@ -1694,26 +1694,24 @@ function parseHeight(input) {
 // biography/proStints/videos) — callers pass whichever file actually holds
 // the field(s) they're changing.
 async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
-  if (!githubToken) {
+  if (!githubToken || !githubToken.trim()) {
     githubToken = prompt('GitHub personal access token (Contents: read/write on this repo).\nUsed only this session, never stored.');
-    if (!githubToken || !githubToken.trim()) return { ok: false, message: 'Cancelled — no token entered.' };
+    if (!githubToken || !githubToken.trim()) return { ok: false, message: 'Cancelled ? no token entered.' };
   }
-  const apiUrl = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${path}`;
   const headers = { 'Authorization': `Bearer ${githubToken.trim()}`, 'Accept': 'application/vnd.github+json' };
+  let step = 'reading repo file';
   try {
-    const getResp = await fetch(apiUrl, { headers });
-    if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).` };
-    const fileData = await getResp.json();
-    const allPlayers = await readGitHubJsonContent(fileData, headers);
+    const allPlayers = await readGitHubJsonRepoFile(path, headers);
     const playerArr = Array.isArray(allPlayers) ? allPlayers : Object.values(allPlayers);
     const target = playerArr.find(p => p && String(p.id) === String(playerId));
     if (!target) return { ok: false, message: 'Player not found in remote file.' };
     mutate(target);
+    step = 'writing updated blob';
     const wr = await writeGitHubJsonContent(path, allPlayers, commitMessage(target), headers);
     if (!wr.ok) return { ok: false, message: `Save failed (${wr.status}): ${wr.message}` };
-    return { ok: true, message: 'Saved — live site updates in ~1 min.' };
+    return { ok: true, message: 'Saved ? live site updates in ~1 min.' };
   } catch (e) {
-    return { ok: false, message: `Network error: ${e.message}` };
+    return { ok: false, message: `Network error while ${step}: ${e.message}` };
   }
 }
 

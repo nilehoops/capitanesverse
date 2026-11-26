@@ -1412,6 +1412,46 @@ function utf8ToBase64(str) {
   bytes.forEach(b => binary += String.fromCharCode(b));
   return btoa(binary);
 }
+async function writeGitHubJsonContent(path, dataObj, commitMsg, headers) {
+  const base = `https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}`;
+  const jsonHeaders = { ...headers, 'Content-Type': 'application/json' };
+  const blobRes = await fetch(`${base}/git/blobs`, {
+    method: 'POST', headers: jsonHeaders,
+    body: JSON.stringify({ content: JSON.stringify(dataObj, null, 2), encoding: 'utf-8' })
+  });
+  if (!blobRes.ok) {
+    const err = await blobRes.json().catch(() => ({}));
+    return { ok: false, status: blobRes.status, message: err.message || 'Blob upload failed' };
+  }
+  const { sha: blobSha } = await blobRes.json();
+  const refRes = await fetch(`${base}/git/refs/heads/main`, { headers });
+  if (!refRes.ok) return { ok: false, status: refRes.status, message: 'Could not read branch ref' };
+  const { object: { sha: headSha } } = await refRes.json();
+  const commitRes = await fetch(`${base}/git/commits/${headSha}`, { headers });
+  if (!commitRes.ok) return { ok: false, status: commitRes.status, message: 'Could not read head commit' };
+  const { tree: { sha: baseTreeSha } } = await commitRes.json();
+  const treeRes = await fetch(`${base}/git/trees`, {
+    method: 'POST', headers: jsonHeaders,
+    body: JSON.stringify({ base_tree: baseTreeSha, tree: [{ path, mode: '100644', type: 'blob', sha: blobSha }] })
+  });
+  if (!treeRes.ok) return { ok: false, status: treeRes.status, message: 'Could not create tree' };
+  const { sha: newTreeSha } = await treeRes.json();
+  const newCommitRes = await fetch(`${base}/git/commits`, {
+    method: 'POST', headers: jsonHeaders,
+    body: JSON.stringify({ message: commitMsg, tree: newTreeSha, parents: [headSha] })
+  });
+  if (!newCommitRes.ok) return { ok: false, status: newCommitRes.status, message: 'Could not create commit' };
+  const { sha: newCommitSha } = await newCommitRes.json();
+  const patchRes = await fetch(`${base}/git/refs/heads/main`, {
+    method: 'PATCH', headers: jsonHeaders,
+    body: JSON.stringify({ sha: newCommitSha })
+  });
+  if (!patchRes.ok) {
+    const err = await patchRes.json().catch(() => ({}));
+    return { ok: false, status: patchRes.status, message: err.message || 'Could not update branch' };
+  }
+  return { ok: true };
+}
 async function readGitHubJsonContent(fileData, headers) {
   let rawB64 = fileData.content;
   if (!rawB64 && fileData.sha) {
@@ -1640,18 +1680,12 @@ async function commitPlayerUpdate(path, playerId, mutate, commitMessage) {
     if (!getResp.ok) return { ok: false, message: `Could not read file (${getResp.status}).` };
     const fileData = await getResp.json();
     const allPlayers = await readGitHubJsonContent(fileData, headers);
-    const target = allPlayers.find(p => p.id === playerId);
+    const playerArr = Array.isArray(allPlayers) ? allPlayers : Object.values(allPlayers);
+    const target = playerArr.find(p => p && String(p.id) === String(playerId));
     if (!target) return { ok: false, message: 'Player not found in remote file.' };
     mutate(target);
-    const putResp = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: commitMessage(target), content: utf8ToBase64(JSON.stringify(allPlayers)), sha: fileData.sha }),
-    });
-    if (!putResp.ok) {
-      const err = await putResp.json().catch(() => ({}));
-      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}` };
-    }
+    const wr = await writeGitHubJsonContent(path, allPlayers, commitMessage(target), headers);
+    if (!wr.ok) return { ok: false, message: `Save failed (${wr.status}): ${wr.message}` };
     return { ok: true, message: 'Saved — live site updates in ~1 min.' };
   } catch (e) {
     return { ok: false, message: `Network error: ${e.message}` };
@@ -1691,15 +1725,8 @@ async function pushNewPlayerToFile(path, newPlayerSlice, playerName) {
     } else {
       allEntries.push(newPlayerSlice);
     }
-    const putResp = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: `Add player: ${playerName}`, content: utf8ToBase64(JSON.stringify(allEntries)), sha: fileData.sha }),
-    });
-    if (!putResp.ok) {
-      const err = await putResp.json().catch(() => ({}));
-      return { ok: false, message: `Save failed on ${path} (${putResp.status}): ${err.message || 'unknown error'}` };
-    }
+    const wr = await writeGitHubJsonContent(path, allEntries, `Add player: ${playerName}`, headers);
+    if (!wr.ok) return { ok: false, message: `Save failed on ${path} (${wr.status}): ${wr.message}` };
     return { ok: true, message: 'ok' };
   } catch (e) {
     return { ok: false, message: `Network error: ${e.message}` };
@@ -2189,15 +2216,8 @@ async function commitBulkStints(rows, path, commitMessage) {
       appliedCount++;
     }
 
-    const putResp = await fetch(apiUrl, {
-      method: 'PUT',
-      headers: { ...headers, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: commitMessage(appliedCount), content: utf8ToBase64(JSON.stringify(allPlayers)), sha: fileData.sha }),
-    });
-    if (!putResp.ok) {
-      const err = await putResp.json().catch(() => ({}));
-      return { ok: false, message: `Save failed (${putResp.status}): ${err.message || 'unknown error'}`, appliedCount: 0, notFoundIds: [] };
-    }
+    const wr = await writeGitHubJsonContent(path, allPlayers, commitMessage(appliedCount), headers);
+    if (!wr.ok) return { ok: false, message: `Save failed (${wr.status}): ${wr.message}`, appliedCount: 0, notFoundIds: [] };
     return { ok: true, message: 'Saved — live site updates in ~1 min.', appliedCount, notFoundIds };
   } catch (e) {
     return { ok: false, message: `Network error: ${e.message}`, appliedCount: 0, notFoundIds: [] };

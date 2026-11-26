@@ -6,6 +6,7 @@ STEPS = [
     ("3. 31-Team Profiles, OREB/DREB & Lineups (2026-27)", [sys.executable, "pipeline/enrich_team_profiles.py"]),
     ("4. Quarter Baselines & Shot-Clock Metrics", [sys.executable, "pipeline/build_qtr_baselines.py"]),
     ("5. Transactions & Active Roster Sync", [sys.executable, "pipeline/fetch_transactions.py"]),
+    ("5b. Sync G League Career Stints Across Database", [sys.executable, "pipeline/sync_gleague_careers.py"]),
     ("6. Preserve MXC Yellow Roster Outlines", [sys.executable, "pipeline/fix_mxc_onroster.py"]),
 ]
 

@@ -1,13 +1,14 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" href="data:,">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Advanced Box Score ? Capitanesverse</title>
+<title>Advanced Box Score — Capitanesverse</title>
 <link href="https://googleapis.com" rel="stylesheet">
 <style>
   :root { --bg:#000; --panel:#0a0a0a; --border:#222; --text:#ECECEC; --muted:#8A8A8A; --blue:#2358A6; --yellow:#F9D116; --green:#3FCF5C; --red:#D81F2A; }
-  * { box-sizing: border-box; }
+  * { box-sizing:border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font-family:'Lora',Georgia,serif; font-size:13px; }
   a { color:inherit; text-decoration:none; }
   .topbar { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; padding:10px 16px; border-bottom:1px solid var(--border); background:#050505; }
@@ -24,7 +25,7 @@
   .score-banner { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; padding:14px 18px; border:1px solid var(--border); background:var(--panel); margin-bottom:14px; }
   .team-side { display:flex; flex-direction:column; gap:3px; }
   .team-side.right { text-align:right; align-items:flex-end; }
-  .team-name { font-family:'Oswald',sans-serif; font-size:22px; font-weight:700; }
+  .team-name { font-family:'Oswald',sans-serif; font-size:21px; font-weight:700; }
   .team-sub { font-size:11px; color:var(--muted); }
   .score-center { text-align:center; }
   .score-big { font-family:'Oswald',sans-serif; font-size:30px; font-weight:700; }
@@ -51,17 +52,18 @@
   .shot-panel { border:1px solid var(--border); background:var(--panel); padding:10px 12px; }
   .shot-filters { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; align-items:center; }
   .good { color:var(--green); } .bad { color:var(--red); }
+  .p-link:hover { color:var(--yellow); text-decoration:underline; }
 </style>
 </head>
 <body>
 <div class="topbar">
-  <div class="brand">CAPITANES<span>VERSE</span> ? ADVANCED BOX SCORES</div>
+  <div class="brand">CAPITANES<span>VERSE</span> · ADVANCED BOX SCORES</div>
   <div class="nav-links">
-    <a class="nav-btn" href="inseason.html">? In-Season Hub</a>
+    <a class="nav-btn" href="inseason.html">← In-Season Hub</a>
     <a class="nav-btn primary" href="team.html">Team Profiles</a>
     <a class="nav-btn" href="playerstats.html">Player Stats</a>
     <a class="nav-btn" href="transactions.html">Transactions</a>
-    <a class="nav-btn" href="index.html">? Offseason Tool</a>
+    <a class="nav-btn" href="index.html">⇄ Offseason Tool</a>
   </div>
 </div>
 <div class="controls">
@@ -69,20 +71,22 @@
   <select id="seasonSelect"><option value="2026-27">2026-27</option><option value="2025-26">2025-26</option></select>
   <label style="font-family:'Oswald',sans-serif;font-size:11px;color:var(--muted);">GAME</label>
   <select id="gameSelect" style="min-width:290px;"></select>
-  <button class="ctrl-btn" id="prevGameBtn">? Prev</button>
-  <button class="ctrl-btn" id="nextGameBtn">Next ?</button>
+  <button class="ctrl-btn" id="prevGameBtn">← Prev</button>
+  <button class="ctrl-btn" id="nextGameBtn">Next →</button>
   <span id="statusMsg" style="font-size:11px;color:var(--muted);margin-left:auto;"></span>
 </div>
 <div class="container">
   <div id="bannerWrap"></div>
-  <div class="section-title"><span id="mxcTitle">Mexico City Capitanes ? Advanced Box Score</span><span style="font-size:11px;color:var(--muted);">Click any header to sort ? Rim ? 4 ft</span></div>
+  <div class="section-title"><span id="mxcTitle">Mexico City Capitanes — Advanced Box Score</span><span style="font-size:11px;color:var(--muted);">Click any header to sort · Rim ≤ 4 ft</span></div>
   <div class="table-wrap" id="mxcBoxWrap"></div>
-  <div class="section-title"><span id="oppTitle">Opponent ? Advanced Box Score</span><span style="font-size:11px;color:var(--muted);">Derived from play-by-play possessions, shots, FTs & turnovers</span></div>
+  <div class="section-title"><span id="oppTitle">Opponent — Advanced Box Score</span><span style="font-size:11px;color:var(--muted);">Derived from play-by-play possessions, shots, FTs & turnovers</span></div>
   <div class="table-wrap" id="oppBoxWrap"></div>
   <div class="split-grid">
     <div><div class="section-title" style="margin-top:0;">Play-by-Play Shot & Context Breakdown</div><div class="table-wrap" id="contextWrap"></div></div>
-    <div><div class="section-title" style="margin-top:0;">Interactive Game Shot Chart</div><div class="shot-panel"><div class="shot-filters"><select id="scSideFilter"><option value="off">Mexico City Capitanes</option><option value="def">Opponent</option><option value="all">Both Teams</option></select><select id="scPlayerFilter"><option value="all">All Players</option></select><span id="scSummary" style="font-size:11px;color:var(--muted);margin-left:auto;"></span></div><svg id="courtSvg" viewBox="-260 -55 520 475" style="width:100%;max-height:430px;background:#050505;border:1px solid #1e1e1e;display:block;"></svg></div></div>
+    <div><div class="section-title" style="margin-top:0;"><span>Detailed Shot Charts</span><span id="scStintBadge"></span></div><div class="shot-panel"><div class="shot-filters"><select id="scMxcPlayerFilter"><option value="all">MXC: All Players</option></select><select id="scOppPlayerFilter"><option value="all">OPP: All Players</option></select><select id="scResultFilter"><option value="all">All Shots</option><option value="made">Made Only</option><option value="miss">Missed Only</option></select><select id="scZoneFilter"><option value="all">All Zones</option><option value="dunk">Dunks</option><option value="rim">Rim (? 4 ft)</option><option value="mid">Mid-Range</option><option value="3pt">3-Pointers</option></select><select id="scPeriodFilter"><option value="all">All Periods</option><option value="h1">1st Half</option><option value="h2">2nd Half</option><option value="1">Q1</option><option value="2">Q2</option><option value="3">Q3</option><option value="4">Q4</option><option value="ot">OT</option></select><select id="scCtxFilter"><option value="all">All Contexts</option><option value="early">Transition / Early</option><option value="half">Half-Court</option><option value="2nd">2nd Chance</option><option value="astd">Assisted</option><option value="unast">Unassisted</option></select></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-family:'Oswald',sans-serif;font-size:11.5px;font-weight:700;color:var(--yellow);">MEXICO CITY CAPITANES</span><span id="scMxcSummary" style="font-size:10.5px;color:var(--muted);font-family:'Oswald',sans-serif;"></span></div><svg id="courtSvgMxc" viewBox="-260 -55 520 475" style="width:100%;max-height:360px;background:#050505;border:1px solid #1e1e1e;display:block;"></svg></div><div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span id="scOppHeader" style="font-family:'Oswald',sans-serif;font-size:11.5px;font-weight:700;color:#9ec5fe;">OPPONENT</span><span id="scOppSummary" style="font-size:10.5px;color:var(--muted);font-family:'Oswald',sans-serif;"></span></div><svg id="courtSvgOpp" viewBox="-260 -55 520 475" style="width:100%;max-height:360px;background:#050505;border:1px solid #1e1e1e;display:block;"></svg></div></div></div></div>
   </div>
+  <div class="section-title"><span>MXC 5-Man Lineup Segments &amp; Stint Plus-Minus</span><span style="font-size:11px;color:var(--muted);">Aggregated 5-man units &amp; chronological floor stints</span></div>
+  <div id="lineupSegWrap"></div>
 </div>
 <script>
 const params = new URLSearchParams(location.search);
@@ -90,53 +94,71 @@ let currentSeason = params.get('season') || '2026-27';
 let requestedGid = params.get('game') || '';
 const cacheBySeason = {};
 let currentGameData = null;
-const TEAM_NAMES = { MXC:'Mexico City Capitanes',AUS:'Austin Spurs',BHM:'Birmingham Squadron',CAP:'Capital City Go-Go',CCG:'Cleveland Charge',CPS:'College Park Skyhawks',DEL:'Delaware Blue Coats',GRG:'Grand Rapids Gold',GBO:'Greensboro Swarm',IWA:'Iowa Wolves',LIN:'Long Island Nets',MNE:'Maine Celtics',MHU:'Memphis Hustle',MCC:'Motor City Cruise',NOB:'Noblesville Boom',OKL:'Oklahoma City Blue',OSC:'Osceola Magic',RAP:'Raptors 905',RGV:'Rio Grande Valley Vipers',RCR:'Rip City Remix',SLC:'Salt Lake City Stars',SCW:'Santa Cruz Warriors',SXF:'Sioux Falls Skyforce',SBL:'South Bay Lakers',STO:'Stockton Kings',TEX:'Texas Legends',VAL:'Valley Suns',WES:'Westchester Knicks',WCB:'Windy City Bulls',WIS:'Wisconsin Herd',SD:'San Diego Clippers' };
+const TEAM_NAMES = { MXC:'Mexico City Capitanes',AUS:'Austin Spurs',BHM:'Birmingham Squadron',CAP:'Capital City Go-Go',CCG:'Cleveland Charge',CPS:'College Park Skyhawks',DEL:'Delaware Blue Coats',GRG:'Grand Rapids Gold',GBO:'Greensboro Swarm',IWA:'Iowa Wolves',LIN:'Long Island Nets',MNE:'Maine Celtics',MHU:'Memphis Hustle',MCC:'Motor City Cruise',NOB:'Noblesville Boom',OKL:'Oklahoma City Blue',OSC:'Osceola Magic',RAP:'Raptors 905',RGV:'Rio Grande Valley Vipers',RCR:'Rip City Remix',SLC:'Salt Lake City Stars',SCW:'Santa Cruz Warriors',SXF:'Sioux Falls Skyforce',SBL:'South Bay Lakers',STO:'Stockton Kings',TEX:'Texas Legends',VAL:'Valley Suns',WES:'Westchester Knicks',WCB:'Windy City Bulls',WIS:'Wisconsin Herd',SD:'San Diego Clippers',CLC:'Cleveland Charge',IMA:'Noblesville Boom' };
 
 async function loadSeasonData(season) {
   if (cacheBySeason[season]) return cacheBySeason[season];
-  document.getElementById('statusMsg').textContent = `Loading ${season} play-by-play...`;
-  const resp = await fetch(`data/shot_charts_${season}.json?v=${Date.now()}`);
-  if (!resp.ok) throw new Error(`Failed to load shot_charts_${season}.json`);
+  document.getElementById('statusMsg').innerHTML = 'Loading ' + season + ' play-by-play...';
+  const [resp, lgResp, mexResp] = await Promise.all([
+    fetch('data/shot_charts_' + season + '.json?v=' + Date.now()),
+    fetch('data/league_lite_shots_' + season + '.json?v=' + Date.now()).catch(() => null),
+    fetch('data/mex_data_' + season + '.json?v=' + Date.now()).catch(() => null)
+  ]);
+  if (!resp.ok) throw new Error('Failed to load shot_charts_' + season + '.json');
   const data = await resp.json();
+  const lgJson = (lgResp && lgResp.ok) ? await lgResp.json() : {};
+  const mexJson = (mexResp && mexResp.ok) ? await mexResp.json() : {};
+  data._lgTeams = lgJson.teams || [];
+  data._mexPlayers = mexJson.players || [];
   if ((!data.games || !data.games.length) && season === '2026-27' && !params.get('season')) {
     document.getElementById('seasonSelect').value = '2025-26'; currentSeason = '2025-26';
     return loadSeasonData('2025-26');
   }
-  const nameById = new Map();
-  const pl = data.players || {};
-  if (Array.isArray(pl)) pl.forEach(p => nameById.set(Number(p.id), p.name));
-  else Object.entries(pl).forEach(([id, v]) => nameById.set(Number(id), typeof v === 'string' ? v : v.name));
-  data._nameById = nameById; cacheBySeason[season] = data;
-  document.getElementById('statusMsg').textContent = `${data.games.length} games loaded`;
+  const nameById = new Map(), mxcPids = new Set();
+  const pl = data.players || [];
+  if (Array.isArray(pl)) pl.forEach(p => { const id = Number(p.id); if (id) { nameById.set(id, p.name); mxcPids.add(id); } });
+  else Object.entries(pl).forEach(([id, v]) => { const nid = Number(id); if (nid) { nameById.set(nid, typeof v === 'string' ? v : v.name); mxcPids.add(nid); } });
+  (data.poss || []).forEach(ps => (ps.on || []).forEach(id => mxcPids.add(Number(id))));
+  (data.shots || []).forEach(sh => { if (sh.side === 'off' && sh.pid) mxcPids.add(Number(sh.pid)); });
+  data._nameById = nameById; data._mxcPids = mxcPids; cacheBySeason[season] = data;
+  document.getElementById('statusMsg').innerHTML = data.games.length + ' games loaded';
   return data;
 }
 
 function parseGameMeta(gameObj) {
-  const lbl = gameObj.label || gameObj.id;
-  const m = lbl.match(/^(\d{4}-\d{2}-\d{2})\s*·\s*MXC\s+(vs\.|@)\s+([A-Z]{2,4})(?:\s*\(([WL])\))?/);
-  const date = m ? m : '', loc = m ? (m === '@' ? 'Away' : 'Home') : '', oppCode = m ? m : 'OPP', wl = m ? (m || '') : '';
-  return { id: String(gameObj.id), label: lbl, date, loc, oppCode, oppName: TEAM_NAMES[oppCode] || oppCode, wl };
+  const lbl = String(gameObj.label || gameObj.id || '');
+  const dMatch = lbl.match(/(\d{4}-\d{2}-\d{2})/);
+  const mMatch = lbl.match(/MXC\s+(vs\.?|@)\s+([A-Z]{2,4})/);
+  const wlMatch = lbl.match(/\(([WL])\)/);
+  const date = dMatch ? dMatch.at(1) : '';
+  const loc = mMatch ? (mMatch.at(1) === '@' ? 'Away' : 'Home') : '';
+  const oppCode = mMatch ? mMatch.at(2) : 'OPP';
+  return { id: String(gameObj.id), label: lbl, date, loc, oppCode, oppName: TEAM_NAMES[oppCode] || oppCode, wl: wlMatch ? wlMatch.at(1) : '' };
 }
-function buildBoxForSide(side, gPoss, gShots, gFts, gTos, gEvts, nameById) {
+
+function buildBoxForSide(side, gPoss, gShots, gFts, gTos, gEvts, nameById, mxcPids, gBoxP) {
+  const officialSide = (gBoxP || []).filter(x => x.side === side);
   const sidePoss = gPoss.filter(x => x.side === side), oppPoss = gPoss.filter(x => x.side !== side);
   const sideShots = gShots.filter(x => x.side === side), sideFts = gFts.filter(x => x.side === side);
   const sideTos = gTos.filter(x => x.side === side), oppTos = gTos.filter(x => x.side !== side);
-  const sideEvts = gEvts.filter(x => x.side === side), oppEvts = gEvts.filter(x => x.side !== side);
+  const isMxcPid = pid => mxcPids.has(Number(pid));
+  const sideEvts = gEvts.filter(e => e.side ? e.side === side : (side === 'off' ? isMxcPid(e.pid) : !isMxcPid(e.pid)));
+  const oppEvts = gEvts.filter(e => e.side ? e.side !== side : (side === 'off' ? !isMxcPid(e.pid) : isMxcPid(e.pid)));
   const totalPoss = Math.max(1, sidePoss.length), oppTotalPoss = Math.max(1, oppPoss.length);
   const teamPts = sideShots.reduce((s, x) => s + (x.made ? x.val : 0), 0) + sideFts.reduce((s, x) => s + (x.made ? 1 : 0), 0);
   const teamFga = sideShots.length, teamFgm = sideShots.filter(x => x.made).length;
   const team3pm = sideShots.filter(x => x.val === 3 && x.made).length, team3pa = sideShots.filter(x => x.val === 3).length;
   const team2pm = teamFgm - team3pm, team2pa = teamFga - team3pa;
   const teamFtm = sideFts.filter(x => x.made).length, teamFta = sideFts.length;
-  const teamOrb = sideEvts.filter(e => e.type === 'OREB').length || sidePoss.reduce((s, x) => s + (x.oreb || 0), 0);
-  const teamDrb = sideEvts.filter(e => e.type === 'DREB').length || oppPoss.reduce((s, x) => s + (x.dreb || 0), 0);
-  const oppOrb = oppEvts.filter(e => e.type === 'OREB').length || oppPoss.reduce((s, x) => s + (x.oreb || 0), 0);
-  const oppDrb = oppEvts.filter(e => e.type === 'DREB').length || sidePoss.reduce((s, x) => s + (x.dreb || 0), 0);
+  const teamOrb = sideEvts.filter(e => String(e.type).toUpperCase() === 'OREB').length || sidePoss.reduce((s, x) => s + (x.oreb || 0), 0);
+  const teamDrb = sideEvts.filter(e => String(e.type).toUpperCase() === 'DREB').length || oppPoss.reduce((s, x) => s + (x.dreb || 0), 0);
+  const oppOrb = oppEvts.filter(e => String(e.type).toUpperCase() === 'OREB').length || oppPoss.reduce((s, x) => s + (x.oreb || 0), 0);
+  const oppDrb = oppEvts.filter(e => String(e.type).toUpperCase() === 'DREB').length || sidePoss.reduce((s, x) => s + (x.dreb || 0), 0);
   const teamTov = sideTos.length, opp2pa = gShots.filter(x => x.side !== side && x.val === 2).length;
   const playersMap = new Map();
   const ensureP = (pid, fallbackName) => {
     const id = Number(pid); if (!id) return null;
-    if (!playersMap.has(id)) playersMap.set(id, { id, name: fallbackName || nameById.get(id) || `#${id}`, possOn:0,offPtsOn:0,defPtsOn:0,pts:0,fgm:0,fga:0,fg3m:0,fg3a:0,ftm:0,fta:0,dunkM:0,dunkA:0,rimM:0,rimA:0,midM:0,midA:0,ast:0,tov:0,stl:0,blk:0,orb:0,drb:0,pf:0,teamFgmOn:0,teamFgaOn:0,teamFtaOn:0,teamTovOn:0,oppPossOn:0 });
+    if (!playersMap.has(id)) playersMap.set(id, { id, name: fallbackName || nameById.get(id) || ('#' + id), possOn:0,offPtsOn:0,defPtsOn:0,pts:0,fgm:0,fga:0,fg3m:0,fg3a:0,ftm:0,fta:0,dunkM:0,dunkA:0,rimM:0,rimA:0,midM:0,midA:0,ast:0,tov:0,stl:0,blk:0,orb:0,drb:0,pf:0,teamFgmOn:0,teamFgaOn:0,teamFtaOn:0,teamTovOn:0,oppPossOn:0 });
     else if (fallbackName && playersMap.get(id).name.startsWith('#')) playersMap.get(id).name = fallbackName;
     return playersMap.get(id);
   };
@@ -171,139 +193,611 @@ function buildBoxForSide(side, gPoss, gShots, gFts, gTos, gEvts, nameById) {
     const p = ensureP(to.pid, to.player); if (p) p.tov += 1;
     if (side === 'off' && Array.isArray(to.on)) for (const oid of to.on) { const op = ensureP(oid); if (op) op.teamTovOn += 1; }
   }
-  for (const oto of oppTos) if (oto.spid) { const sp = ensureP(oto.spid, oto.stealer); if (sp) sp.stl += 1; }
+  if (side === 'def') { for (const oto of oppTos) if (oto.spid) { const sp = ensureP(oto.spid, oto.stealer); if (sp) sp.stl += 1; } }
   for (const ev of sideEvts) {
     const p = ensureP(ev.pid); if (!p) continue; const t = String(ev.type || '').toUpperCase();
-    if (t === 'AST') p.ast += 1; else if (t === 'OREB') p.orb += 1; else if (t === 'DREB') p.drb += 1; else if (t === 'BLK') p.blk += 1; else if (t === 'FOUL' || t === 'PF') p.pf += 1;
+    if (t === 'AST') p.ast += 1; else if (t === 'OREB') p.orb += 1; else if (t === 'DREB') p.drb += 1; else if (t === 'BLK') p.blk += 1; else if (t === 'STL') p.stl += 1;
   }
-  const rows = Array.from(playersMap.values()).map(p => {
-    const min = side === 'off' ? Math.max(1, Math.round((p.possOn / totalGamePoss) * totalGameMins)) : Math.min(48, Math.max(4, Math.round((p.fga + p.fta * 0.44 + p.tov + p.orb + p.drb + p.ast + p.stl + p.blk) * 1.45)));
-    const minShare = min / totalGameMins, fg2m = p.fgm - p.fg3m, fg2a = p.fga - p.fg3a;
+  const rawList = Array.from(playersMap.values());
+  const rawWeightSum = side === 'def' ? Math.max(1, rawList.reduce((acc, q) => acc + Math.max(1, q.fga + q.fta * 0.44 + q.tov + q.pts * 0.35), 0)) : 1;
+  const rows = rawList.map(p => {
+    const defW = Math.max(1, p.fga + p.fta * 0.44 + p.tov + p.pts * 0.35);
+    const offM = officialSide.find(o => Number(o.pid) === Number(p.id)); const min = offM && offM.min > 0 ? offM.min : (side === 'off' ? Math.max(1, Math.round((p.possOn / totalGamePoss) * totalGameMins)) : Math.min(44, Math.max(5, Math.round((defW / rawWeightSum) * (totalGameMins * 5)))));
+    const onFloorShare = Math.min(1, Math.max(0.03, min / totalGameMins)), fg2m = p.fgm - p.fg3m, fg2a = p.fga - p.fg3a;
     const efg = p.fga ? ((p.fgm + 0.5 * p.fg3m) / p.fga) * 100 : null;
     const tsa = p.fga + 0.44 * p.fta, ts = tsa ? (p.pts / (2 * tsa)) * 100 : null;
-    const tmFga = p.teamFgaOn || Math.max(1, Math.round(teamFga * minShare)), tmFta = p.teamFtaOn || Math.max(1, Math.round(teamFta * minShare)), tmTov = p.teamTovOn || Math.max(1, Math.round(teamTov * minShare)), tmFgm = p.teamFgmOn || Math.max(1, Math.round(teamFgm * minShare));
-    const usgDen = tmFga + 0.44 * tmFta + tmTov, usg = usgDen ? ((p.fga + 0.44 * p.fta + p.tov) / usgDen) * 100 * (side === 'off' ? 1 : 0.2) : null;
+    const tmFga = p.teamFgaOn || Math.max(1, teamFga * onFloorShare), tmFta = p.teamFtaOn || Math.max(1, teamFta * onFloorShare), tmTov = p.teamTovOn || Math.max(1, teamTov * onFloorShare), tmFgm = p.teamFgmOn || Math.max(1, teamFgm * onFloorShare);
+    const usgDen = tmFga + 0.44 * tmFta + tmTov, usg = usgDen ? ((p.fga + 0.44 * p.fta + p.tov) / usgDen) * 100 : null;
     const indivPoss = p.fga + 0.44 * p.fta + p.tov - p.orb * 0.5, ortg = indivPoss > 0.5 ? ((p.pts + p.ast * 1.5) / indivPoss) * 100 : null;
-    const orbCh = (teamOrb + oppDrb) * minShare, drbCh = (teamDrb + oppOrb) * minShare;
-    const orPct = orbCh > 0.5 ? (p.orb / orbCh) * 100 : null, drPct = drbCh > 0.5 ? (p.drb / drbCh) * 100 : null;
-    const astPct = (p.ast / Math.max(1, tmFgm - p.fgm)) * 100;
+    const offRec = officialSide.find(o => Number(o.pid) === Number(p.id)); if (offRec) { p.ast = offRec.ast; p.orb = offRec.orb; p.drb = offRec.drb; p.stl = offRec.stl; p.blk = offRec.blk; p.pf = offRec.pf; p.pm = offRec.pm; p.pts = offRec.pts; p.fgm = offRec.fgm; p.fga = offRec.fga; p.fg3m = offRec.fg3m; p.fg3a = offRec.fg3a; p.ftm = offRec.ftm; p.fta = offRec.fta; p.tov = offRec.tov; } const hasEv = side === 'off' || Boolean(offRec);
+    const orbCh = (teamOrb + oppDrb) * onFloorShare, drbCh = (teamDrb + oppOrb) * onFloorShare;
+    const orPct = (hasEv && orbCh > 0.5) ? (p.orb / orbCh) * 100 : null, drPct = (hasEv && drbCh > 0.5) ? (p.drb / drbCh) * 100 : null;
+    const astPct = (hasEv && Math.max(1, tmFgm - p.fgm) > 0) ? (p.ast / Math.max(1, tmFgm - p.fgm)) * 100 : null;
     const tovPct = (p.fga + 0.44 * p.fta + p.tov) > 0 ? (p.tov / (p.fga + 0.44 * p.fta + p.tov)) * 100 : null;
-    const stlPct = (p.stl / (p.oppPossOn || Math.max(1, oppTotalPoss * minShare))) * 100;
-    const blkPct = (p.blk / Math.max(1, opp2pa * minShare)) * 100;
-    const pm = side === 'off' ? (p.offPtsOn - p.defPtsOn) : null;
-    return { ...p, min, fg2m, fg2a, efg, ts, usg, ortg, orPct, drPct, astPct, tovPct, stlPct, blkPct, pm };
+    const oppPOn = p.oppPossOn || Math.max(1, oppTotalPoss * onFloorShare);
+    const stlPct = hasEv ? (p.stl / oppPOn) * 100 : null, blkPct = hasEv ? (p.blk / Math.max(1, opp2pa * onFloorShare)) * 100 : null;
+    const pm = offRec ? offRec.pm : (side === 'off' ? (p.offPtsOn - p.defPtsOn) : null);
+    const estPoss = p.possOn ? (p.possOn / 2) : Math.max(1, totalPoss * onFloorShare);
+    const dre = (100 / estPoss) * (0.792 * p.pts - 0.719 * p.fga - 0.299 * p.fta + 0.145 * (p.orb + p.drb) + 0.369 * p.ast + 1.662 * p.stl + 0.696 * p.blk - 0.844 * p.tov);
+    return { ...p, min, fg2m, fg2a, efg, ts, usg, ortg, orPct, drPct, astPct, tovPct, stlPct, blkPct, pm, dre, ast: hasEv ? p.ast : null, stl: hasEv ? p.stl : null, blk: hasEv ? p.blk : null, orb: hasEv ? p.orb : null, drb: hasEv ? p.drb : null };
   }).sort((a, b) => b.min - a.min || b.pts - a.pts);
   const totals = {
-    min: totalGameMins, pts: teamPts, ortg: (teamPts / totalPoss) * 100,
-    efg: teamFga ? ((teamFgm + 0.5 * team3pm) / teamFga) * 100 : null,
-    ts: (teamFga + 0.44 * teamFta) ? (teamPts / (2 * (teamFga + 0.44 * teamFta))) * 100 : null,
-    orPct: (teamOrb + oppDrb) ? (teamOrb / (teamOrb + oppDrb)) * 100 : null,
-    drPct: (teamDrb + oppOrb) ? (teamDrb / (teamDrb + oppOrb)) * 100 : null,
-    ast: rows.reduce((s, r) => s + r.ast, 0), astPct: teamFgm ? (rows.reduce((s, r) => s + r.ast, 0) / teamFgm) * 100 : null,
+    min: totalGameMins, pts: teamPts, ortg: (teamPts / totalPoss) * 100, efg: teamFga ? ((teamFgm + 0.5 * team3pm) / teamFga) * 100 : null, ts: (teamFga + 0.44 * teamFta) ? (teamPts / (2 * (teamFga + 0.44 * teamFta))) * 100 : null,
+    orPct: (teamOrb + oppDrb) ? (teamOrb / (teamOrb + oppDrb)) * 100 : null, drPct: (teamDrb + oppOrb) ? (teamDrb / (teamDrb + oppOrb)) * 100 : null,
+    ast: rows.reduce((s, r) => s + (r.ast || 0), 0), astPct: teamFgm ? (rows.reduce((s, r) => s + (r.ast || 0), 0) / teamFgm) * 100 : null,
     tov: teamTov, tovPct: (teamFga + 0.44 * teamFta + teamTov) ? (teamTov / (teamFga + 0.44 * teamFta + teamTov)) * 100 : null,
-    stl: rows.reduce((s, r) => s + r.stl, 0), stlPct: (rows.reduce((s, r) => s + r.stl, 0) / oppTotalPoss) * 100,
-    blk: rows.reduce((s, r) => s + r.blk, 0), blkPct: opp2pa ? (rows.reduce((s, r) => s + r.blk, 0) / opp2pa) * 100 : null,
-    dunkM: rows.reduce((s, r) => s + r.dunkM, 0), dunkA: rows.reduce((s, r) => s + r.dunkA, 0),
-    rimM: rows.reduce((s, r) => s + r.rimM, 0), rimA: rows.reduce((s, r) => s + r.rimA, 0),
-    midM: rows.reduce((s, r) => s + r.midM, 0), midA: rows.reduce((s, r) => s + r.midA, 0),
-    fg2m: team2pm, fg2a: team2pa, fg3m: team3pm, fg3a: team3pa, ftm: teamFtm, fta: teamFta,
-    orb: teamOrb, drb: teamDrb, pf: rows.reduce((s, r) => s + r.pf, 0), poss: totalPoss
+    stl: rows.reduce((s, r) => s + (r.stl || 0), 0), stlPct: (rows.reduce((s, r) => s + (r.stl || 0), 0) / oppTotalPoss) * 100,
+    blk: rows.reduce((s, r) => s + (r.blk || 0), 0), blkPct: opp2pa ? (rows.reduce((s, r) => s + (r.blk || 0), 0) / opp2pa) * 100 : null,
+    dunkM: rows.reduce((s, r) => s + r.dunkM, 0), dunkA: rows.reduce((s, r) => s + r.dunkA, 0), rimM: rows.reduce((s, r) => s + r.rimM, 0), rimA: rows.reduce((s, r) => s + r.rimA, 0), midM: rows.reduce((s, r) => s + r.midM, 0), midA: rows.reduce((s, r) => s + r.midA, 0),
+    fg2m: team2pm, fg2a: team2pa, fg3m: team3pm, fg3a: team3pa, ftm: teamFtm, fta: teamFta, orb: officialSide.length ? officialSide.reduce((s, r) => s + r.orb, 0) : teamOrb, drb: officialSide.length ? officialSide.reduce((s, r) => s + r.drb, 0) : teamDrb, pf: rows.reduce((s, r) => s + r.pf, 0), poss: totalPoss
   };
   return { rows, totals };
 }
 function renderBoxTable(containerId, boxObj, isMxc) {
   const cols = [
-    { key:'name',label:'Player'},{key:'min',label:'Min'},{key:'ortg',label:'ORtg',dec:1},{key:'usg',label:'Usg%',dec:1},
+    {key:'name',label:'Player'},{key:'min',label:'Min'},{key:'ortg',label:'ORtg',dec:1},{key:'usg',label:'Usg%',dec:1},
     {key:'efg',label:'eFG%',dec:1},{key:'ts',label:'TS%',dec:1},{key:'orPct',label:'OR%',dec:0},{key:'drPct',label:'DR%',dec:0},
     {key:'astPct',label:'A%',dec:0},{key:'tovPct',label:'TO%',dec:0},{key:'stlPct',label:'Stl%',dec:1},{key:'blkPct',label:'Blk%',dec:1},
-    {key:'dunkA',label:'Dunk',ma:['dunkM','dunkA']},{key:'rimA',label:'Rim',ma:['rimM','rimA']},{key:'midA',label:'Mid',ma:['midM','midA']},
-    {key:'fg2a',label:'2Pt',ma:['fg2m','fg2a']},{key:'fg3a',label:'3Pt',ma:['fg3m','fg3a']},{key:'fta',label:'FT',ma:['ftm','fta']},
+    {key:'dunkA',label:'Dunk',ma:'dunkM,dunkA'},{key:'rimA',label:'Rim',ma:'rimM,rimA'},{key:'midA',label:'Mid',ma:'midM,midA'},
+    {key:'fg2a',label:'2Pt',ma:'fg2m,fg2a'},{key:'fg3a',label:'3Pt',ma:'fg3m,fg3a'},{key:'fta',label:'FT',ma:'ftm,fta'},
     {key:'ast',label:'Ast'},{key:'tov',label:'TO'},{key:'stl',label:'Stl'},{key:'blk',label:'Blk'},{key:'orb',label:'OR'},{key:'drb',label:'DR'},{key:'pf',label:'PF'},
-    ...(isMxc ? [{key:'pm',label:'+/-',signed:true}] : []),{key:'pts',label:'Pts'}
+    {key:'pm',label:'+/-',signed:true},{key:'dre',label:'DRE',dec:1,signedDec:true},{key:'pts',label:'Pts'}
   ];
   let sortKey = 'min', sortDir = -1;
   const draw = () => {
-    const sorted = boxObj.rows.slice().sort((a, b) => sortKey === 'name' ? a.name.localeCompare(b.name) * sortDir : ((a[sortKey] ?? -9999) - (b[sortKey] ?? -9999)) * sortDir);
-    const t = boxObj.totals;
-    const cellVal = (row, c) => {
-      if (c.key === 'name') return `<strong>${row.name}</strong>`;
-      if (c.ma) return `${row[c.ma[0]]}-${row[c.ma[1]]}`;
+    const sorted = boxObj.rows.slice().sort((a, b) => sortKey === 'name' ? a.name.localeCompare(b.name) * sortDir : ((a[sortKey] ?? -9999) - (b[sortKey] ?? -9999)) * sortDir), t = boxObj.totals;
+    const cellVal = (row, c, isTotal) => {
+      if (c.key === 'name') return isTotal ? ('Totals (' + t.poss + ' poss)') : (isMxc ? '<a class="p-link" href="player.html?id=' + row.id + '"><strong>' + row.name + '</strong></a>' : '<strong>' + row.name + '</strong>');
+      if (c.ma) return row[c.ma.split(',').at(0)] + '-' + row[c.ma.split(',').at(1)];
       const v = row[c.key]; if (v == null || Number.isNaN(v)) return '—';
-      if (c.signed) return v > 0 ? `<span class="good">+${v}</span>` : v < 0 ? `<span class="bad">${v}</span>` : '0';
+      if (c.signed) return v > 0 ? '<span class="good">+' + v + '</span>' : v < 0 ? '<span class="bad">' + v + '</span>' : '0'; if (c.signedDec) { const n = Number(v); return n > 0 ? '<span class="good">+' + n.toFixed(1) + '</span>' : n < 0 ? '<span class="bad">' + n.toFixed(1) + '</span>' : '0.0'; }
       return c.dec != null ? Number(v).toFixed(c.dec) : Math.round(v);
     };
     const el = document.getElementById(containerId);
-    el.innerHTML = `<table class="box"><thead><tr>${cols.map(c => `<th data-k="${c.key}">${c.label}${sortKey === c.key ? (sortDir < 0 ? ' ↓' : ' ↑') : ''}</th>`).join('')}</tr></thead><tbody>`
-      + sorted.map(r => `<tr>${cols.map(c => `<td>${cellVal(r, c)}</td>`).join('')}</tr>`).join('')
-      + `<tr class="totals">${cols.map(c => c.key === 'name' ? `<td>Totals (${t.poss} poss)</td>` : (c.key === 'usg' || c.key === 'pm') ? '<td>—</td>' : `<td>${cellVal(t, c)}</td>`).join('')}</tr></tbody></table>`;
+    el.innerHTML = '<table class="box"><thead><tr>' + cols.map(c => '<th data-k="' + c.key + '">' + c.label + (sortKey === c.key ? (sortDir < 0 ? ' ↓' : ' ↑') : '') + '</th>').join('') + '</tr></thead><tbody>' + sorted.map(r => '<tr>' + cols.map(c => '<td>' + cellVal(r, c, false) + '</td>').join('') + '</tr>').join('') + '<tr class="totals">' + cols.map(c => (c.key === 'usg' || c.key === 'pm' || c.key === 'dre') ? '<td>—</td>' : '<td>' + cellVal(t, c, true) + '</td>').join('') + '</tr></tbody></table>';
     el.querySelectorAll('th').forEach(th => th.onclick = () => { const k = th.dataset.k; if (sortKey === k) sortDir *= -1; else { sortKey = k; sortDir = k === 'name' ? 1 : -1; } draw(); });
   };
   draw();
 }
-
 function renderContextBreakdown(gPoss, gShots, gFts, gTos, oppCode) {
-  const possByKey = new Map(); gPoss.forEach(p => possByKey.set(`${p.side}_${p.gord}`, p));
-  const sortedPoss = gPoss.slice().sort((a, b) => (a.gord || 0) - (b.gord || 0));
-  const prevPossMap = new Map(); for (let i = 1; i < sortedPoss.length; i++) prevPossMap.set(`${sortedPoss[i].side}_${sortedPoss[i].gord}`, sortedPoss[i - 1]);
+  const possByKey = new Map(); gPoss.forEach(p => { const k = p.side + '_' + p.p + '_' + p.clk + '_' + (Array.isArray(p.on) ? p.on.join(',') : ''); if (!possByKey.has(k) || p.oreb) possByKey.set(k, p); });
+  const tovPidsByPer = new Set(gTos.map(t => t.side + '_' + t.p));
   const sideStats = (side) => {
     const sh = gShots.filter(x => x.side === side), totalFga = Math.max(1, sh.length);
-    const calc = (arr) => {
-      const fga = arr.length, fgm = arr.filter(x => x.made).length, fg3m = arr.filter(x => x.made && x.val === 3).length, astd = arr.filter(x => x.made && x.astd).length;
-      return { ma: `${fgm}-${fga}`, efg: fga ? (((fgm + 0.5 * fg3m) / fga) * 100).toFixed(1) : '—', share: ((fga / totalFga) * 100).toFixed(1) + '%', astPct: fgm ? ((astd / fgm) * 100).toFixed(1) + '%' : '—' };
-    };
+    const calc = (arr) => { const fga = arr.length, fgm = arr.filter(x => x.made).length, fg3m = arr.filter(x => x.made && x.val === 3).length, astd = arr.filter(x => x.made && x.astd).length; return { ma: fgm + '-' + fga, efg: fga ? (((fgm + 0.5 * fg3m) / fga) * 100).toFixed(1) : '—', share: ((fga / totalFga) * 100).toFixed(1) + '%', astPct: fgm ? ((astd / fgm) * 100).toFixed(1) + '%' : '—' }; };
     const isDunk = x => /dunk/i.test(String(x.sub || '')), isRim = x => x.val === 2 && (isDunk(x) || Number(x.dist || 99) <= 4 || /layup|tip|hook/i.test(String(x.sub || '')));
     const isEarly = x => String(x.clk || '').toLowerCase() === 'early';
-    const is2nd = x => { const ps = possByKey.get(`${side}_${x.gord}`); return ps && (ps.oreb || 0) > 0; };
-    const isOffTov = x => { const prev = prevPossMap.get(`${side}_${x.gord}`); return prev ? gTos.some(t => t.side !== side && t.gord === prev.gord) : false; };
+    const is2nd = x => Boolean(x.oreb);
+    const isOffTov = x => Boolean(x.offTov);
     const and1Count = gFts.filter(f => f.side === side && f.and1).length;
-    return { all: calc(sh), dunk: calc(sh.filter(isDunk)), rim: calc(sh.filter(isRim)), mid: calc(sh.filter(x => x.val === 2 && !isRim(x))), three: calc(sh.filter(x => x.val === 3)), early: calc(sh.filter(isEarly)), half: calc(sh.filter(x => !isEarly(x))), second: calc(sh.filter(is2nd)), offTov: calc(sh.filter(isOffTov)), and1: { ma: `${and1Count}`, efg: '—', share: totalFga ? ((and1Count / totalFga) * 100).toFixed(1) + '%' : '—', astPct: '—' }, h1: calc(sh.filter(x => Number(x.p || 1) <= 2)), h2: calc(sh.filter(x => Number(x.p || 1) >= 3)) };
+    return { all: calc(sh), dunk: calc(sh.filter(isDunk)), rim: calc(sh.filter(isRim)), mid: calc(sh.filter(x => x.val === 2 && !isRim(x))), three: calc(sh.filter(x => x.val === 3)), early: calc(sh.filter(isEarly)), half: calc(sh.filter(x => !isEarly(x))), second: calc(sh.filter(is2nd)), offTov: calc(sh.filter(isOffTov)), and1: { ma: String(and1Count), efg: '—', share: totalFga ? ((and1Count / totalFga) * 100).toFixed(1) + '%' : '—', astPct: '—' }, h1: calc(sh.filter(x => Number(x.p || 1) <= 2)), h2: calc(sh.filter(x => Number(x.p || 1) >= 3)) };
   };
   const m = sideStats('off'), o = sideStats('def');
-  const rows = [
-    { cat: 'SHOT ZONES' },{ label: 'All Field Goals', k: 'all' },{ label: 'Dunks', k: 'dunk' },{ label: 'At the Rim (Close 2)', k: 'rim' },{ label: 'Other 2-PT (Mid)', k: 'mid' },{ label: '3-Pt Jumpers', k: 'three' },
-    { cat: 'PLAY CONTEXTS' },{ label: 'Transition / Early Clock', k: 'early' },{ label: 'Half-Court', k: 'half' },{ label: '2nd Chance (Poss. w/ OREB)', k: 'second' },{ label: 'Off Opponent Turnover', k: 'offTov' },{ label: 'And-1s (Bonus FT)', k: 'and1' },
-    { cat: 'BY PERIOD' },{ label: '1st Half (Q1–Q2)', k: 'h1' },{ label: '2nd Half (Q3–Q4+)', k: 'h2' }
-  ];
-  document.getElementById('contextWrap').innerHTML = `<table class="ctx"><thead><tr><th rowspan="2">Split / Context</th><th colspan="4" style="text-align:center;color:var(--yellow);border-left:1px solid #2b2b2b;">MXC</th><th colspan="4" style="text-align:center;color:#9ec5fe;border-left:1px solid #2b2b2b;">${oppCode}</th></tr><tr><th style="border-left:1px solid #2b2b2b;">FGM-A</th><th>eFG%</th><th>Share</th><th>Ast'd</th><th style="border-left:1px solid #2b2b2b;">FGM-A</th><th>eFG%</th><th>Share</th><th>Ast'd</th></tr></thead><tbody>${rows.map(r => r.cat ? `<tr class="cat-hdr"><td colspan="9">${r.cat}</td></tr>` : `<tr><td>${r.label}</td><td style="border-left:1px solid #1f1f1f;">${m[r.k].ma}</td><td>${m[r.k].efg}</td><td>${m[r.k].share}</td><td>${m[r.k].astPct}</td><td style="border-left:1px solid #1f1f1f;">${o[r.k].ma}</td><td>${o[r.k].efg}</td><td>${o[r.k].share}</td><td>${o[r.k].astPct}</td></tr>`).join('')}</tbody></table>`;
+  const rows = [{ cat: 'SHOT ZONES' },{ label: 'All Field Goals', k: 'all' },{ label: 'Dunks', k: 'dunk' },{ label: 'At the Rim (Close 2)', k: 'rim' },{ label: 'Other 2-PT (Mid)', k: 'mid' },{ label: '3-Pt Jumpers', k: 'three' },{ cat: 'PLAY CONTEXTS' },{ label: 'Transition / Early Clock', k: 'early' },{ label: 'Half-Court', k: 'half' },{ label: '2nd Chance (Poss. w/ OREB)', k: 'second' },{ cat: 'BY PERIOD' },{ label: '1st Half (Q1–Q2)', k: 'h1' },{ label: '2nd Half (Q3–Q4+)', k: 'h2' }];
+  document.getElementById('contextWrap').innerHTML = '<table class="ctx"><thead><tr><th rowspan="2">Split / Context</th><th colspan="4" style="text-align:center;color:var(--yellow);border-left:1px solid #2b2b2b;">MXC</th><th colspan="4" style="text-align:center;color:#9ec5fe;border-left:1px solid #2b2b2b;">' + oppCode + '</th></tr><tr><th style="border-left:1px solid #2b2b2b;">FGM-A</th><th>eFG%</th><th>Share</th><th>Ast\'d</th><th style="border-left:1px solid #2b2b2b;">FGM-A</th><th>eFG%</th><th>Share</th><th>Ast\'d</th></tr></thead><tbody>' + rows.map(r => r.cat ? '<tr class="cat-hdr"><td colspan="9">' + r.cat + '</td></tr>' : '<tr><td>' + r.label + '</td><td style="border-left:1px solid #1f1f1f;">' + m[r.k].ma + '</td><td>' + m[r.k].efg + '</td><td>' + m[r.k].share + '</td><td>' + m[r.k].astPct + '</td><td style="border-left:1px solid #1f1f1f;">' + o[r.k].ma + '</td><td>' + o[r.k].efg + '</td><td>' + o[r.k].share + '</td><td>' + o[r.k].astPct + '</td></tr>').join('') + '</tbody></table>';
 }
-function renderShotChart(gShots, nameById) {
-  const sideSel = document.getElementById('scSideFilter'), playerSel = document.getElementById('scPlayerFilter');
-  const rebuildPlayers = () => {
-    const side = sideSel.value, pool = side === 'all' ? gShots : gShots.filter(s => s.side === side), pMap = new Map();
-    pool.forEach(s => { const id = Number(s.pid); if (id) pMap.set(id, s.shooter || nameById.get(id) || `#${id}`); });
-    const prev = playerSel.value;
-    playerSel.innerHTML = `<option value="all">All Players (${pMap.size})</option>` + Array.from(pMap.entries()).sort((a, b) => a[1].localeCompare(b[1])).map(([id, nm]) => `<option value="${id}">${nm}</option>`).join('');
-    if (Array.from(playerSel.options).some(o => o.value === prev)) playerSel.value = prev;
+let activeStintFilter = null;
+function renderShotChart(gShots, nameById, oppCode) {
+  if (oppCode) document.getElementById('scOppHeader').innerHTML = oppCode + ' (OPPONENT)';
+  const mxcSel = document.getElementById('scMxcPlayerFilter'), oppSel = document.getElementById('scOppPlayerFilter'), resSel = document.getElementById('scResultFilter'), zoneSel = document.getElementById('scZoneFilter'), perSel = document.getElementById('scPeriodFilter'), ctxSel = document.getElementById('scCtxFilter');
+  const fillPlayerSel = (sel, side, prefix) => {
+    const pool = gShots.filter(s => s.side === side), pMap = new Map();
+    pool.forEach(s => { const id = Number(s.pid); if (id) pMap.set(id, s.shooter || nameById.get(id) || ('#' + id)); });
+    const prev = sel.value;
+    sel.innerHTML = '<option value="all">' + prefix + ': All (' + pMap.size + ')</option>' + Array.from(pMap.entries()).sort((a, b) => a.at(1).localeCompare(b.at(1))).map(([id, nm]) => '<option value="' + id + '">' + nm + '</option>').join('');
+    if (Array.from(sel.options).some(o => o.value === prev)) sel.value = prev;
   };
-  const drawCourt = () => {
-    const side = sideSel.value, pid = playerSel.value;
-    let pool = side === 'all' ? gShots : gShots.filter(s => s.side === side);
+  fillPlayerSel(mxcSel, 'off', 'MXC'); fillPlayerSel(oppSel, 'def', oppCode || 'OPP');
+  const drawSingle = (side, playerSel, svgId, sumId) => {
+    const pid = playerSel.value, res = resSel.value, zn = zoneSel.value, per = perSel.value, ctx = ctxSel.value;
+    let pool = gShots.filter(s => s.side === side);
+    if (activeStintFilter) pool = pool.filter(s => activeStintFilter.pSet.has(Number(s.p || 1)) && activeStintFilter.keySet.has((Array.isArray(s.on) ? s.on : []).map(Number).sort((a, b) => a - b).join(',')));
     if (pid !== 'all') pool = pool.filter(s => String(s.pid) === pid);
-    const fgm = pool.filter(s => s.made).length, fga = pool.length, fg3m = pool.filter(s => s.made && s.val === 3).length;
-    document.getElementById('scSummary').textContent = `${fgm}-${fga} FG (${fga ? (((fgm + 0.5 * fg3m) / fga) * 100).toFixed(1) : '—'}% eFG)`;
-    const lines = `<rect x="-250" y="-47.5" width="500" height="470" fill="none" stroke="#2c2c2c" stroke-width="1.5"/><rect x="-80" y="-47.5" width="160" height="190" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><circle cx="0" cy="142.5" r="60" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><line x1="-220" y1="-47.5" x2="-220" y2="92.5" stroke="#2c2c2c" stroke-width="1.3"/><line x1="220" y1="-47.5" x2="220" y2="92.5" stroke="#2c2c2c" stroke-width="1.3"/><path d="M -220 92.5 A 237.5 237.5 0 0 0 220 92.5" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><circle cx="0" cy="0" r="7.5" fill="none" stroke="#F9D116" stroke-width="1.5"/><line x1="-30" y1="-7.5" x2="30" y2="-7.5" stroke="#666" stroke-width="2"/>`;
-    const dots = pool.map(s => { const x = Number(s.x || 0), y = Math.min(410, Number(s.y || 0)), lbl = `${s.shooter || ''} (${s.sub || ''}, ${s.dist || 0}ft)`; return s.made ? `<circle cx="${x}" cy="${y}" r="4.3" fill="#3FCF5C" fill-opacity="0.85" stroke="#000" stroke-width="0.8"><title>${lbl} — MADE</title></circle>` : `<g stroke="#D81F2A" stroke-width="1.6" opacity="0.82"><line x1="${x-3.5}" y1="${y-3.5}" x2="${x+3.5}" y2="${y+3.5}"/><line x1="${x-3.5}" y1="${y+3.5}" x2="${x+3.5}" y2="${y-3.5}"/><title>${lbl} — MISS</title></g>`; }).join('');
-    document.getElementById('courtSvg').innerHTML = lines + dots;
+    if (res === 'made') pool = pool.filter(s => s.made); else if (res === 'miss') pool = pool.filter(s => !s.made);
+    if (zn === 'dunk') pool = pool.filter(s => /dunk/i.test(String(s.sub || '')));
+    else if (zn === 'rim') pool = pool.filter(s => s.val === 2 && (/dunk/i.test(String(s.sub || '')) || Number(s.dist || 99) <= 4 || /layup|tip|hook/i.test(String(s.sub || ''))));
+    else if (zn === 'mid') pool = pool.filter(s => s.val === 2 && !(/dunk/i.test(String(s.sub || '')) || Number(s.dist || 99) <= 4 || /layup|tip|hook/i.test(String(s.sub || ''))));
+    else if (zn === '3pt') pool = pool.filter(s => s.val === 3);
+    if (per === 'h1') pool = pool.filter(s => Number(s.p || 1) <= 2); else if (per === 'h2') pool = pool.filter(s => Number(s.p || 1) >= 3); else if (per === 'ot') pool = pool.filter(s => Number(s.p || 1) >= 5); else if (per !== 'all') pool = pool.filter(s => String(s.p) === per);
+    if (ctx === 'early') pool = pool.filter(s => String(s.clk || '').toLowerCase() === 'early'); else if (ctx === 'half') pool = pool.filter(s => String(s.clk || '').toLowerCase() !== 'early'); else if (ctx === '2nd') pool = pool.filter(s => Boolean(s.oreb)); else if (ctx === 'astd') pool = pool.filter(s => s.made && s.astd); else if (ctx === 'unast') pool = pool.filter(s => s.made && !s.astd);
+    const fgm = pool.filter(s => s.made).length, fga = pool.length, fg3m = pool.filter(s => s.made && s.val === 3).length, fg3a = pool.filter(s => s.val === 3).length, pts = pool.reduce((a, b) => a + (b.made ? b.val : 0), 0);
+    document.getElementById(sumId).innerHTML = fgm + '-' + fga + ' FG &middot; ' + fg3m + '-' + fg3a + ' 3P &middot; ' + (fga ? (((fgm + 0.5 * fg3m) / fga) * 100).toFixed(1) + '%' : '?') + ' eFG &middot; ' + (fga ? (pts / fga).toFixed(2) : '?') + ' PPS';
+    const lines = '<rect x="-250" y="-47.5" width="500" height="470" fill="none" stroke="#2c2c2c" stroke-width="1.5"/><rect x="-80" y="-47.5" width="160" height="190" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><circle cx="0" cy="142.5" r="60" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><line x1="-220" y1="-47.5" x2="-220" y2="92.5" stroke="#2c2c2c" stroke-width="1.3"/><line x1="220" y1="-47.5" x2="220" y2="92.5" stroke="#2c2c2c" stroke-width="1.3"/><path d="M -220 92.5 A 237.5 237.5 0 0 0 220 92.5" fill="none" stroke="#2c2c2c" stroke-width="1.3"/><circle cx="0" cy="0" r="7.5" fill="none" stroke="#F9D116" stroke-width="1.5"/><line x1="-30" y1="-7.5" x2="30" y2="-7.5" stroke="#666" stroke-width="2"/>';
+    const dots = pool.map(s => { const x = Number(s.x || 0), y = Math.min(410, Number(s.y || 0)), lbl = (s.shooter || '') + ' (' + (s.sub || '') + ', ' + (s.dist || 0) + 'ft, Q' + (s.p || 1) + ')'; return s.made ? '<circle cx="' + x + '" cy="' + y + '" r="4.8" fill="#3FCF5C" fill-opacity="0.88" stroke="#000" stroke-width="0.8"><title>' + lbl + ' &middot; MADE</title></circle>' : '<g stroke="#D81F2A" stroke-width="1.8" opacity="0.85"><line x1="' + (x-3.8) + '" y1="' + (y-3.8) + '" x2="' + (x+3.8) + '" y2="' + (y+3.8) + '"/><line x1="' + (x-3.8) + '" y1="' + (y+3.8) + '" x2="' + (x+3.8) + '" y2="' + (y-3.8) + '"/><title>' + lbl + ' &middot; MISS</title></g>'; }).join('');
+    document.getElementById(svgId).innerHTML = lines + dots;
   };
-  sideSel.onchange = () => { rebuildPlayers(); drawCourt(); }; playerSel.onchange = drawCourt; rebuildPlayers(); drawCourt();
+  window._refreshDualCourts = () => {
+    const badge = document.getElementById('scStintBadge');
+    if (activeStintFilter) {
+      badge.innerHTML = '<button type="button" id="clearStintScBtn" style="font-family:Oswald,sans-serif;font-size:10.5px;font-weight:700;background:var(--yellow);color:#000;border:none;padding:2px 8px;cursor:pointer;">Stint: ' + activeStintFilter.label + ' ?</button>';
+      document.getElementById('clearStintScBtn').onclick = () => { activeStintFilter = null; document.querySelectorAll('#lineupSegWrap .tl-bar').forEach(b => { b.style.outline = 'none'; }); window._refreshDualCourts(); };
+    } else badge.innerHTML = '';
+    drawSingle('off', mxcSel, 'courtSvgMxc', 'scMxcSummary'); drawSingle('def', oppSel, 'courtSvgOpp', 'scOppSummary');
+  };
+  [mxcSel, oppSel, resSel, zoneSel, perSel, ctxSel].forEach(el => { el.onchange = window._refreshDualCourts; });
+  window._refreshDualCourts();
 }
+function renderLineupSegments(gPoss, gShots, gFts, gTos, nameById) {
+  const fmtShort = id => {
+    const full = nameById.get(Number(id)) || ('#' + id);
+    const parts = full.split(' ');
+    return parts.length > 1 ? (parts.at(0).at(0) + '. ' + parts.slice(1).join(' ')) : full;
+  };
+  const fmtNames = ids => (Array.isArray(ids) ? ids : []).map(fmtShort).join(' &middot; ');
+
+  const sorted = gPoss.slice().sort((a, b) => (a.gord || 0) - (b.gord || 0));
+  const maxP = Math.max(4, ...sorted.map(x => Number(x.p || 4)));
+  const totalGameMins = 48 + Math.max(0, maxP - 4) * 5;
+  const totalGamePoss = Math.max(1, sorted.length);
+
+  const unitMap = new Map();
+  const stints = [];
+  const playerMap = new Map();
+
+  sorted.forEach((ps, idx) => {
+    const ids = [...new Set((Array.isArray(ps.on) ? ps.on : []).map(Number).filter(Boolean))].sort((a, b) => a - b);
+    if (!ids.length) return;
+    const key = ids.join(',');
+    const rawPts = Number(ps.pts || 0), pts = (rawPts >= 0 && rawPts <= 4) ? rawPts : 0, isOff = ps.side === 'off', pNum = Number(ps.p || 1);
+
+    const quads = [];
+    if (ids.length >= 4) {
+      for (let skip = 0; skip < ids.length; skip++) {
+        const qIds = ids.filter((_, qi) => qi !== skip);
+        if (qIds.length === 4) quads.push(qIds);
+      }
+    }
+    quads.forEach(qIds => {
+      const qKey = qIds.join(',');
+      if (!unitMap.has(qKey)) unitMap.set(qKey, { key: qKey, ids: qIds, offPoss: 0, defPoss: 0, ptsFor: 0, ptsAg: 0, stints: 0, _lastStint: -1 });
+      const u = unitMap.get(qKey);
+      if (isOff) { u.offPoss += 1; u.ptsFor += pts; } else { u.defPoss += 1; u.ptsAg += pts; }
+    });
+
+    ids.forEach(pid => {
+      if (!playerMap.has(pid)) playerMap.set(pid, { pid, name: fmtShort(pid), fullName: nameById.get(pid) || ('#' + pid), possOn: 0, pm: 0, spans: [] });
+      const pr = playerMap.get(pid);
+      pr.possOn += 1;
+      pr.pm += isOff ? pts : -pts;
+    });
+
+    const last = stints.at(-1);
+    if (!last || last.key !== key || last.p !== pNum) {
+      const nextStIdx = stints.length + 1;
+      for (let skip = 0; skip < ids.length; skip++) {
+        const qKey = ids.filter((_, qi) => qi !== skip).join(',');
+        const qu = unitMap.get(qKey);
+        if (qu && qu._lastStint !== nextStIdx) { qu.stints += 1; qu._lastStint = nextStIdx; }
+      }
+      stints.push({ idx: stints.length + 1, p: pNum, key, ids, startIdx: idx, endIdx: idx + 1, offPoss: isOff ? 1 : 0, defPoss: isOff ? 0 : 1, ptsFor: isOff ? pts : 0, ptsAg: isOff ? 0 : pts });
+    } else {
+      last.endIdx = idx + 1;
+      if (isOff) { last.offPoss += 1; last.ptsFor += pts; } else { last.defPoss += 1; last.ptsAg += pts; }
+    }
+  });
+
+  // Merge consecutive player floor stints into clean timeline bars with stint +/-
+  stints.forEach(st => {
+    const stPm = st.ptsFor - st.ptsAg;
+    const leftPct = (st.startIdx / totalGamePoss) * 100;
+    const widthPct = Math.max(0.6, ((st.endIdx - st.startIdx) / totalGamePoss) * 100);
+    st.ids.forEach(pid => {
+      const pr = playerMap.get(pid);
+      if (!pr) return;
+      const prev = pr.spans.at(-1);
+      if (prev && Math.abs((prev.leftPct + prev.widthPct) - leftPct) < 0.05 && prev.p === st.p) {
+        prev.widthPct += widthPct;
+        prev.pm += stPm;
+        prev.ptsFor += st.ptsFor;
+        prev.ptsAg += st.ptsAg;
+        prev.stintIds.push(st.idx);
+      } else {
+        pr.spans.push({ p: st.p, leftPct, widthPct, pm: stPm, ptsFor: st.ptsFor, ptsAg: st.ptsAg, stintIds: [st.idx] });
+      }
+    });
+  });
+
+  // Quarter boundary markers along the 0..100% timeline
+  const qMarks = [];
+  for (let q = 1; q <= maxP; q++) {
+    const qIndices = sorted.map((ps, idx) => Number(ps.p || 1) === q ? idx : -1).filter(i => i >= 0);
+    if (!qIndices.length) continue;
+    const sPct = (qIndices.at(0) / totalGamePoss) * 100;
+    const ePct = ((qIndices.at(-1) + 1) / totalGamePoss) * 100;
+    qMarks.push({ q, label: q <= 4 ? 'Q' + q : 'OT' + (q - 4), sPct, wPct: ePct - sPct });
+  }
+
+  const playersOrdered = Array.from(playerMap.values()).sort((a, b) => b.possOn - a.possOn || b.pm - a.pm);
+  const fmtPm = v => v > 0 ? '<span class="good">+' + v + '</span>' : v < 0 ? '<span class="bad">' + v + '</span>' : '0';
+  const fmtNet = v => v == null ? '?' : (v > 0 ? '<span class="good">+' + v.toFixed(1) + '</span>' : v < 0 ? '<span class="bad">' + v.toFixed(1) + '</span>' : '0.0');
+
+  const qHeaderHtml = qMarks.map(qm => {
+    const mins = Array.from({length: qm.q <= 4 ? 12 : 5}, (_, i) => i + 1);
+    const ticks = mins.map(m => '<span style="flex:1;text-align:center;font-size:9px;color:#777;">' + m + '</span>').join('');
+    return '<div style="width:' + qm.wPct.toFixed(2) + '%;border-left:1px solid #383838;display:flex;flex-direction:column;">'
+      + '<div style="text-align:center;font-size:9.5px;color:var(--yellow);font-weight:700;border-bottom:1px solid #222;padding:1px 0;">' + qm.label + '</div>'
+      + '<div style="display:flex;">' + ticks + '</div></div>';
+  }).join('');
+
+  const qGridLines = qMarks.slice(1).map(qm => '<div style="position:absolute;top:0;bottom:0;left:' + qm.sPct.toFixed(2) + '%;width:1px;background:#383838;z-index:1;"></div>').join('');
+
+  const timelineRows = playersOrdered.map(pr => {
+    const estMin = Math.max(1, Math.round((pr.possOn / totalGamePoss) * totalGameMins));
+    const bars = pr.spans.map(sp => {
+      const bg = sp.pm > 0 ? '#1f7a3e' : sp.pm < 0 ? '#8c2329' : '#2358A6';
+      const bd = sp.pm > 0 ? '#3FCF5C' : sp.pm < 0 ? '#ff6b72' : '#5894f5';
+      const pmTxt = sp.pm > 0 ? ('+' + sp.pm) : String(sp.pm);
+      const showLbl = sp.widthPct >= 4.2;
+      const tip = pr.fullName + ' (' + (sp.p <= 4 ? 'Q' + sp.p : 'OT' + (sp.p - 4)) + ') &middot; ' + sp.ptsFor + '-' + sp.ptsAg + ' (' + pmTxt + ')';
+      return '<div class="tl-bar" data-stints="' + sp.stintIds.join(',') + '" title="' + tip + ' (Click for breakdown)" style="cursor:pointer;position:absolute;top:3px;bottom:3px;left:' + sp.leftPct.toFixed(2) + '%;width:' + sp.widthPct.toFixed(2) + '%;background:' + bg + ';border:1px solid ' + bd + ';border-radius:2px;display:flex;align-items:center;justify-content:center;font-family:Oswald,sans-serif;font-size:10px;font-weight:700;color:#fff;overflow:hidden;white-space:nowrap;z-index:2;">' + (showLbl ? pmTxt : '') + '</div>';
+    }).join('');
+
+    return '<div style="display:grid;grid-template-columns:155px 1fr 48px 52px;align-items:center;border-bottom:1px solid #181818;min-height:26px;">'
+      + '<div style="padding:3px 8px;font-family:Oswald,sans-serif;font-size:11.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-right:1px solid #2b2b2b;">' + pr.name + '</div>'
+      + '<div style="position:relative;height:24px;background:#070707;">' + qGridLines + bars + '</div>'
+      + '<div style="text-align:right;padding:3px 8px;font-family:Oswald,sans-serif;font-size:11.5px;font-weight:700;border-left:1px solid #2b2b2b;">' + estMin + '</div>'
+      + '<div style="text-align:right;padding:3px 8px;font-family:Oswald,sans-serif;font-size:11.5px;font-weight:700;border-left:1px solid #1f1f1f;">' + fmtPm(pr.pm) + '</div>'
+      + '</div>';
+  }).join('');
+
+  const timelineBox = '<div class="table-wrap" style="margin-bottom:12px;overflow-x:auto;"><div style="min-width:860px;">'
+    + '<div style="display:grid;grid-template-columns:155px 1fr 48px 52px;align-items:stretch;background:#050505;border-bottom:1px solid #2b2b2b;font-family:Oswald,sans-serif;">'
+    + '<div style="padding:6px 8px;font-size:11px;color:var(--muted);display:flex;align-items:center;border-right:1px solid #2b2b2b;">PLAYER</div>'
+    + '<div style="display:flex;">' + qHeaderHtml + '</div>'
+    + '<div style="padding:6px 8px;font-size:11px;color:var(--muted);text-align:right;display:flex;align-items:center;justify-content:flex-end;border-left:1px solid #2b2b2b;">MIN</div>'
+    + '<div style="padding:6px 8px;font-size:11px;color:var(--muted);text-align:right;display:flex;align-items:center;justify-content:flex-end;border-left:1px solid #1f1f1f;">+/-</div>'
+    + '</div>' + timelineRows + '</div></div>';
+
+  const units = Array.from(unitMap.values()).map(u => {
+    const poss = Math.max(u.offPoss, u.defPoss, 1);
+    const avgP = Math.max(1, (u.offPoss + u.defPoss) / 2);
+    const pm = u.ptsFor - u.ptsAg;
+    const ortg = (u.ptsFor / avgP) * 100;
+    const drtg = (u.ptsAg / avgP) * 100;
+    const net = ortg - drtg;
+    return { ...u, poss, pm, ortg, drtg, net };
+  }).sort((a, b) => b.poss - a.poss || b.pm - a.pm);
+
+  const inspectorHtml = '<div id="stintInspector" style="margin-bottom:12px;border:1px solid #2b2b2b;background:#0a0d14;padding:10px 14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;"><span style="font-size:11.5px;color:var(--muted);">Click any colored stint bar above to inspect the exact 5-man unit, four-factor drivers, and key plays during that stretch.</span></div>';
+  document.getElementById('lineupSegWrap').innerHTML = timelineBox + inspectorHtml + '<div id="quadsPagedHost"></div>';
+
+  let quadPage = 0, quadMinPoss = 5;
+  const quadPageSize = 10;
+  const renderQuadsPage = () => {
+    const filtered = units.filter(u => u.poss >= quadMinPoss);
+    const totalPages = Math.max(1, Math.ceil(filtered.length / quadPageSize));
+    if (quadPage >= totalPages) quadPage = totalPages - 1;
+    if (quadPage < 0) quadPage = 0;
+    const slice = filtered.slice(quadPage * quadPageSize, (quadPage + 1) * quadPageSize);
+    const hdrControls = '<div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:6px 10px;background:#060606;border-bottom:1px solid #2b2b2b;font-family:Oswald,sans-serif;font-size:11px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;"><span style="color:var(--yellow);font-weight:700;">4-MAN LINEUP QUADS SUMMARY</span>'
+      + '<select id="quadMinPossSel" style="font-size:11px;padding:2px 6px;"><option value="1"' + (quadMinPoss===1?' selected':'') + '>All Quads (' + units.length + ')</option><option value="5"' + (quadMinPoss===5?' selected':'') + '>5+ Poss (' + units.filter(u=>u.poss>=5).length + ')</option><option value="10"' + (quadMinPoss===10?' selected':'') + '>10+ Poss (' + units.filter(u=>u.poss>=10).length + ')</option></select></div>'
+      + '<div style="display:flex;align-items:center;gap:6px;">'
+      + '<button type="button" class="ctrl-btn" id="quadPrevBtn" style="padding:2px 8px;font-size:11px;"' + (quadPage <= 0 ? ' disabled' : '') + '>&larr; Prev</button>'
+      + '<span style="color:var(--muted);">Page <strong style="color:#fff;">' + (quadPage + 1) + '</strong> of ' + totalPages + ' (' + filtered.length + ' quads)</span>'
+      + '<button type="button" class="ctrl-btn" id="quadNextBtn" style="padding:2px 8px;font-size:11px;"' + (quadPage >= totalPages - 1 ? ' disabled' : '') + '>Next &rarr;</button>'
+      + '</div></div>';
+    const bodyRows = slice.length
+      ? slice.map(u => '<tr><td><strong>' + fmtNames(u.ids) + '</strong></td><td>' + u.stints + '</td><td>' + u.poss + '</td><td>' + u.ptsFor + '</td><td>' + u.ptsAg + '</td><td><strong>' + fmtPm(u.pm) + '</strong></td><td>' + (u.ortg != null ? u.ortg.toFixed(1) : '&mdash;') + '</td><td>' + (u.drtg != null ? u.drtg.toFixed(1) : '&mdash;') + '</td><td><strong>' + fmtNet(u.net) + '</strong></td></tr>').join('')
+      : '<tr><td colspan="9" style="text-align:center;color:var(--muted);padding:12px;">No 4-man quads meet the ' + quadMinPoss + '+ possession threshold in this game.</td></tr>';
+    document.getElementById('quadsPagedHost').innerHTML = '<div class="table-wrap">' + hdrControls + '<table class="box"><thead><tr><th>4-Man Lineup Quad</th><th>Stints</th><th>Poss</th><th>Pts For</th><th>Pts Ag</th><th>+/-</th><th>ORtg</th><th>DRtg</th><th>NetRtg</th></tr></thead><tbody>' + bodyRows + '</tbody></table></div>';
+    document.getElementById('quadMinPossSel').onchange = e => { quadMinPoss = Number(e.target.value); quadPage = 0; renderQuadsPage(); };
+    document.getElementById('quadPrevBtn').onclick = () => { if (quadPage > 0) { quadPage -= 1; renderQuadsPage(); } };
+    document.getElementById('quadNextBtn').onclick = () => { if (quadPage < totalPages - 1) { quadPage += 1; renderQuadsPage(); } };
+  };
+  renderQuadsPage();
+
+  const inspectStints = idList => {
+    const chosen = stints.filter(st => idList.includes(st.idx));
+    if (!chosen.length) return;
+    const first = chosen.at(0), last = chosen.at(-1);
+    const pLbl = first.p <= 4 ? 'Q' + first.p : 'OT' + (first.p - 4);
+    const offP = chosen.reduce((a, b) => a + b.offPoss, 0), defP = chosen.reduce((a, b) => a + b.defPoss, 0);
+    const ptsF = chosen.reduce((a, b) => a + b.ptsFor, 0), ptsA = chosen.reduce((a, b) => a + b.ptsAg, 0);
+    const pm = ptsF - ptsA;
+    const keySet = new Set(chosen.map(c => c.key));
+    const pSet = new Set(chosen.map(c => c.p));
+    const matchRow = r => pSet.has(Number(r.p || 1)) && keySet.has((Array.isArray(r.on) ? r.on : []).map(Number).sort((a, b) => a - b).join(','));
+    const stShots = gShots.filter(matchRow), stTos = gTos.filter(matchRow), stPoss = gPoss.slice(first.startIdx, last.endIdx);
+    const mSh = stShots.filter(x => x.side === 'off'), oSh = stShots.filter(x => x.side === 'def');
+    const mFgm = mSh.filter(x => x.made).length, m3m = mSh.filter(x => x.made && x.val === 3).length, m3a = mSh.filter(x => x.val === 3).length;
+    const oFgm = oSh.filter(x => x.made).length, o3m = oSh.filter(x => x.made && x.val === 3).length, o3a = oSh.filter(x => x.val === 3).length;
+    const mEfg = mSh.length ? (((mFgm + 0.5 * m3m) / mSh.length) * 100).toFixed(1) + '%' : '?';
+    const oEfg = oSh.length ? (((oFgm + 0.5 * o3m) / oSh.length) * 100).toFixed(1) + '%' : '?';
+    const mTov = stTos.filter(x => x.side === 'off').length, oTov = stTos.filter(x => x.side === 'def').length;
+    const mOrb = stPoss.filter(x => x.side === 'off').reduce((a, b) => a + (b.oreb || 0), 0);
+    const oOrb = stPoss.filter(x => x.side === 'def').reduce((a, b) => a + (b.oreb || 0), 0);
+
+    const prevSt = first.idx > 1 ? stints.at(first.idx - 2) : null;
+    const subIn = prevSt ? first.ids.filter(id => !prevSt.ids.includes(id)).map(fmtShort) : [];
+    const subOut = prevSt ? prevSt.ids.filter(id => !first.ids.includes(id)).map(fmtShort) : [];
+    const subTxt = prevSt && (subIn.length || subOut.length) ? ('Trigger: <strong>IN</strong> ' + (subIn.join(', ') || '?') + ' &middot; <strong>OUT</strong> ' + (subOut.join(', ') || '?')) : 'Trigger: Period Start Lineup';
+
+    const drivers = [];
+    if (mSh.length && oSh.length) {
+      const mE = ((mFgm + 0.5 * m3m) / mSh.length) * 100, oE = ((oFgm + 0.5 * o3m) / oSh.length) * 100;
+      if (Math.abs(mE - oE) >= 8) drivers.push(mE > oE ? 'Shot-making edge (' + mEfg + ' vs ' + oEfg + ' eFG)' : 'Opp shot-making (' + oEfg + ' vs ' + mEfg + ' eFG)');
+    }
+    if (mTov !== oTov) drivers.push(mTov < oTov ? 'Won turnover battle (' + mTov + ' vs ' + oTov + ' TO)' : 'Turnovers hurt (' + mTov + ' vs ' + oTov + ' TO)');
+    if (mOrb !== oOrb) drivers.push(mOrb > oOrb ? '2nd-chance edge (' + mOrb + ' vs ' + oOrb + ' OREB)' : 'Gave up ' + oOrb + ' OREB');
+    if (m3m >= 2 && m3m > o3m) drivers.push('Hot from deep (' + m3m + '-' + m3a + ' 3PT)');
+    if (o3m >= 2 && o3m > m3m) drivers.push('Opp 3PT surge (' + o3m + '-' + o3a + ' 3PT)');
+
+    activeStintFilter = { label: pLbl + ' #' + first.idx + (last.idx !== first.idx ? '?' + last.idx : ''), pSet, keySet }; if (window._refreshDualCourts) window._refreshDualCourts(); const box = document.getElementById('stintInspector');
+    box.innerHTML = '<div style="width:100%;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #222;padding-bottom:6px;">'
+      + '<div><span style="font-family:Oswald,sans-serif;font-weight:700;color:var(--yellow);">' + pLbl + ' STINT #' + first.idx + (last.idx !== first.idx ? '?' + last.idx : '') + '</span> &middot; <strong>' + fmtNames(first.ids) + '</strong></div>'
+      + '<div style="font-family:Oswald,sans-serif;font-size:13px;font-weight:700;">Score: ' + ptsF + '?' + ptsA + ' (' + fmtPm(pm) + ') &middot; ' + Math.max(offP, defP, 1) + ' Poss</div></div>'
+      + '<div style="width:100%;display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;font-size:11.5px;padding-top:4px;">'
+      + '<div><span style="color:var(--muted);">MXC Shooting:</span> <strong>' + mFgm + '-' + mSh.length + ' FG</strong> (' + m3m + '-' + m3a + ' 3P, ' + mEfg + ' eFG)</div>'
+      + '<div><span style="color:var(--muted);">OPP Shooting:</span> <strong>' + oFgm + '-' + oSh.length + ' FG</strong> (' + o3m + '-' + o3a + ' 3P, ' + oEfg + ' eFG)</div>'
+      + '<div><span style="color:var(--muted);">Possession Battle:</span> TO <strong>' + mTov + '?' + oTov + '</strong> &middot; OREB <strong>' + mOrb + '?' + oOrb + '</strong></div>'
+      + '<div><span style="color:var(--muted);">' + subTxt + '</span></div></div>'
+      + (drivers.length ? '<div style="width:100%;font-size:11.5px;color:#cbd5e1;padding-top:2px;"><span style="color:var(--yellow);font-family:Oswald,sans-serif;font-weight:700;">WHY IT SWUNG:</span> ' + drivers.join(' &middot; ') + '</div>' : '');
+  };
+
+  document.querySelectorAll('#lineupSegWrap .tl-bar').forEach(bar => {
+    bar.onclick = () => {
+      document.querySelectorAll('#lineupSegWrap .tl-bar').forEach(b => { b.style.outline = 'none'; });
+      bar.style.outline = '2px solid #F9D116';
+      const ids = bar.dataset.stints.split(',').map(Number);
+      inspectStints(ids);
+    };
+  });
+}
+
 function renderGame(data, gid) {
   const games = data.games || []; if (!games.length) return;
-  const gameObj = games.find(g => String(g.id) === String(gid)) || games[0];
-  const activeGid = String(gameObj.id); document.getElementById('gameSelect').value = activeGid;
+  const gameObj = games.find(g => String(g.id) === String(gid)) || games.at(0), activeGid = String(gameObj.id);
+  document.getElementById('gameSelect').value = activeGid;
   const u = new URL(location.href); u.searchParams.set('season', currentSeason); u.searchParams.set('game', activeGid); history.replaceState(null, '', u.toString());
-  const meta = parseGameMeta(gameObj);
-  const gPoss = (data.poss || []).filter(x => String(x.gid) === activeGid), gShots = (data.shots || []).filter(x => String(x.gid) === activeGid);
-  const gFts = (data.fts || []).filter(x => String(x.gid) === activeGid), gTos = (data.turnovers || []).filter(x => String(x.gid) === activeGid), gEvts = (data.events || []).filter(x => String(x.gid) === activeGid);
-  const mxcBox = buildBoxForSide('off', gPoss, gShots, gFts, gTos, gEvts, data._nameById), oppBox = buildBoxForSide('def', gPoss, gShots, gFts, gTos, gEvts, data._nameById);
+  const meta = parseGameMeta(gameObj), gPoss = (data.poss || []).filter(x => String(x.gid) === activeGid), gShots = (data.shots || []).filter(x => String(x.gid) === activeGid), gFts = (data.fts || []).filter(x => String(x.gid) === activeGid), gTos = (data.turnovers || []).filter(x => String(x.gid) === activeGid), gEvts = (data.events || []).filter(x => String(x.gid) === activeGid);
+  const gBoxP = (data.boxPlayers || []).filter(x => String(x.gid) === activeGid); (data.boxPlayers || []).forEach(bp => { if (bp.pid && bp.name) data._nameById.set(Number(bp.pid), bp.name); }); gShots.forEach(sh => { if (sh.pid && sh.shooter) data._nameById.set(Number(sh.pid), sh.shooter); }); const mxcBox = buildBoxForSide('off', gPoss, gShots, gFts, gTos, gEvts, data._nameById, data._mxcPids, gBoxP), oppBox = buildBoxForSide('def', gPoss, gShots, gFts, gTos, gEvts, data._nameById, data._mxcPids, gBoxP);
   const mxcPts = mxcBox.totals.pts, oppPts = oppBox.totals.pts, possCount = Math.round((mxcBox.totals.poss + oppBox.totals.poss) / 2);
   const ortg = ((mxcPts / Math.max(1, mxcBox.totals.poss)) * 100).toFixed(1), drtg = ((oppPts / Math.max(1, oppBox.totals.poss)) * 100).toFixed(1), net = (Number(ortg) - Number(drtg)).toFixed(1);
   const periods = Array.from(new Set(gPoss.map(p => Number(p.p || 1)))).sort((a, b) => a - b);
   const pPts = (side, pNum) => gShots.filter(s => s.side === side && Number(s.p) === pNum && s.made).reduce((a, b) => a + b.val, 0) + gFts.filter(f => f.side === side && Number(f.p) === pNum && f.made).length;
-  document.getElementById('bannerWrap').innerHTML = `<div class="score-banner"><div class="team-side"><div class="team-name" style="color:var(--yellow);">Mexico City Capitanes (MXC)</div><div class="team-sub">ORtg ${ortg} · eFG% ${mxcBox.totals.efg?.toFixed(1) ?? '—'} · TO% ${mxcBox.totals.tovPct?.toFixed(1) ?? '—'} · OR% ${mxcBox.totals.orPct?.toFixed(1) ?? '—'}</div></div><div class="score-center"><div class="score-big"><span class="${mxcPts > oppPts ? 'good' : ''}">${mxcPts}</span> – <span class="${oppPts > mxcPts ? 'good' : ''}">${oppPts}</span></div><div class="score-meta">${meta.date} · ${meta.loc || 'Neutral'} · ${possCount} Possessions · Net ${Number(net) > 0 ? '+' + net : net}</div><table class="qtr-table"><thead><tr><th>Team</th>${periods.map(p => `<th>${p <= 4 ? 'Q' + p : 'OT' + (p - 4)}</th>`).join('')}<th>Total</th></tr></thead><tbody><tr><td>MXC</td>${periods.map(p => `<td>${pPts('off', p)}</td>`).join('')}<td><strong>${mxcPts}</strong></td></tr><tr><td>${meta.oppCode}</td>${periods.map(p => `<td>${pPts('def', p)}</td>`).join('')}<td><strong>${oppPts}</strong></td></tr></tbody></table></div><div class="team-side right"><div class="team-name">${meta.oppName} (${meta.oppCode})</div><div class="team-sub">ORtg ${drtg} · eFG% ${oppBox.totals.efg?.toFixed(1) ?? '—'} · TO% ${oppBox.totals.tovPct?.toFixed(1) ?? '—'} · OR% ${oppBox.totals.orPct?.toFixed(1) ?? '—'}</div></div></div>`;
-  document.getElementById('mxcTitle').textContent = `Mexico City Capitanes — Advanced Box Score (${mxcPts} pts)`;
-  document.getElementById('oppTitle').textContent = `${meta.oppName} (${meta.oppCode}) — Advanced Box Score (${oppPts} pts)`;
-  renderBoxTable('mxcBoxWrap', mxcBox, true); renderBoxTable('oppBoxWrap', oppBox, false); renderContextBreakdown(gPoss, gShots, gFts, gTos, meta.oppCode); renderShotChart(gShots, data._nameById);
+    const pctile = (val, arr, lb) => {
+    const c = arr.filter(v => v != null && !Number.isNaN(v)).sort((a, b) => a - b);
+    if (!c.length || val == null) return 50;
+    return Math.max(1, Math.min(99, Math.round((c.filter(v => lb ? v >= val : v <= val).length / c.length) * 100)));
+  };
+  const lgTms = data._lgTeams || [];
+  const calcFF = (boxObj, oppBoxObj, sideKey) => {
+    const t = boxObj.totals, ot = oppBoxObj.totals, stKey = sideKey === 'off' ? 'offStats' : 'defStats';
+    const efg = t.efg ?? 0, tovDen = t.fg2a + t.fg3a + 0.44 * t.fta + t.tov, tov = tovDen ? (t.tov / tovDen) * 100 : 0;
+    const orPct = (t.orb + ot.drb) ? (t.orb / (t.orb + ot.drb)) * 100 : 0, fgaTot = t.fg2a + t.fg3a, ftr = fgaTot ? (t.fta / fgaTot) * 100 : 0;
+    const efgA = lgTms.map(tm => { const st = tm[stKey] || {}; const tp = Number(st.threePar || 0) / 100; return Number(st.fg2Pct || 0) * (1 - tp) + 1.5 * Number(st.fg3Pct || 0) * tp; }).filter(v => v > 0);
+    return [
+      { lbl: 'EFG%', val: efg, pct: pctile(efg, efgA, false) },
+      { lbl: 'TOV%', val: tov, pct: pctile(tov, lgTms.map(tm => Number((tm[stKey] || {}).tovPct)).filter(v => v > 0), true) },
+      { lbl: 'OR%', val: orPct, pct: pctile(orPct, lgTms.map(tm => Number((tm[stKey] || {}).orebPct)).filter(v => v > 0), false) },
+      { lbl: 'FTR%', val: ftr, pct: pctile(ftr, lgTms.map(tm => Number((tm[stKey] || {}).ftr)).filter(v => v > 0), false) }
+    ];
+  };
+  const duoMap = new Map();
+  gPoss.forEach(ps => {
+    const ids = (Array.isArray(ps.on) ? ps.on : []).map(Number).sort((a, b) => a - b), pts = Number(ps.pts || 0), isOff = ps.side === 'off';
+    for (let a = 0; a < ids.length; a++) for (let b = a + 1; b < ids.length; b++) {
+      const k = ids.at(a) + ',' + ids.at(b);
+      if (!duoMap.has(k)) duoMap.set(k, { ids: [ids.at(a), ids.at(b)], offP: 0, defP: 0, ptsF: 0, ptsA: 0 });
+      const d = duoMap.get(k); if (isOff) { d.offP += 1; d.ptsF += pts; } else { d.defP += 1; d.ptsA += pts; }
+    }
+  });
+  const shortLast = id => { const p = (data._nameById.get(Number(id)) || ('#' + id)).trim().split(/\s+/); return p.length > 1 && /^(Jr\.?|Sr\.?|II|III|IV)$/i.test(p.at(-1)) ? p.slice(-2).join(' ') : p.at(-1); };
+  const duoList = Array.from(duoMap.values()).map(d => ({ ...d, poss: Math.max(d.offP, d.defP, 1), net: (d.offP ? (d.ptsF / d.offP) * 100 : 0) - (d.defP ? (d.ptsA / d.defP) * 100 : 0), names: d.ids.map(shortLast).join(' / ') })).filter(d => d.poss >= 10).sort((a, b) => b.net - a.net);
+  const bestDuo = duoList.at(0) || { poss: 0, net: 0, names: '&mdash;' }, worstDuo = duoList.at(-1) || { poss: 0, net: 0, names: '&mdash;' };
+  const mxcFF = calcFF(mxcBox, oppBox, 'off'), oppFF = calcFF(oppBox, mxcBox, 'def');
+  const ffTileHtml = items => '<div style="display:grid;grid-template-columns:repeat(4,1fr);border:1px solid #333;background:#fff;color:#111;margin-top:6px;">' + items.map((it, idx) => { const bg = it.pct >= 75 ? '#c7f0d2' : it.pct >= 55 ? '#e6f7eb' : it.pct <= 25 ? '#f8cfd2' : it.pct <= 45 ? '#fbe7e9' : '#f4f4f5'; const pCol = it.pct >= 60 ? '#15803d' : it.pct <= 40 ? '#b91c1c' : '#52525b'; return '<div style="padding:3px 5px;text-align:center;background:' + bg + ';' + (idx > 0 ? 'border-left:1px solid #cbd5e1;' : '') + '"><div style="font-family:Oswald,sans-serif;font-size:10.5px;font-weight:700;color:#18181b;border-bottom:1px solid #cbd5e1;">' + it.lbl + '</div><div style="font-size:9px;font-weight:700;color:' + pCol + ';text-align:right;padding-top:1px;">' + it.pct + '%</div><div style="font-family:Oswald,sans-serif;font-size:14.5px;font-weight:700;color:#09090b;line-height:1.1;">' + it.val.toFixed(1) + '%</div></div>'; }).join('') + '</div>';
+  const duoCard = (title, duo, isBest) => '<div style="border:1px solid #2b2b2b;background:#0d0d0d;padding:5px 7px;text-align:center;"><div style="display:flex;justify-content:space-between;align-items:center;font-family:Oswald,sans-serif;font-size:10px;border-bottom:1px solid #222;padding-bottom:2px;margin-bottom:4px;"><span style="color:#e5e5e5;font-weight:700;">' + title + ' (' + duo.poss + 'p)</span><span style="color:' + (duo.net >= 0 ? 'var(--green)' : 'var(--red)') + ';font-weight:700;">' + (duo.net >= 0 ? '+' : '') + duo.net.toFixed(1) + '</span></div><div style="font-family:Oswald,sans-serif;font-size:12px;font-weight:700;color:' + (isBest ? 'var(--yellow)' : '#fca5a5') + ';padding:4px 0;">' + duo.names + '</div></div>';
+  const sortedP = gPoss.slice().sort((a, b) => (a.gord || 0) - (b.gord || 0));
+  const allPoss = data.poss || [], allShots = data.shots || [], allTos = data.turnovers || [], allFts = data.fts || [], allEvts = data.events || [];
+  const parseHtIn = h => { const m = String(h || '').match(/(\d+)\s*[-']\s*(\d+)/); return m ? Number(m.at(1)) * 12 + Number(m.at(2)) : 0; };
+  const bioByPid = new Map();
+  (data._mexPlayers || []).forEach(mp => {
+    const pid = Number(mp.id || mp.player_id || 0), nm = String(mp.name || mp.player || '').toLowerCase();
+    const rec = { ht: parseHtIn(mp.height || mp.ht), wt: Number(mp.weight || mp.wt || 0), pos: String(mp.pos || mp.position || '') };
+    if (pid) bioByPid.set(pid, rec);
+    data._nameById.forEach((v, k) => { if (String(v).toLowerCase() === nm && !bioByPid.has(k)) bioByPid.set(k, rec); });
+  });
+  const sDreMap = new Map();
+  allPoss.forEach(ps => (Array.isArray(ps.on) ? ps.on : []).forEach(id => { const k = Number(id); if (!sDreMap.has(k)) sDreMap.set(k, { pOn: 0, pts: 0, fga: 0, fta: 0, reb: 0, ast: 0, stl: 0, blk: 0, tov: 0 }); sDreMap.get(k).pOn += 1; }));
+  allShots.filter(x => x.side === 'off').forEach(sh => { const r = sDreMap.get(Number(sh.pid)); if (r) { r.fga += 1; if (sh.made) r.pts += sh.val; } });
+  allFts.filter(x => x.side === 'off').forEach(ft => { const r = sDreMap.get(Number(ft.pid)); if (r) { r.fta += 1; if (ft.made) r.pts += 1; } });
+  allTos.filter(x => x.side === 'off').forEach(to => { const r = sDreMap.get(Number(to.pid)); if (r) r.tov += 1; });
+  allEvts.forEach(ev => { const r = sDreMap.get(Number(ev.pid)); if (!r) return; const t = String(ev.type || '').toUpperCase(); if (t === 'AST') r.ast += 1; else if (t === 'OREB' || t === 'DREB') r.reb += 1; else if (t === 'STL') r.stl += 1; else if (t === 'BLK') r.blk += 1; });
+  const getSeasonDre = pid => { const r = sDreMap.get(Number(pid)); if (!r || r.pOn < 20) return null; const estP = r.pOn / 2; return (100 / estP) * (0.792 * r.pts - 0.719 * r.fga - 0.299 * r.fta + 0.145 * r.reb + 0.369 * r.ast + 1.662 * r.stl + 0.696 * r.blk - 0.844 * r.tov); };
+  const avgLg = fn => { const a = lgTms.map(fn).filter(v => v != null && !Number.isNaN(v) && v > 0); return a.length ? a.reduce((x, y) => x + y, 0) / a.length : null; };
+  const lgRimShare = avgLg(tm => Number((tm.offStats || {}).rimFreq || (tm.offStats || {}).rimShare)) || 34.0;
+  const lg3Par = avgLg(tm => Number((tm.offStats || {}).threePar)) || 38.5;
+  const lgTovPct = avgLg(tm => Number((tm.offStats || {}).tovPct)) || 14.5;
+  const isRimSh = x => x.val === 2 && (/dunk/i.test(String(x.sub || '')) || Number(x.dist || 99) <= 4 || /layup|tip|hook/i.test(String(x.sub || '')));
+  const isCorner3 = x => x.val === 3 && Math.abs(Number(x.x || 0)) >= 215 && Number(x.y || 0) <= 95;
+  const sMxcPoss = Math.max(1, allPoss.filter(x => x.side === 'off').length), sDefPoss = Math.max(1, allPoss.filter(x => x.side === 'def').length);
+  const sMxcSh = allShots.filter(x => x.side === 'off'), sMxcFga = Math.max(1, sMxcSh.length);
+  const sOrtg = (allPoss.filter(x => x.side === 'off').reduce((a, b) => a + Number(b.pts || 0), 0) / sMxcPoss) * 100;
+  const sDrtg = (allPoss.filter(x => x.side === 'def').reduce((a, b) => a + Number(b.pts || 0), 0) / sDefPoss) * 100;
+  const sRimShare = (sMxcSh.filter(isRimSh).length / sMxcFga) * 100;
+  const s3Par = (sMxcSh.filter(x => x.val === 3).length / sMxcFga) * 100;
+  const sCornerRate = (sMxcSh.filter(isCorner3).length / Math.max(1, sMxcSh.filter(x => x.val === 3).length)) * 100;
+  const sLateRate = (sMxcSh.filter(x => String(x.clk || '').toLowerCase() === 'late').length / sMxcFga) * 100;
+  const sEarlyRate = (sMxcSh.filter(x => String(x.clk || '').toLowerCase() === 'early').length / sMxcFga) * 100;
+  const sLiveToRate = (allTos.filter(t => t.side === 'off' && Number(t.live || 0) === 1).length / sMxcPoss) * 100;
+  const sAvgDist = sMxcSh.reduce((a, b) => a + Number(b.dist || 0), 0) / sMxcFga;
+  const mSh = gShots.filter(x => x.side === 'off'), oSh = gShots.filter(x => x.side === 'def');
+  const mFga = Math.max(1, mSh.length), oFga = Math.max(1, oSh.length);
+  const gMxcPoss = Math.max(1, sortedP.filter(x => x.side === 'off').length), gDefPoss = Math.max(1, sortedP.filter(x => x.side === 'def').length);
+  const gOrtg = (mxcPts / gMxcPoss) * 100, gDrtg = (oppPts / gDefPoss) * 100;
+  const mLate = mSh.filter(x => String(x.clk || '').toLowerCase() === 'late'), oLate = oSh.filter(x => String(x.clk || '').toLowerCase() === 'late');
+  const mEarly = mSh.filter(x => String(x.clk || '').toLowerCase() === 'early');
+  const mC3 = mSh.filter(isCorner3), m3All = mSh.filter(x => x.val === 3), oC3 = oSh.filter(isCorner3);
+  const mRim = mSh.filter(isRimSh), mTos = gTos.filter(t => t.side === 'off'), oTos = gTos.filter(t => t.side === 'def');
+  const mLiveTo = mTos.filter(t => Number(t.live || 0) === 1).length, mDeadTo = mTos.length - mLiveTo;
+  const oLiveTo = oTos.filter(t => Number(t.live || 0) === 1).length, oDeadTo = oTos.length - oLiveTo;
+  const mAvgDist = mSh.reduce((a, b) => a + Number(b.dist || 0), 0) / mFga, oAvgDist = oSh.reduce((a, b) => a + Number(b.dist || 0), 0) / oFga;
+  const fmtUnit = ids => ids.map(shortLast).join('-'), fmtHt = inches => inches ? Math.floor(inches / 12) + "'" + Math.round(inches % 12) + '"' : '';
+
+  let curSide = '', curPts = 0, curQ = 1, curRunOn = [], bestMxcRun = { pts: 0, q: 1, on: [] }, bestOppRun = { pts: 0, q: 1, on: [] };
+  let maxLead = 0, maxDef = 0, runDiff = 0, leadChanges = 0, ties = 0, prevSign = 0, mDry = 0, oDry = 0, maxMDry = 0, maxODry = 0, dryQ = 1, dryOn = [], curDryOn = [];
+  sortedP.forEach(ps => {
+    const pts = Number(ps.pts || 0), onIds = (Array.isArray(ps.on) ? ps.on : []).map(Number);
+    if (ps.side === 'off') { if (pts === 0) { if (mDry === 0) curDryOn = onIds; mDry += 1; if (mDry > maxMDry) { maxMDry = mDry; dryQ = ps.p || 1; dryOn = curDryOn; } } else mDry = 0; }
+    else { if (pts === 0) { oDry += 1; if (oDry > maxODry) maxODry = oDry; } else oDry = 0; }
+    if (pts > 0) {
+      runDiff += ps.side === 'off' ? pts : -pts;
+      if (runDiff > maxLead) maxLead = runDiff;
+      if (-runDiff > maxDef) maxDef = -runDiff;
+      const sign = runDiff > 0 ? 1 : (runDiff < 0 ? -1 : 0);
+      if (sign === 0) ties += 1; else if (prevSign !== 0 && sign !== prevSign) leadChanges += 1;
+      if (sign !== 0) prevSign = sign;
+      if (ps.side === curSide) curPts += pts; else { curSide = ps.side; curPts = pts; curQ = ps.p || 1; curRunOn = onIds; }
+      if (curSide === 'off' && curPts > bestMxcRun.pts) bestMxcRun = { pts: curPts, q: curQ, on: curRunOn };
+      if (curSide === 'def' && curPts > bestOppRun.pts) bestOppRun = { pts: curPts, q: curQ, on: curRunOn };
+    }
+  });
+  const stintRuns = [], stintBio = [];
+  sortedP.forEach(ps => {
+    const ids = [...new Set((Array.isArray(ps.on) ? ps.on : []).map(Number).filter(Boolean))].sort((a, b) => a - b);
+    if (!ids.length) return;
+    const k = ids.join(','), pts = Number(ps.pts || 0), isOff = ps.side === 'off';
+    const last = stintRuns.at(-1);
+    if (!last || last.k !== k || last.p !== ps.p) stintRuns.push({ k, ids, p: ps.p || 1, poss: 1, pf: isOff ? pts : 0, pa: isOff ? 0 : pts });
+    else { last.poss += 1; if (isOff) last.pf += pts; else last.pa += pts; }
+    if (ids.length >= 5) {
+      const lb = stintBio.at(-1);
+      if (!lb || lb.k !== k) {
+        const bios = ids.map(id => bioByPid.get(id)).filter(Boolean);
+        const avgHt = bios.filter(b => b.ht > 0).length ? bios.filter(b => b.ht > 0).reduce((a, b) => a + b.ht, 0) / bios.filter(b => b.ht > 0).length : 0;
+        const avgWt = bios.filter(b => b.wt > 0).length ? bios.filter(b => b.wt > 0).reduce((a, b) => a + b.wt, 0) / bios.filter(b => b.wt > 0).length : 0;
+        stintBio.push({ k, ids, offP: isOff ? 1 : 0, defP: isOff ? 0 : 1, pf: isOff ? pts : 0, pa: isOff ? 0 : pts, avgHt, avgWt });
+      } else { if (isOff) { lb.offP += 1; lb.pf += pts; } else { lb.defP += 1; lb.pa += pts; } }
+    }
+  });
+  const q4Poss = sortedP.filter(x => Number(x.p || 1) >= 4), crunchSlice = q4Poss.slice(Math.floor(q4Poss.length * 0.55));
+  const crMxc = crunchSlice.filter(x => x.side === 'off').reduce((a, b) => a + Number(b.pts || 0), 0), crOpp = crunchSlice.filter(x => x.side === 'def').reduce((a, b) => a + Number(b.pts || 0), 0);
+  const h1Diff = (pPts('off', 1) + pPts('off', 2)) - (pPts('def', 1) + pPts('def', 2)), h2Diff = (mxcPts - (pPts('off', 1) + pPts('off', 2))) - (oppPts - (pPts('def', 1) + pPts('def', 2)));
+  const q1Diff = pPts('off', 1) - pPts('def', 1), q3Diff = pPts('off', 3) - pPts('def', 3);
+  const zInfo = (pool, val) => {
+    const c = pool.filter(v => v != null && !Number.isNaN(v));
+    if (c.length < 3 || val == null || Number.isNaN(val)) return null;
+    const mean = c.reduce((a, b) => a + b, 0) / c.length;
+    const sd = Math.sqrt(c.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / c.length);
+    if (sd < 1e-6) return null;
+    return { z: (val - mean) / sd, mean, sd };
+  };
+  const gameIds = [...new Set(allPoss.map(x => x.gid))];
+  const byGameMetric = fn => gameIds.map(id => fn(allPoss.filter(x => x.gid === id), allShots.filter(x => x.gid === id), allTos.filter(x => x.gid === id))).filter(v => v != null && !Number.isNaN(v));
+
+  const ortgPool = byGameMetric((gp, gs) => { const op = gp.filter(x => x.side === 'off'); const v = op.length >= 60 ? (op.reduce((a, b) => a + Math.min(4, Number(b.pts || 0)), 0) / op.length) * 100 : null; return (v && v >= 65 && v <= 155) ? v : null; });
+  const drtgPool = byGameMetric((gp, gs) => { const dp = gp.filter(x => x.side === 'def'); const v = dp.length >= 60 ? (dp.reduce((a, b) => a + Math.min(4, Number(b.pts || 0)), 0) / dp.length) * 100 : null; return (v && v >= 65 && v <= 155) ? v : null; });
+  const rimPool = byGameMetric((gp, gs) => { const sh = gs.filter(x => x.side === 'off'); return sh.length ? (sh.filter(isRimSh).length / sh.length) * 100 : null; });
+  const threeParPool = byGameMetric((gp, gs) => { const sh = gs.filter(x => x.side === 'off'); return sh.length ? (sh.filter(x => x.val === 3).length / sh.length) * 100 : null; });
+  const cornerPool = byGameMetric((gp, gs) => { const t3 = gs.filter(x => x.side === 'off' && x.val === 3); return t3.length >= 8 ? (t3.filter(isCorner3).length / t3.length) * 100 : null; });
+  const latePool = byGameMetric((gp, gs) => { const sh = gs.filter(x => x.side === 'off'); return sh.length ? (sh.filter(x => String(x.clk || '').toLowerCase() === 'late').length / sh.length) * 100 : null; });
+  const earlyPool = byGameMetric((gp, gs) => { const sh = gs.filter(x => x.side === 'off'); return sh.length ? (sh.filter(x => String(x.clk || '').toLowerCase() === 'early').length / sh.length) * 100 : null; });
+  const liveToPool = byGameMetric((gp, gs, gt) => { const op = gp.filter(x => x.side === 'off'); return op.length ? (gt.filter(x => x.side === 'off' && Number(x.live || 0) === 1).length / op.length) * 100 : null; });
+  const distPool = byGameMetric((gp, gs) => { const sh = gs.filter(x => x.side === 'off'); return sh.length ? sh.reduce((a, b) => a + Number(b.dist || 0), 0) / sh.length : null; });
+
+  // Lineup Studies metric: % of game possessions played by sustained (above-noise) 5-man units vs MXC season
+  const noiseFloor = Math.max(4, Math.round(gMxcPoss * 0.06));
+  const unitPossMap = new Map();
+  sortedP.forEach(ps => { const k = (ps.on || []).slice().sort().join(','); if (k) unitPossMap.set(k, (unitPossMap.get(k) || 0) + 1); });
+  const sustainedShare = (Array.from(unitPossMap.values()).filter(v => v >= noiseFloor).reduce((a, b) => a + b, 0) / Math.max(1, sortedP.length)) * 100;
+  const sustPool = byGameMetric(gp => {
+    const nf = Math.max(4, Math.round(gp.filter(x => x.side === 'off').length * 0.06));
+    const um = new Map();
+    gp.forEach(ps => { const k = (ps.on || []).slice().sort().join(','); if (k) um.set(k, (um.get(k) || 0) + 1); });
+    return gp.length ? (Array.from(um.values()).filter(v => v >= nf).reduce((a, b) => a + b, 0) / gp.length) * 100 : null;
+  });
+
+  const candidates = [];
+  const addZ = (zObj, tag, color, body, minZ) => { if (zObj && Math.abs(zObj.z) >= (minZ || 1.25)) candidates.push({ score: Math.abs(zObj.z) * 15, tag, color, body }); };
+  const gRimShare = (mRim.length / mFga) * 100, g3Par = (m3All.length / mFga) * 100;
+  const gCornerRate = m3All.length ? (mC3.length / m3All.length) * 100 : null;
+  const gLateRate = (mLate.length / mFga) * 100, gEarlyRate = (mEarly.length / mFga) * 100;
+  const gLiveRate = (mLiveTo / gMxcPoss) * 100;
+
+  const zOrtg = zInfo(ortgPool, gOrtg), zDrtg = zInfo(drtgPool, gDrtg);
+  const zRim = zInfo(rimPool, gRimShare), z3Par = zInfo(threeParPool, g3Par);
+  const zCorner = zInfo(cornerPool, gCornerRate), zDist = zInfo(distPool, mAvgDist);
+  const zLate = zInfo(latePool, gLateRate), zEarly = zInfo(earlyPool, gEarlyRate);
+  const zLive = zInfo(liveToPool, gLiveRate), zSust = zInfo(sustPool, sustainedShare);
+
+  const lgRimPool = lgTms.map(tm => Number((tm.offStats || {}).rimFreq || (tm.offStats || {}).rimShare)).filter(v => v > 0);
+  const lg3ParPool = lgTms.map(tm => Number((tm.offStats || {}).threePar)).filter(v => v > 0);
+  const zLgRim = zInfo(lgRimPool, gRimShare), zLg3Par = zInfo(lg3ParPool, g3Par);
+
+  addZ(zOrtg, 'Offensive Rating vs. Season', zOrtg && zOrtg.z > 0 ? 'var(--yellow)' : '#fb7185', 'MXC posted <strong>' + gOrtg.toFixed(1) + ' ORtg</strong> vs their <strong>' + zOrtg?.mean.toFixed(1) + '</strong> season avg (' + (zOrtg?.z >= 0 ? '+' : '') + zOrtg?.z.toFixed(1) + '&sigma;).');
+  addZ(zDrtg, 'Defensive Rating vs. Season', zDrtg && zDrtg.z < 0 ? '#34d399' : '#f87171', 'MXC allowed <strong>' + gDrtg.toFixed(1) + ' DRtg</strong> vs their <strong>' + zDrtg?.mean.toFixed(1) + '</strong> season avg (' + (zDrtg?.z >= 0 ? '+' : '') + zDrtg?.z.toFixed(1) + '&sigma;).');
+  addZ(zSust, 'Lineup Continuity (Lineup Studies)', zSust && zSust.z > 0 ? 'var(--green)' : '#fb7185', '<strong>' + sustainedShare.toFixed(1) + '%</strong> of possessions went to sustained 5-man units (&ge;' + noiseFloor + 'p) vs <strong>' + zSust?.mean.toFixed(1) + '%</strong> MXC season avg (' + (zSust?.z >= 0 ? '+' : '') + zSust?.z.toFixed(1) + '&sigma;).');
+  addZ(zLgRim || zRim, 'Rim Attempt Share', '#60a5fa', '<strong>' + gRimShare.toFixed(1) + '%</strong> of MXC FGA came at the rim vs <strong>' + sRimShare.toFixed(1) + '%</strong> MXC season avg and <strong>' + lgRimShare.toFixed(1) + '%</strong> G League avg.');
+  addZ(zLg3Par || z3Par, '3-Point Attempt Rate', '#38bdf8', 'MXC posted a <strong>' + g3Par.toFixed(1) + '% 3PAr</strong> vs <strong>' + s3Par.toFixed(1) + '%</strong> MXC season avg and <strong>' + lg3Par.toFixed(1) + '%</strong> G League avg.');
+  addZ(zCorner, 'Corner 3-Point Share', '#60a5fa', '<strong>' + (gCornerRate || 0).toFixed(1) + '%</strong> of MXC 3s came from the corners (' + mC3.filter(x => x.made).length + '-' + mC3.length + ') vs <strong>' + sCornerRate.toFixed(1) + '%</strong> season avg.');
+  addZ(zDist, 'Average Shot Distance', '#93c5fd', 'Average shot distance was <strong>' + mAvgDist.toFixed(1) + ' ft</strong> vs <strong>' + zDist?.mean.toFixed(1) + ' ft</strong> MXC season avg (' + meta.oppCode + ': ' + oAvgDist.toFixed(1) + ' ft).');
+  addZ(zLate, 'Late-Clock Shot Share', '#f59e0b', '<strong>' + gLateRate.toFixed(1) + '%</strong> of MXC FGA came with &le;6s left (' + mLate.filter(x => x.made).length + '-' + mLate.length + ') vs <strong>' + zLate?.mean.toFixed(1) + '%</strong> season avg.');
+  addZ(zEarly, 'Early-Clock Shot Share', '#fbbf24', 'Early-clock (&le;8s) shots accounted for <strong>' + gEarlyRate.toFixed(1) + '%</strong> of MXC FGA vs <strong>' + zEarly?.mean.toFixed(1) + '%</strong> season avg.');
+  addZ(zLive, 'Live-Ball Turnovers', zLive && zLive.z > 0 ? '#f87171' : '#34d399', 'MXC had <strong>' + mLiveTo + ' live-ball TOs</strong> (' + gLiveRate.toFixed(1) + '% of poss vs <strong>' + zLive?.mean.toFixed(1) + '%</strong> season avg) &middot; ' + mDeadTo + ' dead-ball.');
+
+  // Duo season consistency vs game deviation (scaled strictly to game possession sample)
+  const duoFloor = Math.max(8, Math.round(gPoss.length * 0.08));
+  [bestDuo, worstDuo].forEach((duo, idx) => {
+    if (!duo || duo.poss < duoFloor) return;
+    const sDuo = allPoss.filter(ps => Array.isArray(ps.on) && duo.ids.every(id => ps.on.map(Number).includes(id)));
+    const sOff = sDuo.filter(x => x.side === 'off'), sDef = sDuo.filter(x => x.side === 'def');
+    const sNet = (sOff.length ? (sOff.reduce((a, b) => a + Number(b.pts || 0), 0) / sOff.length) * 100 : 0) - (sDef.length ? (sDef.reduce((a, b) => a + Number(b.pts || 0), 0) / sDef.length) * 100 : 0);
+    const d1 = getSeasonDre(duo.ids.at(0)), d2 = getSeasonDre(duo.ids.at(1));
+    const dreStr = (d1 != null && d2 != null) ? ' &middot; Season DRE: ' + (d1 >= 0 ? '+' : '') + d1.toFixed(1) + ' / ' + (d2 >= 0 ? '+' : '') + d2.toFixed(1) : '';
+    const sameDir = (duo.net * sNet > 0) && sOff.length >= duoFloor * 2;
+    if (Math.abs(duo.net) >= 15 || sameDir) {
+      candidates.push({
+        score: Math.abs(duo.net) * 0.5 + (sameDir ? 18 : 0),
+        tag: idx === 0 ? 'Top 2-Man Lineup' : 'Worst 2-Man Lineup',
+        color: idx === 0 ? 'var(--green)' : 'var(--red)',
+        body: '<strong>' + duo.names + '</strong> posted <strong>' + (duo.net >= 0 ? '+' : '') + duo.net.toFixed(1) + ' Net</strong> in ' + duo.poss + 'p' + (sOff.length >= duoFloor ? ' (season: <strong>' + (sNet >= 0 ? '+' : '') + sNet.toFixed(1) + ' Net</strong> in ' + sOff.length + 'p)' : '') + dreStr + '.'
+      });
+    }
+  });
+
+  // Player On/Off Rim & eFG% shifts scaled by possession sample
+  const onOffFloor = Math.max(12, Math.round(gPoss.length * 0.12));
+  mxcBox.rows.filter(r => r.possOn >= onOffFloor && (sortedP.length - r.possOn) >= onOffFloor).forEach(r => {
+    const pid = Number(r.id);
+    const onSh = mSh.filter(x => Array.isArray(x.on) && x.on.map(Number).includes(pid)), offSh = mSh.filter(x => !Array.isArray(x.on) || !x.on.map(Number).includes(pid));
+    if (onSh.length >= 8 && offSh.length >= 8) {
+      const onRim = (onSh.filter(isRimSh).length / onSh.length) * 100, offRim = (offSh.filter(isRimSh).length / offSh.length) * 100;
+      const rimShift = onRim - offRim;
+      const sOn = sMxcSh.filter(x => Array.isArray(x.on) && x.on.map(Number).includes(pid)), sOff = sMxcSh.filter(x => !Array.isArray(x.on) || !x.on.map(Number).includes(pid));
+      const sRimDiff = (sOn.length && sOff.length) ? ((sOn.filter(isRimSh).length / sOn.length) - (sOff.filter(isRimSh).length / sOff.length)) * 100 : 0;
+      if (Math.abs(rimShift) >= 12) candidates.push({ score: Math.abs(rimShift) * 1.4, tag: shortLast(pid) + ' On/Off Rim Share', color: '#c084fc', body: 'With <strong>' + r.name + '</strong> ON, MXC rim share shifted <strong>' + (rimShift >= 0 ? '+' : '') + rimShift.toFixed(0) + '%</strong> (' + onRim.toFixed(0) + '% vs ' + offRim.toFixed(0) + '% OFF; season: ' + (sRimDiff >= 0 ? '+' : '') + sRimDiff.toFixed(0) + '%).' });
+    }
+  });
+  const insightSlides = candidates.sort((a, b) => b.score - a.score);
+  if (!insightSlides.length) insightSlides.push({ tag: 'Season Baseline Summary', color: '#60a5fa', body: 'MXC shot-clock tempo, spatial shot diet, and lineup splits all tracked within normal season &amp; G League variance.' });
+
+
+  document.getElementById('bannerWrap').innerHTML = '<div style="display:grid;grid-template-columns:125px 1.15fr auto 1.15fr 1.35fr;gap:10px;align-items:stretch;padding:10px 12px;border:1px solid var(--border);background:var(--panel);margin-bottom:14px;"><div style="display:flex;flex-direction:column;justify-content:space-between;gap:6px;">' + duoCard('Best Duo', bestDuo, true) + duoCard('Worst Duo', worstDuo, false) + '</div><div style="display:flex;flex-direction:column;justify-content:space-between;text-align:center;"><div style="font-family:Oswald,sans-serif;font-size:21px;font-weight:700;color:var(--yellow);line-height:1.1;">Mexico City Capitanes</div><div style="font-family:Oswald,sans-serif;font-size:28px;font-weight:700;color:var(--yellow);line-height:1.05;">' + mxcPts + '</div>' + ffTileHtml(mxcFF) + '</div><div style="display:flex;flex-direction:column;align-items:center;justify-content:space-between;padding:0 4px;"><div style="font-family:Oswald,sans-serif;font-size:15px;font-weight:700;color:#e5e5e5;">' + meta.date + '</div><table class="qtr-table" style="margin:4px 0;"><thead><tr>' + periods.map(p => '<th>' + (p <= 4 ? 'Q' + p : 'OT' + (p - 4)) + '</th>').join('') + '</tr></thead><tbody><tr>' + periods.map(p => '<td style="color:var(--yellow);font-weight:700;">' + pPts('off', p) + '</td>').join('') + '</tr><tr>' + periods.map(p => '<td style="color:#60a5fa;font-weight:700;">' + pPts('def', p) + '</td>').join('') + '</tr></tbody></table><div style="width:100%;border-top:1px solid #262626;padding-top:4px;display:flex;flex-direction:column;gap:2px;text-align:center;font-family:Oswald,sans-serif;font-size:10px;letter-spacing:0.3px;"> <div style="color:#e4e4e7;"><strong>' + Math.round((gMxcPoss + gDefPoss) / 2) + ' POSS</strong> &middot; <span style="color:var(--yellow);">' + (meta.loc || '').toUpperCase() + '</span> &middot; <span style="color:var(--muted);">' + (meta.st || 'REG').toUpperCase() + '</span></div> <div style="color:var(--muted);">' + leadChanges + ' LC &middot; ' + ties + ' Ties &middot; <span style="color:var(--green);">+' + maxLead + '</span> / <span style="color:var(--red);">-' + maxDef + '</span></div> </div></div><div style="display:flex;flex-direction:column;justify-content:space-between;text-align:center;"><div style="font-family:Oswald,sans-serif;font-size:21px;font-weight:700;color:#60a5fa;line-height:1.1;">' + meta.oppName + '</div><div style="font-family:Oswald,sans-serif;font-size:28px;font-weight:700;color:#60a5fa;line-height:1.05;">' + oppPts + '</div>' + ffTileHtml(oppFF) + '</div><div id="insightsBox" style="border-left:1px solid #2b2b2b;padding-left:10px;display:flex;flex-direction:column;justify-content:space-between;"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #222;padding-bottom:3px;margin-bottom:5px;"><span style="font-family:Oswald,sans-serif;font-size:12px;font-weight:700;color:#60a5fa;text-decoration:underline;">Insights</span><div style="display:flex;align-items:center;gap:4px;"><span id="insCounter" style="font-family:Oswald,sans-serif;font-size:10px;color:var(--muted);">1 / ' + insightSlides.length + '</span><button type="button" class="ctrl-btn" id="insPrevBtn" style="padding:1px 6px;font-size:10px;">&lsaquo;</button><button type="button" class="ctrl-btn" id="insNextBtn" style="padding:1px 6px;font-size:10px;">&rsaquo;</button></div></div><div id="insSlideBody" style="flex:1;display:flex;flex-direction:column;justify-content:center;font-size:11.5px;line-height:1.45;color:#e4e4e7;"></div><div id="insDots" style="display:flex;gap:3px;margin-top:6px;"></div></div></div>';
+
+
+
+  if (window._insTimer) clearInterval(window._insTimer);
+  let insIdx = 0, insPaused = false;
+  const renderInsSlide = () => {
+    const sl = insightSlides.at(insIdx);
+    if (!sl) return;
+    document.getElementById('insCounter').textContent = (insIdx + 1) + ' / ' + insightSlides.length;
+    document.getElementById('insSlideBody').innerHTML = '<div style="font-family:Oswald,sans-serif;font-size:10.5px;font-weight:700;letter-spacing:0.4px;color:' + sl.color + ';margin-bottom:3px;">' + sl.tag + '</div><div>' + sl.body + '</div>';
+    document.getElementById('insDots').innerHTML = insightSlides.map((_, di) => '<span data-di="' + di + '" style="cursor:pointer;height:3px;flex:1;background:' + (di === insIdx ? 'var(--yellow)' : '#27272a') + ';border-radius:1px;"></span>').join('');
+    document.querySelectorAll('#insDots span').forEach(sp => { sp.onclick = () => { insIdx = Number(sp.dataset.di); renderInsSlide(); }; });
+  };
+  renderInsSlide();
+  document.getElementById('insPrevBtn').onclick = () => { insIdx = (insIdx - 1 + insightSlides.length) % insightSlides.length; renderInsSlide(); };
+  document.getElementById('insNextBtn').onclick = () => { insIdx = (insIdx + 1) % insightSlides.length; renderInsSlide(); };
+  const insBox = document.getElementById('insightsBox');
+  insBox.onmouseenter = () => { insPaused = true; };
+insBox.onmouseleave = () => { insPaused = false; };
+window._insTimer = setInterval(() => { if (!insPaused && document.getElementById('insSlideBody')) { insIdx = (insIdx + 1) % insightSlides.length; renderInsSlide(); } }, 5000);
+document.getElementById('mxcTitle').innerHTML = 'Mexico City Capitanes — Advanced Box Score (' + mxcPts + ' pts)';
+  document.getElementById('oppTitle').innerHTML = meta.oppName + ' (' + meta.oppCode + ') — Advanced Box Score (' + oppPts + ' pts)';
+  renderBoxTable('mxcBoxWrap', mxcBox, true); renderBoxTable('oppBoxWrap', oppBox, false); renderContextBreakdown(gPoss, gShots, gFts, gTos, meta.oppCode); activeStintFilter = null; renderShotChart(gShots, data._nameById, meta.oppCode); renderLineupSegments(gPoss, gShots, gFts, gTos, data._nameById);
 }
 async function init() {
   const sSel = document.getElementById('seasonSelect'), gSel = document.getElementById('gameSelect');
@@ -311,8 +805,8 @@ async function init() {
   const loadAndPopulate = async (season, targetGid) => {
     const data = await loadSeasonData(season); currentGameData = data;
     const games = data.games || [];
-    gSel.innerHTML = games.map(g => `<option value="${g.id}">${g.label || g.id}</option>`).join('');
-    renderGame(data, targetGid || (games[0] && games[0].id));
+    gSel.innerHTML = games.map(g => '<option value="' + g.id + '">' + (g.label || g.id) + '</option>').join('');
+    renderGame(data, targetGid || (games.at(0) && games.at(0).id));
   };
   sSel.onchange = () => { currentSeason = sSel.value; loadAndPopulate(currentSeason, ''); };
   gSel.onchange = () => { if (currentGameData) renderGame(currentGameData, gSel.value); };
@@ -320,7 +814,7 @@ async function init() {
   document.getElementById('nextGameBtn').onclick = () => { if (gSel.selectedIndex > 0) { gSel.selectedIndex -= 1; gSel.onchange(); } };
   await loadAndPopulate(currentSeason, requestedGid);
 }
-init().catch(err => { document.getElementById('statusMsg').textContent = err.message; });
+init().catch(err => { document.getElementById('statusMsg').innerHTML = err.message; });
 </script>
 </body>
 </html>

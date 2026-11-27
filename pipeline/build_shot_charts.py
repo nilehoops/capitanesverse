@@ -78,6 +78,7 @@ all_tovs = []
 all_fts = []
 all_poss = []
 all_events = []
+all_box_players = []
 player_names = {}
 for idx, gid in enumerate(gids, 1):
     try:
@@ -91,8 +92,44 @@ for idx, gid in enumerate(gids, 1):
 
     ros = box[box["teamTricode"] == TEAM]
     mxc_ids = set(ros["personId"].astype(int))
+    def _parse_min(m_str):
+        s = str(m_str or "").strip()
+        if ":" in s:
+            m_p, s_p = s.split(":", 1)
+            return round(float(m_p) + float(s_p) / 60.0, 1)
+        try:
+            return round(float(s), 1)
+        except Exception:
+            return 0.0
     for _, r in box.iterrows():
-        player_names[int(r["personId"])] = f"{r['firstName']} {r['familyName']}"
+        pid_i = int(r["personId"])
+        nm_s = f"{r['firstName']} {r['familyName']}".strip()
+        player_names[pid_i] = nm_s
+        mins_f = _parse_min(r.get("minutes", ""))
+        if mins_f <= 0 and int(r.get("points", 0) or 0) == 0 and int(r.get("fieldGoalsAttempted", 0) or 0) == 0:
+            continue
+        all_box_players.append({
+            "gid": gid,
+            "side": "off" if str(r.get("teamTricode", "")) == TEAM else "def",
+            "pid": pid_i,
+            "name": nm_s,
+            "min": round(mins_f),
+            "pts": int(r.get("points", 0) or 0),
+            "fgm": int(r.get("fieldGoalsMade", 0) or 0),
+            "fga": int(r.get("fieldGoalsAttempted", 0) or 0),
+            "fg3m": int(r.get("threePointersMade", 0) or 0),
+            "fg3a": int(r.get("threePointersAttempted", 0) or 0),
+            "ftm": int(r.get("freeThrowsMade", 0) or 0),
+            "fta": int(r.get("freeThrowsAttempted", 0) or 0),
+            "orb": int(r.get("reboundsOffensive", 0) or 0),
+            "drb": int(r.get("reboundsDefensive", 0) or 0),
+            "ast": int(r.get("assists", 0) or 0),
+            "stl": int(r.get("steals", 0) or 0),
+            "blk": int(r.get("blocks", 0) or 0),
+            "tov": int(r.get("turnovers", 0) or 0),
+            "pf": int(r.get("foulsPersonal", 0) or 0),
+            "pm": int(r.get("plusMinusPoints", 0) or 0),
+        })
 
     steal_lookup = {}
     made_val_lookup = {}
@@ -116,9 +153,20 @@ for idx, gid in enumerate(gids, 1):
     poss_fta = 0
     poss_tov = 0
     poss_pts = 0
+    def _parse_clk(c_str):
+        s = str(c_str or "").replace("PT", "").replace("S", "")
+        if "M" in s:
+            m_s, sec_s = s.split("M", 1)
+            try:
+                return float(m_s) * 60.0 + float(sec_s)
+            except Exception:
+                return 0.0
+        return 0.0
+    opp_ids = set(box[box["teamTricode"] != TEAM]["personId"].astype(int))
+    last_poss_end_clk = 720.0
     poss_oreb = 0
-    non_final_ft = False
-    non_final_ft = False
+    prev_closed_by_tov = False
+    last_missed_tm = ""
 
     def close_poss(p_num, side_tm, lineup_set, fga_c, fta_c, tov_c, pts_c=0, oreb_c=0, dreb_c=0):
         if side_tm != "" and (fga_c > 0 or fta_c > 0 or tov_c > 0):
@@ -141,12 +189,16 @@ for idx, gid in enumerate(gids, 1):
         act = row["actionType"]
         tm = str(row["teamTricode"] or "")
         desc = str(row["description"])
+        cur_clk = _parse_clk(row.get("clock"))
 
         if p != cur_p:
             if cur_p > 0:
                 close_poss(cur_p, poss_tm, on, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb, 0)
             cur_p = p
-            poss_tm, poss_fga, poss_fta, poss_tov = "", 0, 0, 0
+            poss_tm, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb = "", 0, 0, 0, 0, 0
+            prev_closed_by_tov = False
+            last_missed_tm = ""
+            last_poss_end_clk = 720.0 if p <= 4 else 300.0
             if p == 1:
                 on = set(ros[ros["position"] != ""]["personId"].astype(int))
             else:
@@ -178,10 +230,27 @@ for idx, gid in enumerate(gids, 1):
                     on.add(pid)
             continue
 
+        if act == "Rebound":
+            reb_pid = int(row.get("personId", 0) or 0)
+            reb_tm = tm or (TEAM if reb_pid in mxc_ids else (str(box[box["teamTricode"] != TEAM]["teamTricode"].iloc[0]) if reb_pid in opp_ids and not box[box["teamTricode"] != TEAM].empty else ""))
+            if reb_tm != "" and last_missed_tm != "":
+                if reb_tm == last_missed_tm:
+                    poss_oreb += 1
+                else:
+                    if poss_tm != "":
+                        close_poss(p, poss_tm, on, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb, 1)
+                        poss_tm, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb = "", 0, 0, 0, 0, 0
+                        prev_closed_by_tov = False
+                    last_poss_end_clk = cur_clk
+                last_missed_tm = ""
+            continue
+
         if act in ["Made Shot", "Missed Shot", "Turnover", "Free Throw"] and tm != "":
             if poss_tm != "" and poss_tm != tm:
                 close_poss(p, poss_tm, on, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb, 0)
                 poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb = 0, 0, 0, 0, 0
+                prev_closed_by_tov = False
+                last_poss_end_clk = cur_clk
             poss_tm = tm
 
         if act in ["Steal", "Block"] and tm == TEAM:
@@ -199,8 +268,12 @@ for idx, gid in enumerate(gids, 1):
 
         if act in ["Made Shot", "Missed Shot"] and tm != "":
             non_final_ft = False
-            non_final_ft = False
             poss_fga += 1
+            if act == "Missed Shot":
+                last_missed_tm = tm
+            else:
+                last_missed_tm = ""
+            elapsed = max(0.0, last_poss_end_clk - cur_clk)
             x_val = row.get("xLegacy")
             y_val = row.get("yLegacy")
             if not pd.isna(x_val) and not pd.isna(y_val):
@@ -224,6 +297,9 @@ for idx, gid in enumerate(gids, 1):
                     "sub": str(row.get("subType", "")),
                     "x": int(x_val),
                     "y": int(y_val),
+                    "clk": ("early" if elapsed <= 8.0 else ("late" if elapsed >= 18.0 else "mid")),
+                    "oreb": 1 if poss_oreb > 0 else 0,
+                    "offTov": 1 if prev_closed_by_tov else 0,
                     "on": sorted(list(on)),
                 })
                 if is_astd and tm == TEAM:
@@ -236,7 +312,9 @@ for idx, gid in enumerate(gids, 1):
                 poss_pts += (3 if ("3PT" in desc or row.get("shotValue", 0) == 3) else 2)
             if act == "Made Shot" and (p, str(row["clock"])) not in ft_clocks:
                 close_poss(p, poss_tm, on, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb, 0)
-                poss_tm, poss_fga, poss_fta, poss_tov = "", 0, 0, 0
+                poss_tm, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb = "", 0, 0, 0, 0, 0
+            prev_closed_by_tov = False
+            last_poss_end_clk = 720.0 if p <= 4 else 300.0
 
         elif act == "Turnover" and tm != "":
             non_final_ft = False
@@ -263,7 +341,9 @@ for idx, gid in enumerate(gids, 1):
                 "on": sorted(list(on)),
             })
             close_poss(p, poss_tm, on, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb, 0)
-            poss_tm, poss_fga, poss_fta, poss_tov = "", 0, 0, 0
+            poss_tm, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb = "", 0, 0, 0, 0, 0
+            prev_closed_by_tov = False
+            last_poss_end_clk = 720.0 if p <= 4 else 300.0
 
         elif act == "Free Throw" and tm != "":
             sub_ft_chk = str(row.get("subType", ""))
@@ -301,7 +381,9 @@ for idx, gid in enumerate(gids, 1):
                 poss_pts += 1
             if is_made and any(tag in sub_ft for tag in ["1 of 1", "2 of 2", "3 of 3"]):
                 close_poss(p, poss_tm, on, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb, 0)
-                poss_tm, poss_fga, poss_fta, poss_tov = "", 0, 0, 0
+                poss_tm, poss_fga, poss_fta, poss_tov, poss_pts, poss_oreb = "", 0, 0, 0, 0, 0
+            prev_closed_by_tov = False
+            last_poss_end_clk = 720.0 if p <= 4 else 300.0
 
         elif act == "Rebound" and poss_tm != "":
             if not non_final_ft:
@@ -352,6 +434,7 @@ payload = {
     "fts": all_fts,
     "turnovers": all_tovs,
     "events": all_events,
+        "boxPlayers": all_box_players,
 }
 
 with open(OUT_FILE, "w", encoding="utf-8") as f:
